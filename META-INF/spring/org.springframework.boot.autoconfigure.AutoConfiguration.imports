@@ -1,0 +1,4 @@
+org.me.springframework.security.config.autoconfigure.SecurityPropertiesConverterAutoConfiguration
+org.me.springframework.security.config.autoconfigure.SecurityAutoConfiguration
+org.me.springframework.security.config.autoconfigure.SecurityAnnotationAutoConfiguration
+org.me.springframework.security.config.autoconfigure.TransactionIdAutoConfiguration

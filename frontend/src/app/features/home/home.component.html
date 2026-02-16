@@ -1,0 +1,528 @@
+<div class="home-container">
+  <!-- Project Header -->
+  <div class="project-header">
+    <div class="header-text">
+      <h2 class="header-title">Overview</h2>
+      <p class="header-subtitle">All the workflows, credentials and data tables you have access to</p>
+    </div>
+    <div class="header-actions">
+      <div class="create-dropdown-wrapper">
+        <button class="btn-create" (click)="createWorkflow()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Create workflow
+        </button>
+        <button class="btn-create-chevron" (click)="showCreateDropdown = !showCreateDropdown">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        @if (showCreateDropdown) {
+          <div class="create-dropdown">
+            <button class="dropdown-item" (click)="createWorkflow()">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/>
+                <rect x="9" y="15" width="6" height="6" rx="1"/>
+                <path d="M6 9v3a1 1 0 001 1h4m6-4v3a1 1 0 01-1 1h-4m0 0v3"/>
+              </svg>
+              Workflow
+            </button>
+            <button class="dropdown-item" (click)="showCreateDropdown = false; setTab('credentials')">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+              </svg>
+              Credential
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Insights Bar -->
+  <div class="insights-bar">
+    <div class="insight-item">
+      <div class="insight-value">{{ totalExecutions() }}</div>
+      <div class="insight-label">Prod. executions</div>
+    </div>
+    <div class="insight-divider"></div>
+    <div class="insight-item">
+      <div class="insight-value">{{ failedExecutions() }}</div>
+      <div class="insight-label">Failed</div>
+    </div>
+    <div class="insight-divider"></div>
+    <div class="insight-item">
+      <div class="insight-value">{{ failureRate() }}%</div>
+      <div class="insight-label">Failure rate</div>
+    </div>
+    <div class="insight-divider"></div>
+    <div class="insight-item">
+      <div class="insight-value">{{ formatSeconds(avgRunTime()) }}</div>
+      <div class="insight-label">Run time (avg.)</div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button class="tab" [class.active]="activeTab() === 'workflows'" (click)="setTab('workflows')">Workflows</button>
+    <button class="tab" [class.active]="activeTab() === 'credentials'" (click)="setTab('credentials')">Credentials</button>
+    <button class="tab" [class.active]="activeTab() === 'executions'" (click)="setTab('executions')">Executions</button>
+    <button class="tab" [class.active]="activeTab() === 'variables'" (click)="setTab('variables')">Variables</button>
+    <button class="tab" [class.active]="activeTab() === 'datatables'" (click)="setTab('datatables')">Data Tables</button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content">
+    @switch (activeTab()) {
+      @case ('workflows') {
+        <!-- Filters Row -->
+        <div class="filters-row">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input class="search-input"
+                   type="text"
+                   placeholder="Search workflows..."
+                   [value]="searchTerm()"
+                   (input)="onSearchChange($any($event.target).value)">
+          </div>
+          <select class="sort-select" [value]="sortBy()" (change)="onSortChange($any($event.target).value)">
+            <option value="updatedAt">Last updated</option>
+            <option value="createdAt">Last created</option>
+            <option value="name">Name A-Z</option>
+            <option value="nameDesc">Name Z-A</option>
+          </select>
+          <button class="btn-exec-filter" [class.active]="wfFilterActive()" (click)="showWfFilterModal.set(true)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Workflow Cards -->
+        @if (loadingWorkflows()) {
+          <div class="loading-state">
+            <span class="spinner-border spinner-border-sm"></span>
+            Loading workflows...
+          </div>
+        } @else if (pagedWorkflows().length === 0) {
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1">
+              <rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/>
+              <rect x="9" y="15" width="6" height="6" rx="1"/>
+              <path d="M6 9v3a1 1 0 001 1h4m6-4v3a1 1 0 01-1 1h-4m0 0v3"/>
+            </svg>
+            @if (searchTerm()) {
+              <p>No workflows match "{{ searchTerm() }}"</p>
+            } @else {
+              <p>No workflows yet</p>
+              <button class="btn-create-inline" (click)="createWorkflow()">Create your first workflow</button>
+            }
+          </div>
+        } @else {
+          <div class="workflow-cards">
+            @for (workflow of pagedWorkflows(); track workflow.id) {
+              <app-workflow-card
+                [workflow]="workflow"
+                (open)="openWorkflow($event)"
+                (duplicate)="duplicateWorkflow($event)"
+                (delete)="confirmDelete($event)"
+                (toggleActive)="toggleWorkflowActive($event)" />
+            }
+          </div>
+
+          <!-- Pagination -->
+          @if (totalPages() > 1) {
+            <div class="pagination-bar">
+              <span class="pagination-total">Total {{ filteredWorkflows().length }}</span>
+              <div class="pagination-controls">
+                <button class="page-btn" [disabled]="page() <= 1" (click)="goToPage(page() - 1)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <span class="page-info">{{ page() }} / {{ totalPages() }}</span>
+                <button class="page-btn" [disabled]="page() >= totalPages()" (click)="goToPage(page() + 1)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+        }
+      }
+      @case ('credentials') {
+        @if (loadingCredentials()) {
+          <div class="loading-state">
+            <span class="spinner-border spinner-border-sm"></span>
+            Loading credentials...
+          </div>
+        } @else if (credentials().length === 0) {
+          <!-- Empty state -->
+          <div class="empty-action-box">
+            <div class="empty-action-icon">
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <h3 class="empty-action-heading">Let's set up a credential</h3>
+            <p class="empty-action-description">Credentials let workflows interact with your apps and services</p>
+            <button class="btn-secondary-action" (click)="navigateToCredentials()">Add first credential</button>
+          </div>
+        } @else {
+          <!-- Credential filters -->
+          <div class="filters-row">
+            <div class="search-input-wrapper">
+              <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input class="search-input"
+                     type="text"
+                     placeholder="Search credentials..."
+                     [value]="credSearchTerm()"
+                     (input)="onCredSearchChange($any($event.target).value)">
+            </div>
+            <select class="sort-select" [value]="credSortBy()" (change)="onCredSortChange($any($event.target).value)">
+              <option value="updatedAt">Last updated</option>
+              <option value="createdAt">Last created</option>
+              <option value="name">Name A-Z</option>
+              <option value="nameDesc">Name Z-A</option>
+            </select>
+          </div>
+
+          <!-- Credential cards -->
+          <div class="credential-cards">
+            @for (cred of filteredCredentials(); track cred.id) {
+              <div class="cred-card">
+                <div class="cred-card-icon">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <div class="cred-card-content">
+                  <h4 class="cred-card-name">{{ cred.name }}</h4>
+                  <div class="cred-card-meta">
+                    <span>{{ cred.type }}</span>
+                    @if (credTimeAgo(cred)) {
+                      <span class="meta-sep">|</span>
+                      <span>Last updated {{ credTimeAgo(cred) }}</span>
+                    }
+                    @if (credCreatedDate(cred)) {
+                      <span class="meta-sep">|</span>
+                      <span>Created {{ credCreatedDate(cred) }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="cred-card-append">
+                  <span class="personal-badge">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    Personal
+                  </span>
+                  <div class="cred-actions-wrapper">
+                    <button class="btn-cred-actions" (click)="toggleCredActions(cred.id!, $event)">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
+                      </svg>
+                    </button>
+                    @if (credActionsOpenId() === cred.id) {
+                      <div class="cred-actions-dropdown">
+                        <button class="cred-dropdown-item danger" (click)="confirmCredDelete(cred, $event)">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                          Delete
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+      @case ('executions') {
+        <!-- Execution header controls -->
+        <div class="exec-header-controls">
+          <div class="exec-auto-refresh">
+            <button class="exec-checkbox" [class.checked]="execAutoRefresh()" (click)="toggleAutoRefresh()" role="checkbox" [attr.aria-checked]="execAutoRefresh()">
+              @if (execAutoRefresh()) {
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              }
+            </button>
+            <span class="exec-checkbox-label">Auto refresh</span>
+          </div>
+          <div class="exec-header-right">
+            <div class="exec-filter-wrapper">
+              <button class="btn-exec-filter" [class.active]="execFilterActive()" (click)="showExecFilterPopover.set(!showExecFilterPopover())">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Execution table -->
+        <div class="exec-table-wrapper">
+          <table class="exec-table">
+            <thead>
+              <tr>
+                <th>Workflow</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Run time</th>
+                <th>Exec. ID</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (loadingExecutions()) {
+                <tr>
+                  <td colspan="6" class="exec-table-empty">
+                    <span class="spinner-border spinner-border-sm"></span>
+                    Loading executions...
+                  </td>
+                </tr>
+              } @else if (filteredExecutions().length === 0) {
+                <tr>
+                  <td colspan="6" class="exec-table-empty">No executions</td>
+                </tr>
+              } @else {
+                @for (exec of filteredExecutions(); track exec.id) {
+                  <tr>
+                    <td class="exec-workflow-name">{{ getWorkflowName(exec.workflowId) }}</td>
+                    <td>
+                      <span class="exec-status-badge" [attr.data-status]="exec.status">{{ exec.status }}</span>
+                    </td>
+                    <td class="exec-meta-cell">{{ execStartedAt(exec) }}</td>
+                    <td class="exec-meta-cell">{{ execRunTime(exec) }}</td>
+                    <td class="exec-meta-cell exec-id-cell">{{ exec.id }}</td>
+                    <td class="exec-actions-cell">
+                      @if (exec.status === 'error') {
+                        <button class="btn-exec-action" title="Retry" (click)="retryExecution(exec.id, $event)">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                          </svg>
+                        </button>
+                      }
+                      <button class="btn-exec-action" title="Delete" (click)="deleteExecution(exec.id, $event)">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      @case ('variables') {
+        <app-variable-list />
+      }
+      @case ('datatables') {
+        <div class="empty-action-box">
+          <div class="empty-action-icon">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="3" y1="15" x2="21" y2="15"/>
+              <line x1="9" y1="3" x2="9" y2="21"/>
+            </svg>
+          </div>
+          <h3 class="empty-action-heading">No data tables yet</h3>
+          <p class="empty-action-description">Data tables let you store and manage structured data for your workflows</p>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- Workflow Filter Modal -->
+@if (showWfFilterModal()) {
+  <div class="filter-modal-backdrop" (click)="showWfFilterModal.set(false)"></div>
+  <div class="filter-modal">
+    <div class="filter-modal-header">
+      <h3 class="filter-modal-title">Filter Workflows</h3>
+      <button class="filter-modal-close" (click)="showWfFilterModal.set(false)">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="filter-modal-body">
+      <!-- Tags -->
+      <div class="exec-filter-group">
+        <label class="exec-filter-label" for="wf-filter-tags">Tags</label>
+        <input type="text" class="exec-filter-input" id="wf-filter-tags" placeholder="Filter by tags"
+               [value]="wfTagsFilter()"
+               (input)="wfTagsFilter.set($any($event.target).value)">
+      </div>
+
+      <!-- Status -->
+      <div class="exec-filter-group">
+        <label class="exec-filter-label" for="wf-filter-status">Status</label>
+        <select class="exec-filter-select" id="wf-filter-status" [value]="wfStatusFilter()" (change)="wfStatusFilter.set($any($event.target).value)">
+          <option value="all">All</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <!-- Show archived -->
+      <div class="exec-filter-group">
+        <label class="exec-filter-exact-match">
+          <button class="exec-checkbox" [class.checked]="wfShowArchived()" (click)="wfShowArchived.set(!wfShowArchived())" role="checkbox" [attr.aria-checked]="wfShowArchived()">
+            @if (wfShowArchived()) {
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            }
+          </button>
+          <span>Show archived workflows</span>
+        </label>
+      </div>
+    </div>
+    <div class="filter-modal-footer">
+      @if (wfFilterActive()) {
+        <button class="btn-reset-filters" (click)="resetWfFilters()">Reset filters</button>
+      }
+      <button class="btn-apply-filters" (click)="showWfFilterModal.set(false)">Apply</button>
+    </div>
+  </div>
+}
+
+<!-- Execution Filter Modal -->
+@if (showExecFilterPopover()) {
+  <div class="filter-modal-backdrop" (click)="showExecFilterPopover.set(false)"></div>
+  <div class="filter-modal">
+    <div class="filter-modal-header">
+      <h3 class="filter-modal-title">Filter Executions</h3>
+      <button class="filter-modal-close" (click)="showExecFilterPopover.set(false)">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="filter-modal-body">
+      <div class="filter-grid">
+        <!-- Workflows -->
+        <div class="exec-filter-group">
+          <label class="exec-filter-label" for="exec-filter-workflow">Workflows</label>
+          <select class="exec-filter-select" id="exec-filter-workflow" [value]="execWorkflowFilter()" (change)="onExecWorkflowFilterChange($any($event.target).value)">
+            <option value="all">All workflows</option>
+            @for (wf of workflows(); track wf.id) {
+              <option [value]="wf.id">{{ wf.name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Status -->
+        <div class="exec-filter-group">
+          <label class="exec-filter-label" for="exec-filter-status">Status</label>
+          <select class="exec-filter-select" id="exec-filter-status" [value]="execStatusFilter()" (change)="onExecFilterChange($any($event.target).value)">
+            <option value="all">All statuses</option>
+            <option value="success">Success</option>
+            <option value="error">Error</option>
+            <option value="running">Running</option>
+            <option value="waiting">Waiting</option>
+          </select>
+        </div>
+
+        <!-- Execution start -->
+        <div class="exec-filter-group exec-filter-group-full">
+          <label class="exec-filter-label">Execution start</label>
+          <div class="exec-filter-date-range">
+            <input type="datetime-local" class="exec-filter-input" placeholder="Earliest"
+                   [value]="execStartDateFrom()"
+                   (input)="execStartDateFrom.set($any($event.target).value)">
+            <span class="exec-filter-date-sep">to</span>
+            <input type="datetime-local" class="exec-filter-input" placeholder="Latest"
+                   [value]="execStartDateTo()"
+                   (input)="execStartDateTo.set($any($event.target).value)">
+          </div>
+        </div>
+
+        <!-- Execution tags -->
+        <div class="exec-filter-group">
+          <label class="exec-filter-label" for="exec-filter-tags">Execution tags</label>
+          <input type="text" class="exec-filter-input" id="exec-filter-tags" placeholder="Filter by tags"
+                 [value]="execTags()"
+                 (input)="execTags.set($any($event.target).value)">
+        </div>
+
+        <!-- Rating -->
+        <div class="exec-filter-group">
+          <label class="exec-filter-label" for="exec-filter-rating">Rating</label>
+          <select class="exec-filter-select" id="exec-filter-rating" [value]="execRating()" (change)="execRating.set($any($event.target).value)">
+            <option value="all">Select Rating</option>
+            <option value="positive">Positive</option>
+            <option value="negative">Negative</option>
+          </select>
+        </div>
+
+        <!-- Highlighted data -->
+        <div class="exec-filter-group exec-filter-group-full">
+          <label class="exec-filter-label">Highlighted data</label>
+          <div class="exec-filter-data-row">
+            <input type="text" class="exec-filter-input" placeholder="Key (e.g. ID)"
+                   [value]="execDataKey()"
+                   (input)="execDataKey.set($any($event.target).value)">
+            <label class="exec-filter-exact-match">
+              <button class="exec-checkbox" [class.checked]="execDataExactMatch()" (click)="execDataExactMatch.set(!execDataExactMatch())" role="checkbox" [attr.aria-checked]="execDataExactMatch()">
+                @if (execDataExactMatch()) {
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                }
+              </button>
+              <span>Exact match</span>
+            </label>
+            <input type="text" class="exec-filter-input" placeholder="Value (e.g. 123)"
+                   [value]="execDataValue()"
+                   (input)="execDataValue.set($any($event.target).value)">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="filter-modal-footer">
+      @if (execFilterActive()) {
+        <button class="btn-reset-filters" (click)="resetExecFilters()">Reset filters</button>
+      }
+      <button class="btn-apply-filters" (click)="showExecFilterPopover.set(false)">Apply</button>
+    </div>
+  </div>
+}
+
+<app-confirm-dialog
+  [isOpen]="showDeleteConfirm()"
+  title="Delete Workflow"
+  [message]="'Are you sure you want to delete \'' + (deleteTarget()?.name || '') + '\'? This action cannot be undone.'"
+  confirmText="Delete"
+  confirmBtnClass="btn btn-danger"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()" />
+
+<app-confirm-dialog
+  [isOpen]="showCredDeleteConfirm()"
+  title="Delete Credential"
+  [message]="'Are you sure you want to delete \'' + (credDeleteTarget()?.name || '') + '\'? This action cannot be undone.'"
+  confirmText="Delete"
+  confirmBtnClass="btn btn-danger"
+  (confirmed)="onCredDeleteConfirmed()"
+  (cancelled)="onCredDeleteCancelled()" />

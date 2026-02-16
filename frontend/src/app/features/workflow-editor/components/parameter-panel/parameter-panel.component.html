@@ -1,0 +1,117 @@
+<div class="parameter-panel">
+  <div class="panel-header">
+    <div class="panel-title-row">
+      <h3 class="panel-title">{{ node.name }}</h3>
+      <div class="panel-actions">
+        <button class="btn btn-sm btn-ghost" (click)="deleteNode.emit()" title="Delete node">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+          </svg>
+        </button>
+        <button class="btn btn-sm btn-ghost" (click)="close.emit()" title="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    @if (nodeType) {
+      <p class="panel-subtitle">{{ nodeType.description }}</p>
+    }
+  </div>
+
+  <div class="panel-tabs">
+    <button class="tab" [class.active]="activeTab === 'parameters'" (click)="activeTab = 'parameters'">
+      Parameters
+    </button>
+    <button class="tab" [class.active]="activeTab === 'settings'" (click)="activeTab = 'settings'">
+      Settings
+    </button>
+  </div>
+
+  <div class="panel-body">
+    @if (activeTab === 'parameters') {
+      @if (visibleParameters.length === 0) {
+        <div class="empty-params">
+          <p>No parameters to configure</p>
+        </div>
+      }
+      @for (param of visibleParameters; track param.name) {
+        <div class="param-group">
+          @switch (param.type) {
+            @case ('string') {
+              <app-string-param
+                [param]="param"
+                [value]="getParameterValue(param.name, param.defaultValue)"
+                (valueChange)="onParameterChange(param.name, $event)" />
+            }
+            @case ('number') {
+              <app-number-param
+                [param]="param"
+                [value]="getParameterValue(param.name, param.defaultValue)"
+                (valueChange)="onParameterChange(param.name, $event)" />
+            }
+            @case ('boolean') {
+              <app-boolean-param
+                [param]="param"
+                [value]="getParameterValue(param.name, param.defaultValue)"
+                (valueChange)="onParameterChange(param.name, $event)" />
+            }
+            @case ('options') {
+              <app-options-param
+                [param]="param"
+                [value]="getParameterValue(param.name, param.defaultValue)"
+                (valueChange)="onParameterChange(param.name, $event)" />
+            }
+            @case ('json') {
+              <app-json-param
+                [param]="param"
+                [value]="getParameterValue(param.name, param.defaultValue)"
+                (valueChange)="onParameterChange(param.name, $event)" />
+            }
+            @case ('collection') {
+              <app-collection-param
+                [param]="param"
+                [value]="getParameterValue(param.name, param.defaultValue)"
+                (valueChange)="onParameterChange(param.name, $event)" />
+            }
+            @case ('fixedCollection') {
+              <app-fixed-collection-param
+                [param]="param"
+                [value]="getParameterValue(param.name, param.defaultValue)"
+                (valueChange)="onParameterChange(param.name, $event)" />
+            }
+            @default {
+              <app-string-param
+                [param]="param"
+                [value]="getParameterValue(param.name, param.defaultValue)"
+                (valueChange)="onParameterChange(param.name, $event)" />
+            }
+          }
+        </div>
+      }
+    } @else {
+      <div class="settings-section">
+        <div class="param-group">
+          <label class="param-label">Continue on Fail</label>
+          <p class="param-description">If enabled, the workflow continues even when this node fails</p>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox"
+                   [ngModel]="node.continueOnFail"
+                   (ngModelChange)="onParameterChange('continueOnFail', $event)">
+          </div>
+        </div>
+        <div class="param-group">
+          <label class="param-label">Disabled</label>
+          <p class="param-description">Skip this node during execution</p>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox"
+                   [ngModel]="node.disabled"
+                   (ngModelChange)="onParameterChange('disabled', $event)">
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,73 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Configure your Trellis instance</p>
+  </div>
+
+  <div class="settings-card">
+    <h3 class="section-title">General</h3>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <label class="setting-label">Timezone</label>
+        <p class="setting-description">Default timezone for workflow scheduling</p>
+      </div>
+      <input type="text" class="form-control setting-input"
+             [(ngModel)]="settings.timezone">
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <label class="setting-label">Execution Timeout (seconds)</label>
+        <p class="setting-description">Maximum time a workflow execution can run</p>
+      </div>
+      <input type="number" class="form-control setting-input"
+             [(ngModel)]="settings.executionTimeout">
+    </div>
+  </div>
+
+  <div class="settings-card">
+    <h3 class="section-title">Executions</h3>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <label class="setting-label">Save Execution Progress</label>
+        <p class="setting-description">Save execution progress for each node as it completes</p>
+      </div>
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox"
+               [(ngModel)]="settings.saveExecutionProgress">
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <label class="setting-label">Save Manual Executions</label>
+        <p class="setting-description">Store results of manual workflow executions</p>
+      </div>
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox"
+               [(ngModel)]="settings.saveManualExecutions">
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <label class="setting-label">Default Execution Mode</label>
+        <p class="setting-description">Default mode for new workflow executions</p>
+      </div>
+      <select class="form-select setting-input"
+              [(ngModel)]="settings.defaultExecutionMode">
+        <option value="MANUAL">Manual</option>
+        <option value="TRIGGER">Trigger</option>
+        <option value="WEBHOOK">Webhook</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="settings-footer">
+    <button class="btn btn-primary" (click)="saveSettings()">
+      Save Settings
+    </button>
+  </div>
+</div>

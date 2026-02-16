@@ -1,0 +1,114 @@
+<div class="insights-container" (click)="closeDatePicker()">
+  <!-- Header -->
+  <div class="insights-header">
+    <h2 class="insights-title">Insights</h2>
+  </div>
+
+  <!-- Controls Row -->
+  <div class="insights-controls">
+    <select class="control-select">
+      <option>All projects</option>
+    </select>
+    <div class="date-picker-wrapper">
+      <button class="control-btn-date" [class.active]="showDatePicker()" (click)="toggleDatePicker($event)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        {{ dateRangeLabel() }}
+      </button>
+
+      @if (showDatePicker()) {
+        <div class="date-picker-dropdown" (click)="onDatePickerClick($event)">
+          <!-- Presets -->
+          <div class="dp-presets">
+            @for (preset of presets; track preset.label) {
+              <button class="dp-preset-btn"
+                      [class.active]="selectedPreset() === preset.label"
+                      [class.locked]="preset.locked"
+                      (click)="selectPreset(preset, $event)">
+                {{ preset.label }}
+                @if (preset.locked) {
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lock-icon">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                }
+              </button>
+            }
+          </div>
+
+          <!-- Calendar + Date Fields -->
+          <div class="dp-main">
+            <!-- Calendar -->
+            <div class="dp-calendar">
+              <div class="dp-cal-header">
+                <button class="dp-nav-btn" [disabled]="!canGoPrev()" (click)="prevMonth()">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m15 18-6-6 6-6"/>
+                  </svg>
+                </button>
+                <span class="dp-cal-month">{{ calendarMonthLabel() }}</span>
+                <button class="dp-nav-btn" [disabled]="!canGoNext()" (click)="nextMonth()">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </button>
+              </div>
+              <table class="dp-grid">
+                <thead>
+                  <tr>
+                    <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (week of calendarWeeks(); track $index) {
+                    <tr>
+                      @for (day of week; track day.value) {
+                        <td>
+                          <div class="dp-day"
+                               [class.outside]="day.outsideMonth"
+                               [class.disabled]="day.disabled"
+                               [class.selected]="day.selected"
+                               [class.range-start]="day.selectionStart"
+                               [class.range-end]="day.selectionEnd"
+                               [class.today]="day.today">
+                            {{ day.day }}
+                          </div>
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Date Field -->
+            <div class="dp-date-field">
+              <div class="dp-date-inputs">
+                <span class="dp-date-segment">{{ dateFieldStart() }}</span>
+                <span class="dp-date-sep">-</span>
+                <span class="dp-date-segment">{{ dateFieldEnd() }}</span>
+              </div>
+              <button class="dp-apply-btn" (click)="closeDatePicker()">Apply</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Metric Tabs -->
+  <div class="metric-tabs">
+    @for (tab of tabs; track tab.key) {
+      <a class="metric-tab" [class.active]="activeMetric() === tab.key"
+         [routerLink]="'/insights/' + tab.key">
+        <span class="metric-tab-label">{{ tab.label }}</span>
+        <span class="metric-tab-subtitle">{{ tab.subtitle }}</span>
+        <span class="metric-tab-value">{{ getTabValue(tab.key) }}</span>
+      </a>
+    }
+  </div>
+
+  <!-- Content Area -->
+  <div class="insights-content">
+  </div>
+</div>

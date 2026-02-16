@@ -1,0 +1,83 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Executions</h1>
+      <p class="page-subtitle">View workflow execution history</p>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="btn-group" role="group">
+      @for (status of ['all', 'success', 'error', 'running', 'waiting']; track status) {
+        <button type="button"
+                class="btn btn-sm"
+                [class.btn-active]="statusFilter() === status"
+                [class.btn-outline-secondary]="statusFilter() !== status"
+                (click)="onFilterChange(status)">
+          {{ status | titlecase }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner message="Loading executions..." />
+  } @else if (filteredExecutions().length === 0) {
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+        <circle cx="12" cy="12" r="10"/>
+        <polygon points="10,8 16,12 10,16"/>
+      </svg>
+      <p>No executions found</p>
+    </div>
+  } @else {
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Workflow</th>
+            <th>Mode</th>
+            <th>Started</th>
+            <th>Finished</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (exec of filteredExecutions(); track exec.id) {
+            <tr class="execution-row">
+              <td>
+                <span class="badge" [class]="getStatusClass(exec.status)">
+                  {{ exec.status }}
+                </span>
+              </td>
+              <td class="workflow-name">{{ exec.workflowId }}</td>
+              <td>
+                <span class="mode-badge">{{ exec.mode }}</span>
+              </td>
+              <td>{{ exec.startedAt | date:'short' }}</td>
+              <td>{{ exec.finishedAt | date:'short' }}</td>
+              <td>
+                <div class="action-buttons">
+                  @if (exec.status === 'error') {
+                    <button class="btn btn-sm btn-ghost" (click)="retryExecution(exec.id, $event)" title="Retry">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                      </svg>
+                    </button>
+                  }
+                  <button class="btn btn-sm btn-ghost" (click)="deleteExecution(exec.id, $event)" title="Delete">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+// Bootstrap variable overrides (must come before Bootstrap import)
+$primary: #0b5ed7;
+$secondary: hsl(247, 49%, 53%);
+$success: hsl(147, 60%, 40%);
+$danger: hsl(355, 83%, 52%);
+$warning: hsl(36, 77%, 40%);
+$body-bg: hsl(0, 0%, 13%);
+$body-color: hsl(0, 0%, 96%);
+$font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+$border-color: hsl(0, 0%, 24%);
+$border-radius: 0.5rem;
+$border-radius-sm: 0.25rem;
+$border-radius-lg: 0.75rem;
+$input-border-color: hsl(0, 0%, 24%);
+$input-focus-border-color: hsl(7, 100%, 68%);
+$input-bg: hsl(0, 0%, 9%);
+$input-color: hsl(0, 0%, 96%);
+$btn-border-radius: 0.25rem;
+$card-bg: hsl(0, 0%, 13%);
+$card-border-color: hsl(0, 0%, 24%);
+$modal-content-bg: hsl(0, 0%, 13%);
+$modal-content-color: hsl(0, 0%, 96%);
+$modal-content-border-color: hsl(0, 0%, 24%);
+$table-color: hsl(0, 0%, 96%);
+$table-bg: transparent;
+$table-border-color: hsl(0, 0%, 24%);
+
+@import 'bootstrap/scss/bootstrap';
+
+:root {
+  --trellis-bg: hsl(0, 0%, 13%);
+  --trellis-sidebar-bg: hsl(0, 0%, 13%);
+  --trellis-canvas-bg: hsl(0, 0%, 9%);
+  --trellis-node-bg: hsl(0, 0%, 13%);
+  --trellis-node-border: hsl(0, 0%, 24%);
+  --trellis-node-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 6px rgba(0, 0, 0, 0.2);
+  --trellis-trigger-color: hsl(7, 100%, 68%);
+  --trellis-action-color: hsl(247, 49%, 53%);
+  --trellis-success-color: hsl(147, 60%, 40%);
+  --trellis-error-color: hsl(355, 83%, 52%);
+  --trellis-warning-color: hsl(36, 77%, 40%);
+  --trellis-text-primary: hsl(0, 0%, 96%);
+  --trellis-text-secondary: hsl(0, 0%, 68%);
+  --trellis-primary: hsl(7, 100%, 68%);
+  --trellis-accent: hsl(247, 49%, 53%);
+  --trellis-border: hsl(0, 0%, 24%);
+  --trellis-border-light: hsl(0, 0%, 17%);
+  --trellis-surface: hsl(0, 0%, 13%);
+  --trellis-hover-bg: hsl(0, 0%, 17%);
+  --trellis-card-bg: hsl(0, 0%, 15%);
+  --trellis-card-hover-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --trellis-tab-active-border: var(--bs-primary);
+  --trellis-insight-bg: hsl(0, 0%, 11%);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--trellis-bg);
+  color: var(--trellis-text-primary);
+  overflow: hidden;
+  height: 100vh;
+}
+
+html, body {
+  height: 100%;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(0, 0%, 30%);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(0, 0%, 40%);
+}

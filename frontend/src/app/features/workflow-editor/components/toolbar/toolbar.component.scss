@@ -1,0 +1,243 @@
+/* n8n-style MainHeader */
+.main-header {
+  position: relative;
+  background: hsl(0, 0%, 13%);
+  border-bottom: 1px solid hsl(0, 0%, 24%);
+  z-index: 10;
+}
+
+.top-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 65px;
+  padding: 0 16px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 58%);
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:hover {
+    background: hsl(0, 0%, 17%);
+    color: hsl(0, 0%, 96%);
+  }
+}
+
+.breadcrumb-link {
+  font-size: 0.8125rem;
+  color: hsl(0, 0%, 58%);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+    background: hsl(0, 0%, 17%);
+  }
+}
+
+.breadcrumb-sep {
+  font-size: 1.25rem;
+  color: hsl(0, 0%, 30%);
+  padding: 0 2px;
+  user-select: none;
+}
+
+.workflow-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 96%);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover {
+    background: hsl(0, 0%, 17%);
+  }
+}
+
+.dirty-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: hsl(36, 77%, 50%);
+  flex-shrink: 0;
+}
+
+.name-input {
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(247, 49%, 53%);
+  box-shadow: 0 0 0 2px hsla(247, 49%, 53%, 0.15);
+  color: hsl(0, 0%, 96%);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  outline: none;
+  width: 300px;
+}
+
+.header-divider {
+  width: 1px;
+  height: 24px;
+  background: hsl(0, 0%, 24%);
+}
+
+.active-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.active-label {
+  color: hsl(0, 0%, 58%);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.toggle-switch {
+  width: 36px;
+  height: 20px;
+  background: hsl(0, 0%, 30%);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s ease;
+
+  &.active {
+    background: hsl(147, 83%, 44%);
+  }
+}
+
+.toggle-thumb {
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s ease;
+
+  .active & {
+    left: 18px;
+  }
+}
+
+.btn-subtle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid hsl(0, 0%, 30%);
+  background: transparent;
+  color: hsl(0, 0%, 80%);
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.btn-execute {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: hsl(147, 60%, 40%);
+  border: 1px solid hsl(147, 60%, 40%);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: hsl(147, 60%, 34%);
+    border-color: hsl(147, 60%, 34%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+/* n8n-style floating tab bar at bottom center of header */
+.tab-bar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(50%);
+  display: flex;
+  padding: 3px;
+  background: hsl(0, 0%, 20%);
+  border-radius: 8px;
+  z-index: 100;
+  gap: 2px;
+}
+
+.tab-btn {
+  padding: 4px 16px;
+  border: none;
+  background: transparent;
+  color: hsl(0, 0%, 58%);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+  }
+
+  &.active {
+    background: hsl(0, 0%, 13%);
+    color: hsl(0, 0%, 96%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}

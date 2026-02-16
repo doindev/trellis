@@ -1,0 +1,76 @@
+<div class="node-palette">
+  <div class="palette-header">
+    <h3 class="palette-title">Nodes</h3>
+    <button class="btn btn-sm btn-ghost" (click)="close.emit()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="palette-search">
+    <svg class="search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="text"
+           class="search-input"
+           placeholder="Search nodes..."
+           [ngModel]="searchTerm()"
+           (ngModelChange)="onSearchChange($event)">
+  </div>
+
+  <div class="palette-body">
+    @for (entry of getCategoryEntries(); track entry[0]) {
+      <div class="category">
+        <div class="category-header" (click)="toggleCategory(entry[0])">
+          <svg class="category-chevron"
+               [class.expanded]="isCategoryExpanded(entry[0])"
+               viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <span class="category-name">{{ entry[0] }}</span>
+          <span class="category-count">{{ entry[1].length }}</span>
+        </div>
+        @if (isCategoryExpanded(entry[0])) {
+          <div class="category-items">
+            @for (nodeType of entry[1]; track nodeType.type) {
+              <div class="node-item"
+                   draggable="true"
+                   (dragstart)="onDragStart($event, nodeType)">
+                <div class="node-icon" [class.trigger]="nodeType.isTrigger">
+                  @if (nodeType.icon) {
+                    <span>{{ nodeType.icon }}</span>
+                  } @else if (nodeType.isTrigger) {
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                  } @else {
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  }
+                </div>
+                <div class="node-info">
+                  <span class="node-name">{{ nodeType.displayName }}</span>
+                  @if (nodeType.description) {
+                    <span class="node-desc">{{ nodeType.description }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (getCategoryEntries().length === 0) {
+      <div class="empty-palette">
+        @if (searchTerm()) {
+          <p>No nodes matching "{{ searchTerm() }}"</p>
+        } @else {
+          <p>No node types available</p>
+        }
+      </div>
+    }
+  </div>
+</div>

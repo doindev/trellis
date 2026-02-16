@@ -1,0 +1,204 @@
+/* React Flow overrides for Trellis theme — n8n style */
+
+.trellis-flow {
+  background: hsl(0, 0%, 9%) !important;
+}
+
+.trellis-node {
+  background: hsl(0, 0%, 13%);
+  border: 1.5px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.2);
+  min-width: 160px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+
+  &.selected {
+    border-color: hsl(7, 100%, 68%);
+    box-shadow: 0 0 0 4px hsla(7, 100%, 68%, 0.15), 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+
+  &.trigger-node {
+    border-radius: 36px 8px 8px 36px;
+  }
+
+  &.status-success {
+    border: 2px solid hsl(147, 60%, 40%);
+  }
+
+  &.status-error {
+    border: 2px solid hsl(355, 83%, 52%);
+  }
+
+  &.status-running {
+    border: 2px solid hsl(7, 100%, 68%);
+    animation: running-glow 1.5s ease-in-out infinite;
+  }
+
+  &.disabled {
+    opacity: 0.45;
+  }
+}
+
+.node-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.node-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: hsla(247, 49%, 53%, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(247, 49%, 53%);
+  flex-shrink: 0;
+  font-size: 0.875rem;
+
+  &.trigger {
+    background: hsla(7, 100%, 68%, 0.12);
+    color: hsl(7, 100%, 68%);
+  }
+}
+
+.node-title {
+  overflow: hidden;
+}
+
+.node-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 96%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-subtitle {
+  font-size: 0.6875rem;
+  color: hsl(0, 0%, 46%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.node-status-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.625rem;
+  border: 2px solid hsl(0, 0%, 13%);
+
+  &.success {
+    background: hsl(147, 60%, 40%);
+  }
+
+  &.error {
+    background: hsl(355, 83%, 52%);
+  }
+
+  &.running {
+    background: hsl(36, 77%, 40%);
+  }
+
+  &.waiting {
+    background: hsl(0, 0%, 46%);
+  }
+}
+
+.item-count {
+  font-size: 0.5625rem;
+  font-weight: 700;
+}
+
+.running-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Connection handles */
+.trellis-handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: hsl(0, 0%, 30%) !important;
+  border: 2px solid hsl(0, 0%, 13%) !important;
+  border-radius: 50%;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--bs-primary) !important;
+  }
+}
+
+/* React Flow controls — n8n style */
+.react-flow__controls {
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+
+  button {
+    background: transparent;
+    border-bottom: 1px solid hsl(0, 0%, 20%);
+    color: hsl(0, 0%, 58%);
+    width: 28px;
+    height: 28px;
+
+    &:hover {
+      background: hsl(0, 0%, 17%);
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    svg {
+      fill: hsl(0, 0%, 58%);
+    }
+  }
+}
+
+.react-flow__minimap {
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Edge selection */
+.react-flow__edge {
+  &.selected .react-flow__edge-path {
+    stroke: hsl(7, 100%, 68%) !important;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dashdraw {
+  to { stroke-dashoffset: -10; }
+}
+
+@keyframes running-glow {
+  0%, 100% { box-shadow: 0 0 0 0 hsla(7, 100%, 68%, 0.2); }
+  50% { box-shadow: 0 0 8px 2px hsla(7, 100%, 68%, 0.3); }
+}

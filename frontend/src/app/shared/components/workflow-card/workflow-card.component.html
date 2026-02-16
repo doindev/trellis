@@ -1,0 +1,73 @@
+<div class="workflow-card" (click)="onCardClick()">
+  <div class="card-left">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="6" height="6" rx="1"/>
+        <rect x="15" y="3" width="6" height="6" rx="1"/>
+        <rect x="9" y="15" width="6" height="6" rx="1"/>
+        <path d="M6 9v3a1 1 0 001 1h4m6-4v3a1 1 0 01-1 1h-4m0 0v3"/>
+      </svg>
+    </div>
+    <div class="card-info">
+      <div class="card-name">{{ workflow.name }}</div>
+      <div class="card-meta">
+        @if (timeAgo) {
+          <span>Last updated {{ timeAgo }}</span>
+        }
+        @if (createdDate) {
+          <span class="meta-sep">|</span>
+          <span>Created {{ createdDate }}</span>
+        }
+        @if (nodeCount > 0) {
+          <span class="meta-sep">|</span>
+          <span>{{ nodeCount }} node{{ nodeCount !== 1 ? 's' : '' }}</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="card-right">
+    @if (workflow.active) {
+      <span class="status-badge active">
+        <span class="status-dot"></span>
+        Published
+      </span>
+    } @else {
+      <span class="status-badge inactive">Inactive</span>
+    }
+
+    <div class="actions-wrapper">
+      <button class="btn-actions" (click)="onToggleActions($event)" title="Actions">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
+        </svg>
+      </button>
+      @if (showActions) {
+        <div class="actions-dropdown">
+          <button class="dropdown-item" (click)="onAction('open', $event)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Open
+          </button>
+          <button class="dropdown-item" (click)="onAction('duplicate', $event)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Duplicate
+          </button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item danger" (click)="onAction('delete', $event)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Delete
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,239 @@
+package io.trellis.nodes.base;
+
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+public abstract class AbstractDatabaseNode extends AbstractNode {
+	
+	// create a datbase connection from credentials
+	protected Connection createConnection(Map<String, Object> credentials) throws SQLException {
+		String host = (String) credentials.getOrDefault("host",  "localhost");
+		int port = toInt(credentials.get("port"), getDefaultPort());
+		String database = (String) credentials.get("database");
+		String user = (String) credentials.get("user");
+		String password = (String) credentials.get("password");
+		String jdbcUrl = buildJdbcUrl(host, port, database, credentials);
+		
+		Properties props = new Properties();
+		if (user != null) props.setProperty("user",  user);
+		if (password != null) props.setProperty("password",  password);
+		
+		addConnectionProperties(props, credentials);
+		
+		return DriverManager.getConnection(jdbcUrl, props);
+	}
+	
+	// builds the JDBC url for the specific database
+	protected abstract String buildJdbcUrl(String host, int port, String database, Map<String, Object> credentials);
+	
+	
+	// return the default port for the specific database
+	protected abstract int getDefaultPort();
+	
+	// adds database-specifc connection properties
+	protected void addConnectionProperties(Properties props, Map<String, Object> credentials) {
+		// override in subclases if needed
+	}
+	
+	// executes a query and returns results as items
+	protected List<Map<String, Object>> executeQuery(Connection conn, String sql, List<Object> params) throws SQLException {
+		List<Map<String, Object>> items = new ArrayList<>();
+		
+		try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+			setParameters(stmt, params);
+			
+			try (ResultSet rs = stmt.executeQuery()) {
+				ResultSetMetaData meta = rs.getMetaData();
+				int columnCount = meta.getColumnCount();
+				
+				while (rs.next()) {
+					Map<String, Object> row = new LinkedHashMap<>();
+					for (int i = 1; i <= columnCount; i++) {
+						String columnName = meta.getColumnLabel(i);
+						Object value = rs.getObject(i);
+						row.put(columnName,  convertSqlValue(value));
+					}
+					items.add(wrapInJson(row));
+				}
+			}
+		}
+			
+		return items;
+	}
+	
+	// executes an update/insert/delete statement
+	protected int executeUpdate(Connection conn, String sql, List<Object> params) throws Exception {
+		try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+			setParameters(stmt, params);
+			return stmt.executeUpdate();
+		}
+	}
+	
+	// executes an insert and returns generated keys
+	protected List<Map<String, Object>> executeInsertReturning(Connection conn, String sql, List<Object> params) throws SQLException {
+		List<Map<String, Object>> items = new ArrayList<>();
+		
+		try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+			setParameters(stmt, params);
+			
+			try (ResultSet rs = stmt.getGeneratedKeys()) {
+				ResultSetMetaData meta = rs.getMetaData();
+				int columnCount = meta.getColumnCount();
+				
+				while (rs.next()) {
+					Map<String, Object> row = new LinkedHashMap<>();
+					for (int i = 1; i <= columnCount; i++) {
+						String columnName = meta.getColumnLabel(i);
+						if (columnName == null || columnName.isEmpty()) {
+							columnName = "generated_key_" + i;
+						}
+						row.put(columnName,  rs.getObject(i));
+					}
+					items.add(wrapInJson(row));
+				}
+			}
+		}
+		
+		return items;
+	}
+	
+	// sets parameters on a prepared statement
+	protected void setParameters(PreparedStatement stmt, List<Object> params) throws SQLException {
+		if (params == null) return;
+		
+		for (int i = 0; i < params.size(); i++) {
+			Object param = params.get(i);
+			
+			if (param == null) {
+				stmt.setNull(i + 1, Types.NULL);
+			} else if (param instanceof String) {
+				stmt.setString(i + 1,  (String) param);
+			} else if (param instanceof Integer) {
+				stmt.setInt(i + 1,  (Integer) param);
+			} else if (param instanceof Long) {
+				stmt.setLong(i + 1,  (Long) param);
+			} else if (param instanceof Double) {
+				stmt.setDouble(i + 1,  (Double) param);
+			} else if (param instanceof Float) {
+				stmt.setFloat(i + 1,  (Float) param);
+			} else if (param instanceof Boolean) {
+				stmt.setBoolean(i + 1,  (Boolean) param);
+			} else if (param instanceof Date) {
+				stmt.setTimestamp(i + 1,  new Timestamp(((Date) param).getTime()));
+			} else if (param instanceof byte[]) {
+				stmt.setBytes(i + 1,  (byte[]) param);
+			} else {
+				stmt.setObject(i + 1,  param);
+			}
+		}
+	}
+	
+	// converts SQL value types to JSON-compatible types
+	protected Object convertSqlValue(Object value) {
+		if (value == null) return null;
+		if (value instanceof java.sql.Timestamp) {
+			return ((java.sql.Timestamp) value).toInstant().toString();
+		}
+		if (value instanceof java.sql.Date) {
+			return ((java.sql.Date) value).toLocalDate().toString();
+		}
+		if (value instanceof java.sql.Time) {
+			return ((java.sql.Time) value).toLocalTime().toString();
+		}
+		if (value instanceof java.sql.Clob) {
+			try {
+				java.sql.Clob clob = (java.sql.Clob)value;
+				return clob.getSubString(1,  (int) clob.length());
+			} catch (SQLException e) {
+				return value.toString();
+			}
+		}
+		if (value instanceof java.sql.Blob) {
+			try {
+				java.sql.Blob blob = (java.sql.Blob)value;
+				return Base64.getEncoder().encodeToString(blob.getBytes(1,  (int) blob.length()));
+			} catch (SQLException e) {
+				return null;
+			}
+		}
+		if (value instanceof BigDecimal) {
+			return ((BigDecimal) value).doubleValue();
+		}
+		return value;
+	}
+	
+	// build INSERT statement from column-value pairs
+	protected String buildInsertSql(String table, Map<String, Object> values) {
+		StringBuilder sql = new StringBuilder("INSERT INTO ");
+		sql
+			.append(quoteIdentifier(table))
+			.append(" (");
+		
+		StringBuilder valuesPart = new StringBuilder(" VALUES (");
+		boolean first = true;
+		
+		for (String column : values.keySet()) {
+			if (!first) {
+				sql.append(", ");
+				 valuesPart.append(", ");
+			}
+			sql.append(quoteIdentifier(column));
+			valuesPart.append("?");
+			first = false;
+		}
+		
+		sql
+			.append(")")
+			.append(valuesPart)
+			.append(")");
+		
+		return sql.toString();
+	}
+	
+	// builds UPDATE statement from column-value pairs
+	protected String buildUpdateSql(String table, Map<String, Object> values, String whereClause) {
+		StringBuilder sql = new StringBuilder("UPDATE ");
+		sql
+			.append(quoteIdentifier(table))
+			.append(" SET ");
+	
+		boolean first = true;
+		
+		for (String column : values.keySet()) {
+			if (!first) sql.append(", ");
+			sql
+				.append(quoteIdentifier(column))
+				.append(" = ?");
+			first = false;
+		}
+		
+		if (whereClause != null && !whereClause.isEmpty()) {
+			sql
+				.append(" WHERE ")
+				.append(whereClause);
+		}
+		
+		return sql.toString();
+	}
+	
+	// quotes an identifier (table/column) for the specific database
+	protected String quoteIdentifier(String identifier) {
+		return "\"" + identifier.replace("\"", "\"\"") + "\"";
+	}
+	
+}

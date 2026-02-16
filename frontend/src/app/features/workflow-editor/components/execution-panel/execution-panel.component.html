@@ -1,0 +1,38 @@
+<div class="execution-panel">
+  <div class="panel-header">
+    <div class="header-left">
+      <h4 class="panel-title">Output</h4>
+      <span class="status-badge" [class]="'status-' + executionStatus">
+        {{ executionStatus }}
+      </span>
+    </div>
+    <button class="btn btn-sm btn-ghost" (click)="close.emit()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="panel-body">
+    @if (isExecuting) {
+      <div class="executing-state">
+        <div class="spinner-border spinner-border-sm text-warning"></div>
+        <span>Executing workflow...</span>
+      </div>
+    } @else if (!executionData) {
+      <div class="empty-state">
+        <p>Execute the workflow to see results here</p>
+      </div>
+    } @else if (!selectedNodeId) {
+      <div class="empty-state">
+        <p>Select a node to see its output</p>
+      </div>
+    } @else if (!nodeExecutionData) {
+      <div class="empty-state">
+        <p>No output data for this node</p>
+      </div>
+    } @else {
+      <pre class="output-json">{{ outputJson }}</pre>
+    }
+  </div>
+</div>

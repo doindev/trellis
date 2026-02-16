@@ -1,0 +1,6 @@
+{
+  "/api": { "target": "http://localhost:5678", "secure": false },
+  "/ws": { "target": "http://localhost:5678", "secure": false, "ws": true },
+  "/webhook": { "target": "http://localhost:5678", "secure": false },
+  "/webhook-test": { "target": "http://localhost:5678", "secure": false }
+}

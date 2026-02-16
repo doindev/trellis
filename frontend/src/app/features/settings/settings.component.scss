@@ -1,0 +1,128 @@
+.page-container {
+  padding: 32px;
+  max-width: 800px;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: hsl(0, 0%, 96%);
+  margin: 0;
+}
+
+.page-subtitle {
+  color: hsl(0, 0%, 68%);
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+}
+
+.settings-card {
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 96%);
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid hsl(0, 0%, 24%);
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid hsl(0, 0%, 17%);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.setting-info {
+  flex: 1;
+  margin-right: 24px;
+}
+
+.setting-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(0, 0%, 96%);
+  margin: 0;
+}
+
+.setting-description {
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 46%);
+  margin: 2px 0 0;
+}
+
+.setting-input {
+  width: 250px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(0, 0%, 24%);
+  color: hsl(0, 0%, 96%);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+
+  &:focus {
+    background: hsl(0, 0%, 9%);
+    border-color: hsl(247, 49%, 53%);
+    box-shadow: 0 0 0 2px hsla(247, 49%, 53%, 0.15);
+    color: hsl(0, 0%, 96%);
+  }
+}
+
+.form-select {
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(0, 0%, 24%);
+  color: hsl(0, 0%, 96%);
+
+  option {
+    background: hsl(0, 0%, 13%);
+  }
+
+  &:focus {
+    background: hsl(0, 0%, 9%);
+    border-color: hsl(247, 49%, 53%);
+    box-shadow: 0 0 0 2px hsla(247, 49%, 53%, 0.15);
+    color: hsl(0, 0%, 96%);
+  }
+}
+
+.form-check-input {
+  background-color: hsl(0, 0%, 24%);
+  border-color: hsl(0, 0%, 30%);
+
+  &:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+  }
+}
+
+.settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.btn-primary {
+  background: var(--bs-primary);
+  border-color: var(--bs-primary);
+  font-weight: 500;
+  color: #fff;
+
+  &:hover {
+    filter: brightness(0.9);
+  }
+}

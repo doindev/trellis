@@ -1,0 +1,151 @@
+.page-container {
+  padding: 32px;
+  max-width: 1200px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: hsl(0, 0%, 96%);
+  margin: 0;
+}
+
+.page-subtitle {
+  color: hsl(0, 0%, 68%);
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+}
+
+.filter-bar {
+  margin-bottom: 24px;
+}
+
+.btn-active {
+  background: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+
+.btn-outline-secondary {
+  color: hsl(0, 0%, 68%);
+  border-color: hsl(0, 0%, 24%);
+
+  &:hover {
+    background: hsl(0, 0%, 17%);
+    color: hsl(0, 0%, 96%);
+  }
+}
+
+.table-container {
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table {
+  color: hsl(0, 0%, 96%);
+  margin: 0;
+
+  thead th {
+    background: hsl(0, 0%, 9%);
+    color: hsl(0, 0%, 68%);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom-color: hsl(0, 0%, 24%);
+    padding: 12px 16px;
+  }
+
+  tbody td {
+    padding: 12px 16px;
+    border-bottom-color: hsl(0, 0%, 17%);
+    vertical-align: middle;
+    font-size: 0.8125rem;
+  }
+}
+
+.execution-row {
+  transition: background 0.1s ease;
+
+  &:hover {
+    background: hsl(0, 0%, 17%);
+  }
+}
+
+.workflow-name {
+  font-weight: 500;
+}
+
+.status-badge {
+  font-size: 0.6875rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+
+  &.status-success {
+    background: hsla(147, 60%, 40%, 0.15);
+    color: hsl(147, 60%, 40%);
+  }
+
+  &.status-error {
+    background: hsla(355, 83%, 52%, 0.15);
+    color: hsl(355, 83%, 52%);
+  }
+
+  &.status-running {
+    background: hsla(36, 77%, 40%, 0.15);
+    color: hsl(36, 77%, 40%);
+  }
+}
+
+.mode-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  background: hsl(0, 0%, 17%);
+  border-radius: 4px;
+  color: hsl(0, 0%, 68%);
+  text-transform: lowercase;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-ghost {
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 68%);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+
+  &:hover {
+    color: hsl(7, 100%, 68%);
+    background: hsl(0, 0%, 17%);
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 20px;
+  text-align: center;
+
+  .empty-icon {
+    color: hsl(0, 0%, 30%);
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: hsl(0, 0%, 46%);
+    font-size: 1rem;
+  }
+}

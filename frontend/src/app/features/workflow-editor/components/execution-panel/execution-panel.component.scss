@@ -1,0 +1,107 @@
+.execution-panel {
+  height: 220px;
+  min-height: 220px;
+  background: hsl(0, 0%, 13%);
+  border-top: 1px solid hsl(0, 0%, 24%);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid hsl(0, 0%, 17%);
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 96%);
+  margin: 0;
+}
+
+.status-badge {
+  font-size: 0.6875rem;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+  text-transform: capitalize;
+
+  &.status-success {
+    background: hsla(147, 60%, 40%, 0.15);
+    color: hsl(147, 60%, 50%);
+  }
+
+  &.status-error {
+    background: hsla(355, 83%, 52%, 0.15);
+    color: hsl(355, 83%, 60%);
+  }
+
+  &.status-running {
+    background: hsla(36, 77%, 40%, 0.15);
+    color: hsl(36, 77%, 50%);
+  }
+
+  &.status-idle {
+    background: hsl(0, 0%, 17%);
+    color: hsl(0, 0%, 46%);
+  }
+}
+
+.btn-ghost {
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 58%);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  cursor: pointer;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+    background: hsl(0, 0%, 17%);
+  }
+}
+
+.panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 16px;
+}
+
+.output-json {
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(0, 0%, 20%);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 86%);
+  margin: 0;
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: 100%;
+}
+
+.empty-state, .executing-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+
+  p, span {
+    color: hsl(0, 0%, 46%);
+    font-size: 0.8125rem;
+    margin: 0;
+  }
+}

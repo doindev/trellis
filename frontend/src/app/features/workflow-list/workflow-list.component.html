@@ -1,0 +1,118 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title">Workflows</h1>
+    <button class="btn btn-primary" (click)="createWorkflow()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add Workflow
+    </button>
+  </div>
+
+  <div class="filters-bar">
+    <div class="search-bar">
+      <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text"
+             class="search-input"
+             placeholder="Search workflows..."
+             [ngModel]="searchTerm()"
+             (ngModelChange)="onSearchChange($event)">
+    </div>
+    <div class="filter-controls">
+      <select class="filter-select" [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChange($event)">
+        <option value="">All</option>
+        <option value="active">Active</option>
+        <option value="inactive">Deactivated</option>
+      </select>
+      <select class="filter-select" [ngModel]="sortBy()" (ngModelChange)="onSortChange($event)">
+        <option value="updatedAt">Last updated</option>
+        <option value="createdAt">Last created</option>
+        <option value="name">Name A-Z</option>
+      </select>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner message="Loading workflows..." />
+  } @else if (filteredWorkflows().length === 0) {
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+        <rect x="3" y="3" width="6" height="6" rx="1"/>
+        <rect x="15" y="3" width="6" height="6" rx="1"/>
+        <rect x="9" y="15" width="6" height="6" rx="1"/>
+        <path d="M6 9v3a1 1 0 001 1h4m6-4v3a1 1 0 01-1 1h-4m0 0v3"/>
+      </svg>
+      @if (searchTerm()) {
+        <p>No workflows found matching "{{ searchTerm() }}"</p>
+      } @else {
+        <p>No workflows yet</p>
+        <span class="empty-hint">Start by creating your first workflow</span>
+        <button class="btn btn-primary mt-3" (click)="createWorkflow()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Create Workflow
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="workflow-list">
+      @for (workflow of filteredWorkflows(); track workflow.id) {
+        <div class="workflow-row" (click)="openWorkflow(workflow)">
+          <div class="workflow-row-left">
+            <div class="workflow-status-dot" [class.active]="workflow.active" [title]="workflow.active ? 'Active' : 'Inactive'"></div>
+            <div class="workflow-info">
+              <h3 class="workflow-name">{{ workflow.name }}</h3>
+              <div class="workflow-meta">
+                @if (workflow.updatedAt) {
+                  <span class="meta-item">Updated {{ workflow.updatedAt | date:'short' }}</span>
+                }
+                <span class="meta-item">{{ workflow.nodes?.length || 0 }} nodes</span>
+              </div>
+            </div>
+          </div>
+          <div class="workflow-row-right">
+            @if (workflow.active) {
+              <span class="active-badge">Active</span>
+            }
+            <div class="workflow-actions" (click)="$event.stopPropagation()">
+              <button class="btn-action"
+                      [class.active-toggle]="workflow.active"
+                      (click)="toggleActive(workflow, $event)"
+                      [title]="workflow.active ? 'Deactivate' : 'Activate'">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  @if (workflow.active) {
+                    <path d="M18.36 6.64a9 9 0 11-12.73 0"/>
+                    <line x1="12" y1="2" x2="12" y2="12"/>
+                  } @else {
+                    <circle cx="12" cy="12" r="10"/>
+                    <polygon points="10,8 16,12 10,16"/>
+                  }
+                </svg>
+              </button>
+              <button class="btn-action btn-delete"
+                      (click)="confirmDelete(workflow, $event)"
+                      title="Delete">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<app-confirm-dialog
+  [isOpen]="showDeleteConfirm()"
+  title="Delete Workflow"
+  [message]="'Are you sure you want to delete \'' + (deleteTarget()?.name || '') + '\'? This action cannot be undone.'"
+  confirmText="Delete"
+  confirmBtnClass="btn-danger"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()" />

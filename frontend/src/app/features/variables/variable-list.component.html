@@ -1,0 +1,113 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Variables</h1>
+      <p class="page-subtitle">Manage global variables accessible in workflows</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreate()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      New Variable
+    </button>
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner message="Loading variables..." />
+  } @else if (variables().length === 0) {
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+        <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/>
+        <path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>
+      </svg>
+      <p>No variables defined yet</p>
+      <button class="btn btn-primary mt-3" (click)="openCreate()">Add Variable</button>
+    </div>
+  } @else {
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Value</th>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (variable of variables(); track variable.id) {
+            <tr class="variable-row" (click)="openEdit(variable)">
+              <td class="var-key">{{ variable.key }}</td>
+              <td class="var-value">{{ variable.value }}</td>
+              <td>
+                <span class="type-badge">{{ variable.type || 'string' }}</span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-ghost" (click)="confirmDelete(variable, $event)" title="Delete">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- Create/Edit Modal -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ isEditing() ? 'Edit' : 'New' }} Variable</h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Key</label>
+            <input type="text" class="form-control"
+                   [ngModel]="editingVariable().key"
+                   (ngModelChange)="updateField('key', $event)"
+                   placeholder="VARIABLE_NAME">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Value</label>
+            <input type="text" class="form-control"
+                   [ngModel]="editingVariable().value"
+                   (ngModelChange)="updateField('value', $event)"
+                   placeholder="Variable value">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select class="form-select"
+                    [ngModel]="editingVariable().type"
+                    (ngModelChange)="updateField('type', $event)">
+              <option value="string">String</option>
+              <option value="number">Number</option>
+              <option value="boolean">Boolean</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="saveVariable()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<app-confirm-dialog
+  [isOpen]="showDeleteConfirm()"
+  title="Delete Variable"
+  [message]="'Delete variable \'' + (deleteTarget()?.key || '') + '\'?'"
+  confirmText="Delete"
+  confirmBtnClass="btn-danger"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()" />

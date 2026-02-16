@@ -1,0 +1,52 @@
+<div class="editor-container">
+  <app-toolbar
+    [workflowName]="store.workflow()?.name || 'New Workflow'"
+    [isActive]="store.workflow()?.active || false"
+    [isDirty]="store.isDirty()"
+    [isExecuting]="store.isExecuting()"
+    (nameChanged)="store.updateWorkflowName($event)"
+    (save)="onSave()"
+    (execute)="onExecute()"
+    (toggleActive)="store.toggleActive()"
+    (back)="goBack()"
+    (togglePalette)="togglePalette()"
+    (showExecutions)="toggleExecutionPanel()" />
+
+  <div class="editor-body">
+    @if (showPalette) {
+      <app-node-palette
+        [nodeTypes]="nodeTypeStore.groupedByCategory()"
+        (close)="togglePalette()" />
+    }
+
+    <div class="canvas-area">
+      <app-react-flow-wrapper
+        [workflow]="store.workflow()"
+        [nodeTypeMap]="nodeTypeStore.nodeTypes()"
+        [executionData]="store.executionData()"
+        [selectedNodeId]="store.selectedNodeId()"
+        (nodeSelected)="store.selectNode($event)"
+        (nodeAdded)="store.addNode($event)"
+        (nodeRemoved)="store.removeNode($event)"
+        (nodesPositionChanged)="store.updateNodePositions($event)"
+        (connectionsChanged)="store.updateConnections($event)" />
+    </div>
+
+    @if (store.selectedNode()) {
+      <app-parameter-panel
+        [node]="store.selectedNode()!"
+        [nodeType]="nodeTypeStore.getByType(store.selectedNode()!.type)"
+        (parameterChanged)="store.updateNode(store.selectedNodeId()!, { parameters: $event })"
+        (close)="store.selectNode(null)"
+        (deleteNode)="store.removeNode(store.selectedNodeId()!)" />
+    }
+  </div>
+
+  @if (showExecutionPanel) {
+    <app-execution-panel
+      [executionData]="store.executionData()"
+      [selectedNodeId]="store.selectedNodeId()"
+      [isExecuting]="store.isExecuting()"
+      (close)="toggleExecutionPanel()" />
+  }
+</div>

@@ -1,0 +1,164 @@
+.workflow-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--trellis-card-bg);
+  border: 1px solid var(--trellis-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    border-color: hsl(0, 0%, 32%);
+    box-shadow: var(--trellis-card-hover-shadow);
+  }
+}
+
+.card-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: hsla(247, 49%, 53%, 0.12);
+  color: hsl(247, 49%, 63%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-info {
+  min-width: 0;
+}
+
+.card-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--trellis-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-meta {
+  font-size: 0.75rem;
+  color: var(--trellis-text-secondary);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.meta-sep {
+  color: hsl(0, 0%, 30%);
+}
+
+.card-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &.active {
+    color: hsl(147, 60%, 50%);
+    background: hsla(147, 60%, 40%, 0.12);
+  }
+
+  &.inactive {
+    color: var(--trellis-text-secondary);
+    background: hsla(0, 0%, 50%, 0.1);
+  }
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(147, 60%, 50%);
+}
+
+.actions-wrapper {
+  position: relative;
+}
+
+.btn-actions {
+  background: none;
+  border: none;
+  color: var(--trellis-text-secondary);
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    background: var(--trellis-hover-bg);
+    color: var(--trellis-text-primary);
+  }
+}
+
+.actions-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: hsl(0, 0%, 17%);
+  border: 1px solid var(--trellis-border);
+  border-radius: 8px;
+  min-width: 160px;
+  padding: 4px;
+  z-index: 50;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--trellis-text-primary);
+  font-size: 0.8125rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background: var(--trellis-hover-bg);
+  }
+
+  &.danger {
+    color: var(--trellis-error-color);
+
+    &:hover {
+      background: hsla(355, 83%, 52%, 0.1);
+    }
+  }
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--trellis-border);
+  margin: 4px 0;
+}

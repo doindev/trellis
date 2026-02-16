@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(mvn compile:*)",
+      "Bash(npx:*)",
+      "Bash(npm install:*)",
+      "Bash(findstr:*)",
+      "Bash(Select-String \"ERROR\")",
+      "Bash(Select-String -NotMatch \"Parser Error\")",
+      "Bash(jar tf:*)",
+      "Bash(timeout 30 mvn spring-boot:run -Dfrontend.skip=true)",
+      "Bash(timeout 35 mvn spring-boot:run:*)",
+      "WebSearch",
+      "WebFetch(domain:n8n.io)",
+      "WebFetch(domain:docs.n8n.io)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:localhost)",
+      "Bash(curl:*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(python -m json.tool:*)",
+      "Bash(gh auth:*)",
+      "WebFetch(domain:blog.n8n.io)",
+      "WebFetch(domain:community.n8n.io)",
+      "Bash(python -c:*)"
+    ]
+  }
+}

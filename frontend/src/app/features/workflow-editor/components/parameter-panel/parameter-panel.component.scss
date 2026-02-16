@@ -1,0 +1,142 @@
+.parameter-panel {
+  width: 360px;
+  min-width: 360px;
+  background: hsl(0, 0%, 13%);
+  border-left: 1px solid hsl(0, 0%, 24%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.panel-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid hsl(0, 0%, 24%);
+}
+
+.panel-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: hsl(0, 0%, 96%);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-subtitle {
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 46%);
+  margin: 4px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.btn-ghost {
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 58%);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+    background: hsl(0, 0%, 17%);
+  }
+
+  &:hover .delete-icon {
+    color: hsl(355, 83%, 52%);
+  }
+}
+
+.panel-tabs {
+  display: flex;
+  border-bottom: 1px solid hsl(0, 0%, 24%);
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: hsl(0, 0%, 46%);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: hsl(0, 0%, 80%);
+  }
+
+  &.active {
+    color: hsl(7, 100%, 68%);
+    border-bottom-color: hsl(7, 100%, 68%);
+  }
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.param-group {
+  margin-bottom: 16px;
+}
+
+.param-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: hsl(0, 0%, 96%);
+  margin-bottom: 4px;
+}
+
+.param-description {
+  font-size: 0.6875rem;
+  color: hsl(0, 0%, 46%);
+  margin-bottom: 6px;
+}
+
+.empty-params {
+  text-align: center;
+  padding: 40px 16px;
+
+  p {
+    color: hsl(0, 0%, 46%);
+    font-size: 0.8125rem;
+    margin: 0;
+  }
+}
+
+.settings-section {
+  padding: 0;
+}
+
+.form-check-input {
+  background-color: hsl(0, 0%, 24%);
+  border-color: hsl(0, 0%, 30%);
+
+  &:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+  }
+}
