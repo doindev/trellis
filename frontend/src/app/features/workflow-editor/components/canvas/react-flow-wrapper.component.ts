@@ -10,6 +10,7 @@ import {
   AfterViewInit,
   SimpleChanges,
   NgZone,
+  ViewEncapsulation,
 } from '@angular/core';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -21,6 +22,7 @@ import { Workflow, WorkflowNode, NodeTypeDescription } from '../../../../core/mo
   standalone: true,
   template: `<div #reactFlowHost class="react-flow-host"></div>`,
   styleUrl: './canvas-styles.scss',
+  encapsulation: ViewEncapsulation.None,
   styles: [`
     :host {
       display: block;

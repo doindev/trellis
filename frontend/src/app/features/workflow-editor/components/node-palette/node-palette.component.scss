@@ -2,11 +2,11 @@
   width: 385px;
   min-width: 385px;
   background: hsl(0, 0%, 13%);
-  border-right: 1px solid hsl(0, 0%, 24%);
+  border-left: 1px solid hsl(0, 0%, 24%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: 5;
+  height: 100%;
 }
 
 .palette-header {

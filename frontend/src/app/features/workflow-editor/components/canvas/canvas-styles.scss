@@ -149,6 +149,7 @@
 
 /* React Flow controls — n8n style */
 .react-flow__controls {
+  z-index: 5;
   background: hsl(0, 0%, 13%);
   border: 1px solid hsl(0, 0%, 24%);
   border-radius: 8px;
@@ -177,6 +178,7 @@
 }
 
 .react-flow__minimap {
+  z-index: 5;
   background: hsl(0, 0%, 13%);
   border: 1px solid hsl(0, 0%, 24%);
   border-radius: 8px;

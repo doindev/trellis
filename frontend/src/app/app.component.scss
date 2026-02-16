@@ -32,6 +32,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
 }
 
 .brand-icon {
@@ -115,6 +116,116 @@
   &:hover {
     background: hsl(0, 0%, 22%);
   }
+}
+
+/* Sidebar create button group */
+.sidebar-create {
+  position: relative;
+  padding: 8px 8px 0;
+}
+
+.create-btn-group {
+  display: flex;
+  width: 100%;
+}
+
+.btn-create-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: var(--bs-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px 0 0 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(0.85);
+  }
+}
+
+.btn-create-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  background: var(--bs-primary);
+  color: #fff;
+  border: none;
+  border-left: 1px solid hsla(0, 0%, 100%, 0.2);
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(0.85);
+  }
+}
+
+.btn-create-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 6px;
+  background: var(--bs-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(0.85);
+  }
+}
+
+.create-menu {
+  position: absolute;
+  top: 100%;
+  left: 8px;
+  right: 8px;
+  margin-top: 4px;
+  background: hsl(0, 0%, 17%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.create-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 96%);
+  font-size: 0.8125rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background: hsl(0, 0%, 22%);
+  }
+}
+
+.sidebar-collapsed .sidebar-create {
+  padding: 8px 4px 0;
+}
+
+.sidebar-collapsed .create-menu {
+  left: 4px;
+  right: auto;
+  min-width: 170px;
 }
 
 .sidebar-nav {

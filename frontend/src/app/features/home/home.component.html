@@ -6,12 +6,12 @@
       <p class="header-subtitle">All the workflows, credentials and data tables you have access to</p>
     </div>
     <div class="header-actions">
-      <div class="create-dropdown-wrapper">
+      <div class="create-dropdown-wrapper" (mouseenter)="cancelCreateDropdownClose()" (mouseleave)="scheduleCreateDropdownClose()">
         <button class="btn-create" (click)="createWorkflow()">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Create workflow
+          Workflow
         </button>
         <button class="btn-create-chevron" (click)="showCreateDropdown = !showCreateDropdown">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -20,19 +20,17 @@
         </button>
         @if (showCreateDropdown) {
           <div class="create-dropdown">
-            <button class="dropdown-item" (click)="createWorkflow()">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/>
-                <rect x="9" y="15" width="6" height="6" rx="1"/>
-                <path d="M6 9v3a1 1 0 001 1h4m6-4v3a1 1 0 01-1 1h-4m0 0v3"/>
-              </svg>
-              Workflow
-            </button>
             <button class="dropdown-item" (click)="showCreateDropdown = false; setTab('credentials')">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-              </svg>
+              <lucide-icon name="key-round" [size]="14"></lucide-icon>
               Credential
+            </button>
+            <button class="dropdown-item" (click)="showCreateDropdown = false; createFolder()">
+              <lucide-icon name="folder" [size]="14"></lucide-icon>
+              Folder
+            </button>
+            <button class="dropdown-item" (click)="showCreateDropdown = false; createDataTable()">
+              <lucide-icon name="table" [size]="14"></lucide-icon>
+              Data table
             </button>
           </div>
         }

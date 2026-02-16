@@ -5,3 +5,4 @@ export * from './node-type.service';
 export * from './credential.service';
 export * from './variable.service';
 export * from './websocket.service';
+export * from './chat.service';

@@ -4,32 +4,44 @@
     [isActive]="store.workflow()?.active || false"
     [isDirty]="store.isDirty()"
     [isExecuting]="store.isExecuting()"
+    [activeTab]="activeTab"
     (nameChanged)="store.updateWorkflowName($event)"
     (save)="onSave()"
     (execute)="onExecute()"
     (toggleActive)="store.toggleActive()"
     (back)="goBack()"
     (togglePalette)="togglePalette()"
-    (showExecutions)="toggleExecutionPanel()" />
+    (showExecutions)="toggleDrawer()"
+    (tabChanged)="onTabChanged($event)" />
 
   <div class="editor-body">
-    @if (showPalette) {
+    <div class="canvas-and-drawer">
+      <div class="canvas-area">
+        <app-react-flow-wrapper
+          [workflow]="store.workflow()"
+          [nodeTypeMap]="nodeTypeStore.nodeTypes()"
+          [executionData]="store.executionData()"
+          [selectedNodeId]="store.selectedNodeId()"
+          (nodeSelected)="store.selectNode($event)"
+          (nodeAdded)="store.addNode($event)"
+          (nodeRemoved)="store.removeNode($event)"
+          (nodesPositionChanged)="store.updateNodePositions($event)"
+          (connectionsChanged)="store.updateConnections($event)" />
+      </div>
+
+      <app-editor-drawer
+        [executionData]="store.executionData()"
+        [selectedNodeId]="store.selectedNodeId()"
+        [isExecuting]="store.isExecuting()"
+        [workflowId]="store.workflow()?.id || null"
+        [expanded]="drawerExpanded"
+        (expandedChange)="drawerExpanded = $event" />
+    </div>
+
+    <div class="palette-slide" [class.palette-open]="showPalette">
       <app-node-palette
         [nodeTypes]="nodeTypeStore.groupedByCategory()"
         (close)="togglePalette()" />
-    }
-
-    <div class="canvas-area">
-      <app-react-flow-wrapper
-        [workflow]="store.workflow()"
-        [nodeTypeMap]="nodeTypeStore.nodeTypes()"
-        [executionData]="store.executionData()"
-        [selectedNodeId]="store.selectedNodeId()"
-        (nodeSelected)="store.selectNode($event)"
-        (nodeAdded)="store.addNode($event)"
-        (nodeRemoved)="store.removeNode($event)"
-        (nodesPositionChanged)="store.updateNodePositions($event)"
-        (connectionsChanged)="store.updateConnections($event)" />
     </div>
 
     @if (store.selectedNode()) {
@@ -41,12 +53,4 @@
         (deleteNode)="store.removeNode(store.selectedNodeId()!)" />
     }
   </div>
-
-  @if (showExecutionPanel) {
-    <app-execution-panel
-      [executionData]="store.executionData()"
-      [selectedNodeId]="store.selectedNodeId()"
-      [isExecuting]="store.isExecuting()"
-      (close)="toggleExecutionPanel()" />
-  }
 </div>

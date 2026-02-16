@@ -2,7 +2,7 @@
   <aside class="sidebar">
     <!-- Header: Logo + Actions -->
     <div class="sidebar-header">
-      <div class="brand">
+      <a class="brand" routerLink="/">
         <svg class="brand-icon" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 2L2 7l10 5 10-5-10-5z"/>
           <path d="M2 17l10 5 10-5"/>
@@ -11,53 +11,58 @@
         @if (!sidebarCollapsed) {
           <span class="brand-name">Trellis</span>
         }
-      </div>
+      </a>
+    </div>
+
+    <!-- Create button group -->
+    <div class="sidebar-create" (mouseenter)="cancelCreateClose()" (mouseleave)="scheduleCreateClose()">
       @if (!sidebarCollapsed) {
-        <div class="header-actions">
-          <!-- Add button -->
-          <div class="add-btn-wrapper">
-            <button class="btn-header-action btn-add" (click)="showAddDropdown = !showAddDropdown" title="Add new">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            </button>
-            @if (showAddDropdown) {
-              <div class="add-dropdown">
-                <button class="add-dropdown-item" (click)="onAddWorkflow()">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/>
-                    <rect x="9" y="15" width="6" height="6" rx="1"/>
-                    <path d="M6 9v3a1 1 0 001 1h4m6-4v3a1 1 0 01-1 1h-4m0 0v3"/>
-                  </svg>
-                  Workflow
-                </button>
-                <button class="add-dropdown-item" (click)="onAddCredential()">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-                  </svg>
-                  Credential
-                </button>
-              </div>
-            }
-          </div>
-          <!-- Collapse button -->
-          <button class="btn-header-action" (click)="toggleSidebar()" title="Collapse sidebar">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M15 18l-6-6 6-6"/>
+        <div class="create-btn-group">
+          <button class="btn-create-main" (click)="onAddWorkflow()">
+            <lucide-icon name="plus" [size]="16"></lucide-icon>
+            Workflow
+          </button>
+          <button class="btn-create-chevron" (click)="showCreateMenu = !showCreateMenu">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
         </div>
       } @else {
-        <button class="btn-header-action" (click)="toggleSidebar()" title="Expand sidebar">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+        <button class="btn-create-collapsed" (click)="showCreateMenu = !showCreateMenu" title="Create new">
+          <lucide-icon name="plus" [size]="18"></lucide-icon>
         </button>
+      }
+      @if (showCreateMenu) {
+        <div class="create-menu">
+          @if (sidebarCollapsed) {
+            <button class="create-menu-item" (click)="onAddWorkflow()">
+              <lucide-icon name="workflow" [size]="14"></lucide-icon>
+              Workflow
+            </button>
+          }
+          <button class="create-menu-item" (click)="onAddCredential()">
+            <lucide-icon name="key-round" [size]="14"></lucide-icon>
+            Credential
+          </button>
+          <button class="create-menu-item" (click)="onAddDataTable()">
+            <lucide-icon name="table" [size]="14"></lucide-icon>
+            Data table
+          </button>
+          <button class="create-menu-item" (click)="onAddProject()">
+            <lucide-icon name="folder" [size]="14"></lucide-icon>
+            Project
+          </button>
+          <button class="create-menu-item" (click)="onAddVariable()">
+            <lucide-icon name="variable" [size]="14"></lucide-icon>
+            Variable
+          </button>
+        </div>
       }
     </div>
 
     <!-- Main Nav -->
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav" (dblclick)="toggleSidebar()">
       <a class="nav-item" routerLink="/home/workflows" routerLinkActive="active">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">

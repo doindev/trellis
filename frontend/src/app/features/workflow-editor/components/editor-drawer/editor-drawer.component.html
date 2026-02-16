@@ -1,0 +1,102 @@
+<div class="editor-drawer" [class.expanded]="expanded" [style.height.px]="expanded ? drawerHeight : null">
+  @if (expanded) {
+    <div class="drag-handle" (mousedown)="onDragStart($event)">
+      <div class="grip"></div>
+    </div>
+  }
+
+  <div class="tab-strip">
+    <button class="drawer-tab" [class.active]="activeTab === 'output' && expanded" (click)="selectTab('output')">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+      </svg>
+      Output
+      @if (executionStatus !== 'idle') {
+        <span class="tab-badge" [class]="'status-' + executionStatus">{{ executionStatus }}</span>
+      }
+    </button>
+    <button class="drawer-tab" [class.active]="activeTab === 'chat' && expanded" (click)="selectTab('chat')">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      Chat
+    </button>
+
+    <div class="tab-spacer"></div>
+
+    <button class="btn-collapse" [class.expanded]="expanded" (click)="toggleExpanded()" [title]="expanded ? 'Collapse drawer' : 'Expand drawer'">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </button>
+  </div>
+
+  @if (expanded) {
+    <div class="drawer-body">
+      @if (activeTab === 'output') {
+        <div class="output-content">
+          @if (isExecuting) {
+            <div class="empty-state">
+              <div class="spinner-border spinner-border-sm text-warning"></div>
+              <span>Executing workflow...</span>
+            </div>
+          } @else if (!executionData) {
+            <div class="empty-state">
+              <p>Execute the workflow to see results here</p>
+            </div>
+          } @else if (!selectedNodeId) {
+            <div class="empty-state">
+              <p>Select a node to see its output</p>
+            </div>
+          } @else if (!nodeExecutionData) {
+            <div class="empty-state">
+              <p>No output data for this node</p>
+            </div>
+          } @else {
+            <pre class="output-json">{{ outputJson }}</pre>
+          }
+        </div>
+      }
+
+      @if (activeTab === 'chat') {
+        <div class="chat-content">
+          <div class="chat-messages" #chatMessages>
+            @if (messages.length === 0 && !isTyping) {
+              <div class="chat-empty">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <p>Ask questions about your workflow or get help building automations</p>
+              </div>
+            }
+            @for (msg of messages; track msg.timestamp) {
+              <div class="chat-bubble" [class]="'role-' + msg.role">
+                <div class="bubble-content">{{ msg.content }}</div>
+              </div>
+            }
+            @if (isTyping) {
+              <div class="chat-bubble role-assistant">
+                <div class="typing-indicator">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+            }
+          </div>
+          <div class="chat-input-area">
+            <textarea
+              class="chat-input"
+              [(ngModel)]="chatInput"
+              (keydown)="onChatKeydown($event)"
+              placeholder="Type a message..."
+              rows="1"></textarea>
+            <button class="btn-send" (click)="sendMessage()" [disabled]="!chatInput.trim()">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

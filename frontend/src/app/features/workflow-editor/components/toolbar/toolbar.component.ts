@@ -19,8 +19,10 @@ export class ToolbarComponent {
   @Output() execute = new EventEmitter<void>();
   @Output() toggleActive = new EventEmitter<void>();
   @Output() back = new EventEmitter<void>();
+  @Input() activeTab: 'editor' | 'executions' = 'editor';
   @Output() togglePalette = new EventEmitter<void>();
   @Output() showExecutions = new EventEmitter<void>();
+  @Output() tabChanged = new EventEmitter<'editor' | 'executions'>();
 
   editingName = false;
   nameInput = '';

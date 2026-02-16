@@ -77,7 +77,7 @@
   </div>
 
   <div class="tab-bar">
-    <button class="tab-btn active">Editor</button>
-    <button class="tab-btn" (click)="toggleExecutionPanel()">Executions</button>
+    <button class="tab-btn" [class.active]="activeTab === 'editor'" (click)="tabChanged.emit('editor')">Editor</button>
+    <button class="tab-btn" [class.active]="activeTab === 'executions'" (click)="tabChanged.emit('executions')">Executions</button>
   </div>
 </div>

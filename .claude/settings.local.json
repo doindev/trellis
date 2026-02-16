@@ -27,7 +27,8 @@
       "Bash(gh auth:*)",
       "WebFetch(domain:blog.n8n.io)",
       "WebFetch(domain:community.n8n.io)",
-      "Bash(python -c:*)"
+      "Bash(python -c:*)",
+      "Bash(jar xf:*)"
     ]
   }
 }

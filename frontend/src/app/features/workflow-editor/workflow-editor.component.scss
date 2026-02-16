@@ -12,8 +12,31 @@
   position: relative;
 }
 
+.canvas-and-drawer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
 .canvas-area {
   flex: 1;
   position: relative;
   overflow: hidden;
+  z-index: 0;
+}
+
+.palette-slide {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+
+  &.palette-open {
+    transform: translateX(0);
+  }
 }

@@ -12,6 +12,7 @@ public class SpaForwardController {
 
     @GetMapping(value = {
             "/",
+            "/home/**",
             "/workflows",
             "/workflow/**",
             "/executions",

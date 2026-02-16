@@ -7,6 +7,7 @@ import { Workflow, Execution, Credential } from '../../core/models';
 import { WorkflowCardComponent } from '../../shared/components/workflow-card/workflow-card.component';
 import { VariableListComponent } from '../variables/variable-list.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Folder, Table } from 'lucide-angular';
 
 @Component({
   selector: 'app-home',
@@ -18,8 +19,10 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
     RouterLinkActive,
     WorkflowCardComponent,
     VariableListComponent,
-    ConfirmDialogComponent
+    ConfirmDialogComponent,
+    LucideAngularModule
   ],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Folder, Table }) }],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
@@ -189,6 +192,7 @@ export class HomeComponent implements OnInit {
 
   // Create dropdown
   showCreateDropdown = false;
+  private createDropdownTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private router: Router,
@@ -235,6 +239,20 @@ export class HomeComponent implements OnInit {
       },
       error: () => this.loadingExecutions.set(false)
     });
+  }
+
+  scheduleCreateDropdownClose(): void {
+    this.cancelCreateDropdownClose();
+    this.createDropdownTimer = setTimeout(() => {
+      this.showCreateDropdown = false;
+    }, 300);
+  }
+
+  cancelCreateDropdownClose(): void {
+    if (this.createDropdownTimer) {
+      clearTimeout(this.createDropdownTimer);
+      this.createDropdownTimer = null;
+    }
   }
 
   createWorkflow(): void {
@@ -321,6 +339,14 @@ export class HomeComponent implements OnInit {
 
   navigateToCredentials(): void {
     this.router.navigate(['/home/credentials']);
+  }
+
+  createFolder(): void {
+    this.router.navigate(['/home/folders']);
+  }
+
+  createDataTable(): void {
+    this.router.navigate(['/home/data-tables']);
   }
 
   // Credential methods

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { WorkflowService } from '../../core/services';
@@ -8,7 +8,7 @@ import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { NodePaletteComponent } from './components/node-palette/node-palette.component';
 import { ReactFlowWrapperComponent } from './components/canvas/react-flow-wrapper.component';
 import { ParameterPanelComponent } from './components/parameter-panel/parameter-panel.component';
-import { ExecutionPanelComponent } from './components/execution-panel/execution-panel.component';
+import { EditorDrawerComponent } from './components/editor-drawer/editor-drawer.component';
 
 @Component({
   selector: 'app-workflow-editor',
@@ -19,14 +19,15 @@ import { ExecutionPanelComponent } from './components/execution-panel/execution-
     NodePaletteComponent,
     ReactFlowWrapperComponent,
     ParameterPanelComponent,
-    ExecutionPanelComponent
+    EditorDrawerComponent
   ],
   templateUrl: './workflow-editor.component.html',
   styleUrl: './workflow-editor.component.scss'
 })
 export class WorkflowEditorComponent implements OnInit {
-  showPalette = true;
-  showExecutionPanel = false;
+  showPalette = false;
+  drawerExpanded = false;
+  activeTab: 'editor' | 'executions' = 'editor';
 
   constructor(
     private route: ActivatedRoute,
@@ -54,8 +55,25 @@ export class WorkflowEditorComponent implements OnInit {
     this.showPalette = !this.showPalette;
   }
 
-  toggleExecutionPanel(): void {
-    this.showExecutionPanel = !this.showExecutionPanel;
+  toggleDrawer(): void {
+    this.drawerExpanded = !this.drawerExpanded;
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Tab' && this.activeTab === 'editor') {
+      const target = event.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable;
+      if (!isInput) {
+        event.preventDefault();
+        this.togglePalette();
+      }
+    }
+
+    if ((event.ctrlKey || event.metaKey) && event.key === 'j') {
+      event.preventDefault();
+      this.toggleDrawer();
+    }
   }
 
   onSave(): void {
@@ -69,7 +87,7 @@ export class WorkflowEditorComponent implements OnInit {
       return;
     }
     this.store.setIsExecuting(true);
-    this.showExecutionPanel = true;
+    this.drawerExpanded = true;
     this.workflowService.run(wf.id).subscribe({
       next: (result) => {
         this.store.setExecutionData(result);
@@ -79,6 +97,13 @@ export class WorkflowEditorComponent implements OnInit {
         this.store.setIsExecuting(false);
       }
     });
+  }
+
+  onTabChanged(tab: 'editor' | 'executions'): void {
+    this.activeTab = tab;
+    if (tab === 'executions') {
+      this.drawerExpanded = true;
+    }
   }
 
   goBack(): void {
