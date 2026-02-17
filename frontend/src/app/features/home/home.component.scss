@@ -1,7 +1,6 @@
 .home-container {
-  padding: 32px 40px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 32px 48px;
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -135,6 +134,7 @@
   color: var(--trellis-text-secondary);
   margin-top: 2px;
   text-transform: uppercase;
+  white-space: nowrap;
   letter-spacing: 0.03em;
 }
 
@@ -260,7 +260,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 0;
+  padding: 20px 0;
   color: var(--trellis-text-secondary);
   text-align: center;
 
@@ -370,8 +370,8 @@
 
 .btn-secondary-action {
   padding: 8px 20px;
-  background: transparent;
-  border: 1px solid var(--trellis-border);
+  background: var(--bs-primary);
+  border: 1px solid var(--bs-primary);
   border-radius: 6px;
   color: var(--trellis-text-primary);
   font-size: 0.8125rem;
