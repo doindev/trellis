@@ -19,7 +19,8 @@ import { NodeParameter } from '../../../../../core/models';
            class="form-control param-input"
            [ngModel]="value"
            (ngModelChange)="valueChange.emit($event)"
-           [placeholder]="param.placeHolder || ''">
+           [placeholder]="param.placeHolder || ''"
+           [disabled]="readOnly">
   `,
   styles: [`
     .param-label { display: block; font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin-bottom: 4px; }
@@ -38,5 +39,6 @@ import { NodeParameter } from '../../../../../core/models';
 export class NumberParamComponent {
   @Input() param!: NodeParameter;
   @Input() value: any = 0;
+  @Input() readOnly = false;
   @Output() valueChange = new EventEmitter<any>();
 }

@@ -21,7 +21,8 @@ import { NodeParameter } from '../../../../../core/models';
               [class.is-invalid]="hasError"
               rows="6"
               spellcheck="false"
-              [placeholder]="param.placeHolder || '{}'"></textarea>
+              [placeholder]="param.placeHolder || '{}'"
+              [disabled]="readOnly"></textarea>
     @if (hasError) {
       <div class="invalid-feedback d-block">Invalid JSON</div>
     }
@@ -47,6 +48,7 @@ import { NodeParameter } from '../../../../../core/models';
 })
 export class JsonParamComponent {
   @Input() param!: NodeParameter;
+  @Input() readOnly = false;
   @Input() set value(val: any) {
     if (typeof val === 'object') {
       this.jsonString = JSON.stringify(val, null, 2);

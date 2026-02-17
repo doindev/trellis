@@ -14,7 +14,8 @@ import { NodeParameter } from '../../../../../core/models';
                type="checkbox"
                [ngModel]="value"
                (ngModelChange)="valueChange.emit($event)"
-               [id]="'param-' + param.name">
+               [id]="'param-' + param.name"
+               [disabled]="readOnly">
         <label class="form-check-label param-label" [for]="'param-' + param.name">
           {{ param.displayName }}
         </label>
@@ -41,5 +42,6 @@ import { NodeParameter } from '../../../../../core/models';
 export class BooleanParamComponent {
   @Input() param!: NodeParameter;
   @Input() value: any = false;
+  @Input() readOnly = false;
   @Output() valueChange = new EventEmitter<any>();
 }

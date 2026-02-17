@@ -18,11 +18,13 @@ import { NodeParameter } from '../../../../../core/models';
         <div class="collection-item">
           <div class="item-header">
             <span class="item-index">Item {{ $index + 1 }}</span>
-            <button class="btn btn-sm btn-ghost" (click)="removeItem($index)">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
+            @if (!readOnly) {
+              <button class="btn btn-sm btn-ghost" (click)="removeItem($index)">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            }
           </div>
           @if (param.nestedParameters) {
             @for (nested of param.nestedParameters; track nested.name) {
@@ -31,19 +33,22 @@ import { NodeParameter } from '../../../../../core/models';
                 <input type="text" class="form-control param-input"
                        [ngModel]="item[nested.name]"
                        (ngModelChange)="onItemChange($index, nested.name, $event)"
-                       [placeholder]="nested.placeHolder || ''">
+                       [placeholder]="nested.placeHolder || ''"
+                       [disabled]="readOnly">
               </div>
             }
           }
         </div>
       }
 
+      @if (!readOnly) {
       <button class="btn btn-sm btn-add" (click)="addItem()">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
         Add item
       </button>
+      }
     </div>
   `,
   styles: [`
@@ -65,6 +70,7 @@ import { NodeParameter } from '../../../../../core/models';
 })
 export class FixedCollectionParamComponent {
   @Input() param!: NodeParameter;
+  @Input() readOnly = false;
   @Input() set value(val: any) {
     this.items = Array.isArray(val) ? [...val] : [];
   }

@@ -36,7 +36,9 @@
       "Bash(cmd /c \"cd /d C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend & npx ng build\")",
       "Bash(powershell -Command \"Set-Location 'C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend'; npx ng build 2>&1\":*)",
       "WebFetch(domain:cdn.jsdelivr.net)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(ls -la \"C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend\\\\src\\\\app\\\\features\\\\workflow-editor\\\\components\\\\parameter-panel\"\" 2>&1 || find \"C:Userstimhjeclipse-workspacetrellisfrontend\" -type d -name \"parameter-panel \")",
+      "Bash(grep:*)"
     ]
   }
 }

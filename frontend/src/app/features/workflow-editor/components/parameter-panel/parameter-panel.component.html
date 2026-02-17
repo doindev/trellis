@@ -1,14 +1,38 @@
-<div class="parameter-panel">
-  <div class="panel-header">
-    <div class="panel-title-row">
-      <h3 class="panel-title">{{ node.name }}</h3>
-      <div class="panel-actions">
-        <button class="btn btn-sm btn-ghost" (click)="deleteNode.emit()" title="Delete node">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-          </svg>
-        </button>
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
+  <div class="node-modal">
+    <!-- Header -->
+    <div class="node-modal-header">
+      <div class="header-left">
+        @if (nodeType?.icon) {
+          <div class="header-icon">
+            <lucide-icon [name]="nodeType!.icon" [size]="20"></lucide-icon>
+          </div>
+        } @else {
+          <div class="header-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+            </svg>
+          </div>
+        }
+        <div class="header-info">
+          <h3 class="header-title">{{ node.name }}</h3>
+          @if (nodeType) {
+            <p class="header-description">{{ nodeType.description }}</p>
+          }
+        </div>
+        @if (readOnly) {
+          <span class="readonly-badge">Execution Data</span>
+        }
+      </div>
+      <div class="header-actions">
+        @if (!readOnly) {
+          <button class="btn btn-sm btn-ghost" (click)="deleteNode.emit()" title="Delete node">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+            </svg>
+          </button>
+        }
         <button class="btn btn-sm btn-ghost" (click)="close.emit()" title="Close">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -16,102 +40,203 @@
         </button>
       </div>
     </div>
-    @if (nodeType) {
-      <p class="panel-subtitle">{{ nodeType.description }}</p>
-    }
-  </div>
 
-  <div class="panel-tabs">
-    <button class="tab" [class.active]="activeTab === 'parameters'" (click)="activeTab = 'parameters'">
-      Parameters
-    </button>
-    <button class="tab" [class.active]="activeTab === 'settings'" (click)="activeTab = 'settings'">
-      Settings
-    </button>
-  </div>
+    <!-- Body: 3-column layout -->
+    <div class="node-modal-body">
 
-  <div class="panel-body">
-    @if (activeTab === 'parameters') {
-      @if (visibleParameters.length === 0) {
-        <div class="empty-params">
-          <p>No parameters to configure</p>
-        </div>
-      }
-      @for (param of visibleParameters; track param.name) {
-        <div class="param-group">
-          @switch (param.type) {
-            @case ('string') {
-              <app-string-param
-                [param]="param"
-                [value]="getParameterValue(param.name, param.defaultValue)"
-                (valueChange)="onParameterChange(param.name, $event)" />
-            }
-            @case ('number') {
-              <app-number-param
-                [param]="param"
-                [value]="getParameterValue(param.name, param.defaultValue)"
-                (valueChange)="onParameterChange(param.name, $event)" />
-            }
-            @case ('boolean') {
-              <app-boolean-param
-                [param]="param"
-                [value]="getParameterValue(param.name, param.defaultValue)"
-                (valueChange)="onParameterChange(param.name, $event)" />
-            }
-            @case ('options') {
-              <app-options-param
-                [param]="param"
-                [value]="getParameterValue(param.name, param.defaultValue)"
-                (valueChange)="onParameterChange(param.name, $event)" />
-            }
-            @case ('json') {
-              <app-json-param
-                [param]="param"
-                [value]="getParameterValue(param.name, param.defaultValue)"
-                (valueChange)="onParameterChange(param.name, $event)" />
-            }
-            @case ('collection') {
-              <app-collection-param
-                [param]="param"
-                [value]="getParameterValue(param.name, param.defaultValue)"
-                (valueChange)="onParameterChange(param.name, $event)" />
-            }
-            @case ('fixedCollection') {
-              <app-fixed-collection-param
-                [param]="param"
-                [value]="getParameterValue(param.name, param.defaultValue)"
-                (valueChange)="onParameterChange(param.name, $event)" />
-            }
-            @default {
-              <app-string-param
-                [param]="param"
-                [value]="getParameterValue(param.name, param.defaultValue)"
-                (valueChange)="onParameterChange(param.name, $event)" />
-            }
+      <!-- Left nav rail -->
+      @if (previousNodes.length > 0) {
+        <div class="nav-rail nav-rail-left">
+          @for (prev of previousNodes; track prev.node.id) {
+            <button class="nav-node-btn" [title]="prev.node.name" (click)="navigateToNode.emit(prev.node.id)">
+              @if (prev.nodeType?.icon) {
+                <lucide-icon [name]="prev.nodeType!.icon" [size]="16"></lucide-icon>
+              } @else {
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              }
+            </button>
           }
         </div>
       }
-    } @else {
-      <div class="settings-section">
-        <div class="param-group">
-          <label class="param-label">Continue on Fail</label>
-          <p class="param-description">If enabled, the workflow continues even when this node fails</p>
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox"
-                   [ngModel]="node.continueOnFail"
-                   (ngModelChange)="onParameterChange('continueOnFail', $event)">
-          </div>
+
+      <!-- Input column -->
+      <div class="column column-input" [style.width.%]="leftWidthPercent">
+        <div class="column-header">
+          <span class="column-label">Input</span>
+          @if (executionData && inputItemCount > 0) {
+            <span class="item-count-badge">{{ inputItemCount }} items</span>
+          }
         </div>
-        <div class="param-group">
-          <label class="param-label">Disabled</label>
-          <p class="param-description">Skip this node during execution</p>
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox"
-                   [ngModel]="node.disabled"
-                   (ngModelChange)="onParameterChange('disabled', $event)">
-          </div>
+        <div class="column-body">
+          @if (previousNodes.length === 0) {
+            <div class="empty-state">No input connections</div>
+          } @else {
+            @for (prev of previousNodes; track prev.node.id) {
+              <div class="data-block">
+                <div class="data-block-header">{{ prev.node.name }}</div>
+                @if (getNodeOutputJson(prev.node.id)) {
+                  <pre class="data-json">{{ getNodeOutputJson(prev.node.id) }}</pre>
+                } @else {
+                  <div class="empty-state-sm">No execution data</div>
+                }
+              </div>
+            }
+          }
         </div>
       </div>
-    }
+
+      <!-- Left border (resize handle) -->
+      <div class="column-border" (mousedown)="onBorderDragStart($event, 'left-border')"></div>
+
+      <!-- Parameters column -->
+      <div class="column column-params" [style.width.%]="centerWidthPercent">
+        <!-- Center drag handle -->
+        <div class="center-drag-handle" (mousedown)="onCenterHandleDragStart($event)">
+          <div class="drag-grip"></div>
+        </div>
+
+        <div class="panel-tabs">
+          <button class="tab" [class.active]="activeTab === 'parameters'" (click)="activeTab = 'parameters'">
+            Parameters
+          </button>
+          <button class="tab" [class.active]="activeTab === 'settings'" (click)="activeTab = 'settings'">
+            Settings
+          </button>
+        </div>
+
+        <div class="column-body">
+          @if (activeTab === 'parameters') {
+            @if (visibleParameters.length === 0) {
+              <div class="empty-state">No parameters to configure</div>
+            }
+            @for (param of visibleParameters; track param.name) {
+              <div class="param-group">
+                @switch (param.type) {
+                  @case ('string') {
+                    <app-string-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)" />
+                  }
+                  @case ('number') {
+                    <app-number-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)" />
+                  }
+                  @case ('boolean') {
+                    <app-boolean-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)" />
+                  }
+                  @case ('options') {
+                    <app-options-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)" />
+                  }
+                  @case ('json') {
+                    <app-json-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)" />
+                  }
+                  @case ('collection') {
+                    <app-collection-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)" />
+                  }
+                  @case ('fixedCollection') {
+                    <app-fixed-collection-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)" />
+                  }
+                  @default {
+                    <app-string-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)" />
+                  }
+                }
+              </div>
+            }
+          } @else {
+            <div class="settings-section">
+              <div class="param-group">
+                <label class="param-label">Continue on Fail</label>
+                <p class="param-description">If enabled, the workflow continues even when this node fails</p>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox"
+                         [ngModel]="node.continueOnFail"
+                         (ngModelChange)="onParameterChange('continueOnFail', $event)"
+                         [disabled]="readOnly">
+                </div>
+              </div>
+              <div class="param-group">
+                <label class="param-label">Disabled</label>
+                <p class="param-description">Skip this node during execution</p>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox"
+                         [ngModel]="node.disabled"
+                         (ngModelChange)="onParameterChange('disabled', $event)"
+                         [disabled]="readOnly">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right border (resize handle) -->
+      <div class="column-border" (mousedown)="onBorderDragStart($event, 'right-border')"></div>
+
+      <!-- Output column -->
+      <div class="column column-output" [style.width.%]="rightWidthPercent">
+        <div class="column-header">
+          <span class="column-label">Output</span>
+          @if (executionData && outputItemCount > 0) {
+            <span class="item-count-badge">{{ outputItemCount }} items</span>
+          }
+        </div>
+        <div class="column-body">
+          @if (outputJson) {
+            <pre class="data-json">{{ outputJson }}</pre>
+          } @else {
+            <div class="empty-state">No execution data</div>
+          }
+        </div>
+      </div>
+
+      <!-- Right nav rail -->
+      @if (nextNodes.length > 0) {
+        <div class="nav-rail nav-rail-right">
+          @for (next of nextNodes; track next.node.id) {
+            <button class="nav-node-btn" [title]="next.node.name" (click)="navigateToNode.emit(next.node.id)">
+              @if (next.nodeType?.icon) {
+                <lucide-icon [name]="next.nodeType!.icon" [size]="16"></lucide-icon>
+              } @else {
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              }
+            </button>
+          }
+        </div>
+      }
+
+    </div>
   </div>
 </div>

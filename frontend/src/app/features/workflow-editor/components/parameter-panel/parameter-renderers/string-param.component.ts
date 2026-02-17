@@ -20,13 +20,15 @@ import { NodeParameter } from '../../../../../core/models';
                 [ngModel]="value"
                 (ngModelChange)="valueChange.emit($event)"
                 [placeholder]="param.placeHolder || ''"
+                [disabled]="readOnly"
                 rows="4"></textarea>
     } @else {
       <input type="text"
              class="form-control param-input"
              [ngModel]="value"
              (ngModelChange)="valueChange.emit($event)"
-             [placeholder]="param.placeHolder || ''">
+             [placeholder]="param.placeHolder || ''"
+             [disabled]="readOnly">
     }
   `,
   styles: [`
@@ -47,6 +49,7 @@ import { NodeParameter } from '../../../../../core/models';
 export class StringParamComponent {
   @Input() param!: NodeParameter;
   @Input() value: any = '';
+  @Input() readOnly = false;
   @Output() valueChange = new EventEmitter<any>();
 
   get isMultiline(): boolean {

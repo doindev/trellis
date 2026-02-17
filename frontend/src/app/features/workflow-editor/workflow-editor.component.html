@@ -43,9 +43,15 @@
       <app-parameter-panel
         [node]="store.selectedNode()!"
         [nodeType]="nodeTypeStore.getByType(store.selectedNode()!.type)"
+        [allNodes]="store.nodes()"
+        [connections]="store.connections()"
+        [executionData]="store.executionData()"
+        [nodeTypeMap]="nodeTypeStore.nodeTypes()"
+        [readOnly]="!!store.executionData()"
         (parameterChanged)="store.updateNode(store.selectedNodeId()!, { parameters: $event })"
         (close)="store.selectNode(null)"
-        (deleteNode)="store.removeNode(store.selectedNodeId()!)" />
+        (deleteNode)="store.removeNode(store.selectedNodeId()!)"
+        (navigateToNode)="store.selectNode($event)" />
     }
   </div>
 

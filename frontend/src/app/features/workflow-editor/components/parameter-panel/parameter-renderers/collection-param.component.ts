@@ -28,12 +28,14 @@ import { NodeParameter } from '../../../../../core/models';
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox"
                          [ngModel]="getNestedValue(nested.name, nested.defaultValue)"
-                         (ngModelChange)="onNestedChange(nested.name, $event)">
+                         (ngModelChange)="onNestedChange(nested.name, $event)"
+                         [disabled]="readOnly">
                 </div>
               } @else if (nested.type === 'options' && nested.options) {
                 <select class="form-select param-input"
                         [ngModel]="getNestedValue(nested.name, nested.defaultValue)"
-                        (ngModelChange)="onNestedChange(nested.name, $event)">
+                        (ngModelChange)="onNestedChange(nested.name, $event)"
+                        [disabled]="readOnly">
                   @for (opt of nested.options; track opt.value) {
                     <option [ngValue]="opt.value">{{ opt.name }}</option>
                   }
@@ -42,7 +44,8 @@ import { NodeParameter } from '../../../../../core/models';
                 <input type="text" class="form-control param-input"
                        [ngModel]="getNestedValue(nested.name, nested.defaultValue)"
                        (ngModelChange)="onNestedChange(nested.name, $event)"
-                       [placeholder]="nested.placeHolder || ''">
+                       [placeholder]="nested.placeHolder || ''"
+                       [disabled]="readOnly">
               }
             </div>
           }
@@ -71,6 +74,7 @@ import { NodeParameter } from '../../../../../core/models';
 export class CollectionParamComponent {
   @Input() param!: NodeParameter;
   @Input() value: any = {};
+  @Input() readOnly = false;
   @Output() valueChange = new EventEmitter<any>();
 
   expanded = false;

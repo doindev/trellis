@@ -17,7 +17,8 @@ import { NodeParameter } from '../../../../../core/models';
     }
     <select class="form-select param-input"
             [ngModel]="value"
-            (ngModelChange)="valueChange.emit($event)">
+            (ngModelChange)="valueChange.emit($event)"
+            [disabled]="readOnly">
       @if (!param.required) {
         <option [ngValue]="null">-- Select --</option>
       }
@@ -48,6 +49,7 @@ import { NodeParameter } from '../../../../../core/models';
 export class OptionsParamComponent {
   @Input() param!: NodeParameter;
   @Input() value: any;
+  @Input() readOnly = false;
   @Output() valueChange = new EventEmitter<any>();
 
   get selectedDescription(): string {
