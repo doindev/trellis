@@ -89,7 +89,7 @@ const TrellisNode = memo(({ data, selected }: NodeProps & { data: TrellisNodeDat
           id={output.name}
           style={{ top: `${((index + 1) / (outputs.length + 1)) * 100}%` }}
           className="trellis-handle"
-          onDoubleClick={(e) => {
+          onClick={(e) => {
             e.stopPropagation();
             data.onOutputHandleDoubleClick?.(output.name);
           }}

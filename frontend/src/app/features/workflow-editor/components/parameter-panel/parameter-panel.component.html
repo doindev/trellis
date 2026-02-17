@@ -41,25 +41,40 @@
       </div>
     </div>
 
+    <!-- Nav rails (outside body so body can clip overflow) -->
+    @if (previousNodes.length > 0) {
+      <div class="nav-rail nav-rail-left">
+        @for (prev of previousNodes; track prev.node.id) {
+          <button class="nav-node-btn" [title]="prev.node.name" (click)="navigateToNode.emit(prev.node.id)">
+            @if (prev.nodeType?.icon) {
+              <lucide-icon [name]="prev.nodeType!.icon" [size]="16"></lucide-icon>
+            } @else {
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            }
+          </button>
+        }
+      </div>
+    }
+    @if (nextNodes.length > 0) {
+      <div class="nav-rail nav-rail-right">
+        @for (next of nextNodes; track next.node.id) {
+          <button class="nav-node-btn" [title]="next.node.name" (click)="navigateToNode.emit(next.node.id)">
+            @if (next.nodeType?.icon) {
+              <lucide-icon [name]="next.nodeType!.icon" [size]="16"></lucide-icon>
+            } @else {
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            }
+          </button>
+        }
+      </div>
+    }
+
     <!-- Body: 3-column layout -->
     <div class="node-modal-body">
-
-      <!-- Left nav rail -->
-      @if (previousNodes.length > 0) {
-        <div class="nav-rail nav-rail-left">
-          @for (prev of previousNodes; track prev.node.id) {
-            <button class="nav-node-btn" [title]="prev.node.name" (click)="navigateToNode.emit(prev.node.id)">
-              @if (prev.nodeType?.icon) {
-                <lucide-icon [name]="prev.nodeType!.icon" [size]="16"></lucide-icon>
-              } @else {
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="15 18 9 12 15 6"/>
-                </svg>
-              }
-            </button>
-          }
-        </div>
-      }
 
       <!-- Input column -->
       <div class="column column-input" [style.width.%]="leftWidthPercent">
@@ -219,23 +234,6 @@
           }
         </div>
       </div>
-
-      <!-- Right nav rail -->
-      @if (nextNodes.length > 0) {
-        <div class="nav-rail nav-rail-right">
-          @for (next of nextNodes; track next.node.id) {
-            <button class="nav-node-btn" [title]="next.node.name" (click)="navigateToNode.emit(next.node.id)">
-              @if (next.nodeType?.icon) {
-                <lucide-icon [name]="next.nodeType!.icon" [size]="16"></lucide-icon>
-              } @else {
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              }
-            </button>
-          }
-        </div>
-      }
 
     </div>
   </div>
