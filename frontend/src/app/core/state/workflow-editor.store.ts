@@ -149,11 +149,12 @@ export class WorkflowEditorStore {
     this.resetHistory(wf);
   }
 
-  saveWorkflow(): void {
+  saveWorkflow(onSaved?: (savedWorkflow: Workflow) => void): void {
     const wf = this.workflow();
     if (!wf || this.isSaving()) return;
 
     this.isSaving.set(true);
+    const isNew = !wf.id;
     const operation = wf.id
       ? this.workflowService.update(wf.id, wf)
       : this.workflowService.create(wf);
@@ -163,6 +164,9 @@ export class WorkflowEditorStore {
         this.workflow.set(saved);
         this.isDirty.set(false);
         this.isSaving.set(false);
+        if (isNew && saved.id) {
+          onSaved?.(saved);
+        }
       },
       error: (err) => {
         console.error('Failed to save workflow:', err);

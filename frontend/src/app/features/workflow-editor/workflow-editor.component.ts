@@ -1,6 +1,7 @@
-import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { WorkflowService } from '../../core/services';
 import { WorkflowEditorStore } from '../../core/state/workflow-editor.store';
@@ -10,6 +11,7 @@ import { NodePaletteComponent } from './components/node-palette/node-palette.com
 import { ReactFlowWrapperComponent } from './components/canvas/react-flow-wrapper.component';
 import { ParameterPanelComponent } from './components/parameter-panel/parameter-panel.component';
 import { EditorDrawerComponent } from './components/editor-drawer/editor-drawer.component';
+import { NodeTypeDescription } from '../../core/models';
 
 @Component({
   selector: 'app-workflow-editor',
@@ -26,6 +28,9 @@ import { EditorDrawerComponent } from './components/editor-drawer/editor-drawer.
   styleUrl: './workflow-editor.component.scss'
 })
 export class WorkflowEditorComponent implements OnInit, OnDestroy {
+  @ViewChild(ReactFlowWrapperComponent) canvasWrapper!: ReactFlowWrapperComponent;
+  @ViewChild(NodePaletteComponent) nodePalette!: NodePaletteComponent;
+
   showPalette = false;
   drawerExpanded = false;
   activeTab: 'editor' | 'executions' = 'editor';
@@ -36,6 +41,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private location: Location,
     private workflowService: WorkflowService,
     public store: WorkflowEditorStore,
     public nodeTypeStore: NodeTypeStore
@@ -57,11 +63,17 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.startAutoSaveTimer();
   }
 
+  private replaceUrlOnFirstSave = (saved: { id?: string }) => {
+    if (saved.id) {
+      this.location.replaceState('/workflow/' + saved.id);
+    }
+  };
+
   private startAutoSaveTimer(): void {
     this.stopAutoSaveTimer();
     this.autoSaveInterval = setInterval(() => {
       if (this.store.isDirty() && !this.store.isSaving() && !this.store.isExecuting()) {
-        this.store.saveWorkflow();
+        this.store.saveWorkflow(this.replaceUrlOnFirstSave);
       }
     }, this.AUTO_SAVE_INTERVAL);
   }
@@ -75,6 +87,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   togglePalette(): void {
     this.showPalette = !this.showPalette;
+    if (this.showPalette) {
+      setTimeout(() => this.nodePalette?.focusSearch(), 260);
+    }
   }
 
   toggleDrawer(): void {
@@ -105,16 +120,19 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
 
     if (event.key === 'Tab' && this.activeTab === 'editor') {
-      if (!this.isInputFocused(event)) {
-        event.preventDefault();
-        this.togglePalette();
-      }
+      event.preventDefault();
+      this.togglePalette();
     }
 
     if ((event.ctrlKey || event.metaKey) && event.key === 'j') {
       event.preventDefault();
       this.toggleDrawer();
     }
+  }
+
+  onPaletteNodeClicked(nodeType: NodeTypeDescription): void {
+    this.canvasWrapper.addNodeAtViewportCenter(nodeType.type, nodeType.displayName, nodeType.version);
+    this.showPalette = false;
   }
 
   onNodeSelected(nodeId: string | null): void {
@@ -125,14 +143,14 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   onSave(): void {
-    this.store.saveWorkflow();
+    this.store.saveWorkflow(this.replaceUrlOnFirstSave);
     this.startAutoSaveTimer();
   }
 
   onExecute(): void {
     const wf = this.store.workflow();
     if (!wf?.id) {
-      this.store.saveWorkflow();
+      this.store.saveWorkflow(this.replaceUrlOnFirstSave);
       return;
     }
     this.store.setIsExecuting(true);

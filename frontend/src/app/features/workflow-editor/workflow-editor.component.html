@@ -36,7 +36,8 @@
     <div class="palette-slide" [class.palette-open]="showPalette">
       <app-node-palette
         [nodeTypes]="nodeTypeStore.groupedByCategory()"
-        (close)="togglePalette()" />
+        (close)="togglePalette()"
+        (nodeClicked)="onPaletteNodeClicked($event)" />
     </div>
 
     @if (store.selectedNode()) {

@@ -36,6 +36,7 @@ export interface TrellisCanvasProps {
   onConnectionsChange?: (connections: any) => void;
   onExecute?: () => void;
   onStopExecution?: () => void;
+  onViewportHelperReady?: (helper: { getViewportCenter: () => { x: number; y: number } }) => void;
 }
 
 const GRID_SIZE = 16;
@@ -65,10 +66,12 @@ function TrellisCanvasInner({
   onConnectionsChange,
   onExecute,
   onStopExecution,
+  onViewportHelperReady,
 }: TrellisCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
   const { zoom } = useViewport();
+  const helperExposed = useRef(false);
   const [nodes, setNodes, handleNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, handleEdgesChange] = useEdgesState(initialEdges);
   const [ready, setReady] = useState(false);
@@ -83,20 +86,33 @@ function TrellisCanvasInner({
     setEdges(initialEdges);
   }, [initialEdges, setEdges]);
 
-  // Fit view only once on initial load when nodes are present
+  // Mark ready once on initial load so the canvas fades in
   useEffect(() => {
-    if (!initialFitDone.current && initialNodes.length > 0) {
+    if (!initialFitDone.current) {
       initialFitDone.current = true;
-      // Small delay to ensure React Flow has rendered the nodes
       requestAnimationFrame(() => {
-        fitView({ padding: 0.2, duration: 0 });
         setReady(true);
       });
-    } else if (initialNodes.length === 0) {
-      initialFitDone.current = true;
-      setReady(true);
     }
-  }, [initialNodes, fitView]);
+  }, [initialNodes]);
+
+  // Expose viewport helper to Angular wrapper once
+  useEffect(() => {
+    if (!helperExposed.current && reactFlowWrapper.current && onViewportHelperReady) {
+      helperExposed.current = true;
+      onViewportHelperReady({
+        getViewportCenter: () => {
+          const el = reactFlowWrapper.current;
+          if (!el) return { x: 0, y: 0 };
+          const rect = el.getBoundingClientRect();
+          return screenToFlowPosition({
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          });
+        },
+      });
+    }
+  }, [onViewportHelperReady, screenToFlowPosition]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -138,17 +154,25 @@ function TrellisCanvasInner({
     onPaneClick?.();
   }, [onPaneClick]);
 
+  const snapToGrid = (val: number) => Math.round(val / GRID_SIZE) * GRID_SIZE;
+
   const onNodeDragStop = useCallback(
     (_event: React.MouseEvent, _node: Node, draggedNodes: Node[]) => {
-      if (onNodesPositionChange) {
-        const positions: Record<string, [number, number]> = {};
-        draggedNodes.forEach((n) => {
-          positions[n.id] = [n.position.x, n.position.y];
-        });
-        onNodesPositionChange(positions);
-      }
+      const positions: Record<string, [number, number]> = {};
+      draggedNodes.forEach((n) => {
+        positions[n.id] = [snapToGrid(n.position.x), snapToGrid(n.position.y)];
+      });
+      // Snap the nodes visually in React Flow state
+      setNodes((nds) =>
+        nds.map((n) =>
+          positions[n.id]
+            ? { ...n, position: { x: positions[n.id][0], y: positions[n.id][1] } }
+            : n
+        )
+      );
+      onNodesPositionChange?.(positions);
     },
-    [onNodesPositionChange]
+    [onNodesPositionChange, setNodes]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -244,8 +268,6 @@ function TrellisCanvasInner({
         connectionLineStyle={connectionLineStyle}
         connectionRadius={CONNECTION_RADIUS}
         defaultViewport={{ x: 0, y: 0, zoom: 1.2 }}
-        snapToGrid
-        snapGrid={[GRID_SIZE, GRID_SIZE]}
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
         panOnScroll

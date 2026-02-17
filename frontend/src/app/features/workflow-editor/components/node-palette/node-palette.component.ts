@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -24,10 +24,13 @@ import { NodeTypeDescription } from '../../../../core/models';
   styleUrl: './node-palette.component.scss'
 })
 export class NodePaletteComponent {
+  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+
   @Input() set nodeTypes(value: Map<string, NodeTypeDescription[]>) {
     this._nodeTypes.set(value);
   }
   @Output() close = new EventEmitter<void>();
+  @Output() nodeClicked = new EventEmitter<NodeTypeDescription>();
 
   private _nodeTypes = signal<Map<string, NodeTypeDescription[]>>(new Map());
   searchTerm = signal('');
@@ -50,6 +53,18 @@ export class NodePaletteComponent {
     });
     return filtered;
   });
+
+  focusSearch(): void {
+    requestAnimationFrame(() => {
+      const el = this.searchInput?.nativeElement;
+      if (el) {
+        el.focus();
+        if (el.value) {
+          el.setSelectionRange(0, el.value.length);
+        }
+      }
+    });
+  }
 
   expandedCategories = new Set<string>();
 

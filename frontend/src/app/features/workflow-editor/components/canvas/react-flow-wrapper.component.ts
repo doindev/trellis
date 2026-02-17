@@ -55,6 +55,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
 
   private root: Root | null = null;
   private nodeIdCounter = 0;
+  private viewportHelper: { getViewportCenter: () => { x: number; y: number } } | null = null;
 
   constructor(private ngZone: NgZone) {}
 
@@ -124,6 +125,9 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       onStopExecution: () => {
         this.ngZone.run(() => this.stopExecution.emit());
       },
+      onViewportHelperReady: (helper) => {
+        this.viewportHelper = helper;
+      },
     };
 
     this.root.render(createElement(TrellisCanvas, props));
@@ -189,5 +193,43 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     });
 
     return edges;
+  }
+
+  /** Add a node at the center of the visible viewport, offset to avoid overlap. */
+  addNodeAtViewportCenter(type: string, displayName: string, version: number): void {
+    const NODE_W = 150;
+    const NODE_H = 50;
+    const OFFSET_STEP = 60;
+
+    let center = { x: 0, y: 0 };
+    if (this.viewportHelper) {
+      center = this.viewportHelper.getViewportCenter();
+    }
+
+    // Offset so the node is centered on that point
+    let x = center.x - NODE_W / 2;
+    let y = center.y - NODE_H / 2;
+
+    // Nudge away from existing nodes
+    const existingPositions = (this.workflow?.nodes || []).map(n => n.position);
+    let attempts = 0;
+    while (attempts < 20 && existingPositions.some(p =>
+      Math.abs(p[0] - x) < NODE_W && Math.abs(p[1] - y) < NODE_H
+    )) {
+      x += OFFSET_STEP;
+      y += OFFSET_STEP;
+      attempts++;
+    }
+
+    const id = `node_${Date.now()}_${this.nodeIdCounter++}`;
+    const newNode: WorkflowNode = {
+      id,
+      name: displayName,
+      type,
+      typeVersion: version,
+      parameters: {},
+      position: [x, y],
+    };
+    this.nodeAdded.emit(newNode);
   }
 }
