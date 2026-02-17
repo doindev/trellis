@@ -3,6 +3,7 @@
     [workflowName]="store.workflow()?.name || 'New Workflow'"
     [isActive]="store.workflow()?.active || false"
     [isDirty]="store.isDirty()"
+    [isSaving]="store.isSaving()"
     [isExecuting]="store.isExecuting()"
     [activeTab]="activeTab"
     (nameChanged)="store.updateWorkflowName($event)"

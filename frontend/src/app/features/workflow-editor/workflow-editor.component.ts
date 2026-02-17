@@ -30,6 +30,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   drawerExpanded = false;
   activeTab: 'editor' | 'executions' = 'editor';
   private executionSub?: Subscription;
+  private autoSaveInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly AUTO_SAVE_INTERVAL = 3_000;
 
   constructor(
     private route: ActivatedRoute,
@@ -51,6 +53,24 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     } else {
       this.store.createNew();
     }
+
+    this.startAutoSaveTimer();
+  }
+
+  private startAutoSaveTimer(): void {
+    this.stopAutoSaveTimer();
+    this.autoSaveInterval = setInterval(() => {
+      if (this.store.isDirty() && !this.store.isSaving() && !this.store.isExecuting()) {
+        this.store.saveWorkflow();
+      }
+    }, this.AUTO_SAVE_INTERVAL);
+  }
+
+  private stopAutoSaveTimer(): void {
+    if (this.autoSaveInterval !== null) {
+      clearInterval(this.autoSaveInterval);
+      this.autoSaveInterval = null;
+    }
   }
 
   togglePalette(): void {
@@ -61,12 +81,31 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.drawerExpanded = !this.drawerExpanded;
   }
 
+  private isInputFocused(event: KeyboardEvent): boolean {
+    const target = event.target as HTMLElement;
+    return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable;
+  }
+
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent): void {
+    // Undo: Ctrl+Z (not Shift)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+      if (!this.isInputFocused(event)) {
+        event.preventDefault();
+        this.store.undo();
+      }
+    }
+
+    // Redo: Ctrl+Y or Ctrl+Shift+Z
+    if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'Z' && event.shiftKey) || (event.key === 'z' && event.shiftKey))) {
+      if (!this.isInputFocused(event)) {
+        event.preventDefault();
+        this.store.redo();
+      }
+    }
+
     if (event.key === 'Tab' && this.activeTab === 'editor') {
-      const target = event.target as HTMLElement;
-      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable;
-      if (!isInput) {
+      if (!this.isInputFocused(event)) {
         event.preventDefault();
         this.togglePalette();
       }
@@ -87,6 +126,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   onSave(): void {
     this.store.saveWorkflow();
+    this.startAutoSaveTimer();
   }
 
   onExecute(): void {
@@ -116,6 +156,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.executionSub?.unsubscribe();
+    this.stopAutoSaveTimer();
   }
 
   onTabChanged(tab: 'editor' | 'executions'): void {

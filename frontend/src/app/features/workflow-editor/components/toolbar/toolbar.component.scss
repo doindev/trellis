@@ -180,6 +180,19 @@
   }
 }
 
+.save-status-btn {
+  transition: color 0.3s ease;
+
+  &.saved { color: hsl(0, 0%, 40%); cursor: default; }
+  &.dirty { color: hsl(36, 77%, 50%); cursor: pointer; }
+  &.saving { cursor: default; animation: save-pulse 1.2s ease-in-out infinite; }
+}
+
+@keyframes save-pulse {
+  0%, 100% { color: hsl(36, 77%, 50%); }
+  50% { color: hsl(36, 77%, 70%); }
+}
+
 .btn-execute {
   display: inline-flex;
   align-items: center;

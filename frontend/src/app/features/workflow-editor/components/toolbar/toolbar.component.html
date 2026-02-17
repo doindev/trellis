@@ -35,15 +35,19 @@
 
       <div class="header-divider"></div>
 
-      <button class="btn-subtle"
-              (click)="save.emit()"
-              [disabled]="!isDirty"
-              title="Save workflow">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-        </svg>
-        Save
+      <button class="btn-icon save-status-btn"
+              [class.saving]="isSaving"
+              [class.dirty]="isDirty && !isSaving"
+              [class.saved]="!isDirty && !isSaving"
+              (click)="isDirty && !isSaving ? save.emit() : null"
+              [title]="isSaving ? 'Saving...' : isDirty ? 'Save workflow' : 'All changes saved'">
+        @if (isSaving) {
+          <lucide-icon name="clock-fading" [size]="18"></lucide-icon>
+        } @else if (isDirty) {
+          <lucide-icon name="clock-plus" [size]="18"></lucide-icon>
+        } @else {
+          <lucide-icon name="clock-check" [size]="18"></lucide-icon>
+        }
       </button>
 
       <button class="btn-icon" (click)="togglePalette.emit()" title="Toggle nodes panel">

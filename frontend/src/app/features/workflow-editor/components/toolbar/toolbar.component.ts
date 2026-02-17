@@ -1,11 +1,17 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, ClockCheck, ClockPlus, ClockFading } from 'lucide-angular';
 
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
+  providers: [{
+    provide: LUCIDE_ICONS,
+    multi: true,
+    useValue: new LucideIconProvider({ ClockCheck, ClockPlus, ClockFading })
+  }],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.scss'
 })
@@ -14,6 +20,7 @@ export class ToolbarComponent {
   @Input() isActive = false;
   @Input() isDirty = false;
   @Input() isExecuting = false;
+  @Input() isSaving = false;
   @Output() nameChanged = new EventEmitter<string>();
   @Output() save = new EventEmitter<void>();
   @Output() execute = new EventEmitter<void>();
