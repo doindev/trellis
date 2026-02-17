@@ -4,6 +4,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .editor-body {
@@ -11,6 +12,7 @@
   display: flex;
   overflow: hidden;
   position: relative;
+  min-height: 0;
 }
 
 .canvas-area {
@@ -21,13 +23,20 @@
   z-index: 0;
 }
 
-// Drawer: fixed to bottom of editor-body, overlays canvas when expanded
+// Drawer: sits at the bottom of editor-container in normal flow (collapsed = tab strip only).
+// When expanded, it becomes absolutely positioned and overlays the editor-body.
+// Drawer: sits at the bottom of editor-container in normal flow (collapsed = tab strip only).
+// When expanded, it becomes absolutely positioned and overlays the editor-body.
 app-editor-drawer {
+  flex-shrink: 0;
+  z-index: 8;
+}
+
+.drawer-expanded app-editor-drawer {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 8;
 }
 
 .palette-slide {

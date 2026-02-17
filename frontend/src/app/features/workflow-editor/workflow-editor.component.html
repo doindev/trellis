@@ -1,4 +1,4 @@
-<div class="editor-container">
+<div class="editor-container" [class.drawer-expanded]="drawerExpanded">
   <app-toolbar
     [workflowName]="store.workflow()?.name || 'New Workflow'"
     [isActive]="store.workflow()?.active || false"
@@ -28,14 +28,6 @@
         (connectionsChanged)="store.updateConnections($event)" />
     </div>
 
-    <app-editor-drawer
-      [executionData]="store.executionData()"
-      [selectedNodeId]="store.selectedNodeId()"
-      [isExecuting]="store.isExecuting()"
-      [workflowId]="store.workflow()?.id || null"
-      [expanded]="drawerExpanded"
-      (expandedChange)="drawerExpanded = $event" />
-
     <div class="palette-slide" [class.palette-open]="showPalette">
       <app-node-palette
         [nodeTypes]="nodeTypeStore.groupedByCategory()"
@@ -51,4 +43,12 @@
         (deleteNode)="store.removeNode(store.selectedNodeId()!)" />
     }
   </div>
+
+  <app-editor-drawer
+    [executionData]="store.executionData()"
+    [selectedNodeId]="store.selectedNodeId()"
+    [isExecuting]="store.isExecuting()"
+    [workflowId]="store.workflow()?.id || null"
+    [expanded]="drawerExpanded"
+    (expandedChange)="drawerExpanded = $event" />
 </div>
