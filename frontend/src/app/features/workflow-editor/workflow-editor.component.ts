@@ -34,6 +34,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   showPalette = false;
   drawerExpanded = false;
   activeTab: 'editor' | 'executions' = 'editor';
+  pendingConnection: { sourceNodeId: string; sourceHandleId: string } | null = null;
   private executionSub?: Subscription;
   private autoSaveInterval: ReturnType<typeof setInterval> | null = null;
   private readonly AUTO_SAVE_INTERVAL = 3_000;
@@ -89,6 +90,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.showPalette = !this.showPalette;
     if (this.showPalette) {
       setTimeout(() => this.nodePalette?.focusSearch(), 260);
+    } else {
+      this.pendingConnection = null;
     }
   }
 
@@ -131,8 +134,50 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   onPaletteNodeClicked(nodeType: NodeTypeDescription): void {
-    this.canvasWrapper.addNodeAtViewportCenter(nodeType.type, nodeType.displayName, nodeType.version);
+    const newNodeId = this.canvasWrapper.addNodeAtViewportCenter(nodeType.type, nodeType.displayName, nodeType.version);
+    if (this.pendingConnection) {
+      this.addConnectionFromPending(newNodeId);
+      this.pendingConnection = null;
+    }
     this.showPalette = false;
+  }
+
+  onOutputHandleDoubleClicked(event: { nodeId: string; handleId: string }): void {
+    this.pendingConnection = { sourceNodeId: event.nodeId, sourceHandleId: event.handleId };
+    if (!this.showPalette) {
+      this.showPalette = true;
+      setTimeout(() => this.nodePalette?.focusSearch(), 260);
+    }
+  }
+
+  private addConnectionFromPending(targetNodeId: string): void {
+    if (!this.pendingConnection) return;
+    const { sourceNodeId, sourceHandleId } = this.pendingConnection;
+
+    // Find the output index for the source handle
+    const sourceNode = this.store.nodes().find(n => n.id === sourceNodeId);
+    if (!sourceNode) return;
+
+    const sourceType = this.nodeTypeStore.getByType(sourceNode.type);
+    const outputs = sourceType?.outputs || [{ name: 'main', type: 'main' }];
+    const outputIndex = outputs.findIndex(o => o.name === sourceHandleId);
+    if (outputIndex < 0) return;
+
+    const connections = JSON.parse(JSON.stringify(this.store.connections()));
+    if (!connections[sourceNodeId]) {
+      connections[sourceNodeId] = { main: [] };
+    }
+    // Ensure the main array has enough entries for the output index
+    while (connections[sourceNodeId].main.length <= outputIndex) {
+      connections[sourceNodeId].main.push([]);
+    }
+    connections[sourceNodeId].main[outputIndex].push({
+      node: targetNodeId,
+      type: 'main',
+      index: 0,
+    });
+
+    this.store.updateConnections(connections);
   }
 
   onNodeSelected(nodeId: string | null): void {

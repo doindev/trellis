@@ -37,6 +37,7 @@ export interface TrellisCanvasProps {
   onExecute?: () => void;
   onStopExecution?: () => void;
   onViewportHelperReady?: (helper: { getViewportCenter: () => { x: number; y: number } }) => void;
+  onOutputHandleDoubleClick?: (nodeId: string, handleId: string) => void;
 }
 
 const GRID_SIZE = 16;
@@ -67,11 +68,14 @@ function TrellisCanvasInner({
   onExecute,
   onStopExecution,
   onViewportHelperReady,
+  onOutputHandleDoubleClick,
 }: TrellisCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
   const { zoom } = useViewport();
   const helperExposed = useRef(false);
+  const outputHandleDoubleClickRef = useRef(onOutputHandleDoubleClick);
+  outputHandleDoubleClickRef.current = onOutputHandleDoubleClick;
   const [nodes, setNodes, handleNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, handleEdgesChange] = useEdgesState(initialEdges);
   const [ready, setReady] = useState(false);
@@ -79,7 +83,15 @@ function TrellisCanvasInner({
 
   // Sync nodes from Angular without resetting viewport
   useEffect(() => {
-    setNodes(initialNodes);
+    setNodes(initialNodes.map(n => ({
+      ...n,
+      data: {
+        ...n.data,
+        onOutputHandleDoubleClick: (handleId: string) => {
+          outputHandleDoubleClickRef.current?.(n.id, handleId);
+        },
+      },
+    })));
   }, [initialNodes, setNodes]);
 
   useEffect(() => {

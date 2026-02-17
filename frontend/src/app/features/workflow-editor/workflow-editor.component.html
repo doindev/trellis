@@ -30,7 +30,8 @@
         (nodesPositionChanged)="store.updateNodePositions($event)"
         (connectionsChanged)="store.updateConnections($event)"
         (execute)="onExecute()"
-        (stopExecution)="onStopExecution()" />
+        (stopExecution)="onStopExecution()"
+        (outputHandleDoubleClicked)="onOutputHandleDoubleClicked($event)" />
     </div>
 
     <div class="palette-slide" [class.palette-open]="showPalette">

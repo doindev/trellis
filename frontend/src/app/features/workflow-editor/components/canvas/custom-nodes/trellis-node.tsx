@@ -15,6 +15,7 @@ interface TrellisNodeData {
   executionStatus?: 'success' | 'error' | 'running' | 'waiting';
   itemCount?: number;
   disabled?: boolean;
+  onOutputHandleDoubleClick?: (handleId: string) => void;
   [key: string]: unknown;
 }
 
@@ -88,6 +89,10 @@ const TrellisNode = memo(({ data, selected }: NodeProps & { data: TrellisNodeDat
           id={output.name}
           style={{ top: `${((index + 1) / (outputs.length + 1)) * 100}%` }}
           className="trellis-handle"
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            data.onOutputHandleDoubleClick?.(output.name);
+          }}
         />
       ))}
     </div>

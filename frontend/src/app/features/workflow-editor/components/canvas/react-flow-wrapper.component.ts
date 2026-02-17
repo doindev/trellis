@@ -52,6 +52,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   @Output() nodeRemoved = new EventEmitter<string>();
   @Output() nodesPositionChanged = new EventEmitter<Record<string, [number, number]>>();
   @Output() connectionsChanged = new EventEmitter<Record<string, any>>();
+  @Output() outputHandleDoubleClicked = new EventEmitter<{ nodeId: string; handleId: string }>();
 
   private root: Root | null = null;
   private nodeIdCounter = 0;
@@ -128,6 +129,9 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       onViewportHelperReady: (helper) => {
         this.viewportHelper = helper;
       },
+      onOutputHandleDoubleClick: (nodeId: string, handleId: string) => {
+        this.ngZone.run(() => this.outputHandleDoubleClicked.emit({ nodeId, handleId }));
+      },
     };
 
     this.root.render(createElement(TrellisCanvas, props));
@@ -195,8 +199,8 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     return edges;
   }
 
-  /** Add a node at the center of the visible viewport, offset to avoid overlap. */
-  addNodeAtViewportCenter(type: string, displayName: string, version: number): void {
+  /** Add a node at the center of the visible viewport, offset to avoid overlap. Returns the new node ID. */
+  addNodeAtViewportCenter(type: string, displayName: string, version: number): string {
     const NODE_W = 150;
     const NODE_H = 50;
     const OFFSET_STEP = 60;
@@ -231,5 +235,6 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       position: [x, y],
     };
     this.nodeAdded.emit(newNode);
+    return id;
   }
 }
