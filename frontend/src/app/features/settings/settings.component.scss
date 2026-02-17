@@ -1,6 +1,8 @@
 .page-container {
   padding: 32px;
   max-width: 800px;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .page-header {
