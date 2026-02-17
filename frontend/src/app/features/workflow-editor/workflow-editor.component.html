@@ -21,11 +21,15 @@
         [nodeTypeMap]="nodeTypeStore.nodeTypes()"
         [executionData]="store.executionData()"
         [selectedNodeId]="store.selectedNodeId()"
-        (nodeSelected)="store.selectNode($event)"
+        [isExecuting]="store.isExecuting()"
+        (nodeSelected)="onNodeSelected($event)"
+        (nodeDoubleClicked)="store.selectNode($event)"
         (nodeAdded)="store.addNode($event)"
         (nodeRemoved)="store.removeNode($event)"
         (nodesPositionChanged)="store.updateNodePositions($event)"
-        (connectionsChanged)="store.updateConnections($event)" />
+        (connectionsChanged)="store.updateConnections($event)"
+        (execute)="onExecute()"
+        (stopExecution)="onStopExecution()" />
     </div>
 
     <div class="palette-slide" [class.palette-open]="showPalette">

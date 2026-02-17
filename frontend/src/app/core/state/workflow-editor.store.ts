@@ -66,7 +66,6 @@ export class WorkflowEditorStore {
       nodes: [...wf.nodes, node]
     });
     this.isDirty.set(true);
-    this.selectedNodeId.set(node.id);
   }
 
   removeNode(nodeId: string): void {

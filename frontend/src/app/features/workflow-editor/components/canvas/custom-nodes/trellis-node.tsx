@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { NodeIcon } from './node-icon-map';
 
 interface TrellisNodeData {
   label: string;
@@ -46,7 +47,7 @@ const TrellisNode = memo(({ data, selected }: NodeProps & { data: TrellisNodeDat
 
       <div className="node-header">
         <div className="node-icon">
-          {icon || (
+          {icon ? <NodeIcon name={icon} /> : (
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="3" />
             </svg>

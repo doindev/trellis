@@ -42,8 +42,12 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   @Input() nodeTypeMap: Map<string, NodeTypeDescription> = new Map();
   @Input() executionData: Record<string, any> | null = null;
   @Input() selectedNodeId: string | null = null;
+  @Input() isExecuting = false;
 
   @Output() nodeSelected = new EventEmitter<string | null>();
+  @Output() nodeDoubleClicked = new EventEmitter<string>();
+  @Output() execute = new EventEmitter<void>();
+  @Output() stopExecution = new EventEmitter<void>();
   @Output() nodeAdded = new EventEmitter<WorkflowNode>();
   @Output() nodeRemoved = new EventEmitter<string>();
   @Output() nodesPositionChanged = new EventEmitter<Record<string, [number, number]>>();
@@ -81,8 +85,12 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     const props: TrellisCanvasProps = {
       initialNodes: reactNodes,
       initialEdges: reactEdges,
+      isExecuting: this.isExecuting,
       onNodeClick: (nodeId: string) => {
         this.ngZone.run(() => this.nodeSelected.emit(nodeId));
+      },
+      onNodeDoubleClick: (nodeId: string) => {
+        this.ngZone.run(() => this.nodeDoubleClicked.emit(nodeId));
       },
       onNodeAdd: (type: string, position: { x: number; y: number }, displayName: string, version: number) => {
         this.ngZone.run(() => {
@@ -109,6 +117,12 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       },
       onConnectionsChange: (connections: any) => {
         this.ngZone.run(() => this.connectionsChanged.emit(connections));
+      },
+      onExecute: () => {
+        this.ngZone.run(() => this.execute.emit());
+      },
+      onStopExecution: () => {
+        this.ngZone.run(() => this.stopExecution.emit());
       },
     };
 

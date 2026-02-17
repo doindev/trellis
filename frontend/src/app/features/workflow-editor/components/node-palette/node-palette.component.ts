@@ -1,12 +1,25 @@
 import { Component, Input, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {
+  LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
+  Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
+  UnfoldVertical, Route, Pen, Code
+} from 'lucide-angular';
 import { NodeTypeDescription } from '../../../../core/models';
 
 @Component({
   selector: 'app-node-palette',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
+  providers: [{
+    provide: LUCIDE_ICONS,
+    multi: true,
+    useValue: new LucideIconProvider({
+      Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
+      UnfoldVertical, Route, Pen, Code
+    })
+  }],
   templateUrl: './node-palette.component.html',
   styleUrl: './node-palette.component.scss'
 })

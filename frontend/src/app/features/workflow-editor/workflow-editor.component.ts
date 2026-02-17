@@ -1,6 +1,7 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { WorkflowService } from '../../core/services';
 import { WorkflowEditorStore } from '../../core/state/workflow-editor.store';
 import { NodeTypeStore } from '../../core/state/node-type.store';
@@ -24,10 +25,11 @@ import { EditorDrawerComponent } from './components/editor-drawer/editor-drawer.
   templateUrl: './workflow-editor.component.html',
   styleUrl: './workflow-editor.component.scss'
 })
-export class WorkflowEditorComponent implements OnInit {
+export class WorkflowEditorComponent implements OnInit, OnDestroy {
   showPalette = false;
   drawerExpanded = false;
   activeTab: 'editor' | 'executions' = 'editor';
+  private executionSub?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -76,6 +78,13 @@ export class WorkflowEditorComponent implements OnInit {
     }
   }
 
+  onNodeSelected(nodeId: string | null): void {
+    // Single-click only closes the panel (pane click); double-click opens it
+    if (nodeId === null) {
+      this.store.selectNode(null);
+    }
+  }
+
   onSave(): void {
     this.store.saveWorkflow();
   }
@@ -88,7 +97,8 @@ export class WorkflowEditorComponent implements OnInit {
     }
     this.store.setIsExecuting(true);
     this.drawerExpanded = true;
-    this.workflowService.run(wf.id).subscribe({
+    this.executionSub?.unsubscribe();
+    this.executionSub = this.workflowService.run(wf.id).subscribe({
       next: (result) => {
         this.store.setExecutionData(result);
         this.store.setIsExecuting(false);
@@ -97,6 +107,15 @@ export class WorkflowEditorComponent implements OnInit {
         this.store.setIsExecuting(false);
       }
     });
+  }
+
+  onStopExecution(): void {
+    this.executionSub?.unsubscribe();
+    this.store.setIsExecuting(false);
+  }
+
+  ngOnDestroy(): void {
+    this.executionSub?.unsubscribe();
   }
 
   onTabChanged(tab: 'editor' | 'executions'): void {

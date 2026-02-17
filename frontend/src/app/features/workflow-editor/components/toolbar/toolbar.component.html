@@ -46,22 +46,6 @@
         Save
       </button>
 
-      <button class="btn-execute"
-              (click)="execute.emit()"
-              [disabled]="isExecuting">
-        @if (isExecuting) {
-          <span class="spinner-border spinner-border-sm"></span>
-          Running...
-        } @else {
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="5,3 19,12 5,21 5,3"/>
-          </svg>
-          Execute
-        }
-      </button>
-
-      <div class="header-divider"></div>
-
       <button class="btn-icon" (click)="togglePalette.emit()" title="Toggle nodes panel">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>

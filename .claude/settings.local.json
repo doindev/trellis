@@ -30,7 +30,12 @@
       "Bash(python -c:*)",
       "Bash(jar xf:*)",
       "Bash(python:*)",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend && npx ng build\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend && npx ng build 2>&1\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend & npx ng build\")",
+      "Bash(powershell -Command \"Set-Location 'C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend'; npx ng build 2>&1\":*)",
+      "WebFetch(domain:cdn.jsdelivr.net)"
     ]
   }
 }

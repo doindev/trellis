@@ -187,48 +187,126 @@
   }
 }
 
-/* React Flow controls — n8n style */
-.react-flow__controls {
-  z-index: 5;
-  background: hsl(0, 0%, 13%);
-  border: 1px solid hsl(0, 0%, 24%);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-
-  button {
-    background: transparent;
-    border-bottom: 1px solid hsl(0, 0%, 20%);
-    color: hsl(0, 0%, 58%);
-    width: 28px;
-    height: 28px;
-
-    &:hover {
-      background: hsl(0, 0%, 17%);
-    }
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    svg {
-      fill: hsl(0, 0%, 58%);
-    }
-  }
-}
-
+/* MiniMap — extra bottom margin so controls panel sits below */
 .react-flow__minimap {
   z-index: 5;
   background: hsl(0, 0%, 13%);
   border: 1px solid hsl(0, 0%, 24%);
   border-radius: 8px;
   overflow: hidden;
+  margin-bottom: 60px !important;
+}
+
+/* Custom controls panel — horizontal, below minimap */
+.canvas-controls-panel {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  padding: 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  margin-top: 6px;
+}
+
+.ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: hsl(0, 0%, 58%);
+  cursor: pointer;
+
+  &:hover {
+    background: hsl(0, 0%, 17%);
+    color: hsl(0, 0%, 86%);
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.ctrl-zoom-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: hsl(0, 0%, 58%);
+  min-width: 36px;
+  text-align: center;
+  user-select: none;
 }
 
 /* Selection box */
 .react-flow__selection {
   background: hsla(7, 100%, 68%, 0.05);
   border: 1px dashed hsla(7, 100%, 68%, 0.4);
+}
+
+/* Canvas action bar — Execute / Stop buttons */
+.canvas-action-bar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+}
+
+.canvas-execute-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: hsl(147, 60%, 40%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: filter 0.15s ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.canvas-stop-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: hsl(355, 83%, 52%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
 }
 
 @keyframes spin {
