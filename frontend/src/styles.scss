@@ -68,6 +68,14 @@ html, body {
   height: 100%;
 }
 
+/* Routed components fill their parent */
+.main-content > :not(router-outlet) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

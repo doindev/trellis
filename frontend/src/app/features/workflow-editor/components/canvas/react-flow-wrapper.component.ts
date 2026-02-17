@@ -98,6 +98,9 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
           this.nodeAdded.emit(newNode);
         });
       },
+      onPaneClick: () => {
+        this.ngZone.run(() => this.nodeSelected.emit(null));
+      },
       onNodeDelete: (nodeId: string) => {
         this.ngZone.run(() => this.nodeRemoved.emit(nodeId));
       },

@@ -4,6 +4,42 @@
   background: hsl(0, 0%, 9%) !important;
 }
 
+/* Hide React Flow attribution */
+.react-flow__attribution {
+  display: none !important;
+}
+
+/* Connection line while dragging */
+.react-flow__connection-line {
+  .react-flow__connection-path {
+    stroke: hsl(0, 0%, 46%);
+    stroke-width: 2;
+  }
+}
+
+/* Edge hover - widen hit area */
+.react-flow__edge {
+  cursor: pointer;
+
+  .react-flow__edge-interaction {
+    stroke-width: 20;
+  }
+
+  &:hover .react-flow__edge-path {
+    stroke: hsl(0, 0%, 40%);
+  }
+
+  &.selected .react-flow__edge-path {
+    stroke: hsl(7, 100%, 68%) !important;
+  }
+}
+
+/* Arrow markers */
+.react-flow__marker {
+  fill: hsl(0, 0%, 30%);
+}
+
+/* Nodes */
 .trellis-node {
   background: hsl(0, 0%, 13%);
   border: 1.5px solid hsl(0, 0%, 24%);
@@ -14,6 +50,10 @@
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   position: relative;
+
+  &:hover {
+    border-color: hsl(0, 0%, 35%);
+  }
 
   &.selected {
     border-color: hsl(7, 100%, 68%);
@@ -143,7 +183,7 @@
   transition: background 0.15s ease;
 
   &:hover {
-    background: var(--bs-primary) !important;
+    background: hsl(7, 100%, 68%) !important;
   }
 }
 
@@ -185,11 +225,10 @@
   overflow: hidden;
 }
 
-/* Edge selection */
-.react-flow__edge {
-  &.selected .react-flow__edge-path {
-    stroke: hsl(7, 100%, 68%) !important;
-  }
+/* Selection box */
+.react-flow__selection {
+  background: hsla(7, 100%, 68%, 0.05);
+  border: 1px dashed hsla(7, 100%, 68%, 0.4);
 }
 
 @keyframes spin {

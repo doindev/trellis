@@ -7,6 +7,7 @@ import {
 
 interface TrellisEdgeData {
   animated?: boolean;
+  status?: 'success' | 'error';
   [key: string]: unknown;
 }
 
@@ -18,6 +19,7 @@ export default function TrellisEdge({
   targetY,
   sourcePosition,
   targetPosition,
+  selected,
   style = {},
   markerEnd,
   data,
@@ -33,6 +35,12 @@ export default function TrellisEdge({
   });
 
   const isAnimated = data?.animated || false;
+  const status = data?.status;
+
+  let strokeColor = 'hsl(0, 0%, 24%)';
+  if (selected) strokeColor = 'hsl(7, 100%, 68%)';
+  else if (status === 'success') strokeColor = 'hsl(147, 60%, 40%)';
+  else if (status === 'error') strokeColor = 'hsl(355, 83%, 52%)';
 
   return (
     <BaseEdge
@@ -40,8 +48,9 @@ export default function TrellisEdge({
       path={edgePath}
       markerEnd={markerEnd}
       style={{
-        stroke: 'hsl(0, 0%, 24%)',
+        stroke: strokeColor,
         strokeWidth: 2,
+        transition: 'stroke 0.15s ease',
         ...style,
         ...(isAnimated ? { stroke: 'hsl(0, 0%, 46%)', strokeDasharray: '5 5', animation: 'dashdraw 0.5s linear infinite' } : {}),
       }}

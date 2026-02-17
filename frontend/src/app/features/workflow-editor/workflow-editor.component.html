@@ -15,28 +15,26 @@
     (tabChanged)="onTabChanged($event)" />
 
   <div class="editor-body">
-    <div class="canvas-and-drawer">
-      <div class="canvas-area">
-        <app-react-flow-wrapper
-          [workflow]="store.workflow()"
-          [nodeTypeMap]="nodeTypeStore.nodeTypes()"
-          [executionData]="store.executionData()"
-          [selectedNodeId]="store.selectedNodeId()"
-          (nodeSelected)="store.selectNode($event)"
-          (nodeAdded)="store.addNode($event)"
-          (nodeRemoved)="store.removeNode($event)"
-          (nodesPositionChanged)="store.updateNodePositions($event)"
-          (connectionsChanged)="store.updateConnections($event)" />
-      </div>
-
-      <app-editor-drawer
+    <div class="canvas-area">
+      <app-react-flow-wrapper
+        [workflow]="store.workflow()"
+        [nodeTypeMap]="nodeTypeStore.nodeTypes()"
         [executionData]="store.executionData()"
         [selectedNodeId]="store.selectedNodeId()"
-        [isExecuting]="store.isExecuting()"
-        [workflowId]="store.workflow()?.id || null"
-        [expanded]="drawerExpanded"
-        (expandedChange)="drawerExpanded = $event" />
+        (nodeSelected)="store.selectNode($event)"
+        (nodeAdded)="store.addNode($event)"
+        (nodeRemoved)="store.removeNode($event)"
+        (nodesPositionChanged)="store.updateNodePositions($event)"
+        (connectionsChanged)="store.updateConnections($event)" />
     </div>
+
+    <app-editor-drawer
+      [executionData]="store.executionData()"
+      [selectedNodeId]="store.selectedNodeId()"
+      [isExecuting]="store.isExecuting()"
+      [workflowId]="store.workflow()?.id || null"
+      [expanded]="drawerExpanded"
+      (expandedChange)="drawerExpanded = $event" />
 
     <div class="palette-slide" [class.palette-open]="showPalette">
       <app-node-palette

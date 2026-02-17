@@ -85,7 +85,7 @@ export class EditorDrawerComponent implements AfterViewChecked {
     const onMove = (e: MouseEvent) => {
       if (!this.dragging) return;
       const delta = this.startY - e.clientY;
-      const parentHeight = (event.target as HTMLElement).closest('.canvas-and-drawer')?.clientHeight || 800;
+      const parentHeight = (event.target as HTMLElement).closest('.editor-body')?.clientHeight || 800;
       const maxHeight = parentHeight * this.maxHeightPercent;
       this.drawerHeight = Math.max(this.minHeight, Math.min(maxHeight, this.startHeight + delta));
     };

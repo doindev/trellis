@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useMemo } from 'react';
+import React, { useCallback, useRef, useMemo, useState, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -6,15 +6,20 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  ReactFlowProvider,
   addEdge,
   BackgroundVariant,
+  MarkerType,
+  ConnectionLineType,
   type Connection,
   type Node,
   type Edge,
   type NodeTypes,
   type EdgeTypes,
+  type OnNodesChange,
+  type OnEdgesChange,
 } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 import TrellisNode from './custom-nodes/trellis-node';
 import TrellisTriggerNode from './custom-nodes/trellis-trigger-node';
 import TrellisEdge from './custom-edges/trellis-edge';
@@ -23,11 +28,17 @@ export interface TrellisCanvasProps {
   initialNodes: Node[];
   initialEdges: Edge[];
   onNodeClick?: (nodeId: string) => void;
+  onPaneClick?: () => void;
   onNodeAdd?: (type: string, position: { x: number; y: number }, displayName: string, version: number) => void;
   onNodeDelete?: (nodeId: string) => void;
   onNodesChange?: (positions: Record<string, [number, number]>) => void;
   onConnectionsChange?: (connections: any) => void;
 }
+
+const GRID_SIZE = 16;
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 4;
+const CONNECTION_RADIUS = 60;
 
 const nodeTypes: NodeTypes = {
   trellisNode: TrellisNode as any,
@@ -38,33 +49,50 @@ const edgeTypes: EdgeTypes = {
   trellisEdge: TrellisEdge as any,
 };
 
-export default function TrellisCanvas({
+function TrellisCanvasInner({
   initialNodes,
   initialEdges,
   onNodeClick,
+  onPaneClick,
   onNodeAdd,
   onNodeDelete,
   onNodesChange: onNodesPositionChange,
   onConnectionsChange,
 }: TrellisCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { fitView, screenToFlowPosition } = useReactFlow();
   const [nodes, setNodes, handleNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, handleEdgesChange] = useEdgesState(initialEdges);
+  const [ready, setReady] = useState(false);
+  const initialFitDone = useRef(false);
 
-  // Sync when initialNodes/initialEdges change
-  React.useEffect(() => {
+  // Sync nodes from Angular without resetting viewport
+  useEffect(() => {
     setNodes(initialNodes);
   }, [initialNodes, setNodes]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setEdges(initialEdges);
   }, [initialEdges, setEdges]);
+
+  // Fit view only once on initial load when nodes are present
+  useEffect(() => {
+    if (!initialFitDone.current && initialNodes.length > 0) {
+      initialFitDone.current = true;
+      // Small delay to ensure React Flow has rendered the nodes
+      requestAnimationFrame(() => {
+        fitView({ padding: 0.2, duration: 0 });
+        setReady(true);
+      });
+    } else if (initialNodes.length === 0) {
+      setReady(true);
+    }
+  }, [initialNodes, fitView]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
       setEdges((eds) => addEdge({ ...connection, type: 'trellisEdge' }, eds));
       if (onConnectionsChange) {
-        // Build connections map from edges
         const newEdges = [...edges, { ...connection, type: 'trellisEdge', id: `e-${connection.source}-${connection.target}` }];
         const connectionsMap: Record<string, any> = {};
         newEdges.forEach((e: any) => {
@@ -89,6 +117,10 @@ export default function TrellisCanvas({
     },
     [onNodeClick]
   );
+
+  const onPaneClickHandler = useCallback(() => {
+    onPaneClick?.();
+  }, [onPaneClick]);
 
   const onNodeDragStop = useCallback(
     (_event: React.MouseEvent, _node: Node, draggedNodes: Node[]) => {
@@ -116,20 +148,18 @@ export default function TrellisCanvas({
 
       try {
         const nodeData = JSON.parse(rawData);
-        const bounds = reactFlowWrapper.current?.getBoundingClientRect();
-        if (!bounds) return;
+        // Use screenToFlowPosition for accurate drop coordinates at any zoom/pan
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
 
-        const position = {
-          x: event.clientX - bounds.left - 75,
-          y: event.clientY - bounds.top - 25,
-        };
-
-        onNodeAdd?.(nodeData.type, position, nodeData.displayName, nodeData.version);
+        onNodeAdd?.(nodeData.type, { x: position.x - 75, y: position.y - 25 }, nodeData.displayName, nodeData.version);
       } catch (e) {
         console.error('Failed to parse dropped node data', e);
       }
     },
-    [onNodeAdd]
+    [onNodeAdd, screenToFlowPosition]
   );
 
   const onKeyDown = useCallback(
@@ -146,12 +176,33 @@ export default function TrellisCanvas({
     () => ({
       type: 'trellisEdge',
       animated: false,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 16,
+        height: 16,
+        color: 'hsl(0, 0%, 30%)',
+      },
     }),
     []
   );
 
+  const connectionLineStyle = useMemo(
+    () => ({
+      stroke: 'hsl(0, 0%, 46%)',
+      strokeWidth: 2,
+    }),
+    []
+  );
+
+  const proOptions = useMemo(() => ({ hideAttribution: true }), []);
+
   return (
-    <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }} onKeyDown={onKeyDown} tabIndex={0}>
+    <div
+      ref={reactFlowWrapper}
+      style={{ width: '100%', height: '100%', opacity: ready ? 1 : 0, transition: 'opacity 300ms ease' }}
+      onKeyDown={onKeyDown}
+      tabIndex={0}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -159,19 +210,26 @@ export default function TrellisCanvas({
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClickHandler}
+        onPaneClick={onPaneClickHandler}
         onNodeDragStop={onNodeDragStop}
         onDragOver={onDragOver}
         onDrop={onDrop}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
-        fitView
+        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineStyle={connectionLineStyle}
+        connectionRadius={CONNECTION_RADIUS}
         snapToGrid
-        snapGrid={[16, 16]}
-        deleteKeyCode={['Delete', 'Backspace']}
+        snapGrid={[GRID_SIZE, GRID_SIZE]}
+        minZoom={MIN_ZOOM}
+        maxZoom={MAX_ZOOM}
+        panOnScroll
+        deleteKeyCode={null}
+        proOptions={proOptions}
         className="trellis-flow"
       >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="hsl(0, 0%, 30%)" />
+        <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} color="hsl(0, 0%, 22%)" />
         <Controls
           showZoom={true}
           showFitView={true}
@@ -189,5 +247,13 @@ export default function TrellisCanvas({
         />
       </ReactFlow>
     </div>
+  );
+}
+
+export default function TrellisCanvas(props: TrellisCanvasProps) {
+  return (
+    <ReactFlowProvider>
+      <TrellisCanvasInner {...props} />
+    </ReactFlowProvider>
   );
 }
