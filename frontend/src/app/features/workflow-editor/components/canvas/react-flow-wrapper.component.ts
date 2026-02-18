@@ -162,6 +162,8 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       const typeDesc = this.nodeTypeMap.get(node.type);
       const isTrigger = typeDesc?.isTrigger || false;
       const execData = this.executionData?.[node.id];
+      // execData is an array like [{ status, data, ... }] from runData
+      const execEntry = Array.isArray(execData) ? execData[0] : execData;
 
       return {
         id: node.id,
@@ -178,8 +180,8 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
             outputs: typeDesc.outputs,
             isTrigger: typeDesc.isTrigger,
           } : undefined,
-          executionStatus: execData?.status,
-          itemCount: execData?.itemCount,
+          executionStatus: execEntry?.status,
+          itemCount: execEntry?.itemCount,
           disabled: node.disabled,
           readOnly: this.readOnly,
         },

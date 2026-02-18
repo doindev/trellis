@@ -86,7 +86,16 @@ export interface WorkflowSettings {
   `,
   styleUrl: '../publish-modal/publish-modal.component.scss',
   styles: [`
-    .modal-panel { width: 480px; }
+    .modal-panel {
+      width: 480px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-body {
+      overflow-y: auto;
+      min-height: 0;
+    }
     .btn-save {
       padding: 7px 16px;
       background: hsl(247, 49%, 53%);
