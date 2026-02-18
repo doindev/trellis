@@ -30,7 +30,10 @@ interface MetricTab {
 
 interface DatePreset {
   label: string;
-  days: number;
+  rollingMinutes?: number;
+  days?: number;
+  yesterday?: boolean;
+  customRange?: boolean;
   locked: boolean;
 }
 
@@ -59,7 +62,6 @@ interface TimeBucket {
   avgRunTimeMs: number;
 }
 
-type Granularity = 'hourly' | 'daily' | 'weekly';
 
 @Component({
   selector: 'app-insights',
@@ -78,6 +80,9 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedPreset = signal('Last 7 days');
   rangeStart = signal(this.daysAgo(7));
   rangeEnd = signal(this.today());
+  rollingHours = signal(false);
+  customRangeActive = signal(false);
+  customRangeStep = signal<'start' | 'end'>('start');
   calendarMonth = signal(new Date().getMonth());
   calendarYear = signal(new Date().getFullYear());
 
@@ -85,13 +90,17 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   private chartReady = false;
 
   presets: DatePreset[] = [
-    { label: 'Last 24 hours', days: 1, locked: false },
+    { label: 'Last 30 minutes', rollingMinutes: 30, locked: false },
+    { label: 'Last 60 minutes', rollingMinutes: 60, locked: false },
+    { label: 'Last 2 hours', rollingMinutes: 120, locked: false },
+    { label: 'Last 4 hours', rollingMinutes: 240, locked: false },
+    { label: 'Last 8 hours', rollingMinutes: 480, locked: false },
+    { label: 'Last 24 hours', rollingMinutes: 1440, locked: false },
+    { label: 'Yesterday', yesterday: true, locked: false },
     { label: 'Last 7 days', days: 7, locked: false },
     { label: 'Last 14 days', days: 14, locked: false },
     { label: 'Last 30 days', days: 30, locked: false },
-    { label: 'Last 90 days', days: 90, locked: false },
-    { label: '6 months', days: 180, locked: false },
-    { label: 'One year', days: 365, locked: false }
+    { label: 'Custom range', customRange: true, locked: false },
   ];
 
   tabs: MetricTab[] = [
@@ -106,7 +115,9 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
     const execs = this.executions();
     if (!Array.isArray(execs)) return [];
     const start = this.rangeStart().getTime();
-    const end = this.rangeEnd().getTime() + 86400000 - 1; // include full end day
+    const end = this.rollingHours()
+      ? this.rangeEnd().getTime()
+      : this.rangeEnd().getTime() + 86400000 - 1; // include full end day
     return execs.filter(e => {
       if (!e.startedAt) return false;
       const t = new Date(e.startedAt).getTime();
@@ -138,20 +149,13 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
     return Math.round(totalMs / finished.length);
   });
 
-  granularity = computed<Granularity>(() => {
-    const diffDays = Math.ceil((this.rangeEnd().getTime() - this.rangeStart().getTime()) / 86400000) + 1;
-    if (diffDays <= 1) return 'hourly';
-    if (diffDays <= 30) return 'daily';
-    return 'weekly';
-  });
-
   timeBuckets = computed<TimeBucket[]>(() => {
     const start = this.rangeStart();
     const end = this.rangeEnd();
-    const gran = this.granularity();
+    const rolling = this.rollingHours();
     const execs = this.filteredExecutions();
 
-    const buckets = this.buildBuckets(start, end, gran);
+    const buckets = this.buildBuckets(start, end, rolling);
 
     for (const exec of execs) {
       if (!exec.startedAt) continue;
@@ -216,13 +220,12 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
         const endStr = this.toDateString(end);
         const isOutside = cursor.getMonth() !== month;
         const isAfterToday = dateStr > todayStr;
-        const isBeforeRange = dateStr < startStr;
 
         week.push({
           date: new Date(cursor),
           day: cursor.getDate(),
           outsideMonth: isOutside,
-          disabled: isOutside || isAfterToday || isBeforeRange,
+          disabled: isOutside || isAfterToday,
           selected: dateStr >= startStr && dateStr <= endStr,
           selectionStart: dateStr === startStr,
           selectionEnd: dateStr === endStr,
@@ -314,12 +317,55 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   selectPreset(preset: DatePreset, event: Event): void {
     event.stopPropagation();
     this.selectedPreset.set(preset.label);
-    this.rangeStart.set(this.daysAgo(preset.days));
-    this.rangeEnd.set(this.today());
+
+    if (preset.customRange) {
+      this.customRangeActive.set(true);
+      this.customRangeStep.set('start');
+      return; // keep picker open for day selection
+    }
+
+    this.customRangeActive.set(false);
+
+    if (preset.rollingMinutes != null) {
+      const now = new Date();
+      this.rangeStart.set(new Date(now.getTime() - preset.rollingMinutes * 60000));
+      this.rangeEnd.set(now);
+      this.rollingHours.set(true);
+    } else if (preset.yesterday) {
+      const yesterday = this.today();
+      yesterday.setDate(yesterday.getDate() - 1);
+      this.rangeStart.set(yesterday);
+      this.rangeEnd.set(yesterday);
+      this.rollingHours.set(false);
+    } else if (preset.days != null) {
+      this.rangeStart.set(this.daysAgo(preset.days));
+      this.rangeEnd.set(this.today());
+      this.rollingHours.set(false);
+    }
+
     const now = new Date();
     this.calendarMonth.set(now.getMonth());
     this.calendarYear.set(now.getFullYear());
     this.showDatePicker.set(false);
+  }
+
+  onCalendarDayClick(day: CalendarDay): void {
+    if (!this.customRangeActive() || day.outsideMonth || day.disabled) return;
+
+    if (this.customRangeStep() === 'start') {
+      this.rangeStart.set(day.date);
+      this.rangeEnd.set(day.date);
+      this.rollingHours.set(false);
+      this.customRangeStep.set('end');
+    } else {
+      if (day.date >= this.rangeStart()) {
+        this.rangeEnd.set(day.date);
+      } else {
+        this.rangeEnd.set(new Date(this.rangeStart()));
+        this.rangeStart.set(day.date);
+      }
+      this.customRangeStep.set('start');
+    }
   }
 
   onDatePickerClick(event: Event): void {
@@ -390,44 +436,59 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private buildTotalChart(ctx: CanvasRenderingContext2D, labels: string[], buckets: TimeBucket[]): Chart {
     return new Chart(ctx, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels,
         datasets: [
           {
             label: 'Success',
             data: buckets.map(b => b.success),
-            backgroundColor: 'hsl(147, 60%, 40%)',
-            borderRadius: 3,
-            maxBarThickness: 32
+            borderColor: 'hsl(147, 60%, 45%)',
+            backgroundColor: 'hsla(147, 60%, 40%, 0.1)',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: 'hsl(147, 60%, 45%)',
+            pointBorderColor: 'hsl(147, 60%, 45%)',
+            fill: true,
+            tension: 0.3
           },
           {
             label: 'Failed',
             data: buckets.map(b => b.failed),
-            backgroundColor: 'hsl(355, 83%, 52%)',
-            borderRadius: 3,
-            maxBarThickness: 32
+            borderColor: 'hsl(355, 83%, 52%)',
+            backgroundColor: 'hsla(355, 83%, 52%, 0.1)',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: 'hsl(355, 83%, 52%)',
+            pointBorderColor: 'hsl(355, 83%, 52%)',
+            fill: true,
+            tension: 0.3
           }
         ]
       },
-      options: this.barOptions(true, 'Executions')
+      options: this.lineOptions('Executions')
     });
   }
 
   private buildFailedChart(ctx: CanvasRenderingContext2D, labels: string[], buckets: TimeBucket[]): Chart {
     return new Chart(ctx, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels,
         datasets: [{
           label: 'Failed',
           data: buckets.map(b => b.failed),
-          backgroundColor: 'hsl(355, 83%, 52%)',
-          borderRadius: 3,
-          maxBarThickness: 32
+          borderColor: 'hsl(355, 83%, 52%)',
+          backgroundColor: 'hsla(355, 83%, 52%, 0.1)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: 'hsl(355, 83%, 52%)',
+          pointBorderColor: 'hsl(355, 83%, 52%)',
+          fill: true,
+          tension: 0.3
         }]
       },
-      options: this.barOptions(false, 'Failed executions')
+      options: this.lineOptions('Failed executions')
     });
   }
 
@@ -563,34 +624,86 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
     };
   }
 
+  private lineOptions(yTitle: string): any {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: {
+        mode: 'index' as const,
+        intersect: false
+      },
+      plugins: {
+        tooltip: {
+          backgroundColor: 'hsl(0, 0%, 17%)',
+          titleColor: 'hsl(0, 0%, 90%)',
+          bodyColor: 'hsl(0, 0%, 75%)',
+          borderColor: 'hsl(0, 0%, 28%)',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'hsl(0, 0%, 17%)', drawTicks: false },
+          ticks: { color: 'hsl(0, 0%, 50%)', font: { size: 11 }, maxRotation: 45, padding: 8 },
+          border: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'hsl(0, 0%, 17%)', drawTicks: false },
+          ticks: { color: 'hsl(0, 0%, 50%)', font: { size: 11 }, padding: 8, precision: 0 },
+          border: { display: false },
+          title: {
+            display: true,
+            text: yTitle,
+            color: 'hsl(0, 0%, 45%)',
+            font: { size: 11 }
+          }
+        }
+      }
+    };
+  }
+
   // --- Bucket building ---
 
-  private buildBuckets(start: Date, end: Date, gran: Granularity): TimeBucket[] {
+  private buildBuckets(start: Date, end: Date, rolling: boolean): TimeBucket[] {
+    const endBoundary = rolling
+      ? end.getTime()
+      : end.getTime() + 86400000; // extend to cover the full end day
+    const totalHours = (endBoundary - start.getTime()) / (1000 * 60 * 60);
+
+    let stepMs: number;
+    let labelFn: (d: Date) => string;
+    const timeFmt = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateFmt = (d: Date) => d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+    if (totalHours <= 2) {
+      stepMs = 5 * 60 * 1000;      // 5-minute buckets
+      labelFn = timeFmt;
+    } else if (totalHours <= 8) {
+      stepMs = 30 * 60 * 1000;     // 30-minute buckets
+      labelFn = timeFmt;
+    } else if (totalHours <= 48) {
+      stepMs = 60 * 60 * 1000;     // hourly buckets
+      labelFn = timeFmt;
+    } else if (totalHours <= 30 * 24) {
+      stepMs = 24 * 60 * 60 * 1000; // daily buckets
+      labelFn = dateFmt;
+    } else {
+      stepMs = 7 * 24 * 60 * 60 * 1000; // weekly buckets
+      labelFn = dateFmt;
+    }
+
     const buckets: TimeBucket[] = [];
-    const cursor = new Date(start);
+    let cursor = start.getTime();
 
-    while (cursor <= end) {
-      let bucketEnd: Date;
-      let label: string;
-
-      if (gran === 'hourly') {
-        bucketEnd = new Date(cursor);
-        bucketEnd.setHours(bucketEnd.getHours() + 1);
-        label = cursor.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      } else if (gran === 'daily') {
-        bucketEnd = new Date(cursor);
-        bucketEnd.setDate(bucketEnd.getDate() + 1);
-        label = cursor.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      } else {
-        bucketEnd = new Date(cursor);
-        bucketEnd.setDate(bucketEnd.getDate() + 7);
-        label = cursor.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      }
-
+    while (cursor < endBoundary) {
       buckets.push({
-        label,
+        label: labelFn(new Date(cursor)),
         start: new Date(cursor),
-        end: bucketEnd,
+        end: new Date(cursor + stepMs),
         total: 0,
         success: 0,
         failed: 0,
@@ -599,8 +712,7 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
         finishedCount: 0,
         avgRunTimeMs: 0
       });
-
-      cursor.setTime(bucketEnd.getTime());
+      cursor += stepMs;
     }
 
     return buckets;

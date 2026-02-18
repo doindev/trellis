@@ -70,7 +70,9 @@
                                [class.selected]="day.selected"
                                [class.range-start]="day.selectionStart"
                                [class.range-end]="day.selectionEnd"
-                               [class.today]="day.today">
+                               [class.today]="day.today"
+                               [class.clickable]="customRangeActive() && !day.outsideMonth && !day.disabled"
+                               (click)="onCalendarDayClick(day)">
                             {{ day.day }}
                           </div>
                         </td>
