@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Execution } from '../../../../core/models';
@@ -35,6 +35,7 @@ import {
         <div
           class="execution-card"
           *ngFor="let exec of displayedExecutions"
+          [attr.data-execution-id]="exec.id"
           [class.active]="exec.id === selectedExecutionId"
           (click)="selectExecution(exec)">
           <div class="exec-header">
@@ -307,7 +308,7 @@ import {
     }
   `]
 })
-export class ExecutionsSidebarComponent implements OnInit, OnDestroy {
+export class ExecutionsSidebarComponent implements OnInit, OnDestroy, OnChanges {
   @Input() workflowId: string | null = null;
   @Input() selectedExecutionId: string | null = null;
   @Output() executionSelected = new EventEmitter<string>();
@@ -341,15 +342,36 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy {
     return result;
   }
 
-  constructor(private executionService: ExecutionService) {}
+  constructor(private executionService: ExecutionService, private el: ElementRef) {}
 
   ngOnInit(): void {
     this.loadExecutions(true);
     this.startAutoRefresh();
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['selectedExecutionId'] && this.selectedExecutionId) {
+      this.pendingScrollToExecution = true;
+      // Try immediately in case cards are already rendered
+      setTimeout(() => this.scrollToSelectedExecution());
+    }
+  }
+
   ngOnDestroy(): void {
     this.stopAutoRefresh();
+  }
+
+  private pendingScrollToExecution = false;
+
+  private scrollToSelectedExecution(): void {
+    if (!this.selectedExecutionId) return;
+    const card = this.el.nativeElement.querySelector(
+      `[data-execution-id="${this.selectedExecutionId}"]`
+    );
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      this.pendingScrollToExecution = false;
+    }
   }
 
   private loadExecutions(autoSelect = false): void {
@@ -359,6 +381,10 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy {
         this.executions = execs;
         if (autoSelect && execs.length > 0 && !this.selectedExecutionId) {
           this.selectExecution(execs[0]);
+        }
+        // Scroll after DOM updates with the new list
+        if (this.pendingScrollToExecution && this.selectedExecutionId) {
+          setTimeout(() => this.scrollToSelectedExecution());
         }
       }
     });
