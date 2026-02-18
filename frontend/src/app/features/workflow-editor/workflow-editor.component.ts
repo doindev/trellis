@@ -50,7 +50,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   showSettingsModal = false;
   showArchiveConfirm = false;
   availableWorkflows: { id: string; name: string }[] = [];
-  drawerExpanded = false;
+  drawerExpandedEditor = false;
+  drawerExpandedExecutions = false;
   activeTab: 'editor' | 'executions' = 'editor';
   pendingConnection: { sourceNodeId: string; sourceHandleId: string } | null = null;
   selectedExecutionId: string | null = null;
@@ -129,6 +130,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       setTimeout(() => this.nodePalette?.focusSearch(), 260);
     } else {
       this.pendingConnection = null;
+    }
+  }
+
+  get drawerExpanded(): boolean {
+    return this.activeTab === 'executions' ? this.drawerExpandedExecutions : this.drawerExpandedEditor;
+  }
+
+  set drawerExpanded(value: boolean) {
+    if (this.activeTab === 'executions') {
+      this.drawerExpandedExecutions = value;
+    } else {
+      this.drawerExpandedEditor = value;
     }
   }
 
