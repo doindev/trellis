@@ -243,6 +243,13 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   dateFieldStart = computed(() => this.formatDateField(this.rangeStart()));
   dateFieldEnd = computed(() => this.formatDateField(this.rangeEnd()));
 
+  private rangeEffect = effect(() => {
+    // Re-read range signals to trigger reload on change
+    this.rangeStart();
+    this.rangeEnd();
+    this.loadExecutions();
+  });
+
   private chartEffect = effect(() => {
     // Re-read reactive dependencies
     const metric = this.activeMetric();
@@ -264,7 +271,6 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
       const metric = params.get('metric') || 'total';
       this.activeMetric.set(metric);
     });
-    this.loadExecutions();
   }
 
   ngAfterViewInit(): void {

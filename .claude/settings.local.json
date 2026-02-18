@@ -41,7 +41,10 @@
       "Bash(grep:*)",
       "Bash(ls:*)",
       "Bash(javap:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(gh search:*)",
+      "Bash(python3:*)",
+      "Bash(powershell:*)"
     ]
   }
 }
