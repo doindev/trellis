@@ -8,7 +8,8 @@ export interface ExecutionFilters {
   startDateFrom: string;
   startDateTo: string;
   tags: string;
-  rating: string;
+  runTimeOp: 'any' | '>' | '<';
+  runTimeMs: number | null;     // run time threshold in milliseconds (null = no filter)
   dataKey: string;
   dataValue: string;
   dataExactMatch: boolean;
@@ -21,7 +22,8 @@ export function defaultExecutionFilters(): ExecutionFilters {
     startDateFrom: '',
     startDateTo: '',
     tags: '',
-    rating: 'all',
+    runTimeOp: 'any',
+    runTimeMs: null,
     dataKey: '',
     dataValue: '',
     dataExactMatch: false,
@@ -35,7 +37,7 @@ export function isFilterActive(f: ExecutionFilters): boolean {
     f.startDateFrom !== '' ||
     f.startDateTo !== '' ||
     f.tags !== '' ||
-    f.rating !== 'all' ||
+    (f.runTimeOp !== 'any' && f.runTimeMs !== null) ||
     f.dataKey !== '' ||
     f.dataValue !== ''
   );
@@ -106,14 +108,20 @@ export function isFilterActive(f: ExecutionFilters): boolean {
           </div>
 
           <div class="exec-filter-group">
-            <label class="exec-filter-label" for="exec-filter-rating">Rating</label>
-            <select class="exec-filter-select" id="exec-filter-rating"
-                    [ngModel]="filters.rating"
-                    (ngModelChange)="updateFilter('rating', $event)">
-              <option value="all">Select Rating</option>
-              <option value="positive">Positive</option>
-              <option value="negative">Negative</option>
-            </select>
+            <label class="exec-filter-label">Run time (ms)</label>
+            <div class="exec-filter-runtime-row">
+              <select class="exec-filter-select exec-filter-runtime-op"
+                      [ngModel]="filters.runTimeOp"
+                      (ngModelChange)="updateFilter('runTimeOp', $event)">
+                <option value="any">any</option>
+                <option value=">">&gt;</option>
+                <option value="<">&lt;</option>
+              </select>
+              <input type="text" class="exec-filter-input exec-filter-runtime-ms"
+                     placeholder="e.g. 5000"
+                     [ngModel]="runTimeMsDisplay"
+                     (ngModelChange)="onRunTimeMsChange($event)">
+            </div>
           </div>
 
           <div class="exec-filter-group exec-filter-group-full">
@@ -281,6 +289,24 @@ export function isFilterActive(f: ExecutionFilters): boolean {
       flex-shrink: 0;
     }
 
+    .exec-filter-runtime-row {
+      display: flex;
+      gap: 0;
+    }
+
+    .exec-filter-runtime-op {
+      width: auto;
+      flex: 0 0 auto;
+      border-radius: 6px 0 0 6px;
+      border-right: none;
+      padding: 8px 10px;
+    }
+
+    .exec-filter-runtime-ms {
+      flex: 1;
+      border-radius: 0 6px 6px 0;
+    }
+
     .exec-filter-data-row {
       display: flex;
       align-items: center;
@@ -374,6 +400,15 @@ export class ExecutionFilterModalComponent {
 
   get filterActive(): boolean {
     return isFilterActive(this.filters);
+  }
+
+  get runTimeMsDisplay(): string {
+    return this.filters.runTimeMs !== null ? String(this.filters.runTimeMs) : '';
+  }
+
+  onRunTimeMsChange(value: string): void {
+    const digits = value.replace(/[^0-9]/g, '');
+    this.updateFilter('runTimeMs', digits === '' ? null : Number(digits));
   }
 
   updateFilter(key: keyof ExecutionFilters, value: any): void {

@@ -338,6 +338,15 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy, OnChanges 
       const to = new Date(f.startDateTo).getTime();
       result = result.filter(e => e.startedAt && new Date(e.startedAt).getTime() <= to);
     }
+    if (f.runTimeOp !== 'any' && f.runTimeMs !== null) {
+      const threshold = f.runTimeMs;
+      const op = f.runTimeOp;
+      result = result.filter(e => {
+        if (!e.startedAt || !e.finishedAt) return false;
+        const duration = new Date(e.finishedAt).getTime() - new Date(e.startedAt).getTime();
+        return op === '>' ? duration > threshold : duration < threshold;
+      });
+    }
 
     return result;
   }
