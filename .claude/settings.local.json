@@ -40,7 +40,8 @@
       "Bash(ls -la \"C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend\\\\src\\\\app\\\\features\\\\workflow-editor\\\\components\\\\parameter-panel\"\" 2>&1 || find \"C:Userstimhjeclipse-workspacetrellisfrontend\" -type d -name \"parameter-panel \")",
       "Bash(grep:*)",
       "Bash(ls:*)",
-      "Bash(javap:*)"
+      "Bash(javap:*)",
+      "Bash(dir:*)"
     ]
   }
 }

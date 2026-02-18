@@ -571,7 +571,8 @@
 }
 
 .output-table {
-  width: 100%;
+  min-width: 100%;
+  width: max-content;
   border-collapse: collapse;
   font-size: 0.75rem;
 
@@ -592,7 +593,10 @@
     color: hsl(0, 0%, 86%);
     border-bottom: 1px solid hsl(0, 0%, 15%);
     vertical-align: top;
-    max-width: 300px;
+    white-space: nowrap;
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   tbody tr:last-child td {

@@ -102,13 +102,16 @@
       <a class="metric-tab" [class.active]="activeMetric() === tab.key"
          [routerLink]="'/insights/' + tab.key">
         <span class="metric-tab-label">{{ tab.label }}</span>
-        <span class="metric-tab-subtitle">{{ tab.subtitle }}</span>
+        <span class="metric-tab-subtitle">{{ selectedPreset() }}</span>
         <span class="metric-tab-value">{{ getTabValue(tab.key) }}</span>
       </a>
     }
   </div>
 
-  <!-- Content Area -->
+  <!-- Chart Area -->
   <div class="insights-content">
+    <div class="chart-wrapper">
+      <canvas #chartCanvas></canvas>
+    </div>
   </div>
 </div>

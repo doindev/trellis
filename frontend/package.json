@@ -26,6 +26,7 @@
     "@stomp/stompjs": "^7.3.0",
     "@xyflow/react": "^12.10.0",
     "bootstrap": "^5.3.8",
+    "chart.js": "^4.5.1",
     "lucide-angular": "^0.564.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

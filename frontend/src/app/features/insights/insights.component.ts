@@ -1,13 +1,31 @@
-import { Component, OnInit, signal, computed, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, HostListener, ViewChild, ElementRef, AfterViewInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
 import { ExecutionService } from '../../core/services';
 import { Execution } from '../../core/models';
+import {
+  Chart,
+  BarController,
+  BarElement,
+  LineController,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Filler
+} from 'chart.js';
+
+Chart.register(
+  BarController, BarElement,
+  LineController, LineElement, PointElement,
+  CategoryScale, LinearScale,
+  Tooltip, Filler
+);
 
 interface MetricTab {
   key: string;
   label: string;
-  subtitle: string;
 }
 
 interface DatePreset {
@@ -25,8 +43,23 @@ interface CalendarDay {
   selectionStart: boolean;
   selectionEnd: boolean;
   today: boolean;
-  value: string; // YYYY-MM-DD
+  value: string;
 }
+
+interface TimeBucket {
+  label: string;
+  start: Date;
+  end: Date;
+  total: number;
+  success: number;
+  failed: number;
+  failureRate: number;
+  totalDurationMs: number;
+  finishedCount: number;
+  avgRunTimeMs: number;
+}
+
+type Granularity = 'hourly' | 'daily' | 'weekly';
 
 @Component({
   selector: 'app-insights',
@@ -35,17 +68,21 @@ interface CalendarDay {
   templateUrl: './insights.component.html',
   styleUrl: './insights.component.scss'
 })
-export class InsightsComponent implements OnInit {
+export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
+
   activeMetric = signal('total');
   executions = signal<Execution[]>([]);
   showDatePicker = signal(false);
 
-  // Date range state
   selectedPreset = signal('Last 7 days');
   rangeStart = signal(this.daysAgo(7));
   rangeEnd = signal(this.today());
   calendarMonth = signal(new Date().getMonth());
   calendarYear = signal(new Date().getFullYear());
+
+  private chart: Chart | null = null;
+  private chartReady = false;
 
   presets: DatePreset[] = [
     { label: 'Last 24 hours', days: 1, locked: false },
@@ -58,20 +95,31 @@ export class InsightsComponent implements OnInit {
   ];
 
   tabs: MetricTab[] = [
-    { key: 'total', label: 'Prod. executions', subtitle: 'Last 7 days' },
-    { key: 'failed', label: 'Failed prod. executions', subtitle: 'Last 7 days' },
-    { key: 'failureRate', label: 'Failure rate', subtitle: 'Last 7 days' },
-    { key: 'averageRunTime', label: 'Run time (avg.)', subtitle: 'Last 7 days' }
+    { key: 'total', label: 'Total executions' },
+    { key: 'failed', label: 'Failed executions' },
+    { key: 'failureRate', label: 'Failure rate' },
+    { key: 'averageRunTime', label: 'Run time (avg.)' }
   ];
 
-  totalExecutions = computed(() => {
+  // Filtered executions within the selected date range
+  filteredExecutions = computed(() => {
     const execs = this.executions();
-    return Array.isArray(execs) ? execs.filter(e => e.mode !== 'manual').length : 0;
+    if (!Array.isArray(execs)) return [];
+    const start = this.rangeStart().getTime();
+    const end = this.rangeEnd().getTime() + 86400000 - 1; // include full end day
+    return execs.filter(e => {
+      if (!e.startedAt) return false;
+      const t = new Date(e.startedAt).getTime();
+      return t >= start && t <= end;
+    });
+  });
+
+  totalExecutions = computed(() => {
+    return this.filteredExecutions().length;
   });
 
   failedExecutions = computed(() => {
-    const execs = this.executions();
-    return Array.isArray(execs) ? execs.filter(e => e.status === 'error' && e.mode !== 'manual').length : 0;
+    return this.filteredExecutions().filter(e => e.status?.toLowerCase() === 'error').length;
   });
 
   failureRate = computed(() => {
@@ -80,15 +128,57 @@ export class InsightsComponent implements OnInit {
     return Math.round((this.failedExecutions() / total) * 100);
   });
 
-  avgRunTime = computed(() => {
-    const execs = this.executions();
-    if (!Array.isArray(execs)) return 0;
+  avgRunTimeMs = computed(() => {
+    const execs = this.filteredExecutions();
     const finished = execs.filter(e => e.startedAt && e.finishedAt);
     if (finished.length === 0) return 0;
     const totalMs = finished.reduce((sum, e) => {
       return sum + (new Date(e.finishedAt!).getTime() - new Date(e.startedAt!).getTime());
     }, 0);
-    return Math.round(totalMs / finished.length / 1000);
+    return Math.round(totalMs / finished.length);
+  });
+
+  granularity = computed<Granularity>(() => {
+    const diffDays = Math.ceil((this.rangeEnd().getTime() - this.rangeStart().getTime()) / 86400000) + 1;
+    if (diffDays <= 1) return 'hourly';
+    if (diffDays <= 30) return 'daily';
+    return 'weekly';
+  });
+
+  timeBuckets = computed<TimeBucket[]>(() => {
+    const start = this.rangeStart();
+    const end = this.rangeEnd();
+    const gran = this.granularity();
+    const execs = this.filteredExecutions();
+
+    const buckets = this.buildBuckets(start, end, gran);
+
+    for (const exec of execs) {
+      if (!exec.startedAt) continue;
+      const execTime = new Date(exec.startedAt).getTime();
+      const bucket = buckets.find(b => execTime >= b.start.getTime() && execTime < b.end.getTime());
+      if (!bucket) continue;
+
+      bucket.total++;
+      if (exec.status?.toLowerCase() === 'error') {
+        bucket.failed++;
+      } else {
+        bucket.success++;
+      }
+
+      if (exec.startedAt && exec.finishedAt) {
+        const duration = new Date(exec.finishedAt).getTime() - new Date(exec.startedAt).getTime();
+        bucket.totalDurationMs += duration;
+        bucket.finishedCount++;
+      }
+    }
+
+    for (const bucket of buckets) {
+      bucket.failureRate = bucket.total > 0 ? Math.round((bucket.failed / bucket.total) * 100) : 0;
+      bucket.avgRunTimeMs = bucket.finishedCount > 0 ? Math.round(bucket.totalDurationMs / bucket.finishedCount) : 0;
+    }
+
+    return buckets;
   });
 
   dateRangeLabel = computed(() => {
@@ -110,9 +200,8 @@ export class InsightsComponent implements OnInit {
     const end = this.rangeEnd();
     const todayStr = this.toDateString(this.today());
 
-    // First day of month, find the Monday of the week it falls on
     const firstOfMonth = new Date(year, month, 1);
-    const dayOfWeek = firstOfMonth.getDay(); // 0=Sun
+    const dayOfWeek = firstOfMonth.getDay();
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const calStart = new Date(year, month, 1 + mondayOffset);
 
@@ -143,7 +232,6 @@ export class InsightsComponent implements OnInit {
         cursor.setDate(cursor.getDate() + 1);
       }
       weeks.push(week);
-      // Stop if we've gone past the month
       if (cursor.getMonth() !== month && cursor.getDate() > 7) break;
     }
     return weeks;
@@ -151,6 +239,16 @@ export class InsightsComponent implements OnInit {
 
   dateFieldStart = computed(() => this.formatDateField(this.rangeStart()));
   dateFieldEnd = computed(() => this.formatDateField(this.rangeEnd()));
+
+  private chartEffect = effect(() => {
+    // Re-read reactive dependencies
+    const metric = this.activeMetric();
+    const buckets = this.timeBuckets();
+    // Render chart when data changes
+    if (this.chartReady) {
+      this.renderChart(metric, buckets);
+    }
+  });
 
   constructor(
     private route: ActivatedRoute,
@@ -166,8 +264,17 @@ export class InsightsComponent implements OnInit {
     this.loadExecutions();
   }
 
+  ngAfterViewInit(): void {
+    this.chartReady = true;
+    this.renderChart(this.activeMetric(), this.timeBuckets());
+  }
+
+  ngOnDestroy(): void {
+    this.chart?.destroy();
+  }
+
   loadExecutions(): void {
-    this.executionService.list().subscribe({
+    this.executionService.list({ size: '10000' }).subscribe({
       next: (data) => this.executions.set(Array.isArray(data) ? data : [])
     });
   }
@@ -177,16 +284,22 @@ export class InsightsComponent implements OnInit {
       case 'total': return String(this.totalExecutions());
       case 'failed': return String(this.failedExecutions());
       case 'failureRate': return `${this.failureRate()}%`;
-      case 'averageRunTime': return this.formatSeconds(this.avgRunTime());
+      case 'averageRunTime': return this.formatMs(this.avgRunTimeMs());
       default: return '0';
     }
   }
 
-  formatSeconds(s: number): string {
-    if (s === 0) return '0s';
-    if (s < 60) return `${s}s`;
-    if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
-    return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
+  formatMs(ms: number): string {
+    if (ms === 0) return '0ms';
+    if (ms < 1000) return `${ms}ms`;
+    const s = ms / 1000;
+    if (s < 60) return `${s.toFixed(1)}s`;
+    const min = Math.floor(s / 60);
+    const sec = Math.round(s % 60);
+    if (min < 60) return `${min}m ${sec}s`;
+    const hr = Math.floor(min / 60);
+    const remMin = min % 60;
+    return `${hr}h ${remMin}m`;
   }
 
   toggleDatePicker(event: Event): void {
@@ -203,7 +316,6 @@ export class InsightsComponent implements OnInit {
     this.selectedPreset.set(preset.label);
     this.rangeStart.set(this.daysAgo(preset.days));
     this.rangeEnd.set(this.today());
-    // Reset calendar to current month
     const now = new Date();
     this.calendarMonth.set(now.getMonth());
     this.calendarYear.set(now.getFullYear());
@@ -237,7 +349,6 @@ export class InsightsComponent implements OnInit {
   }
 
   canGoPrev(): boolean {
-    // Allow going back up to 1 year
     const now = new Date();
     const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);
     const current = new Date(this.calendarYear(), this.calendarMonth(), 1);
@@ -249,6 +360,253 @@ export class InsightsComponent implements OnInit {
     return this.calendarYear() < now.getFullYear() ||
       (this.calendarYear() === now.getFullYear() && this.calendarMonth() < now.getMonth());
   }
+
+  // --- Chart rendering ---
+
+  private renderChart(metric: string, buckets: TimeBucket[]): void {
+    if (!this.chartCanvas) return;
+    const ctx = this.chartCanvas.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    this.chart?.destroy();
+
+    const labels = buckets.map(b => b.label);
+
+    switch (metric) {
+      case 'total':
+        this.chart = this.buildTotalChart(ctx, labels, buckets);
+        break;
+      case 'failed':
+        this.chart = this.buildFailedChart(ctx, labels, buckets);
+        break;
+      case 'failureRate':
+        this.chart = this.buildFailureRateChart(ctx, labels, buckets);
+        break;
+      case 'averageRunTime':
+        this.chart = this.buildRunTimeChart(ctx, labels, buckets);
+        break;
+    }
+  }
+
+  private buildTotalChart(ctx: CanvasRenderingContext2D, labels: string[], buckets: TimeBucket[]): Chart {
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Success',
+            data: buckets.map(b => b.success),
+            backgroundColor: 'hsl(147, 60%, 40%)',
+            borderRadius: 3,
+            maxBarThickness: 32
+          },
+          {
+            label: 'Failed',
+            data: buckets.map(b => b.failed),
+            backgroundColor: 'hsl(355, 83%, 52%)',
+            borderRadius: 3,
+            maxBarThickness: 32
+          }
+        ]
+      },
+      options: this.barOptions(true, 'Executions')
+    });
+  }
+
+  private buildFailedChart(ctx: CanvasRenderingContext2D, labels: string[], buckets: TimeBucket[]): Chart {
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Failed',
+          data: buckets.map(b => b.failed),
+          backgroundColor: 'hsl(355, 83%, 52%)',
+          borderRadius: 3,
+          maxBarThickness: 32
+        }]
+      },
+      options: this.barOptions(false, 'Failed executions')
+    });
+  }
+
+  private buildFailureRateChart(ctx: CanvasRenderingContext2D, labels: string[], buckets: TimeBucket[]): Chart {
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Failure rate',
+          data: buckets.map(b => b.failureRate),
+          backgroundColor: 'hsl(36, 77%, 50%)',
+          borderRadius: 3,
+          maxBarThickness: 32
+        }]
+      },
+      options: this.barOptions(false, 'Failure rate (%)')
+    });
+  }
+
+  private buildRunTimeChart(ctx: CanvasRenderingContext2D, labels: string[], buckets: TimeBucket[]): Chart {
+    return new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Avg. run time',
+          data: buckets.map(b => b.avgRunTimeMs),
+          borderColor: 'hsl(247, 49%, 53%)',
+          backgroundColor: 'hsla(247, 49%, 53%, 0.1)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: 'hsl(247, 49%, 53%)',
+          pointBorderColor: 'hsl(247, 49%, 53%)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        interaction: {
+          mode: 'index' as const,
+          intersect: false
+        },
+        plugins: {
+          tooltip: {
+            backgroundColor: 'hsl(0, 0%, 17%)',
+            titleColor: 'hsl(0, 0%, 90%)',
+            bodyColor: 'hsl(0, 0%, 75%)',
+            borderColor: 'hsl(0, 0%, 28%)',
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 6,
+            callbacks: {
+              label: (context: any) => {
+                const val = context.parsed.y;
+                return `  ${context.dataset.label}: ${this.formatMs(val)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'hsl(0, 0%, 17%)', drawTicks: false },
+            ticks: { color: 'hsl(0, 0%, 50%)', font: { size: 11 }, maxRotation: 45, padding: 8 },
+            border: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'hsl(0, 0%, 17%)', drawTicks: false },
+            ticks: {
+              color: 'hsl(0, 0%, 50%)',
+              font: { size: 11 },
+              padding: 8,
+              callback: (value: any) => this.formatMs(Number(value))
+            },
+            border: { display: false },
+            title: {
+              display: true,
+              text: 'Avg. run time',
+              color: 'hsl(0, 0%, 45%)',
+              font: { size: 11 }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  private barOptions(stacked: boolean, yTitle: string): any {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: {
+        mode: 'index' as const,
+        intersect: false
+      },
+      plugins: {
+        tooltip: {
+          backgroundColor: 'hsl(0, 0%, 17%)',
+          titleColor: 'hsl(0, 0%, 90%)',
+          bodyColor: 'hsl(0, 0%, 75%)',
+          borderColor: 'hsl(0, 0%, 28%)',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6
+        }
+      },
+      scales: {
+        x: {
+          stacked,
+          grid: { color: 'hsl(0, 0%, 17%)', drawTicks: false },
+          ticks: { color: 'hsl(0, 0%, 50%)', font: { size: 11 }, maxRotation: 45, padding: 8 },
+          border: { display: false }
+        },
+        y: {
+          stacked,
+          beginAtZero: true,
+          grid: { color: 'hsl(0, 0%, 17%)', drawTicks: false },
+          ticks: { color: 'hsl(0, 0%, 50%)', font: { size: 11 }, padding: 8, precision: 0 },
+          border: { display: false },
+          title: {
+            display: true,
+            text: yTitle,
+            color: 'hsl(0, 0%, 45%)',
+            font: { size: 11 }
+          }
+        }
+      }
+    };
+  }
+
+  // --- Bucket building ---
+
+  private buildBuckets(start: Date, end: Date, gran: Granularity): TimeBucket[] {
+    const buckets: TimeBucket[] = [];
+    const cursor = new Date(start);
+
+    while (cursor <= end) {
+      let bucketEnd: Date;
+      let label: string;
+
+      if (gran === 'hourly') {
+        bucketEnd = new Date(cursor);
+        bucketEnd.setHours(bucketEnd.getHours() + 1);
+        label = cursor.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (gran === 'daily') {
+        bucketEnd = new Date(cursor);
+        bucketEnd.setDate(bucketEnd.getDate() + 1);
+        label = cursor.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      } else {
+        bucketEnd = new Date(cursor);
+        bucketEnd.setDate(bucketEnd.getDate() + 7);
+        label = cursor.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      }
+
+      buckets.push({
+        label,
+        start: new Date(cursor),
+        end: bucketEnd,
+        total: 0,
+        success: 0,
+        failed: 0,
+        failureRate: 0,
+        totalDurationMs: 0,
+        finishedCount: 0,
+        avgRunTimeMs: 0
+      });
+
+      cursor.setTime(bucketEnd.getTime());
+    }
+
+    return buckets;
+  }
+
+  // --- Helpers ---
 
   private today(): Date {
     const d = new Date();
