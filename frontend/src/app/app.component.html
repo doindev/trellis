@@ -62,7 +62,7 @@
     </div>
 
     <!-- Main Nav -->
-    <nav class="sidebar-nav" (dblclick)="toggleSidebar()">
+    <nav class="sidebar-nav" (click)="$event.target === $event.currentTarget && toggleSidebar()">
       <a class="nav-item" routerLink="/home/workflows" routerLinkActive="active">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
