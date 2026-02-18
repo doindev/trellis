@@ -16,7 +16,7 @@
     (tabChanged)="onTabChanged($event)"
     (menuAction)="onMenuAction($event)" />
 
-  <div class="editor-main">
+  <div class="editor-content">
     @if (activeTab === 'executions') {
       <app-executions-sidebar
         [workflowId]="store.workflow()?.id || null"
@@ -24,70 +24,77 @@
         (executionSelected)="onExecutionSelected($event)" />
     }
 
-    <div class="editor-body">
-      <div class="canvas-area">
+    <div class="editor-main">
+      <div class="editor-body">
+        <div class="canvas-area">
+          @if (activeTab === 'editor') {
+            <button class="canvas-add-node-btn" (click)="togglePalette()" title="Toggle nodes panel (Tab)">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          }
+          <app-react-flow-wrapper
+            [workflow]="activeTab === 'executions' && executionWorkflow ? executionWorkflow : store.workflow()"
+            [nodeTypeMap]="nodeTypeStore.nodeTypes()"
+            [executionData]="activeTab === 'executions' ? executionDataById : store.executionData()"
+            [selectedNodeId]="store.selectedNodeId()"
+            [isExecuting]="store.isExecuting()"
+            [readOnly]="activeTab === 'executions'"
+            (nodeSelected)="onNodeSelected($event)"
+            (nodeDoubleClicked)="store.selectNode($event)"
+            (nodeAdded)="store.addNode($event)"
+            (nodeRemoved)="store.removeNode($event)"
+            (nodesPositionChanged)="store.updateNodePositions($event)"
+            (connectionsChanged)="store.updateConnections($event)"
+            (execute)="onExecute()"
+            (stopExecution)="onStopExecution()"
+            (outputHandleDoubleClicked)="onOutputHandleDoubleClicked($event)"
+            (toggleNodeDisabled)="store.toggleNodeDisabled($event)"
+            (duplicateNode)="store.duplicateNode($event)"
+            (executeFromNode)="onExecuteFromNode($event)"
+            (copyNode)="store.copyNode($event)" />
+        </div>
+
         @if (activeTab === 'editor') {
-          <button class="canvas-add-node-btn" (click)="togglePalette()" title="Toggle nodes panel (Tab)">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-          </button>
+          <div class="palette-slide" [class.palette-open]="showPalette">
+            <app-node-palette
+              [nodeTypes]="nodeTypeStore.groupedByCategory()"
+              (close)="togglePalette()"
+              (nodeClicked)="onPaletteNodeClicked($event)" />
+          </div>
         }
-        <app-react-flow-wrapper
-          [workflow]="activeTab === 'executions' && executionWorkflow ? executionWorkflow : store.workflow()"
-          [nodeTypeMap]="nodeTypeStore.nodeTypes()"
-          [executionData]="activeTab === 'executions' ? executionDataById : store.executionData()"
-          [selectedNodeId]="store.selectedNodeId()"
-          [isExecuting]="store.isExecuting()"
-          [readOnly]="activeTab === 'executions'"
-          (nodeSelected)="onNodeSelected($event)"
-          (nodeDoubleClicked)="store.selectNode($event)"
-          (nodeAdded)="store.addNode($event)"
-          (nodeRemoved)="store.removeNode($event)"
-          (nodesPositionChanged)="store.updateNodePositions($event)"
-          (connectionsChanged)="store.updateConnections($event)"
-          (execute)="onExecute()"
-          (stopExecution)="onStopExecution()"
-          (outputHandleDoubleClicked)="onOutputHandleDoubleClicked($event)"
-          (toggleNodeDisabled)="store.toggleNodeDisabled($event)"
-          (duplicateNode)="store.duplicateNode($event)"
-          (executeFromNode)="onExecuteFromNode($event)"
-          (copyNode)="store.copyNode($event)" />
+
+        @if (activeSelectedNode) {
+          <app-parameter-panel
+            [node]="activeSelectedNode"
+            [nodeType]="nodeTypeStore.getByType(activeSelectedNode.type)"
+            [allNodes]="activeTab === 'executions' && executionWorkflow ? executionWorkflow.nodes : store.nodes()"
+            [connections]="activeTab === 'executions' && executionWorkflow ? executionWorkflow.connections : store.connections()"
+            [executionData]="activeTab === 'executions' ? executionDataById : store.executionData()"
+            [nodeTypeMap]="nodeTypeStore.nodeTypes()"
+            [readOnly]="activeTab === 'executions' || !!store.executionData()"
+            (parameterChanged)="store.updateNode(store.selectedNodeId()!, { parameters: $event })"
+            (close)="store.selectNode(null)"
+            (deleteNode)="store.removeNode(store.selectedNodeId()!)"
+            (navigateToNode)="store.selectNode($event)" />
+        }
       </div>
 
-      @if (activeTab === 'editor') {
-        <div class="palette-slide" [class.palette-open]="showPalette">
-          <app-node-palette
-            [nodeTypes]="nodeTypeStore.groupedByCategory()"
-            (close)="togglePalette()"
-            (nodeClicked)="onPaletteNodeClicked($event)" />
-        </div>
-      }
-
-      @if (activeSelectedNode) {
-        <app-parameter-panel
-          [node]="activeSelectedNode"
-          [nodeType]="nodeTypeStore.getByType(activeSelectedNode.type)"
-          [allNodes]="activeTab === 'executions' && executionWorkflow ? executionWorkflow.nodes : store.nodes()"
-          [connections]="activeTab === 'executions' && executionWorkflow ? executionWorkflow.connections : store.connections()"
-          [executionData]="activeTab === 'executions' ? executionDataById : store.executionData()"
-          [nodeTypeMap]="nodeTypeStore.nodeTypes()"
-          [readOnly]="activeTab === 'executions' || !!store.executionData()"
-          (parameterChanged)="store.updateNode(store.selectedNodeId()!, { parameters: $event })"
-          (close)="store.selectNode(null)"
-          (deleteNode)="store.removeNode(store.selectedNodeId()!)"
-          (navigateToNode)="store.selectNode($event)" />
-      }
+      <app-editor-drawer
+        [executionData]="activeTab === 'executions' ? executionDataById : store.executionData()"
+        [selectedNodeId]="store.selectedNodeId()"
+        [isExecuting]="store.isExecuting()"
+        [workflowId]="store.workflow()?.id || null"
+        [expanded]="drawerExpanded"
+        [viewingExecution]="activeTab === 'executions' && !!executionWorkflow"
+        [executionNodes]="executionWorkflow?.nodes || []"
+        [nodeTypeMap]="nodeTypeStore.nodeTypes()"
+        [executionStatus]="viewingExecution?.status || ''"
+        (expandedChange)="drawerExpanded = $event"
+        (logsNodeSelected)="store.selectNode($event)" />
     </div>
   </div>
-
-  <app-editor-drawer
-    [executionData]="activeTab === 'executions' ? executionDataById : store.executionData()"
-    [selectedNodeId]="store.selectedNodeId()"
-    [isExecuting]="store.isExecuting()"
-    [workflowId]="store.workflow()?.id || null"
-    [expanded]="drawerExpanded"
-    (expandedChange)="drawerExpanded = $event" />
 
   @if (showPublishModal) {
     <app-publish-modal

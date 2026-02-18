@@ -1,7 +1,33 @@
 import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ChatService, ChatMessage } from '../../../../core/services/chat.service';
+import { WorkflowNode } from '../../../../core/models';
+
+export interface LogsNodeEntry {
+  node: WorkflowNode;
+  displayName: string;
+  iconName: string;
+  status: string;
+  duration: number;
+  itemCount: number;
+}
+
+const ICON_PATHS: Record<string, string> = {
+  'globe': '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  'merge': '<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
+  'arrow-right': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  'split': '<path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/>',
+  'clock': '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  'play': '<polygon points="6 3 20 12 6 21 6 3"/>',
+  'webhook': '<path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"/><path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"/><path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"/>',
+  'reply': '<polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>',
+  'unfold-vertical': '<path d="M12 22v-6"/><path d="M12 8V2"/><path d="M4 12H2"/><path d="M10 12H8"/><path d="M16 12h-2"/><path d="M22 12h-2"/><path d="m15 19-3 3-3-3"/><path d="m15 5-3-3-3 3"/>',
+  'route': '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+  'pen': '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>',
+  'code': '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+};
 
 @Component({
   selector: 'app-editor-drawer',
@@ -19,9 +45,33 @@ export class EditorDrawerComponent implements AfterViewChecked {
   @Input() expanded = false;
   @Output() expandedChange = new EventEmitter<boolean>();
 
+  // Logs inputs
+  @Input() executionNodes: WorkflowNode[] = [];
+  @Input() nodeTypeMap: Record<string, any> = {};
+  @Input() executionStatus = '';
+
+  @Input() set viewingExecution(value: boolean) {
+    if (value && !this._viewingExecution) {
+      this.activeTab = 'logs';
+      if (!this.expanded) {
+        this.expanded = true;
+        this.expandedChange.emit(true);
+      }
+    } else if (!value && this._viewingExecution) {
+      if (this.activeTab === 'logs') {
+        this.activeTab = 'output';
+      }
+    }
+    this._viewingExecution = value;
+  }
+  get viewingExecution(): boolean { return this._viewingExecution; }
+  private _viewingExecution = false;
+
+  @Output() logsNodeSelected = new EventEmitter<string>();
+
   @ViewChild('chatMessages') chatMessagesEl?: ElementRef<HTMLDivElement>;
 
-  activeTab: 'output' | 'chat' = 'output';
+  activeTab: 'output' | 'chat' | 'logs' = 'output';
   drawerHeight = 300;
   private minHeight = 150;
   private maxHeightPercent = 0.8;
@@ -34,7 +84,12 @@ export class EditorDrawerComponent implements AfterViewChecked {
   isTyping = false;
   private shouldScrollChat = false;
 
-  constructor(private chatService: ChatService) {}
+  private iconCache = new Map<string, SafeHtml>();
+
+  constructor(
+    private chatService: ChatService,
+    private sanitizer: DomSanitizer
+  ) {}
 
   ngAfterViewChecked(): void {
     if (this.shouldScrollChat && this.chatMessagesEl) {
@@ -43,6 +98,8 @@ export class EditorDrawerComponent implements AfterViewChecked {
       this.shouldScrollChat = false;
     }
   }
+
+  // ── Output tab ──
 
   get nodeExecutionData(): any {
     if (!this.executionData || !this.selectedNodeId) return null;
@@ -55,16 +112,126 @@ export class EditorDrawerComponent implements AfterViewChecked {
     return JSON.stringify(data.data || data, null, 2);
   }
 
-  get executionStatus(): string {
+  get executionStatusLabel(): string {
     return this.nodeExecutionData?.status || (this.isExecuting ? 'running' : 'idle');
   }
+
+  // ── Logs tab ──
+
+  get logsNodeList(): LogsNodeEntry[] {
+    if (!this.executionNodes?.length || !this.executionData) return [];
+
+    const entries: LogsNodeEntry[] = [];
+
+    for (const node of this.executionNodes) {
+      const raw = this.executionData[node.id];
+      if (!raw) continue;
+
+      const typeDesc = this.nodeTypeMap?.[node.type];
+      const run = Array.isArray(raw) ? raw[0] : raw;
+      const status = run?.error ? 'error' : (run?.status || 'success');
+      const duration = run?.executionTime || 0;
+      const outputItems = Array.isArray(raw)
+        ? run?.data?.main?.[0]
+        : (raw?.data?.main?.[0] || raw?.data);
+      const itemCount = Array.isArray(outputItems) ? outputItems.length : 0;
+
+      entries.push({
+        node,
+        displayName: node.name,
+        iconName: typeDesc?.icon || '',
+        status,
+        duration,
+        itemCount,
+      });
+    }
+
+    entries.sort((a, b) => {
+      const aRaw = this.executionData![a.node.id];
+      const bRaw = this.executionData![b.node.id];
+      const aStart = (Array.isArray(aRaw) ? aRaw[0] : aRaw)?.startTime || 0;
+      const bStart = (Array.isArray(bRaw) ? bRaw[0] : bRaw)?.startTime || 0;
+      return aStart - bStart;
+    });
+
+    return entries;
+  }
+
+  get overallDurationMs(): number {
+    if (!this.executionData) return 0;
+    let total = 0;
+    for (const nodeId of Object.keys(this.executionData)) {
+      const raw = this.executionData[nodeId];
+      const run = Array.isArray(raw) ? raw[0] : raw;
+      total += run?.executionTime || 0;
+    }
+    return total;
+  }
+
+  get overallSummaryText(): string {
+    const status = this.executionStatus || 'success';
+    const duration = this.formatMs(this.overallDurationMs);
+    return `${status.charAt(0).toUpperCase() + status.slice(1)} in ${duration}`;
+  }
+
+  get selectedLogsEntry(): LogsNodeEntry | null {
+    if (!this.selectedNodeId) return null;
+    return this.logsNodeList.find(e => e.node.id === this.selectedNodeId) || null;
+  }
+
+  get selectedNodeOutputJson(): string {
+    if (!this.selectedNodeId || !this.executionData) return '';
+    const raw = this.executionData[this.selectedNodeId];
+    if (!raw) return '';
+
+    const run = Array.isArray(raw) ? raw[0] : raw;
+    const outputData = run?.data?.main?.[0] || run?.data || run;
+    return JSON.stringify(outputData, null, 2);
+  }
+
+  get selectedNodeItemCount(): number {
+    return this.selectedLogsEntry?.itemCount || 0;
+  }
+
+  get selectedNodeSummary(): string {
+    const entry = this.selectedLogsEntry;
+    if (!entry) return '';
+    const label = entry.status.charAt(0).toUpperCase() + entry.status.slice(1);
+    return `${label} in ${this.formatMs(entry.duration)}`;
+  }
+
+  onLogsNodeClick(nodeId: string): void {
+    this.logsNodeSelected.emit(nodeId);
+  }
+
+  getNodeIconHtml(iconName: string): SafeHtml {
+    if (this.iconCache.has(iconName)) return this.iconCache.get(iconName)!;
+
+    const paths = ICON_PATHS[iconName];
+    const svgContent = paths || '<rect x="3" y="3" width="18" height="18" rx="2"/>';
+    const html = this.sanitizer.bypassSecurityTrustHtml(
+      `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svgContent}</svg>`
+    );
+    this.iconCache.set(iconName, html);
+    return html;
+  }
+
+  formatMs(ms: number): string {
+    if (ms < 1000) return `${ms}ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+    const min = Math.floor(ms / 60000);
+    const sec = Math.round((ms % 60000) / 1000);
+    return `${min}m ${sec}s`;
+  }
+
+  // ── Common ──
 
   toggleExpanded(): void {
     this.expanded = !this.expanded;
     this.expandedChange.emit(this.expanded);
   }
 
-  selectTab(tab: 'output' | 'chat'): void {
+  selectTab(tab: 'output' | 'chat' | 'logs'): void {
     this.activeTab = tab;
     if (!this.expanded) {
       this.expanded = true;

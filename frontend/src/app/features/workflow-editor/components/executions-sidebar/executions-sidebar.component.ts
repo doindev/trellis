@@ -3,25 +3,38 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Execution } from '../../../../core/models';
 import { ExecutionService } from '../../../../core/services';
+import {
+  ExecutionFilterModalComponent,
+  ExecutionFilters,
+  defaultExecutionFilters,
+  isFilterActive
+} from '../../../../shared/components/execution-filter-modal/execution-filter-modal.component';
 
 @Component({
   selector: 'app-executions-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ExecutionFilterModalComponent],
   template: `
     <div class="executions-sidebar">
       <div class="sidebar-header">
         <h3>Executions</h3>
-        <label class="auto-refresh-toggle">
-          <input type="checkbox" [(ngModel)]="autoRefresh" (ngModelChange)="onAutoRefreshChange()">
-          Auto-refresh
-        </label>
+        <div class="sidebar-header-controls">
+          <label class="auto-refresh-toggle">
+            <input type="checkbox" [(ngModel)]="autoRefresh" (ngModelChange)="onAutoRefreshChange()">
+            Auto-refresh
+          </label>
+          <button class="btn-filter" [class.active]="filterActive" (click)="showFilterModal = true" title="Filter executions">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div class="executions-list" *ngIf="executions.length > 0; else emptyState">
+      <div class="executions-list" *ngIf="displayedExecutions.length > 0; else emptyState">
         <div
           class="execution-card"
-          *ngFor="let exec of executions"
+          *ngFor="let exec of displayedExecutions"
           [class.active]="exec.id === selectedExecutionId"
           (click)="selectExecution(exec)">
           <div class="exec-header">
@@ -51,11 +64,24 @@ import { ExecutionService } from '../../../../core/services';
 
       <ng-template #emptyState>
         <div class="empty-state">
-          <p>No executions yet</p>
-          <p class="empty-hint">Run this workflow to see execution history here.</p>
+          @if (filterActive) {
+            <p>No executions match filters</p>
+            <button class="reset-filters-link" (click)="resetFilters()">Reset filters</button>
+          } @else {
+            <p>No executions yet</p>
+            <p class="empty-hint">Run this workflow to see execution history here.</p>
+          }
         </div>
       </ng-template>
     </div>
+
+    @if (showFilterModal) {
+      <app-execution-filter-modal
+        [filters]="filters"
+        [showWorkflowFilter]="false"
+        (filtersChange)="onFiltersChange($event)"
+        (closed)="showFilterModal = false" />
+    }
   `,
   styles: [`
     .executions-sidebar {
@@ -71,17 +97,20 @@ import { ExecutionService } from '../../../../core/services';
     .sidebar-header {
       padding: 16px;
       border-bottom: 1px solid hsl(0, 0%, 20%);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       flex-shrink: 0;
 
       h3 {
-        margin: 0;
+        margin: 0 0 10px 0;
         font-size: 14px;
         font-weight: 600;
         color: hsl(0, 0%, 90%);
       }
+    }
+
+    .sidebar-header-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
     .auto-refresh-toggle {
@@ -94,6 +123,31 @@ import { ExecutionService } from '../../../../core/services';
 
       input[type="checkbox"] {
         accent-color: hsl(247, 49%, 53%);
+      }
+    }
+
+    .btn-filter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: none;
+      border: 1px solid hsl(0, 0%, 20%);
+      border-radius: 6px;
+      color: hsl(0, 0%, 60%);
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: hsl(0, 0%, 17%);
+        color: hsl(0, 0%, 90%);
+      }
+
+      &.active {
+        background: hsl(247, 49%, 53%);
+        border-color: hsl(247, 49%, 53%);
+        color: #fff;
       }
     }
 
@@ -238,6 +292,19 @@ import { ExecutionService } from '../../../../core/services';
         color: hsl(0, 0%, 40%);
       }
     }
+
+    .reset-filters-link {
+      margin-top: 12px;
+      background: none;
+      border: none;
+      color: hsl(247, 49%, 53%);
+      font-size: 13px;
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   `]
 })
 export class ExecutionsSidebarComponent implements OnInit, OnDestroy {
@@ -247,7 +314,32 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy {
 
   executions: Execution[] = [];
   autoRefresh = true;
+  showFilterModal = false;
+  filters: ExecutionFilters = defaultExecutionFilters();
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+  get filterActive(): boolean {
+    return isFilterActive(this.filters);
+  }
+
+  get displayedExecutions(): Execution[] {
+    let result = this.executions;
+    const f = this.filters;
+
+    if (f.status !== 'all') {
+      result = result.filter(e => e.status === f.status);
+    }
+    if (f.startDateFrom) {
+      const from = new Date(f.startDateFrom).getTime();
+      result = result.filter(e => e.startedAt && new Date(e.startedAt).getTime() >= from);
+    }
+    if (f.startDateTo) {
+      const to = new Date(f.startDateTo).getTime();
+      result = result.filter(e => e.startedAt && new Date(e.startedAt).getTime() <= to);
+    }
+
+    return result;
+  }
 
   constructor(private executionService: ExecutionService) {}
 
@@ -289,6 +381,14 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy {
     } else {
       this.stopAutoRefresh();
     }
+  }
+
+  onFiltersChange(filters: ExecutionFilters): void {
+    this.filters = filters;
+  }
+
+  resetFilters(): void {
+    this.filters = defaultExecutionFilters();
   }
 
   private startAutoRefresh(): void {

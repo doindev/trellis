@@ -7,8 +7,8 @@
   position: relative;
 }
 
-// Row wrapper: sidebar (optional) + editor-body
-.editor-main {
+// Row wrapper: sidebar (optional) + editor-main
+.editor-content {
   flex: 1;
   display: flex;
   min-height: 0;
@@ -18,6 +18,16 @@
 app-executions-sidebar {
   flex: 0 0 320px;
   z-index: 5;
+}
+
+// Column: editor-body + drawer
+.editor-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
 }
 
 .editor-body {
@@ -60,16 +70,11 @@ app-executions-sidebar {
   }
 }
 
-// Drawer: sits at the bottom of editor-container in normal flow (collapsed = tab strip only).
+// Drawer: sits at the bottom of editor-main in normal flow (collapsed = tab strip only).
 // When expanded, it becomes absolutely positioned and overlays the editor-body.
 app-editor-drawer {
   flex-shrink: 0;
   z-index: 8;
-}
-
-// Collapsed drawer pushed right by sidebar
-.sidebar-visible app-editor-drawer {
-  margin-left: 320px;
 }
 
 .drawer-expanded app-editor-drawer {
@@ -77,12 +82,6 @@ app-editor-drawer {
   bottom: 0;
   left: 0;
   right: 0;
-  margin-left: 0;
-}
-
-// Expanded drawer pushed right by sidebar
-.sidebar-visible.drawer-expanded app-editor-drawer {
-  left: 320px;
 }
 
 .palette-slide {

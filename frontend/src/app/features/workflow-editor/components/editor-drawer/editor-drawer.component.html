@@ -6,15 +6,30 @@
   }
 
   <div class="tab-strip">
-    <button class="drawer-tab" [class.active]="activeTab === 'output' && expanded" (click)="selectTab('output')">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
-      </svg>
-      Output
-      @if (executionStatus !== 'idle') {
-        <span class="tab-badge" [class]="'status-' + executionStatus">{{ executionStatus }}</span>
-      }
-    </button>
+    @if (viewingExecution) {
+      <button class="drawer-tab" [class.active]="activeTab === 'logs' && expanded" (click)="selectTab('logs')">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        Logs
+        @if (executionStatus) {
+          <span class="tab-badge" [class]="'status-' + executionStatus">{{ executionStatus }}</span>
+        }
+      </button>
+    } @else {
+      <button class="drawer-tab" [class.active]="activeTab === 'output' && expanded" (click)="selectTab('output')">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+        </svg>
+        Output
+        @if (executionStatusLabel !== 'idle') {
+          <span class="tab-badge" [class]="'status-' + executionStatusLabel">{{ executionStatusLabel }}</span>
+        }
+      </button>
+    }
     <button class="drawer-tab" [class.active]="activeTab === 'chat' && expanded" (click)="selectTab('chat')">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -33,6 +48,56 @@
 
   @if (expanded) {
     <div class="drawer-body">
+      @if (activeTab === 'logs') {
+        <div class="logs-content">
+          <!-- Left: node list -->
+          <div class="logs-overview">
+            <div class="logs-overview-header">
+              <span class="logs-title">Logs</span>
+            </div>
+            <div class="logs-overview-body">
+              <div class="logs-summary" [class]="'status-' + (executionStatus || 'success')">
+                <span>{{ overallSummaryText }}</span>
+              </div>
+              <div class="logs-node-list">
+                @for (item of logsNodeList; track item.node.id) {
+                  <div class="logs-node-item"
+                       [class.selected]="item.node.id === selectedNodeId"
+                       (click)="onLogsNodeClick(item.node.id)">
+                    <span class="node-status-dot" [class]="'dot-' + item.status"></span>
+                    <span class="node-icon" [innerHTML]="getNodeIconHtml(item.iconName)"></span>
+                    <span class="node-name">{{ item.displayName }}</span>
+                    <span class="node-duration">{{ formatMs(item.duration) }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: selected node output -->
+          <div class="logs-detail">
+            @if (selectedLogsEntry) {
+              <div class="logs-detail-header">
+                <span class="node-icon" [innerHTML]="getNodeIconHtml(selectedLogsEntry.iconName)"></span>
+                <span class="detail-node-name">{{ selectedLogsEntry.displayName }}</span>
+                <span class="detail-summary" [class]="'status-text-' + selectedLogsEntry.status">{{ selectedNodeSummary }}</span>
+              </div>
+              <div class="logs-detail-body">
+                <div class="detail-output-bar">
+                  <span class="output-label">Output</span>
+                  <span class="output-item-count">{{ selectedNodeItemCount }} {{ selectedNodeItemCount === 1 ? 'item' : 'items' }}</span>
+                </div>
+                <pre class="output-json">{{ selectedNodeOutputJson }}</pre>
+              </div>
+            } @else {
+              <div class="empty-state">
+                <p>Select a node to see its output</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       @if (activeTab === 'output') {
         <div class="output-content">
           @if (isExecuting) {

@@ -8,6 +8,12 @@ import { WorkflowCardComponent } from '../../shared/components/workflow-card/wor
 import { VariableListComponent } from '../variables/variable-list.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Folder, Table } from 'lucide-angular';
+import {
+  ExecutionFilterModalComponent,
+  ExecutionFilters,
+  defaultExecutionFilters,
+  isFilterActive
+} from '../../shared/components/execution-filter-modal/execution-filter-modal.component';
 
 @Component({
   selector: 'app-home',
@@ -20,7 +26,8 @@ import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Folder
     WorkflowCardComponent,
     VariableListComponent,
     ConfirmDialogComponent,
-    LucideAngularModule
+    LucideAngularModule,
+    ExecutionFilterModalComponent
   ],
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Folder, Table }) }],
   templateUrl: './home.component.html',
@@ -143,51 +150,31 @@ export class HomeComponent implements OnInit {
 
   // Execution tab state
   execAutoRefresh = signal(true);
-  execStatusFilter = signal('all');
-  execWorkflowFilter = signal('all');
-  execStartDateFrom = signal('');
-  execStartDateTo = signal('');
-  execTags = signal('');
-  execRating = signal('all');
-  execDataKey = signal('');
-  execDataValue = signal('');
-  execDataExactMatch = signal(false);
-  showExecFilterPopover = signal(false);
+  execFilters = signal<ExecutionFilters>(defaultExecutionFilters());
+  showExecFilterModal = signal(false);
   loadingExecutions = signal(true);
   filteredExecutions = computed(() => {
     const execs = this.executions();
     if (!Array.isArray(execs)) return [];
-    const statusFilter = this.execStatusFilter();
-    const wfFilter = this.execWorkflowFilter();
-    const dateFrom = this.execStartDateFrom();
-    const dateTo = this.execStartDateTo();
+    const f = this.execFilters();
     let result = execs;
-    if (statusFilter !== 'all') {
-      result = result.filter(e => e.status === statusFilter);
+    if (f.status !== 'all') {
+      result = result.filter(e => e.status === f.status);
     }
-    if (wfFilter !== 'all') {
-      result = result.filter(e => e.workflowId === wfFilter);
+    if (f.workflowId !== 'all') {
+      result = result.filter(e => e.workflowId === f.workflowId);
     }
-    if (dateFrom) {
-      const from = new Date(dateFrom).getTime();
+    if (f.startDateFrom) {
+      const from = new Date(f.startDateFrom).getTime();
       result = result.filter(e => e.startedAt && new Date(e.startedAt).getTime() >= from);
     }
-    if (dateTo) {
-      const to = new Date(dateTo).getTime();
+    if (f.startDateTo) {
+      const to = new Date(f.startDateTo).getTime();
       result = result.filter(e => e.startedAt && new Date(e.startedAt).getTime() <= to);
     }
     return result;
   });
-  execFilterActive = computed(() =>
-    this.execStatusFilter() !== 'all' ||
-    this.execWorkflowFilter() !== 'all' ||
-    this.execStartDateFrom() !== '' ||
-    this.execStartDateTo() !== '' ||
-    this.execTags() !== '' ||
-    this.execRating() !== 'all' ||
-    this.execDataKey() !== '' ||
-    this.execDataValue() !== ''
-  );
+  execFilterActive = computed(() => isFilterActive(this.execFilters()));
   private execRefreshInterval: any = null;
 
   // Create dropdown
@@ -429,24 +416,8 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  onExecFilterChange(status: string): void {
-    this.execStatusFilter.set(status);
-  }
-
-  onExecWorkflowFilterChange(workflowId: string): void {
-    this.execWorkflowFilter.set(workflowId);
-  }
-
-  resetExecFilters(): void {
-    this.execStatusFilter.set('all');
-    this.execWorkflowFilter.set('all');
-    this.execStartDateFrom.set('');
-    this.execStartDateTo.set('');
-    this.execTags.set('');
-    this.execRating.set('all');
-    this.execDataKey.set('');
-    this.execDataValue.set('');
-    this.execDataExactMatch.set(false);
+  onExecFiltersChange(filters: ExecutionFilters): void {
+    this.execFilters.set(filters);
   }
 
   deleteExecution(id: string, event: Event): void {
