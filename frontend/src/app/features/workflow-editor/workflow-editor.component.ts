@@ -189,6 +189,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       event.preventDefault();
       this.toggleDrawer();
     }
+
+    if (event.key === 'l' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      if (!this.isInputFocused(event)) {
+        this.toggleDrawer();
+      }
+    }
   }
 
   onPaletteNodeClicked(nodeType: NodeTypeDescription): void {

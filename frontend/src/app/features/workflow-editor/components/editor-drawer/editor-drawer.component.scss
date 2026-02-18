@@ -109,16 +109,26 @@
   padding: 4px;
   border-radius: 4px;
   cursor: pointer;
-  transition: transform 0.2s ease;
-
-  &:not(.expanded) {
-    transform: rotate(180deg);
-  }
 
   &:hover {
     color: hsl(0, 0%, 96%);
     background: hsl(0, 0%, 17%);
   }
+}
+
+.drawer-collapsed-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  height: 28px;
+}
+
+.collapsed-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 50%);
+  letter-spacing: 0.05em;
 }
 
 .drawer-body {
@@ -324,7 +334,7 @@
 .logs-overview-header {
   display: flex;
   align-items: center;
-  padding: 10px 14px;
+  padding: 5px 14px;
   border-bottom: 1px solid hsl(0, 0%, 17%);
   flex-shrink: 0;
 }
@@ -443,11 +453,18 @@
 .logs-detail-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
+  padding: 5px 16px;
   border-bottom: 1px solid hsl(0, 0%, 17%);
   flex-shrink: 0;
   gap: 12px;
+
+  .detail-actions {
+    margin-left: auto;
+  }
+
+  .btn-collapse {
+    flex-shrink: 0;
+  }
 }
 
 .detail-title {
