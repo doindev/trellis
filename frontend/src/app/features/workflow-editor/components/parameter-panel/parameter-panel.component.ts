@@ -70,9 +70,9 @@ export class ParameterPanelComponent implements OnInit {
   private _localPath: string | null = null;
 
   // Column resize state
-  leftWidthPercent = 25;
-  centerWidthPercent = 50;
-  rightWidthPercent = 25;
+  leftWidthPercent = 100 / 3;
+  centerWidthPercent = 100 / 3;
+  rightWidthPercent = 100 / 3;
   private readonly MIN_COL_PCT = 15;
 
   private dragType: 'left-border' | 'right-border' | 'center-handle' | null = null;

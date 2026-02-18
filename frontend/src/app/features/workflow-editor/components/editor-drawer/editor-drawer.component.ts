@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewChecked, SimpleChanges, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -36,7 +36,7 @@ const ICON_PATHS: Record<string, string> = {
   templateUrl: './editor-drawer.component.html',
   styleUrl: './editor-drawer.component.scss'
 })
-export class EditorDrawerComponent implements AfterViewChecked {
+export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   @Input() executionData: Record<string, any> | null = null;
   @Input() selectedNodeId: string | null = null;
   @Input() isExecuting = false;
@@ -47,12 +47,13 @@ export class EditorDrawerComponent implements AfterViewChecked {
 
   // Logs inputs
   @Input() executionNodes: WorkflowNode[] = [];
-  @Input() nodeTypeMap: Record<string, any> = {};
+  @Input() nodeTypeMap: Map<string, any> = new Map();
   @Input() executionStatus = '';
 
   @Input() set viewingExecution(value: boolean) {
     if (value && !this._viewingExecution) {
       this.activeTab = 'logs';
+      this.selectedLogsNodeId = null;
       if (!this.expanded) {
         this.expanded = true;
         this.expandedChange.emit(true);
@@ -61,13 +62,12 @@ export class EditorDrawerComponent implements AfterViewChecked {
       if (this.activeTab === 'logs') {
         this.activeTab = 'output';
       }
+      this.selectedLogsNodeId = null;
     }
     this._viewingExecution = value;
   }
   get viewingExecution(): boolean { return this._viewingExecution; }
   private _viewingExecution = false;
-
-  @Output() logsNodeSelected = new EventEmitter<string>();
 
   @ViewChild('chatMessages') chatMessagesEl?: ElementRef<HTMLDivElement>;
 
@@ -84,12 +84,25 @@ export class EditorDrawerComponent implements AfterViewChecked {
   isTyping = false;
   private shouldScrollChat = false;
 
+  selectedLogsNodeId: string | null = null;
+  detailView: 'input' | 'output' = 'output';
+  displayMode: 'table' | 'json' = 'table';
+  @Output() openNodeDetail = new EventEmitter<string>();
   private iconCache = new Map<string, SafeHtml>();
 
   constructor(
     private chatService: ChatService,
     private sanitizer: DomSanitizer
   ) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['executionData'] && this._viewingExecution && !this.selectedLogsNodeId) {
+      const nodes = this.logsNodeList;
+      if (nodes.length > 0) {
+        this.selectedLogsNodeId = nodes[0].node.id;
+      }
+    }
+  }
 
   ngAfterViewChecked(): void {
     if (this.shouldScrollChat && this.chatMessagesEl) {
@@ -127,8 +140,9 @@ export class EditorDrawerComponent implements AfterViewChecked {
       const raw = this.executionData[node.id];
       if (!raw) continue;
 
-      const typeDesc = this.nodeTypeMap?.[node.type];
+      const typeDesc = this.nodeTypeMap?.get(node.type);
       const run = Array.isArray(raw) ? raw[0] : raw;
+      if (!run || (run.startedAt == null && run.executionTime == null)) continue;
       const status = run?.error ? 'error' : (run?.status || 'success');
       const duration = run?.executionTime || 0;
       const outputItems = Array.isArray(raw)
@@ -149,8 +163,8 @@ export class EditorDrawerComponent implements AfterViewChecked {
     entries.sort((a, b) => {
       const aRaw = this.executionData![a.node.id];
       const bRaw = this.executionData![b.node.id];
-      const aStart = (Array.isArray(aRaw) ? aRaw[0] : aRaw)?.startTime || 0;
-      const bStart = (Array.isArray(bRaw) ? bRaw[0] : bRaw)?.startTime || 0;
+      const aStart = (Array.isArray(aRaw) ? aRaw[0] : aRaw)?.startedAt || 0;
+      const bStart = (Array.isArray(bRaw) ? bRaw[0] : bRaw)?.startedAt || 0;
       return aStart - bStart;
     });
 
@@ -169,24 +183,46 @@ export class EditorDrawerComponent implements AfterViewChecked {
   }
 
   get overallSummaryText(): string {
-    const status = this.executionStatus || 'success';
+    const status = this.capitalizeStatus(this.executionStatus || 'success');
     const duration = this.formatMs(this.overallDurationMs);
-    return `${status.charAt(0).toUpperCase() + status.slice(1)} in ${duration}`;
+    return `${status} in ${duration}`;
   }
 
   get selectedLogsEntry(): LogsNodeEntry | null {
-    if (!this.selectedNodeId) return null;
-    return this.logsNodeList.find(e => e.node.id === this.selectedNodeId) || null;
+    if (!this.selectedLogsNodeId) return null;
+    return this.logsNodeList.find(e => e.node.id === this.selectedLogsNodeId) || null;
   }
 
   get selectedNodeOutputJson(): string {
-    if (!this.selectedNodeId || !this.executionData) return '';
-    const raw = this.executionData[this.selectedNodeId];
+    if (!this.selectedLogsNodeId || !this.executionData) return '';
+    const raw = this.executionData[this.selectedLogsNodeId];
     if (!raw) return '';
 
     const run = Array.isArray(raw) ? raw[0] : raw;
     const outputData = run?.data?.main?.[0] || run?.data || run;
     return JSON.stringify(outputData, null, 2);
+  }
+
+  get selectedNodeOutputItems(): Record<string, any>[] {
+    if (!this.selectedLogsNodeId || !this.executionData) return [];
+    const raw = this.executionData[this.selectedLogsNodeId];
+    if (!raw) return [];
+    const run = Array.isArray(raw) ? raw[0] : raw;
+    const mainOutput = run?.data?.main?.[0];
+    if (!Array.isArray(mainOutput)) return [];
+    return mainOutput.map((item: any) => item?.json || item || {});
+  }
+
+  get selectedNodeOutputColumns(): string[] {
+    const items = this.selectedNodeOutputItems;
+    if (items.length === 0) return [];
+    const keys = new Set<string>();
+    for (const item of items) {
+      for (const key of Object.keys(item)) {
+        keys.add(key);
+      }
+    }
+    return Array.from(keys);
   }
 
   get selectedNodeItemCount(): number {
@@ -196,12 +232,58 @@ export class EditorDrawerComponent implements AfterViewChecked {
   get selectedNodeSummary(): string {
     const entry = this.selectedLogsEntry;
     if (!entry) return '';
-    const label = entry.status.charAt(0).toUpperCase() + entry.status.slice(1);
-    return `${label} in ${this.formatMs(entry.duration)}`;
+    return `${this.capitalizeStatus(entry.status)} in ${this.formatMs(entry.duration)}`;
+  }
+
+  get selectedNodeInputItems(): Record<string, any>[] {
+    if (!this.selectedLogsNodeId || !this.executionData) return [];
+    const raw = this.executionData[this.selectedLogsNodeId];
+    if (!raw) return [];
+    const run = Array.isArray(raw) ? raw[0] : raw;
+    const mainInput = run?.inputData?.main?.[0];
+    if (!Array.isArray(mainInput)) return [];
+    return mainInput.map((item: any) => item?.json || item || {});
+  }
+
+  get selectedNodeInputColumns(): string[] {
+    const items = this.selectedNodeInputItems;
+    if (items.length === 0) return [];
+    const keys = new Set<string>();
+    for (const item of items) {
+      for (const key of Object.keys(item)) keys.add(key);
+    }
+    return Array.from(keys);
+  }
+
+  get selectedNodeInputJson(): string {
+    if (!this.selectedLogsNodeId || !this.executionData) return '';
+    const raw = this.executionData[this.selectedLogsNodeId];
+    if (!raw) return '';
+    const run = Array.isArray(raw) ? raw[0] : raw;
+    const inputData = run?.inputData?.main?.[0] || run?.inputData || {};
+    return JSON.stringify(inputData, null, 2);
+  }
+
+  get activeDetailItems(): Record<string, any>[] {
+    return this.detailView === 'input' ? this.selectedNodeInputItems : this.selectedNodeOutputItems;
+  }
+
+  get activeDetailColumns(): string[] {
+    return this.detailView === 'input' ? this.selectedNodeInputColumns : this.selectedNodeOutputColumns;
+  }
+
+  get activeDetailJson(): string {
+    return this.detailView === 'input' ? this.selectedNodeInputJson : this.selectedNodeOutputJson;
+  }
+
+  get activeDetailItemCount(): number {
+    return this.activeDetailItems.length;
   }
 
   onLogsNodeClick(nodeId: string): void {
-    this.logsNodeSelected.emit(nodeId);
+    this.selectedLogsNodeId = nodeId;
+    this.detailView = 'output';
+    this.displayMode = 'table';
   }
 
   getNodeIconHtml(iconName: string): SafeHtml {
@@ -216,12 +298,41 @@ export class EditorDrawerComponent implements AfterViewChecked {
     return html;
   }
 
+  capitalizeStatus(status: string): string {
+    if (!status) return '';
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  }
+
   formatMs(ms: number): string {
     if (ms < 1000) return `${ms}ms`;
     if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
     const min = Math.floor(ms / 60000);
     const sec = Math.round((ms % 60000) / 1000);
     return `${min}m ${sec}s`;
+  }
+
+  formatCellValue(value: any): string {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    return JSON.stringify(value);
+  }
+
+  isArray(value: any): boolean {
+    return Array.isArray(value);
+  }
+
+  isObjectValue(value: any): boolean {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  isEmptyObject(value: any): boolean {
+    return value !== null && typeof value === 'object' && Object.keys(value).length === 0;
+  }
+
+  getObjectEntries(value: any): [string, any][] {
+    if (!value || typeof value !== 'object') return [];
+    return Object.entries(value);
   }
 
   // ── Common ──

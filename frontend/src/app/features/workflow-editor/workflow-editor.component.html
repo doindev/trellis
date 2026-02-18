@@ -92,7 +92,7 @@
         [nodeTypeMap]="nodeTypeStore.nodeTypes()"
         [executionStatus]="viewingExecution?.status || ''"
         (expandedChange)="drawerExpanded = $event"
-        (logsNodeSelected)="store.selectNode($event)" />
+        (openNodeDetail)="store.selectNode($event)" />
     </div>
   </div>
 

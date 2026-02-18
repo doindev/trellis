@@ -46,18 +46,18 @@ export class HomeComponent implements OnInit {
   executions = signal<Execution[]>([]);
   totalExecutions = computed(() => {
     const execs = this.executions();
-    return Array.isArray(execs) ? execs.filter(e => e.mode !== 'manual').length : 0;
+    return Array.isArray(execs) ? execs.filter(e => e.mode?.toUpperCase() !== 'MANUAL').length : 0;
   });
   failedExecutions = computed(() => {
     const execs = this.executions();
-    return Array.isArray(execs) ? execs.filter(e => e.status === 'error' && e.mode !== 'manual').length : 0;
+    return Array.isArray(execs) ? execs.filter(e => e.status?.toUpperCase() === 'ERROR' && e.mode?.toUpperCase() !== 'MANUAL').length : 0;
   });
   failureRate = computed(() => {
     const total = this.totalExecutions();
     if (total === 0) return 0;
     return Math.round((this.failedExecutions() / total) * 100);
   });
-  avgRunTime = computed(() => {
+  avgRunTimeMs = computed(() => {
     const execs = this.executions();
     if (!Array.isArray(execs)) return 0;
     const finished = execs.filter(e => e.startedAt && e.finishedAt);
@@ -65,7 +65,7 @@ export class HomeComponent implements OnInit {
     const totalMs = finished.reduce((sum, e) => {
       return sum + (new Date(e.finishedAt!).getTime() - new Date(e.startedAt!).getTime());
     }, 0);
-    return Math.round(totalMs / finished.length / 1000);
+    return Math.round(totalMs / finished.length);
   });
   // Workflow filters
   showWfFilterModal = signal(false);
@@ -109,8 +109,9 @@ export class HomeComponent implements OnInit {
 
   // Pagination
   page = signal(1);
-  pageSize = signal(50);
+  pageSize = signal(10);
   totalPages = computed(() => Math.max(1, Math.ceil(this.filteredWorkflows().length / this.pageSize())));
+  pageNumbers = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
   pagedWorkflows = computed(() => {
     const start = (this.page() - 1) * this.pageSize();
     return this.filteredWorkflows().slice(start, start + this.pageSize());
@@ -307,6 +308,11 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  onPageSizeChange(value: string): void {
+    this.pageSize.set(Number(value));
+    this.page.set(1);
+  }
+
   resetWfFilters(): void {
     this.wfTagsFilter.set('');
     this.wfStatusFilter.set('all');
@@ -444,7 +450,7 @@ export class HomeComponent implements OnInit {
   execRunTime(exec: Execution): string {
     if (!exec.startedAt || !exec.finishedAt) return '-';
     const ms = new Date(exec.finishedAt).getTime() - new Date(exec.startedAt).getTime();
-    return this.formatSeconds(Math.round(ms / 1000));
+    return this.formatDuration(ms);
   }
 
   execStartedAt(exec: Execution): string {
@@ -452,7 +458,9 @@ export class HomeComponent implements OnInit {
     return new Date(exec.startedAt).toLocaleString();
   }
 
-  formatSeconds(s: number): string {
+  formatDuration(ms: number): string {
+    if (ms < 1000) return `${ms}ms`;
+    const s = Math.round(ms / 1000);
     if (s < 60) return `${s}s`;
     if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
     return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
