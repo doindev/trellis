@@ -135,6 +135,7 @@
           </div>
 
           <!-- Pagination (pinned bottom) -->
+          @if (filteredWorkflows().length > 0) {
           <div class="pagination-bar">
             <span class="pagination-total">Total {{ filteredWorkflows().length }}</span>
             <div class="pagination-controls">
@@ -159,6 +160,7 @@
               <option value="100">100 / page</option>
             </select>
           </div>
+          }
         </div>
       }
       @case ('credentials') {
