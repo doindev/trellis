@@ -326,6 +326,126 @@
   }
 }
 
+// ── Webhook URLs ──
+
+.webhook-urls-section {
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.webhook-urls-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 96%);
+
+  &:hover {
+    background: hsl(0, 0%, 13%);
+  }
+}
+
+.webhook-chevron {
+  color: hsl(0, 0%, 46%);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+
+  &.expanded {
+    transform: rotate(90deg);
+  }
+}
+
+.webhook-urls-body {
+  padding: 0 12px 12px;
+}
+
+.webhook-url-toggle {
+  margin-bottom: 10px;
+}
+
+.url-radio-group {
+  display: inline-flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid hsl(0, 0%, 24%);
+}
+
+.url-radio {
+  cursor: pointer;
+  margin: 0;
+}
+
+.url-radio-btn {
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(0, 0%, 58%);
+  background: hsl(0, 0%, 13%);
+  transition: all 0.15s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.url-radio.active .url-radio-btn {
+  background: hsl(0, 0%, 20%);
+  color: hsl(0, 0%, 96%);
+}
+
+.url-radio:hover .url-radio-btn {
+  color: hsl(0, 0%, 80%);
+}
+
+.webhook-url-display {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid hsl(0, 0%, 20%);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.http-method-badge {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: hsl(147, 83%, 44%);
+  background: hsl(0, 0%, 13%);
+  border-right: 1px solid hsl(0, 0%, 20%);
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.webhook-url-text {
+  flex: 1;
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 68%);
+  background: hsl(0, 0%, 13%);
+  padding: 6px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  cursor: pointer;
+  direction: rtl;
+  text-align: left;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+  }
+}
+
+.copied-toast {
+  margin-top: 6px;
+  font-size: 0.6875rem;
+  color: hsl(147, 83%, 44%);
+}
+
 .btn-ghost {
   background: none;
   border: none;
@@ -339,5 +459,31 @@
   &:hover {
     color: hsl(0, 0%, 96%);
     background: hsl(0, 0%, 17%);
+  }
+}
+
+// ── Settings tab styles ──
+
+.setting-row {
+  padding: 2px 0;
+}
+
+.param-input-sm {
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(0, 0%, 24%);
+  color: hsl(0, 0%, 96%);
+  font-size: 0.8125rem;
+  border-radius: 6px;
+
+  &:focus {
+    background: hsl(0, 0%, 9%);
+    border-color: hsl(247, 49%, 53%);
+    box-shadow: 0 0 0 2px hsla(247, 49%, 53%, 0.15);
+    color: hsl(0, 0%, 96%);
+  }
+
+  option {
+    background: hsl(0, 0%, 13%);
+    color: hsl(0, 0%, 96%);
   }
 }

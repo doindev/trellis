@@ -33,10 +33,10 @@ export class WorkflowListComponent implements OnInit {
       wfs = wfs.filter(w => w.name.toLowerCase().includes(term));
     }
 
-    if (status === 'active') {
-      wfs = wfs.filter(w => w.active);
-    } else if (status === 'inactive') {
-      wfs = wfs.filter(w => !w.active);
+    if (status === 'published') {
+      wfs = wfs.filter(w => w.published);
+    } else if (status === 'unpublished') {
+      wfs = wfs.filter(w => !w.published);
     }
 
     wfs = [...wfs].sort((a, b) => {
@@ -81,21 +81,6 @@ export class WorkflowListComponent implements OnInit {
     if (workflow.id) {
       this.router.navigate(['/workflow', workflow.id]);
     }
-  }
-
-  toggleActive(workflow: Workflow, event: Event): void {
-    event.stopPropagation();
-    if (!workflow.id) return;
-    const operation = workflow.active
-      ? this.workflowService.deactivate(workflow.id)
-      : this.workflowService.activate(workflow.id);
-    operation.subscribe({
-      next: (updated) => {
-        this.workflows.update(wfs =>
-          wfs.map(w => w.id === updated.id ? updated : w)
-        );
-      }
-    });
   }
 
   confirmDelete(workflow: Workflow, event: Event): void {

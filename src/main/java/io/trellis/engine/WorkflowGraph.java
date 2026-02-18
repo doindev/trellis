@@ -102,35 +102,30 @@ public class WorkflowGraph {
                 Map<String, Object> nodeConnections = (Map<String, Object>) entry.getValue();
                 if (nodeConnections == null) continue;
 
-                Map<String, Object> mainConnections = (Map<String, Object>) nodeConnections.get("main");
-                if (mainConnections == null) continue;
+                Object mainObj = nodeConnections.get("main");
+                if (!(mainObj instanceof List)) continue;
 
-                for (Map.Entry<String, Object> outputEntry : mainConnections.entrySet()) {
-                    int sourceOutputIndex;
-                    try {
-                        sourceOutputIndex = Integer.parseInt(outputEntry.getKey());
-                    } catch (NumberFormatException e) {
-                        sourceOutputIndex = 0;
-                    }
+                List<?> mainList = (List<?>) mainObj;
+                for (int sourceOutputIndex = 0; sourceOutputIndex < mainList.size(); sourceOutputIndex++) {
+                    Object outputObj = mainList.get(sourceOutputIndex);
+                    if (!(outputObj instanceof List)) continue;
 
-                    if (outputEntry.getValue() instanceof List) {
-                        List<Map<String, Object>> targets = (List<Map<String, Object>>) outputEntry.getValue();
-                        for (Map<String, Object> target : targets) {
-                            String targetNodeId = (String) target.get("node");
-                            int targetInputIndex = target.containsKey("index") ?
-                                    ((Number) target.get("index")).intValue() : 0;
+                    List<Map<String, Object>> targets = (List<Map<String, Object>>) outputObj;
+                    for (Map<String, Object> target : targets) {
+                        String targetNodeId = (String) target.get("node");
+                        int targetInputIndex = target.containsKey("index") ?
+                                ((Number) target.get("index")).intValue() : 0;
 
-                            Connection conn = Connection.builder()
-                                    .sourceNodeId(sourceNodeId)
-                                    .sourceOutputIndex(sourceOutputIndex)
-                                    .targetNodeId(targetNodeId)
-                                    .targetInputIndex(targetInputIndex)
-                                    .build();
+                        Connection conn = Connection.builder()
+                                .sourceNodeId(sourceNodeId)
+                                .sourceOutputIndex(sourceOutputIndex)
+                                .targetNodeId(targetNodeId)
+                                .targetInputIndex(targetInputIndex)
+                                .build();
 
-                            graph.connections.add(conn);
-                            graph.outgoingConnections.computeIfAbsent(sourceNodeId, k -> new ArrayList<>()).add(conn);
-                            graph.incomingConnections.computeIfAbsent(targetNodeId, k -> new ArrayList<>()).add(conn);
-                        }
+                        graph.connections.add(conn);
+                        graph.outgoingConnections.computeIfAbsent(sourceNodeId, k -> new ArrayList<>()).add(conn);
+                        graph.incomingConnections.computeIfAbsent(targetNodeId, k -> new ArrayList<>()).add(conn);
                     }
                 }
             }

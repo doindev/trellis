@@ -23,8 +23,8 @@
     <div class="filter-controls">
       <select class="filter-select" [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChange($event)">
         <option value="">All</option>
-        <option value="active">Active</option>
-        <option value="inactive">Deactivated</option>
+        <option value="published">Published</option>
+        <option value="unpublished">Unpublished</option>
       </select>
       <select class="filter-select" [ngModel]="sortBy()" (ngModelChange)="onSortChange($event)">
         <option value="updatedAt">Last updated</option>
@@ -44,8 +44,8 @@
         <rect x="9" y="15" width="6" height="6" rx="1"/>
         <path d="M6 9v3a1 1 0 001 1h4m6-4v3a1 1 0 01-1 1h-4m0 0v3"/>
       </svg>
-      @if (searchTerm()) {
-        <p>No workflows found matching "{{ searchTerm() }}"</p>
+      @if (searchTerm() || statusFilter()) {
+        <p>No workflows match your current filters</p>
       } @else {
         <p>No workflows yet</p>
         <span class="empty-hint">Start by creating your first workflow</span>
@@ -62,7 +62,7 @@
       @for (workflow of filteredWorkflows(); track workflow.id) {
         <div class="workflow-row" (click)="openWorkflow(workflow)">
           <div class="workflow-row-left">
-            <div class="workflow-status-dot" [class.active]="workflow.active" [title]="workflow.active ? 'Active' : 'Inactive'"></div>
+            <div class="workflow-status-dot" [class.active]="workflow.published" [title]="workflow.published ? 'Published' : 'Draft'"></div>
             <div class="workflow-info">
               <h3 class="workflow-name">{{ workflow.name }}</h3>
               <div class="workflow-meta">
@@ -74,24 +74,10 @@
             </div>
           </div>
           <div class="workflow-row-right">
-            @if (workflow.active) {
-              <span class="active-badge">Active</span>
+            @if (workflow.published) {
+              <span class="active-badge">Published</span>
             }
             <div class="workflow-actions" (click)="$event.stopPropagation()">
-              <button class="btn-action"
-                      [class.active-toggle]="workflow.active"
-                      (click)="toggleActive(workflow, $event)"
-                      [title]="workflow.active ? 'Deactivate' : 'Activate'">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  @if (workflow.active) {
-                    <path d="M18.36 6.64a9 9 0 11-12.73 0"/>
-                    <line x1="12" y1="2" x2="12" y2="12"/>
-                  } @else {
-                    <circle cx="12" cy="12" r="10"/>
-                    <polygon points="10,8 16,12 10,16"/>
-                  }
-                </svg>
-              </button>
               <button class="btn-action btn-delete"
                       (click)="confirmDelete(workflow, $event)"
                       title="Delete">

@@ -25,14 +25,6 @@
         }
       </div>
       <div class="header-actions">
-        @if (!readOnly) {
-          <button class="btn btn-sm btn-ghost" (click)="deleteNode.emit()" title="Delete node">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-            </svg>
-          </button>
-        }
         <button class="btn btn-sm btn-ghost" (click)="close.emit()" title="Close">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -123,6 +115,42 @@
 
         <div class="column-body">
           @if (activeTab === 'parameters') {
+            <!-- Webhook URLs section -->
+            @if (isWebhookNode) {
+              <div class="webhook-urls-section">
+                <div class="webhook-urls-header" (click)="webhookUrlsExpanded = !webhookUrlsExpanded">
+                  <svg class="webhook-chevron" [class.expanded]="webhookUrlsExpanded"
+                       viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                  <span>Webhook URLs</span>
+                </div>
+                @if (webhookUrlsExpanded) {
+                  <div class="webhook-urls-body">
+                    <div class="webhook-url-toggle">
+                      <div class="url-radio-group" role="radiogroup">
+                        <label class="url-radio" [class.active]="webhookUrlMode === 'test'" (click)="webhookUrlMode = 'test'">
+                          <div class="url-radio-btn">Test URL</div>
+                        </label>
+                        <label class="url-radio" [class.active]="webhookUrlMode === 'production'" (click)="webhookUrlMode = 'production'">
+                          <div class="url-radio-btn">Production URL</div>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="webhook-url-display">
+                      <div class="http-method-badge">{{ currentHttpMethod }}</div>
+                      <div class="webhook-url-text" (click)="copyWebhookUrl()">
+                        {{ webhookUrlMode === 'test' ? fullWebhookTestUrl : fullWebhookUrl }}
+                      </div>
+                    </div>
+                    @if (copiedField) {
+                      <div class="copied-toast">Copied!</div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
             @if (visibleParameters.length === 0) {
               <div class="empty-state">No parameters to configure</div>
             }
@@ -134,7 +162,8 @@
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
-                      (valueChange)="onParameterChange(param.name, $event)" />
+                      (valueChange)="onParameterChange(param.name, $event)"
+                      (blurred)="onParamBlur(param.name)" />
                   }
                   @case ('number') {
                     <app-number-param
@@ -157,6 +186,13 @@
                       [readOnly]="readOnly"
                       (valueChange)="onParameterChange(param.name, $event)" />
                   }
+                  @case ('multiOptions') {
+                    <app-multi-options-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)" />
+                  }
                   @case ('json') {
                     <app-json-param
                       [param]="param"
@@ -169,6 +205,7 @@
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
+                      [allParameters]="node.parameters"
                       (valueChange)="onParameterChange(param.name, $event)" />
                   }
                   @case ('fixedCollection') {
@@ -178,36 +215,160 @@
                       [readOnly]="readOnly"
                       (valueChange)="onParameterChange(param.name, $event)" />
                   }
+                  @case ('notice') {
+                    <app-notice-param [param]="param" />
+                  }
                   @default {
                     <app-string-param
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
-                      (valueChange)="onParameterChange(param.name, $event)" />
+                      (valueChange)="onParameterChange(param.name, $event)"
+                      (blurred)="onParamBlur(param.name)" />
                   }
                 }
               </div>
             }
           } @else {
             <div class="settings-section">
+              <!-- Node-defined settings parameters -->
+              @for (param of settingsParameters; track param.name) {
+                <div class="param-group">
+                  @switch (param.type) {
+                    @case ('boolean') {
+                      <app-boolean-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        (valueChange)="onParameterChange(param.name, $event)" />
+                    }
+                    @case ('options') {
+                      <app-options-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        (valueChange)="onParameterChange(param.name, $event)" />
+                    }
+                    @case ('string') {
+                      <app-string-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        (valueChange)="onParameterChange(param.name, $event)" />
+                    }
+                    @case ('number') {
+                      <app-number-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        (valueChange)="onParameterChange(param.name, $event)" />
+                    }
+                    @case ('notice') {
+                      <app-notice-param [param]="param" />
+                    }
+                    @default {
+                      <app-string-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        (valueChange)="onParameterChange(param.name, $event)" />
+                    }
+                  }
+                </div>
+              }
+
+              <!-- Built-in settings -->
               <div class="param-group">
-                <label class="param-label">Continue on Fail</label>
-                <p class="param-description">If enabled, the workflow continues even when this node fails</p>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox"
-                         [ngModel]="node.continueOnFail"
-                         (ngModelChange)="onParameterChange('continueOnFail', $event)"
-                         [disabled]="readOnly">
+                <div class="setting-row">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox"
+                           [ngModel]="getSettingValue('alwaysOutputData', false)"
+                           (ngModelChange)="onParameterChange('alwaysOutputData', $event)"
+                           id="setting-alwaysOutputData"
+                           [disabled]="readOnly">
+                    <label class="form-check-label param-label" for="setting-alwaysOutputData">
+                      Always Output Data
+                    </label>
+                  </div>
                 </div>
               </div>
               <div class="param-group">
-                <label class="param-label">Disabled</label>
-                <p class="param-description">Skip this node during execution</p>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox"
-                         [ngModel]="node.disabled"
-                         (ngModelChange)="onParameterChange('disabled', $event)"
+                <div class="setting-row">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox"
+                           [ngModel]="getSettingValue('executeOnce', false)"
+                           (ngModelChange)="onParameterChange('executeOnce', $event)"
+                           id="setting-executeOnce"
+                           [disabled]="readOnly">
+                    <label class="form-check-label param-label" for="setting-executeOnce">
+                      Execute Once
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="param-group">
+                <div class="setting-row">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox"
+                           [ngModel]="getSettingValue('retryOnFail', false)"
+                           (ngModelChange)="onParameterChange('retryOnFail', $event)"
+                           id="setting-retryOnFail"
+                           [disabled]="readOnly">
+                    <label class="form-check-label param-label" for="setting-retryOnFail">
+                      Retry On Fail
+                    </label>
+                  </div>
+                </div>
+              </div>
+              @if (getSettingValue('retryOnFail', false)) {
+                <div class="param-group">
+                  <label class="param-label">Max. Tries</label>
+                  <input type="number" class="form-control param-input-sm"
+                         [ngModel]="getSettingValue('maxTries', 3)"
+                         (ngModelChange)="onParameterChange('maxTries', $event)"
+                         [min]="2" [max]="5"
                          [disabled]="readOnly">
+                </div>
+                <div class="param-group">
+                  <label class="param-label">Wait Between Tries (ms)</label>
+                  <input type="number" class="form-control param-input-sm"
+                         [ngModel]="getSettingValue('waitBetweenTries', 1000)"
+                         (ngModelChange)="onParameterChange('waitBetweenTries', $event)"
+                         [min]="0" [max]="5000"
+                         [disabled]="readOnly">
+                </div>
+              }
+              <div class="param-group">
+                <label class="param-label">On Error</label>
+                <select class="form-select param-input-sm"
+                        [ngModel]="getSettingValue('onError', 'stopWorkflow')"
+                        (ngModelChange)="onParameterChange('onError', $event)"
+                        [disabled]="readOnly">
+                  <option value="stopWorkflow">Stop Workflow</option>
+                  <option value="continueRegularOutput">Continue (using regular output)</option>
+                  <option value="continueErrorOutput">Continue (using error output)</option>
+                </select>
+              </div>
+              <div class="param-group">
+                <label class="param-label">Notes</label>
+                <textarea class="form-control param-input-sm"
+                          [ngModel]="getSettingValue('notes', '')"
+                          (ngModelChange)="onParameterChange('notes', $event)"
+                          rows="5"
+                          [disabled]="readOnly"></textarea>
+              </div>
+              <div class="param-group">
+                <div class="setting-row">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox"
+                           [ngModel]="getSettingValue('notesInFlow', false)"
+                           (ngModelChange)="onParameterChange('notesInFlow', $event)"
+                           id="setting-notesInFlow"
+                           [disabled]="readOnly">
+                    <label class="form-check-label param-label" for="setting-notesInFlow">
+                      Display Note in Flow?
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>

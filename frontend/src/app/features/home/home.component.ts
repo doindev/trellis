@@ -82,10 +82,10 @@ export class HomeComponent implements OnInit {
       wfs = wfs.filter(w => w.name.toLowerCase().includes(term));
     }
 
-    if (statusFilter === 'active') {
-      wfs = wfs.filter(w => w.active);
-    } else if (statusFilter === 'inactive') {
-      wfs = wfs.filter(w => !w.active);
+    if (statusFilter === 'published') {
+      wfs = wfs.filter(w => w.published);
+    } else if (statusFilter === 'unpublished') {
+      wfs = wfs.filter(w => !w.published);
     }
 
     wfs = [...wfs].sort((a, b) => {
@@ -270,25 +270,14 @@ export class HomeComponent implements OnInit {
     if (!workflow.id) return;
     const copy: Partial<Workflow> = {
       name: workflow.name + ' (copy)',
-      active: false,
+      published: false,
+      currentVersion: 0,
       nodes: workflow.nodes,
       connections: workflow.connections,
       settings: workflow.settings
     };
     this.workflowService.create(copy as Workflow).subscribe({
       next: () => this.loadWorkflows()
-    });
-  }
-
-  toggleWorkflowActive(workflow: Workflow): void {
-    if (!workflow.id) return;
-    const operation = workflow.active
-      ? this.workflowService.deactivate(workflow.id)
-      : this.workflowService.activate(workflow.id);
-    operation.subscribe({
-      next: (updated) => {
-        this.workflows.update(wfs => wfs.map(w => w.id === updated.id ? updated : w));
-      }
     });
   }
 

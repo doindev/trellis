@@ -1,8 +1,6 @@
 package io.trellis.controller;
 
-import io.trellis.dto.WorkflowCreateRequest;
-import io.trellis.dto.WorkflowResponse;
-import io.trellis.dto.WorkflowUpdateRequest;
+import io.trellis.dto.*;
 import io.trellis.service.WorkflowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -44,13 +42,29 @@ public class WorkflowController {
         workflowService.deleteWorkflow(id);
     }
 
-    @PostMapping("/{id}/activate")
-    public WorkflowResponse activate(@PathVariable String id) {
-        return workflowService.activateWorkflow(id);
+    @PostMapping("/{id}/publish")
+    public WorkflowResponse publish(@PathVariable String id, @RequestBody PublishWorkflowRequest request) {
+        return workflowService.publishWorkflow(id, request);
     }
 
-    @PostMapping("/{id}/deactivate")
-    public WorkflowResponse deactivate(@PathVariable String id) {
-        return workflowService.deactivateWorkflow(id);
+    @PostMapping("/{id}/unpublish")
+    public WorkflowResponse unpublish(@PathVariable String id) {
+        return workflowService.unpublishWorkflow(id);
+    }
+
+    @PostMapping("/{id}/duplicate")
+    @ResponseStatus(HttpStatus.CREATED)
+    public WorkflowResponse duplicate(@PathVariable String id) {
+        return workflowService.duplicateWorkflow(id);
+    }
+
+    @PostMapping("/{id}/archive")
+    public WorkflowResponse archive(@PathVariable String id) {
+        return workflowService.archiveWorkflow(id);
+    }
+
+    @GetMapping("/{id}/versions")
+    public List<WorkflowVersionResponse> getVersions(@PathVariable String id) {
+        return workflowService.getWorkflowVersions(id);
     }
 }

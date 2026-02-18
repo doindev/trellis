@@ -1,7 +1,19 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, ClockCheck, ClockPlus, ClockFading } from 'lucide-angular';
+
+export type ToolbarAction =
+  | 'editDescription'
+  | 'duplicate'
+  | 'download'
+  | 'rename'
+  | 'importFromUri'
+  | 'importFromFile'
+  | 'pushToGit'
+  | 'settings'
+  | 'unpublish'
+  | 'archive';
 
 @Component({
   selector: 'app-toolbar',
@@ -17,21 +29,26 @@ import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, ClockCheck, Cloc
 })
 export class ToolbarComponent {
   @Input() workflowName = '';
-  @Input() isActive = false;
+  @Input() published = false;
+  @Input() currentVersion = 0;
   @Input() isDirty = false;
   @Input() isExecuting = false;
   @Input() isSaving = false;
   @Output() nameChanged = new EventEmitter<string>();
   @Output() save = new EventEmitter<void>();
   @Output() execute = new EventEmitter<void>();
-  @Output() toggleActive = new EventEmitter<void>();
+  @Output() publish = new EventEmitter<void>();
   @Output() back = new EventEmitter<void>();
   @Input() activeTab: 'editor' | 'executions' = 'editor';
   @Output() showExecutions = new EventEmitter<void>();
   @Output() tabChanged = new EventEmitter<'editor' | 'executions'>();
+  @Output() menuAction = new EventEmitter<ToolbarAction>();
 
   editingName = false;
   nameInput = '';
+  showMenu = false;
+
+  constructor(private elRef: ElementRef) {}
 
   startEditName(): void {
     this.editingName = true;
@@ -59,5 +76,25 @@ export class ToolbarComponent {
 
   toggleExecutionPanel(): void {
     this.showExecutions.emit();
+  }
+
+  toggleMenu(): void {
+    this.showMenu = !this.showMenu;
+  }
+
+  onMenuAction(action: ToolbarAction): void {
+    this.showMenu = false;
+    if (action === 'rename') {
+      this.startEditName();
+    } else {
+      this.menuAction.emit(action);
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    if (this.showMenu && !this.elRef.nativeElement.querySelector('.more-menu-wrapper')?.contains(event.target as Node)) {
+      this.showMenu = false;
+    }
   }
 }

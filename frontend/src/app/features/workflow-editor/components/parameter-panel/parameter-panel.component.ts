@@ -1,18 +1,21 @@
-import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WorkflowNode, NodeTypeDescription, NodeParameter } from '../../../../core/models';
+import { SettingsService } from '../../../../core/services';
 import { StringParamComponent } from './parameter-renderers/string-param.component';
 import { NumberParamComponent } from './parameter-renderers/number-param.component';
 import { BooleanParamComponent } from './parameter-renderers/boolean-param.component';
 import { OptionsParamComponent } from './parameter-renderers/options-param.component';
+import { MultiOptionsParamComponent } from './parameter-renderers/multi-options-param.component';
 import { JsonParamComponent } from './parameter-renderers/json-param.component';
 import { CollectionParamComponent } from './parameter-renderers/collection-param.component';
 import { FixedCollectionParamComponent } from './parameter-renderers/fixed-collection-param.component';
+import { NoticeParamComponent } from './parameter-renderers/notice-param.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
   Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
-  UnfoldVertical, Route, Pen, Code
+  UnfoldVertical, Route, Pen, Code,
 } from 'lucide-angular';
 
 @Component({
@@ -26,9 +29,11 @@ import {
     NumberParamComponent,
     BooleanParamComponent,
     OptionsParamComponent,
+    MultiOptionsParamComponent,
     JsonParamComponent,
     CollectionParamComponent,
     FixedCollectionParamComponent,
+    NoticeParamComponent,
   ],
   providers: [{
     provide: LUCIDE_ICONS,
@@ -41,7 +46,7 @@ import {
   templateUrl: './parameter-panel.component.html',
   styleUrl: './parameter-panel.component.scss'
 })
-export class ParameterPanelComponent {
+export class ParameterPanelComponent implements OnInit {
   @Input() node!: WorkflowNode;
   @Input() nodeType?: NodeTypeDescription;
   @Input() allNodes: WorkflowNode[] = [];
@@ -56,6 +61,14 @@ export class ParameterPanelComponent {
 
   activeTab: 'parameters' | 'settings' = 'parameters';
 
+  // Webhook URL state
+  webhookUrlProduction = 'http://localhost:5678/webhook/';
+  webhookUrlTest = 'http://localhost:5678/webhook-test/';
+  webhookUrlsExpanded = true;
+  webhookUrlMode: 'test' | 'production' = 'test';
+  copiedField: string | null = null;
+  private _localPath: string | null = null;
+
   // Column resize state
   leftWidthPercent = 25;
   centerWidthPercent = 50;
@@ -68,12 +81,55 @@ export class ParameterPanelComponent {
   private dragStartCenter = 0;
   private dragStartRight = 0;
 
+  constructor(private settingsService: SettingsService) {}
+
+  ngOnInit(): void {
+    if (this.isWebhookNode) {
+      this.settingsService.getSettings().subscribe(settings => {
+        this.webhookUrlProduction = settings.webhookUrlProduction || '';
+        this.webhookUrlTest = settings.webhookUrlTest || '';
+      });
+    }
+  }
+
+  get isWebhookNode(): boolean {
+    return this.node?.type === 'webhook';
+  }
+
+  get webhookPath(): string {
+    const path = this._localPath ?? this.node?.parameters?.['path'] ?? '';
+    return path.startsWith('/') ? path.substring(1) : path;
+  }
+
+  get fullWebhookUrl(): string {
+    return this.webhookUrlProduction + this.webhookPath;
+  }
+
+  get fullWebhookTestUrl(): string {
+    return this.webhookUrlTest + this.webhookPath;
+  }
+
+  get currentHttpMethod(): string {
+    return this.node?.parameters?.['httpMethod'] || 'GET';
+  }
+
+  copyWebhookUrl(): void {
+    const url = this.webhookUrlMode === 'test' ? this.fullWebhookTestUrl : this.fullWebhookUrl;
+    navigator.clipboard.writeText(url);
+    this.copiedField = 'url';
+    setTimeout(() => this.copiedField = null, 2000);
+  }
+
   get parameters(): NodeParameter[] {
     return this.nodeType?.parameters || [];
   }
 
   get visibleParameters(): NodeParameter[] {
-    return this.parameters.filter(p => this.isVisible(p));
+    return this.parameters.filter(p => !p.isNodeSetting && this.isVisible(p));
+  }
+
+  get settingsParameters(): NodeParameter[] {
+    return this.parameters.filter(p => p.isNodeSetting && this.isVisible(p));
   }
 
   /** Nodes that connect INTO this node */
@@ -164,12 +220,31 @@ export class ParameterPanelComponent {
   }
 
   onParameterChange(name: string, value: any): void {
+    if (name === 'path' && this.isWebhookNode) {
+      this._localPath = value;
+    }
     const updated = { ...this.node.parameters, [name]: value };
     this.parameterChanged.emit(updated);
   }
 
+  onParamBlur(name: string): void {
+    if (name === 'path' && this.isWebhookNode) {
+      const current = this._localPath ?? this.node?.parameters?.['path'] ?? '';
+      if (current && !current.startsWith('/')) {
+        const normalized = '/' + current;
+        this._localPath = normalized;
+        this.onParameterChange('path', normalized);
+      }
+    }
+  }
+
   getParameterValue(name: string, defaultValue: any): any {
     return this.node.parameters[name] ?? defaultValue;
+  }
+
+  getSettingValue(name: string, defaultValue: any): any {
+    // Settings are stored in node.parameters via the same parameterChanged flow
+    return this.node.parameters?.[name] ?? (this.node as any)[name] ?? defaultValue;
   }
 
   // --- Resize handlers ---

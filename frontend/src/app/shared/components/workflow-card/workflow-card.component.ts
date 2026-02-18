@@ -14,8 +14,6 @@ export class WorkflowCardComponent {
   @Output() open = new EventEmitter<Workflow>();
   @Output() duplicate = new EventEmitter<Workflow>();
   @Output() delete = new EventEmitter<Workflow>();
-  @Output() toggleActive = new EventEmitter<Workflow>();
-
   showActions = false;
 
   get nodeCount(): number {
@@ -60,8 +58,4 @@ export class WorkflowCardComponent {
     }
   }
 
-  onToggleActive(event: Event): void {
-    event.stopPropagation();
-    this.toggleActive.emit(this.workflow);
-  }
 }

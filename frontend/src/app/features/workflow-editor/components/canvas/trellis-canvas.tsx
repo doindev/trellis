@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useRef, useMemo, useState, useEffect, createContext } from 'react';
 import {
   ReactFlow,
   Background,
@@ -23,10 +23,37 @@ import TrellisNode from './custom-nodes/trellis-node';
 import TrellisTriggerNode from './custom-nodes/trellis-trigger-node';
 import TrellisEdge from './custom-edges/trellis-edge';
 
+export interface CanvasActions {
+  singleSelectedId: string | null;
+  executeFromNode: (nodeId: string) => void;
+  toggleDisabled: (nodeId: string) => void;
+  deleteNode: (nodeId: string) => void;
+  openNode: (nodeId: string) => void;
+  duplicateNode: (nodeId: string) => void;
+  copyNode: (nodeId: string) => void;
+  renameNode: (nodeId: string) => void;
+  selectAll: () => void;
+  deselectAll: () => void;
+}
+
+export const CanvasActionsContext = createContext<CanvasActions>({
+  singleSelectedId: null,
+  executeFromNode: () => {},
+  toggleDisabled: () => {},
+  deleteNode: () => {},
+  openNode: () => {},
+  duplicateNode: () => {},
+  copyNode: () => {},
+  renameNode: () => {},
+  selectAll: () => {},
+  deselectAll: () => {},
+});
+
 export interface TrellisCanvasProps {
   initialNodes: Node[];
   initialEdges: Edge[];
   isExecuting?: boolean;
+  readOnly?: boolean;
   onNodeClick?: (nodeId: string) => void;
   onNodeDoubleClick?: (nodeId: string) => void;
   onPaneClick?: () => void;
@@ -38,6 +65,10 @@ export interface TrellisCanvasProps {
   onStopExecution?: () => void;
   onViewportHelperReady?: (helper: { getViewportCenter: () => { x: number; y: number } }) => void;
   onOutputHandleDoubleClick?: (nodeId: string, handleId: string) => void;
+  onToggleNodeDisabled?: (nodeId: string) => void;
+  onDuplicateNode?: (nodeId: string) => void;
+  onExecuteFromNode?: (nodeId: string) => void;
+  onCopyNode?: (nodeId: string) => void;
 }
 
 const GRID_SIZE = 16;
@@ -58,6 +89,7 @@ function TrellisCanvasInner({
   initialNodes,
   initialEdges,
   isExecuting,
+  readOnly,
   onNodeClick,
   onNodeDoubleClick,
   onPaneClick,
@@ -69,6 +101,10 @@ function TrellisCanvasInner({
   onStopExecution,
   onViewportHelperReady,
   onOutputHandleDoubleClick,
+  onToggleNodeDisabled,
+  onDuplicateNode,
+  onExecuteFromNode,
+  onCopyNode,
 }: TrellisCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
@@ -76,10 +112,47 @@ function TrellisCanvasInner({
   const helperExposed = useRef(false);
   const outputHandleDoubleClickRef = useRef(onOutputHandleDoubleClick);
   outputHandleDoubleClickRef.current = onOutputHandleDoubleClick;
+  const onNodeDeleteRef = useRef(onNodeDelete);
+  onNodeDeleteRef.current = onNodeDelete;
+  const onNodeDoubleClickRef = useRef(onNodeDoubleClick);
+  onNodeDoubleClickRef.current = onNodeDoubleClick;
+  const onToggleNodeDisabledRef = useRef(onToggleNodeDisabled);
+  onToggleNodeDisabledRef.current = onToggleNodeDisabled;
+  const onDuplicateNodeRef = useRef(onDuplicateNode);
+  onDuplicateNodeRef.current = onDuplicateNode;
+  const onExecuteFromNodeRef = useRef(onExecuteFromNode);
+  onExecuteFromNodeRef.current = onExecuteFromNode;
+  const onCopyNodeRef = useRef(onCopyNode);
+  onCopyNodeRef.current = onCopyNode;
+
   const [nodes, setNodes, handleNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, handleEdgesChange] = useEdgesState(initialEdges);
   const [ready, setReady] = useState(false);
+  const [singleSelectedId, setSingleSelectedId] = useState<string | null>(null);
   const initialFitDone = useRef(false);
+
+  // Track single node selection
+  const onSelectionChange = useCallback(({ nodes: selectedNodes }: { nodes: Node[] }) => {
+    setSingleSelectedId(selectedNodes.length === 1 ? selectedNodes[0].id : null);
+  }, []);
+
+  // Context value for node action toolbar
+  const canvasActionsValue = useMemo<CanvasActions>(() => ({
+    singleSelectedId,
+    executeFromNode: (nodeId) => onExecuteFromNodeRef.current?.(nodeId),
+    toggleDisabled: (nodeId) => onToggleNodeDisabledRef.current?.(nodeId),
+    deleteNode: (nodeId) => {
+      if (window.confirm('Are you sure you want to delete this node?')) {
+        onNodeDeleteRef.current?.(nodeId);
+      }
+    },
+    openNode: (nodeId) => onNodeDoubleClickRef.current?.(nodeId),
+    duplicateNode: (nodeId) => onDuplicateNodeRef.current?.(nodeId),
+    copyNode: (nodeId) => onCopyNodeRef.current?.(nodeId),
+    renameNode: (nodeId) => onNodeDoubleClickRef.current?.(nodeId),
+    selectAll: () => setNodes(nds => nds.map(n => ({ ...n, selected: true }))),
+    deselectAll: () => setNodes(nds => nds.map(n => ({ ...n, selected: false }))),
+  }), [singleSelectedId, setNodes]);
 
   // Sync nodes from Angular without resetting viewport
   useEffect(() => {
@@ -216,7 +289,10 @@ function TrellisCanvasInner({
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      if (event.key === 'Delete' || event.key === 'Backspace') {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+        event.preventDefault();
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: true })));
+      } else if (!readOnly && (event.key === 'Delete' || event.key === 'Backspace')) {
         const selectedNodes = nodes.filter((n) => n.selected);
         selectedNodes.forEach((n) => onNodeDelete?.(n.id));
       } else if (event.key === '-' || event.key === '_') {
@@ -227,7 +303,7 @@ function TrellisCanvasInner({
         zoomIn();
       }
     },
-    [nodes, onNodeDelete, zoomIn, zoomOut]
+    [nodes, onNodeDelete, zoomIn, zoomOut, setNodes]
   );
 
   const defaultEdgeOptions = useMemo(
@@ -255,91 +331,97 @@ function TrellisCanvasInner({
   const proOptions = useMemo(() => ({ hideAttribution: true }), []);
 
   return (
-    <div
-      ref={reactFlowWrapper}
-      style={{ width: '100%', height: '100%', opacity: ready ? 1 : 0, transition: 'opacity 300ms ease' }}
-      onKeyDown={onKeyDown}
-      tabIndex={0}
-    >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={handleEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClickHandler}
-        onNodeDoubleClick={onNodeDoubleClickHandler}
-        onPaneClick={onPaneClickHandler}
-        onNodeDragStop={onNodeDragStop}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        defaultEdgeOptions={defaultEdgeOptions}
-        connectionLineType={ConnectionLineType.SmoothStep}
-        connectionLineStyle={connectionLineStyle}
-        connectionRadius={CONNECTION_RADIUS}
-        defaultViewport={{ x: 0, y: 0, zoom: 1.2 }}
-        minZoom={MIN_ZOOM}
-        maxZoom={MAX_ZOOM}
-        panOnScroll
-        deleteKeyCode={null}
-        proOptions={proOptions}
-        className="trellis-flow"
+    <CanvasActionsContext.Provider value={canvasActionsValue}>
+      <div
+        ref={reactFlowWrapper}
+        style={{ width: '100%', height: '100%', opacity: ready ? 1 : 0, transition: 'opacity 300ms ease' }}
+        onKeyDown={onKeyDown}
+        tabIndex={0}
       >
-        <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} color="hsl(0, 0%, 22%)" />
-        <MiniMap
-          nodeColor={(n) => {
-            if (n.type === 'trellisTriggerNode') return 'hsl(7, 100%, 68%)';
-            return 'hsl(247, 49%, 53%)';
-          }}
-          maskColor="rgba(0,0,0,0.5)"
-          style={{ background: 'hsl(0, 0%, 13%)' }}
-          position="bottom-left"
-        />
-        <Panel position="bottom-left" className="canvas-controls-panel">
-          <button className="ctrl-btn" onClick={() => zoomOut()} title="Zoom out">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-          <span className="ctrl-zoom-label">{Math.round(zoom * 100)}%</span>
-          <button className="ctrl-btn" onClick={() => zoomIn()} title="Zoom in">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-          <button className="ctrl-btn" onClick={() => fitView({ padding: 0.2, duration: 200 })} title="Fit view">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-            </svg>
-          </button>
-          <button className="ctrl-btn" title="Clean up">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m16 22-1-4" /><path d="M19 13.99a1 1 0 0 0 1-1V12a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v.99a1 1 0 0 0 1 1" /><path d="M5 14h14l1.973 6.767A1 1 0 0 1 20 22H4a1 1 0 0 1-.973-1.233z" /><path d="m8 22 1-4" />
-            </svg>
-          </button>
-        </Panel>
-
-        {nodes.length > 0 && (
-          <div className="canvas-action-bar">
-            <button className="canvas-execute-btn" onClick={onExecute} disabled={isExecuting}>
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
-                <polygon points="6 3 20 12 6 21 6 3" />
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
+          onConnect={readOnly ? undefined : onConnect}
+          onNodeClick={onNodeClickHandler}
+          onNodeDoubleClick={onNodeDoubleClickHandler}
+          onPaneClick={onPaneClickHandler}
+          onNodeDragStop={readOnly ? undefined : onNodeDragStop}
+          onDragOver={readOnly ? undefined : onDragOver}
+          onDrop={readOnly ? undefined : onDrop}
+          onSelectionChange={onSelectionChange}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          defaultEdgeOptions={defaultEdgeOptions}
+          connectionLineType={ConnectionLineType.SmoothStep}
+          connectionLineStyle={connectionLineStyle}
+          connectionRadius={CONNECTION_RADIUS}
+          defaultViewport={{ x: 0, y: 0, zoom: 1.2 }}
+          minZoom={MIN_ZOOM}
+          maxZoom={MAX_ZOOM}
+          panOnScroll
+          deleteKeyCode={null}
+          proOptions={proOptions}
+          className="trellis-flow"
+          nodesDraggable={!readOnly}
+          nodesConnectable={!readOnly}
+          edgesReconnectable={!readOnly}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} color="hsl(0, 0%, 22%)" />
+          <MiniMap
+            nodeColor={(n) => {
+              if (n.type === 'trellisTriggerNode') return 'hsl(7, 100%, 68%)';
+              return 'hsl(247, 49%, 53%)';
+            }}
+            maskColor="rgba(0,0,0,0.5)"
+            style={{ background: 'hsl(0, 0%, 13%)' }}
+            position="bottom-left"
+          />
+          <Panel position="bottom-left" className="canvas-controls-panel">
+            <button className="ctrl-btn" onClick={() => zoomOut()} title="Zoom out">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Execute
             </button>
-            {isExecuting && (
-              <button className="canvas-stop-btn" onClick={onStopExecution}>
+            <span className="ctrl-zoom-label">{Math.round(zoom * 100)}%</span>
+            <button className="ctrl-btn" onClick={() => zoomIn()} title="Zoom in">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+            <button className="ctrl-btn" onClick={() => fitView({ padding: 0.2, duration: 200 })} title="Fit view">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+              </svg>
+            </button>
+            <button className="ctrl-btn" title="Clean up">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m16 22-1-4" /><path d="M19 13.99a1 1 0 0 0 1-1V12a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v.99a1 1 0 0 0 1 1" /><path d="M5 14h14l1.973 6.767A1 1 0 0 1 20 22H4a1 1 0 0 1-.973-1.233z" /><path d="m8 22 1-4" />
+              </svg>
+            </button>
+          </Panel>
+
+          {nodes.length > 0 && !readOnly && (
+            <div className="canvas-action-bar">
+              <button className="canvas-execute-btn" onClick={onExecute} disabled={isExecuting}>
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
-                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                  <polygon points="6 3 20 12 6 21 6 3" />
                 </svg>
+                Execute
               </button>
-            )}
-          </div>
-        )}
-      </ReactFlow>
-    </div>
+              {isExecuting && (
+                <button className="canvas-stop-btn" onClick={onStopExecution}>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
+                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+        </ReactFlow>
+      </div>
+    </CanvasActionsContext.Provider>
   );
 }
 

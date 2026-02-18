@@ -9,7 +9,10 @@ import java.time.Instant;
 public class WorkflowResponse {
     private String id;
     private String name;
-    private boolean active;
+    private String description;
+    private boolean published;
+    private boolean archived;
+    private int currentVersion;
     private Object nodes;
     private Object connections;
     private Object settings;

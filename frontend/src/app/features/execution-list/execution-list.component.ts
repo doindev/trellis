@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ExecutionService } from '../../core/services';
@@ -12,10 +12,13 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
   templateUrl: './execution-list.component.html',
   styleUrl: './execution-list.component.scss'
 })
-export class ExecutionListComponent implements OnInit {
+export class ExecutionListComponent implements OnInit, OnDestroy {
   executions = signal<Execution[]>([]);
   loading = signal(true);
   statusFilter = signal('all');
+  autoRefresh = signal(true);
+  private refreshInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly REFRESH_MS = 5_000;
 
   filteredExecutions = computed(() => {
     const filter = this.statusFilter();
@@ -28,6 +31,11 @@ export class ExecutionListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadExecutions();
+    this.startAutoRefresh();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoRefresh();
   }
 
   loadExecutions(): void {
@@ -39,6 +47,37 @@ export class ExecutionListComponent implements OnInit {
       },
       error: () => this.loading.set(false)
     });
+  }
+
+  private refreshExecutions(): void {
+    this.executionService.list().subscribe({
+      next: (data) => this.executions.set(data)
+    });
+  }
+
+  onAutoRefreshChange(enabled: boolean): void {
+    this.autoRefresh.set(enabled);
+    if (enabled) {
+      this.startAutoRefresh();
+    } else {
+      this.stopAutoRefresh();
+    }
+  }
+
+  private startAutoRefresh(): void {
+    this.stopAutoRefresh();
+    if (this.autoRefresh()) {
+      this.refreshInterval = setInterval(() => {
+        this.refreshExecutions();
+      }, this.REFRESH_MS);
+    }
+  }
+
+  private stopAutoRefresh(): void {
+    if (this.refreshInterval !== null) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
   }
 
   deleteExecution(id: string, event: Event): void {

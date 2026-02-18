@@ -21,9 +21,20 @@ public class WorkflowEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Builder.Default
     @Column(nullable = false)
-    private boolean active = false;
+    private boolean published = false;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean archived = false;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int currentVersion = 0;
 
     @Lob
     @Convert(converter = JsonObjectConverter.class)

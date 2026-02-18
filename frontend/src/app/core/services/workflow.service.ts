@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Workflow } from '../models';
+import { Workflow, WorkflowVersion } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class WorkflowService {
@@ -29,15 +29,31 @@ export class WorkflowService {
     return this.api.delete<void>(`${this.path}/${id}`);
   }
 
-  activate(id: string): Observable<Workflow> {
-    return this.api.patch<Workflow>(`${this.path}/${id}/activate`);
+  publish(id: string, request: { versionName?: string; description?: string }): Observable<Workflow> {
+    return this.api.post<Workflow>(`${this.path}/${id}/publish`, request);
   }
 
-  deactivate(id: string): Observable<Workflow> {
-    return this.api.patch<Workflow>(`${this.path}/${id}/deactivate`);
+  unpublish(id: string): Observable<Workflow> {
+    return this.api.post<Workflow>(`${this.path}/${id}/unpublish`);
+  }
+
+  duplicate(id: string): Observable<Workflow> {
+    return this.api.post<Workflow>(`${this.path}/${id}/duplicate`);
+  }
+
+  archive(id: string): Observable<Workflow> {
+    return this.api.post<Workflow>(`${this.path}/${id}/archive`);
+  }
+
+  getVersions(id: string): Observable<WorkflowVersion[]> {
+    return this.api.get<WorkflowVersion[]>(`${this.path}/${id}/versions`);
   }
 
   run(id: string, inputData?: any): Observable<any> {
     return this.api.post<any>(`${this.path}/${id}/run`, inputData || {});
+  }
+
+  stopExecution(executionId: string): Observable<any> {
+    return this.api.post<any>(`/executions/${executionId}/stop`, {});
   }
 }

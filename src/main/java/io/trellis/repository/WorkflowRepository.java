@@ -7,6 +7,6 @@ import java.util.List;
 
 @Repository
 public interface WorkflowRepository extends JpaRepository<WorkflowEntity, String> {
-    List<WorkflowEntity> findByActive(boolean active);
+    List<WorkflowEntity> findByPublished(boolean published);
     List<WorkflowEntity> findByNameContainingIgnoreCase(String name);
 }

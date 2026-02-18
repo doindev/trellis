@@ -1,7 +1,10 @@
 export interface Workflow {
   id?: string;
   name: string;
-  active: boolean;
+  description?: string;
+  published: boolean;
+  archived?: boolean;
+  currentVersion: number;
   nodes: WorkflowNode[];
   connections: Record<string, any>;
   settings?: Record<string, any>;
@@ -21,4 +24,21 @@ export interface WorkflowNode {
   disabled?: boolean;
   credentials?: Record<string, any>;
   continueOnFail?: boolean;
+  alwaysOutputData?: boolean;
+  executeOnce?: boolean;
+  retryOnFail?: boolean;
+  maxTries?: number;
+  waitBetweenTries?: number;
+  onError?: string;
+  notes?: string;
+  notesInFlow?: boolean;
+}
+
+export interface WorkflowVersion {
+  id: string;
+  workflowId: string;
+  versionNumber: number;
+  versionName: string;
+  description?: string;
+  publishedAt: string;
 }

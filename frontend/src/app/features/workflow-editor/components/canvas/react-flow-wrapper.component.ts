@@ -43,6 +43,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   @Input() executionData: Record<string, any> | null = null;
   @Input() selectedNodeId: string | null = null;
   @Input() isExecuting = false;
+  @Input() readOnly = false;
 
   @Output() nodeSelected = new EventEmitter<string | null>();
   @Output() nodeDoubleClicked = new EventEmitter<string>();
@@ -53,6 +54,10 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   @Output() nodesPositionChanged = new EventEmitter<Record<string, [number, number]>>();
   @Output() connectionsChanged = new EventEmitter<Record<string, any>>();
   @Output() outputHandleDoubleClicked = new EventEmitter<{ nodeId: string; handleId: string }>();
+  @Output() toggleNodeDisabled = new EventEmitter<string>();
+  @Output() duplicateNode = new EventEmitter<string>();
+  @Output() executeFromNode = new EventEmitter<string>();
+  @Output() copyNode = new EventEmitter<string>();
 
   private root: Root | null = null;
   private nodeIdCounter = 0;
@@ -88,6 +93,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       initialNodes: reactNodes,
       initialEdges: reactEdges,
       isExecuting: this.isExecuting,
+      readOnly: this.readOnly,
       onNodeClick: (nodeId: string) => {
         this.ngZone.run(() => this.nodeSelected.emit(nodeId));
       },
@@ -132,6 +138,18 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       onOutputHandleDoubleClick: (nodeId: string, handleId: string) => {
         this.ngZone.run(() => this.outputHandleDoubleClicked.emit({ nodeId, handleId }));
       },
+      onToggleNodeDisabled: (nodeId: string) => {
+        this.ngZone.run(() => this.toggleNodeDisabled.emit(nodeId));
+      },
+      onDuplicateNode: (nodeId: string) => {
+        this.ngZone.run(() => this.duplicateNode.emit(nodeId));
+      },
+      onExecuteFromNode: (nodeId: string) => {
+        this.ngZone.run(() => this.executeFromNode.emit(nodeId));
+      },
+      onCopyNode: (nodeId: string) => {
+        this.ngZone.run(() => this.copyNode.emit(nodeId));
+      },
     };
 
     this.root.render(createElement(TrellisCanvas, props));
@@ -163,6 +181,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
           executionStatus: execData?.status,
           itemCount: execData?.itemCount,
           disabled: node.disabled,
+          readOnly: this.readOnly,
         },
       };
     });

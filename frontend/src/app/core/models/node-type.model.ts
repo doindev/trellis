@@ -29,6 +29,7 @@ export interface NodeParameter {
   typeOptions: any;
   nestedParameters: NodeParameter[];
   noDataExpression: boolean;
+  isNodeSetting: boolean;
 }
 
 export interface ParameterOption {

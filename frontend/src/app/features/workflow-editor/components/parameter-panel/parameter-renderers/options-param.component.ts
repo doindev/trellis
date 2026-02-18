@@ -8,30 +8,52 @@ import { NodeParameter } from '../../../../../core/models';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <label class="param-label">
-      {{ param.displayName }}
-      @if (param.required) { <span class="required">*</span> }
-    </label>
+    <div class="param-header">
+      <label class="param-label">
+        {{ param.displayName }}
+        @if (param.required) { <span class="required">*</span> }
+      </label>
+      @if (!param.noDataExpression) {
+        <div class="expr-radio-group" role="radiogroup">
+          <label class="expr-radio" [class.active]="!isExpression" (click)="setFixed()">
+            <div class="expr-radio-btn">Fixed</div>
+          </label>
+          <label class="expr-radio" [class.active]="isExpression" (click)="setExpression()">
+            <div class="expr-radio-btn">Expression</div>
+          </label>
+        </div>
+      }
+    </div>
     @if (param.description) {
       <p class="param-description">{{ param.description }}</p>
     }
-    <select class="form-select param-input"
-            [ngModel]="value"
-            (ngModelChange)="valueChange.emit($event)"
-            [disabled]="readOnly">
-      @if (!param.required) {
-        <option [ngValue]="null">-- Select --</option>
+    @if (isExpression) {
+      <input type="text"
+             class="form-control param-input expr-input"
+             [ngModel]="value"
+             (ngModelChange)="valueChange.emit($event)"
+             [placeholder]="'={{ }}'"
+             [disabled]="readOnly">
+    } @else {
+      <select class="form-select param-input"
+              [ngModel]="value"
+              (ngModelChange)="valueChange.emit($event)"
+              [disabled]="readOnly">
+        @if (!param.required) {
+          <option [ngValue]="null">-- Select --</option>
+        }
+        @for (opt of param.options || []; track opt.value) {
+          <option [ngValue]="opt.value">{{ opt.name }}</option>
+        }
+      </select>
+      @if (selectedDescription) {
+        <p class="option-description">{{ selectedDescription }}</p>
       }
-      @for (opt of param.options || []; track opt.value) {
-        <option [ngValue]="opt.value">{{ opt.name }}</option>
-      }
-    </select>
-    @if (selectedDescription) {
-      <p class="option-description">{{ selectedDescription }}</p>
     }
   `,
   styles: [`
-    .param-label { display: block; font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin-bottom: 4px; }
+    .param-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .param-label { font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin: 0; }
     .required { color: var(--trellis-error-color); }
     .param-description { font-size: 0.6875rem; color: hsl(0,0%,58%); margin-bottom: 6px; }
     .param-input {
@@ -44,6 +66,35 @@ import { NodeParameter } from '../../../../../core/models';
     .param-input:focus { background: hsl(0,0%,9%); border-color: hsl(247,49%,53%); box-shadow: 0 0 0 2px hsla(247,49%,53%,0.15); color: hsl(0,0%,96%); }
     .param-input option { background: hsl(0,0%,13%); color: hsl(0,0%,96%); }
     .option-description { font-size: 0.6875rem; color: hsl(0,0%,58%); margin-top: 4px; font-style: italic; }
+    .expr-input { border-color: hsl(30,80%,50%); font-family: 'Consolas', 'Monaco', monospace; }
+    .expr-radio-group {
+      display: inline-flex;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid hsl(0,0%,24%);
+      flex-shrink: 0;
+    }
+    .expr-radio {
+      cursor: pointer;
+      margin: 0;
+    }
+    .expr-radio-btn {
+      padding: 2px 8px;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: hsl(0,0%,58%);
+      background: hsl(0,0%,13%);
+      transition: all 0.15s;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .expr-radio.active .expr-radio-btn {
+      background: hsl(0,0%,20%);
+      color: hsl(0,0%,96%);
+    }
+    .expr-radio:hover .expr-radio-btn {
+      color: hsl(0,0%,80%);
+    }
   `]
 })
 export class OptionsParamComponent {
@@ -52,9 +103,25 @@ export class OptionsParamComponent {
   @Input() readOnly = false;
   @Output() valueChange = new EventEmitter<any>();
 
+  get isExpression(): boolean {
+    return typeof this.value === 'string' && this.value.startsWith('={{');
+  }
+
   get selectedDescription(): string {
-    if (!this.value || !this.param.options) return '';
+    if (!this.value || !this.param.options || this.isExpression) return '';
     const opt = this.param.options.find(o => o.value === this.value);
     return opt?.description || '';
+  }
+
+  setFixed(): void {
+    if (this.isExpression) {
+      this.valueChange.emit(this.param.defaultValue ?? null);
+    }
+  }
+
+  setExpression(): void {
+    if (!this.isExpression) {
+      this.valueChange.emit('={{ }}');
+    }
   }
 }

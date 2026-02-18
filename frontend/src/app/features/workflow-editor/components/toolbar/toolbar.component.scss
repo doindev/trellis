@@ -113,45 +113,24 @@
   background: hsl(0, 0%, 24%);
 }
 
-.active-toggle {
-  display: flex;
+.publish-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 4px 0;
-}
-
-.active-label {
-  color: hsl(0, 0%, 58%);
+  gap: 6px;
+  padding: 6px 14px;
+  background: hsl(247, 49%, 53%);
+  border: 1px solid hsl(247, 49%, 53%);
+  color: #fff;
+  border-radius: 6px;
   font-size: 0.8125rem;
   font-weight: 500;
-}
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 
-.toggle-switch {
-  width: 36px;
-  height: 20px;
-  background: hsl(0, 0%, 30%);
-  border-radius: 10px;
-  position: relative;
-  transition: background 0.2s ease;
-
-  &.active {
-    background: hsl(147, 83%, 44%);
-  }
-}
-
-.toggle-thumb {
-  width: 16px;
-  height: 16px;
-  background: #fff;
-  border-radius: 50%;
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  transition: left 0.2s ease;
-
-  .active & {
-    left: 18px;
+  &:hover {
+    background: hsl(247, 49%, 46%);
+    border-color: hsl(247, 49%, 46%);
   }
 }
 
@@ -253,4 +232,69 @@
     color: hsl(0, 0%, 96%);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
+}
+
+/* More actions dropdown */
+.more-menu-wrapper {
+  position: relative;
+}
+
+.more-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: hsl(0, 0%, 15%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  min-width: 200px;
+  padding: 4px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 86%);
+  font-size: 0.8125rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+
+  svg {
+    flex-shrink: 0;
+    color: hsl(0, 0%, 58%);
+  }
+
+  &:hover {
+    background: hsl(0, 0%, 20%);
+    color: hsl(0, 0%, 96%);
+
+    svg { color: hsl(0, 0%, 86%); }
+  }
+
+  &.danger {
+    color: hsl(355, 83%, 62%);
+
+    svg { color: hsl(355, 83%, 62%); }
+
+    &:hover {
+      background: hsla(355, 83%, 52%, 0.12);
+      color: hsl(355, 83%, 68%);
+
+      svg { color: hsl(355, 83%, 68%); }
+    }
+  }
+}
+
+.menu-divider {
+  height: 1px;
+  background: hsl(0, 0%, 24%);
+  margin: 4px 0;
 }

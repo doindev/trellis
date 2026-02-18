@@ -18,6 +18,12 @@
         </button>
       }
     </div>
+    <label class="auto-refresh-toggle">
+      <input type="checkbox"
+             [checked]="autoRefresh()"
+             (change)="onAutoRefreshChange($any($event.target).checked)">
+      Auto-refresh
+    </label>
   </div>
 
   @if (loading()) {

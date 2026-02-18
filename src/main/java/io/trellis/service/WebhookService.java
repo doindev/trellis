@@ -48,18 +48,22 @@ public class WebhookService {
 
             String nodeId = (String) node.get("id");
             Map<String, Object> parameters = (Map<String, Object>) node.getOrDefault("parameters", Map.of());
-            String method = (String) parameters.getOrDefault("httpMethod", "GET");
             String path = (String) parameters.getOrDefault("path", "");
-            String securityChain = (String) parameters.getOrDefault("securityChain", "none");
+            String authentication = (String) parameters.getOrDefault("authentication",
+                    (String) parameters.getOrDefault("securityChain", "none"));
 
             if (path.isEmpty()) continue;
 
+            String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+
+            // Register webhook for the configured HTTP method
+            String method = (String) parameters.getOrDefault("httpMethod", "GET");
             WebhookEntity webhook = WebhookEntity.builder()
                     .workflowId(workflow.getId())
                     .nodeId(nodeId)
                     .method(method.toUpperCase())
-                    .path(path.startsWith("/") ? path.substring(1) : path)
-                    .securityChain(securityChain)
+                    .path(normalizedPath)
+                    .securityChain(authentication)
                     .build();
 
             webhookRepository.save(webhook);

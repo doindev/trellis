@@ -21,7 +21,25 @@
 }
 
 .filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 24px;
+}
+
+.auto-refresh-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: hsl(0, 0%, 68%);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  user-select: none;
+
+  input[type="checkbox"] {
+    accent-color: var(--bs-primary);
+    cursor: pointer;
+  }
 }
 
 .btn-active {

@@ -3,6 +3,8 @@ package io.trellis.nodes.core;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -26,6 +28,9 @@ public class NodeParameter {
 	// for type-specific options (e.g. rows for string textarea)
 	private Map<String, Object> typeOptions;
 	
+	// parameters with this flag appear in the Settings tab instead of Parameters tab
+	private boolean isNodeSetting;
+
 	// for colection types
 	private List<NodeParameter> nestedParameters;
 	
@@ -44,22 +49,33 @@ public class NodeParameter {
 	
 	// parameter types
 	public enum ParameterType {
-		STRING,
-		NUMBER,
-		BOOLEAN,
-		OPTIONS,
-		MULTI_OPTIONS,
-		COLLECTION,
-		FIXED_COLLECTION,
-		JSON,
-		COLOR,
-		DATETIME,
-		DATE_TIME,
-		RESOURCE_LOCATOR,
-		RESOURCE_MAPPER,
-		CREDENTIALS,
-		NOTICE,
-		HIDDEN
+		STRING("string"),
+		NUMBER("number"),
+		BOOLEAN("boolean"),
+		OPTIONS("options"),
+		MULTI_OPTIONS("multiOptions"),
+		COLLECTION("collection"),
+		FIXED_COLLECTION("fixedCollection"),
+		JSON("json"),
+		COLOR("color"),
+		DATETIME("datetime"),
+		DATE_TIME("dateTime"),
+		RESOURCE_LOCATOR("resourceLocator"),
+		RESOURCE_MAPPER("resourceMapper"),
+		CREDENTIALS("credentials"),
+		NOTICE("notice"),
+		HIDDEN("hidden");
+
+		private final String jsonValue;
+
+		ParameterType(String jsonValue) {
+			this.jsonValue = jsonValue;
+		}
+
+		@JsonValue
+		public String toJson() {
+			return jsonValue;
+		}
 	}
 	
 	@Data

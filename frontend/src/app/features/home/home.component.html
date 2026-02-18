@@ -126,8 +126,7 @@
                 [workflow]="workflow"
                 (open)="openWorkflow($event)"
                 (duplicate)="duplicateWorkflow($event)"
-                (delete)="confirmDelete($event)"
-                (toggleActive)="toggleWorkflowActive($event)" />
+                (delete)="confirmDelete($event)" />
             }
           </div>
 
@@ -377,8 +376,8 @@
         <label class="exec-filter-label" for="wf-filter-status">Status</label>
         <select class="exec-filter-select" id="wf-filter-status" [value]="wfStatusFilter()" (change)="wfStatusFilter.set($any($event.target).value)">
           <option value="all">All</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="published">Published</option>
+          <option value="unpublished">Unpublished</option>
         </select>
       </div>
 

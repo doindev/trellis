@@ -4,7 +4,8 @@ import { WorkflowService } from '../services';
 
 interface WorkflowSnapshot {
   name: string;
-  active: boolean;
+  published: boolean;
+  currentVersion: number;
   nodes: WorkflowNode[];
   connections: Record<string, any>;
   settings?: Record<string, any>;
@@ -46,7 +47,8 @@ export class WorkflowEditorStore {
   private takeSnapshot(wf: Workflow): WorkflowSnapshot {
     return {
       name: wf.name,
-      active: wf.active,
+      published: wf.published,
+      currentVersion: wf.currentVersion,
       nodes: JSON.parse(JSON.stringify(wf.nodes)),
       connections: JSON.parse(JSON.stringify(wf.connections)),
       settings: wf.settings ? JSON.parse(JSON.stringify(wf.settings)) : undefined
@@ -82,7 +84,8 @@ export class WorkflowEditorStore {
     this.workflow.set({
       ...wf,
       name: snapshot.name,
-      active: snapshot.active,
+      published: snapshot.published,
+      currentVersion: snapshot.currentVersion,
       nodes: JSON.parse(JSON.stringify(snapshot.nodes)),
       connections: JSON.parse(JSON.stringify(snapshot.connections)),
       settings: snapshot.settings ? JSON.parse(JSON.stringify(snapshot.settings)) : wf.settings
@@ -138,7 +141,8 @@ export class WorkflowEditorStore {
   createNew(): void {
     const wf: Workflow = {
       name: 'New Workflow',
-      active: false,
+      published: false,
+      currentVersion: 0,
       nodes: [],
       connections: {}
     };
@@ -178,6 +182,12 @@ export class WorkflowEditorStore {
   addNode(node: WorkflowNode): void {
     const wf = this.workflow();
     if (!wf) return;
+
+    // Auto-populate webhook path with workflow ID
+    if (node.type === 'webhook' && !node.parameters['path'] && wf.id) {
+      node = { ...node, parameters: { ...node.parameters, path: wf.id } };
+    }
+
     this.commitChange({
       ...wf,
       nodes: [...wf.nodes, node]
@@ -234,6 +244,31 @@ export class WorkflowEditorStore {
     this.commitChange({ ...wf, name }, 'name');
   }
 
+  updateWorkflowDescription(description: string): void {
+    const wf = this.workflow();
+    if (!wf) return;
+    this.commitChange({ ...wf, description }, 'description');
+  }
+
+  updateWorkflowSettings(settings: Record<string, any>): void {
+    const wf = this.workflow();
+    if (!wf) return;
+    this.commitChange({ ...wf, settings: { ...wf.settings, ...settings } }, 'settings');
+  }
+
+  importWorkflowData(data: { name?: string; nodes?: any[]; connections?: any; settings?: any }): void {
+    const wf = this.workflow();
+    if (!wf) return;
+    const updated: Workflow = {
+      ...wf,
+      nodes: data.nodes || wf.nodes,
+      connections: data.connections || wf.connections,
+    };
+    if (data.settings) updated.settings = data.settings;
+    this.commitChange(updated, 'import');
+    this.resetHistory(updated);
+  }
+
   setExecutionData(data: Record<string, any> | null): void {
     this.executionData.set(data);
   }
@@ -242,10 +277,38 @@ export class WorkflowEditorStore {
     this.isExecuting.set(executing);
   }
 
-  toggleActive(): void {
+  toggleNodeDisabled(nodeId: string): void {
     const wf = this.workflow();
     if (!wf) return;
-    this.commitChange({ ...wf, active: !wf.active }, 'toggleActive');
+    const node = wf.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    this.updateNode(nodeId, { disabled: !node.disabled });
+  }
+
+  duplicateNode(nodeId: string): void {
+    const wf = this.workflow();
+    if (!wf) return;
+    const original = wf.nodes.find(n => n.id === nodeId);
+    if (!original) return;
+    const newId = `node_${Date.now()}`;
+    const duplicate: WorkflowNode = {
+      ...JSON.parse(JSON.stringify(original)),
+      id: newId,
+      name: original.name + ' (copy)',
+      position: [original.position[0] + 60, original.position[1] + 60] as [number, number],
+    };
+    this.commitChange({
+      ...wf,
+      nodes: [...wf.nodes, duplicate]
+    }, 'addNode');
+  }
+
+  copyNode(nodeId: string): void {
+    const wf = this.workflow();
+    if (!wf) return;
+    const node = wf.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    navigator.clipboard.writeText(JSON.stringify(node, null, 2));
   }
 
   updateNodePositions(positions: Record<string, [number, number]>): void {

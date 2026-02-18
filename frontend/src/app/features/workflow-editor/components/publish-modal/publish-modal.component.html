@@ -1,0 +1,38 @@
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h3 class="modal-title">Publish Workflow</h3>
+      <button class="modal-close" (click)="onCancel()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="versionName">Version name</label>
+        <input class="form-input"
+               id="versionName"
+               type="text"
+               [(ngModel)]="versionName"
+               (keydown.enter)="onConfirm()"
+               autofocus>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">Description <span class="optional">(optional)</span></label>
+        <textarea class="form-textarea"
+                  id="description"
+                  [(ngModel)]="description"
+                  rows="3"
+                  placeholder="What changed in this version?"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="onCancel()">Cancel</button>
+      <button class="btn-publish" (click)="onConfirm()">Publish</button>
+    </div>
+  </div>
+</div>

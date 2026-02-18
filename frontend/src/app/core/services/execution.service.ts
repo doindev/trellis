@@ -1,7 +1,15 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { Execution } from '../models';
+
+interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ExecutionService {
@@ -10,7 +18,9 @@ export class ExecutionService {
   constructor(private api: ApiService) {}
 
   list(params?: Record<string, string>): Observable<Execution[]> {
-    return this.api.get<Execution[]>(this.path, params);
+    return this.api.get<Page<Execution>>(this.path, params).pipe(
+      map(page => page.content)
+    );
   }
 
   get(id: string): Observable<Execution> {
