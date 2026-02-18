@@ -295,32 +295,30 @@
                 <th>Status</th>
                 <th>Started</th>
                 <th>Run time</th>
-                <th>Exec. ID</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               @if (loadingExecutions()) {
                 <tr>
-                  <td colspan="6" class="exec-table-empty">
+                  <td colspan="5" class="exec-table-empty">
                     <span class="spinner-border spinner-border-sm"></span>
                     Loading executions...
                   </td>
                 </tr>
               } @else if (filteredExecutions().length === 0) {
                 <tr>
-                  <td colspan="6" class="exec-table-empty">No executions</td>
+                  <td colspan="5" class="exec-table-empty">No executions</td>
                 </tr>
               } @else {
                 @for (exec of filteredExecutions(); track exec.id) {
                   <tr>
-                    <td class="exec-workflow-name">{{ getWorkflowName(exec.workflowId) }}</td>
+                    <td class="exec-workflow-name" (click)="openExecution(exec)">{{ getWorkflowName(exec.workflowId) }}</td>
                     <td>
                       <span class="exec-status-badge" [attr.data-status]="exec.status">{{ exec.status }}</span>
                     </td>
                     <td class="exec-meta-cell">{{ execStartedAt(exec) }}</td>
                     <td class="exec-meta-cell">{{ execRunTime(exec) }}</td>
-                    <td class="exec-meta-cell exec-id-cell">{{ exec.id }}</td>
                     <td class="exec-actions-cell">
                       @if (exec.status === 'error') {
                         <button class="btn-exec-action" title="Retry" (click)="retryExecution(exec.id, $event)">

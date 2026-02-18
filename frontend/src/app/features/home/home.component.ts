@@ -254,6 +254,12 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  openExecution(exec: Execution): void {
+    this.router.navigate(['/workflow', exec.workflowId], {
+      queryParams: { tab: 'executions', executionId: exec.id }
+    });
+  }
+
   duplicateWorkflow(workflow: Workflow): void {
     if (!workflow.id) return;
     const copy: Partial<Workflow> = {

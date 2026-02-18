@@ -77,9 +77,21 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.nodeTypeStore.loadNodeTypes();
 
     const id = this.route.snapshot.paramMap.get('id');
+    const qp = this.route.snapshot.queryParams;
+
     if (id) {
       this.workflowService.get(id).subscribe({
-        next: (workflow) => this.store.loadWorkflow(workflow),
+        next: (workflow) => {
+          this.store.loadWorkflow(workflow);
+
+          // If navigated with tab=executions&executionId=..., open that execution
+          if (qp['tab'] === 'executions') {
+            this.activeTab = 'executions';
+            if (qp['executionId']) {
+              this.onExecutionSelected(qp['executionId']);
+            }
+          }
+        },
         error: () => this.router.navigate(['/home/workflows'])
       });
     } else {
