@@ -21,7 +21,10 @@
       <app-executions-sidebar
         [workflowId]="store.workflow()?.id || null"
         [selectedExecutionId]="selectedExecutionId"
-        (executionSelected)="onExecutionSelected($event)" />
+        [filters]="execSidebarFilters"
+        (executionSelected)="onExecutionSelected($event)"
+        (filterButtonClicked)="showExecFilterModal = true"
+        (filtersChanged)="execSidebarFilters = $event" />
     }
 
     <div class="editor-main">
@@ -95,6 +98,14 @@
         (openNodeDetail)="store.selectNode($event)" />
     </div>
   </div>
+
+  @if (showExecFilterModal) {
+    <app-execution-filter-modal
+      [filters]="execSidebarFilters"
+      [showWorkflowFilter]="false"
+      (filtersChange)="execSidebarFilters = $event"
+      (closed)="showExecFilterModal = false" />
+  }
 
   @if (showPublishModal) {
     <app-publish-modal

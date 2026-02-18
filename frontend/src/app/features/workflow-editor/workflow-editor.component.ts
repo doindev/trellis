@@ -17,6 +17,11 @@ import { DescriptionModalComponent } from './components/description-modal/descri
 import { ImportUriModalComponent } from './components/import-uri-modal/import-uri-modal.component';
 import { SettingsModalComponent, WorkflowSettings } from './components/settings-modal/settings-modal.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  ExecutionFilterModalComponent,
+  ExecutionFilters,
+  defaultExecutionFilters
+} from '../../shared/components/execution-filter-modal/execution-filter-modal.component';
 import { NodeTypeDescription, Workflow, WorkflowNode, Execution } from '../../core/models';
 
 @Component({
@@ -34,7 +39,8 @@ import { NodeTypeDescription, Workflow, WorkflowNode, Execution } from '../../co
     ImportUriModalComponent,
     SettingsModalComponent,
     ConfirmDialogComponent,
-    ExecutionsSidebarComponent
+    ExecutionsSidebarComponent,
+    ExecutionFilterModalComponent
   ],
   templateUrl: './workflow-editor.component.html',
   styleUrl: './workflow-editor.component.scss'
@@ -55,6 +61,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   activeTab: 'editor' | 'executions' = 'editor';
   pendingConnection: { sourceNodeId: string; sourceHandleId: string } | null = null;
   selectedExecutionId: string | null = null;
+  showExecFilterModal = false;
+  execSidebarFilters: ExecutionFilters = defaultExecutionFilters();
   viewingExecution: Execution | null = null;
   executionWorkflow: Workflow | null = null;
   executionDataById: Record<string, any> | null = null;

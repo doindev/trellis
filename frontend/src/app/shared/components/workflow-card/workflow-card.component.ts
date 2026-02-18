@@ -15,6 +15,7 @@ export class WorkflowCardComponent {
   @Output() duplicate = new EventEmitter<Workflow>();
   @Output() delete = new EventEmitter<Workflow>();
   showActions = false;
+  private actionsCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
   get nodeCount(): number {
     return this.workflow.nodes?.length || 0;
@@ -45,7 +46,22 @@ export class WorkflowCardComponent {
 
   onToggleActions(event: Event): void {
     event.stopPropagation();
+    this.cancelActionsClose();
     this.showActions = !this.showActions;
+  }
+
+  scheduleActionsClose(): void {
+    this.cancelActionsClose();
+    this.actionsCloseTimer = setTimeout(() => {
+      this.showActions = false;
+    }, 400);
+  }
+
+  cancelActionsClose(): void {
+    if (this.actionsCloseTimer) {
+      clearTimeout(this.actionsCloseTimer);
+      this.actionsCloseTimer = null;
+    }
   }
 
   onAction(action: string, event: Event): void {

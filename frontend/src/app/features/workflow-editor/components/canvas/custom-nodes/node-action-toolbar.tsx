@@ -5,14 +5,15 @@ import { CanvasActionsContext } from '../trellis-canvas';
 interface NodeActionToolbarProps {
   nodeId: string;
   selected: boolean;
+  nearby: boolean;
   disabled?: boolean;
 }
 
-export default function NodeActionToolbar({ nodeId, selected, disabled }: NodeActionToolbarProps) {
+export default function NodeActionToolbar({ nodeId, selected, nearby, disabled }: NodeActionToolbarProps) {
   const ctx = useContext(CanvasActionsContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const isVisible = selected && nodeId === ctx.singleSelectedId;
+  const isVisible = nearby || selected;
 
   // Close menu on outside click
   useEffect(() => {
@@ -31,20 +32,28 @@ export default function NodeActionToolbar({ nodeId, selected, disabled }: NodeAc
     if (!isVisible) setMenuOpen(false);
   }, [isVisible]);
 
+  const ensureSelected = () => {
+    if (!selected) {
+      ctx.selectNode(nodeId);
+    }
+  };
+
   const stop = (fn: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
+    ensureSelected();
     fn();
   };
 
   const menuAction = (fn: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
+    ensureSelected();
     setMenuOpen(false);
     fn();
   };
 
   return (
     <NodeToolbar isVisible={isVisible} position={Position.Top} align="center" offset={8}>
-      <div className="node-action-toolbar" onClick={(e) => e.stopPropagation()}>
+      <div className="node-action-toolbar" onClick={(e) => { e.stopPropagation(); ensureSelected(); }}>
         <button className="nat-btn" title="Execute from this node" onClick={stop(() => ctx.executeFromNode(nodeId))}>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
             <polygon points="6 3 20 12 6 21 6 3" />

@@ -32,6 +32,7 @@ export interface CanvasActions {
   duplicateNode: (nodeId: string) => void;
   copyNode: (nodeId: string) => void;
   renameNode: (nodeId: string) => void;
+  selectNode: (nodeId: string) => void;
   selectAll: () => void;
   deselectAll: () => void;
 }
@@ -45,6 +46,7 @@ export const CanvasActionsContext = createContext<CanvasActions>({
   duplicateNode: () => {},
   copyNode: () => {},
   renameNode: () => {},
+  selectNode: () => {},
   selectAll: () => {},
   deselectAll: () => {},
 });
@@ -150,9 +152,13 @@ function TrellisCanvasInner({
     duplicateNode: (nodeId) => onDuplicateNodeRef.current?.(nodeId),
     copyNode: (nodeId) => onCopyNodeRef.current?.(nodeId),
     renameNode: (nodeId) => onNodeDoubleClickRef.current?.(nodeId),
+    selectNode: (nodeId) => {
+      setNodes(nds => nds.map(n => ({ ...n, selected: n.id === nodeId })));
+      onNodeClick?.(nodeId);
+    },
     selectAll: () => setNodes(nds => nds.map(n => ({ ...n, selected: true }))),
     deselectAll: () => setNodes(nds => nds.map(n => ({ ...n, selected: false }))),
-  }), [singleSelectedId, setNodes]);
+  }), [singleSelectedId, setNodes, onNodeClick]);
 
   // Sync nodes from Angular without resetting viewport
   useEffect(() => {

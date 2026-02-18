@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Execution } from '../../../../core/models';
 import { ExecutionService } from '../../../../core/services';
 import {
-  ExecutionFilterModalComponent,
   ExecutionFilters,
   defaultExecutionFilters,
   isFilterActive
@@ -13,7 +12,7 @@ import {
 @Component({
   selector: 'app-executions-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, ExecutionFilterModalComponent],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="executions-sidebar">
       <div class="sidebar-header">
@@ -23,7 +22,7 @@ import {
             <input type="checkbox" [(ngModel)]="autoRefresh" (ngModelChange)="onAutoRefreshChange()">
             Auto-refresh
           </label>
-          <button class="btn-filter" [class.active]="filterActive" (click)="showFilterModal = true" title="Filter executions">
+          <button class="btn-filter" [class.active]="filterActive" (click)="filterButtonClicked.emit()" title="Filter executions">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
             </svg>
@@ -76,17 +75,10 @@ import {
       </ng-template>
     </div>
 
-    @if (showFilterModal) {
-      <app-execution-filter-modal
-        [filters]="filters"
-        [showWorkflowFilter]="false"
-        (filtersChange)="onFiltersChange($event)"
-        (closed)="showFilterModal = false" />
-    }
   `,
   styles: [`
     .executions-sidebar {
-      width: 320px;
+      width: 280px;
       height: 100%;
       background: hsl(0, 0%, 13%);
       border-right: 1px solid hsl(0, 0%, 20%);
@@ -311,12 +303,13 @@ import {
 export class ExecutionsSidebarComponent implements OnInit, OnDestroy, OnChanges {
   @Input() workflowId: string | null = null;
   @Input() selectedExecutionId: string | null = null;
+  @Input() filters: ExecutionFilters = defaultExecutionFilters();
   @Output() executionSelected = new EventEmitter<string>();
+  @Output() filterButtonClicked = new EventEmitter<void>();
+  @Output() filtersChanged = new EventEmitter<ExecutionFilters>();
 
   executions: Execution[] = [];
   autoRefresh = true;
-  showFilterModal = false;
-  filters: ExecutionFilters = defaultExecutionFilters();
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
   get filterActive(): boolean {
@@ -418,12 +411,8 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy, OnChanges 
     }
   }
 
-  onFiltersChange(filters: ExecutionFilters): void {
-    this.filters = filters;
-  }
-
   resetFilters(): void {
-    this.filters = defaultExecutionFilters();
+    this.filtersChanged.emit(defaultExecutionFilters());
   }
 
   private startAutoRefresh(): void {
