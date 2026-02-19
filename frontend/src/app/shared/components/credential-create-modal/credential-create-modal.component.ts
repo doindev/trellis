@@ -1,13 +1,13 @@
 import { Component, EventEmitter, OnInit, Output, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CredentialService } from '../../../core/services';
-import { Credential, CredentialSchema } from '../../../core/models';
+import { Credential, CredentialProperty, CredentialSchema } from '../../../core/models';
 
 @Component({
   selector: 'app-credential-create-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, KeyValuePipe],
   templateUrl: './credential-create-modal.component.html',
   styleUrl: './credential-create-modal.component.scss'
 })
@@ -30,8 +30,22 @@ export class CredentialCreateModalComponent implements OnInit {
     return types.filter(t =>
       t.displayName.toLowerCase().includes(term) ||
       t.type.toLowerCase().includes(term) ||
-      (t.description && t.description.toLowerCase().includes(term))
+      (t.description && t.description.toLowerCase().includes(term)) ||
+      (t.category && t.category.toLowerCase().includes(term))
     );
+  });
+
+  groupedFilteredTypes = computed(() => {
+    const types = this.filteredTypes();
+    const groups = new Map<string, CredentialSchema[]>();
+    for (const t of types) {
+      const cat = t.category || 'Generic';
+      if (!groups.has(cat)) {
+        groups.set(cat, []);
+      }
+      groups.get(cat)!.push(t);
+    }
+    return groups;
   });
 
   // Modal 2: Credential editor
@@ -91,11 +105,19 @@ export class CredentialCreateModalComponent implements OnInit {
     const type = this.selectedType();
     if (!type) return;
 
+    // Pre-populate all fields that have default values
+    const data: Record<string, any> = {};
+    for (const prop of type.properties) {
+      if (prop.defaultValue != null) {
+        data[prop.name] = prop.defaultValue;
+      }
+    }
+
     this.showTypeSelectModal.set(false);
     this.editorCredential.set({
       name: type.displayName + ' account',
       type: type.type,
-      data: {}
+      data
     });
     this.editorSchema.set(type);
     this.editorTab.set('connection');
@@ -145,7 +167,22 @@ export class CredentialCreateModalComponent implements OnInit {
     this.closed.emit();
   }
 
-  isPasswordField(prop: any): boolean {
-    return prop.typeOptions?.password === true || prop.type === 'password';
+  isPasswordField(prop: CredentialProperty): boolean {
+    return prop.typeOptions?.['password'] === true || prop.type === 'password';
   }
+
+  isPropertyVisible(prop: CredentialProperty): boolean {
+    if (!prop.displayOptions?.show) return true;
+    const data = this.editorCredential().data || {};
+    for (const [field, allowedValues] of Object.entries(prop.displayOptions.show)) {
+      const currentValue = data[field];
+      if (!allowedValues.includes(currentValue)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Keep original insertion order for KeyValuePipe
+  keepOrder = () => 0;
 }

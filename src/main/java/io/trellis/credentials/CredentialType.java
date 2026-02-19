@@ -12,5 +12,9 @@ public class CredentialType {
     private String type;
     private String displayName;
     private String description;
+    private String category;
+    private String icon;
+    private String documentationUrl;
+    private String extendsType;
     private List<NodeParameter> properties;
 }
