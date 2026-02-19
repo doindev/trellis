@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "deepLApi",
-        displayName = "DeepL A P I",
-        description = "DeepL A P I authentication",
+        displayName = "DeepL API",
+        description = "DeepL API authentication",
         category = "AI / LLM",
         icon = "deepl"
 )

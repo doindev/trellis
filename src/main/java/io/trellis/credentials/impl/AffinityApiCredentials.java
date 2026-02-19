@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "affinityApi",
-        displayName = "Affinity A P I",
-        description = "Affinity A P I authentication",
+        displayName = "Affinity API",
+        description = "Affinity API authentication",
         category = "Other",
         icon = "affinity"
 )

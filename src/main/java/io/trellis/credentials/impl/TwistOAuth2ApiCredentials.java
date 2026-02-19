@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "twistOAuth2Api",
-        displayName = "Twist O Auth2 A P I",
-        description = "Twist O Auth2 A P I authentication",
+        displayName = "Twist OAuth2 API",
+        description = "Twist OAuth2 API authentication",
         category = "Communication",
         icon = "twist",
         extendsType = "oAuth2Api"

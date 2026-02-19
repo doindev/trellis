@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "hybridAnalysisApi",
-        displayName = "Hybrid Analysis A P I",
-        description = "Hybrid Analysis A P I authentication",
+        displayName = "Hybrid Analysis API",
+        description = "Hybrid Analysis API authentication",
         category = "Security",
         icon = "hybridanalysis"
 )

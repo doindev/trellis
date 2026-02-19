@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "venafiTlsProtectDatacenterApi",
-        displayName = "Venafi Tls Protect Datacenter A P I",
-        description = "Venafi Tls Protect Datacenter A P I authentication",
+        displayName = "Venafi TLS Protect Datacenter API",
+        description = "Venafi TLS Protect Datacenter API authentication",
         category = "Security",
         icon = "venafitlsprotectdatacenter"
 )

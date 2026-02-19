@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "helpScoutOAuth2Api",
-        displayName = "HelpScout O Auth2 A P I",
-        description = "HelpScout O Auth2 A P I authentication",
+        displayName = "HelpScout OAuth2 API",
+        description = "HelpScout OAuth2 API authentication",
         category = "Support",
         icon = "helpscout",
         extendsType = "oAuth2Api"

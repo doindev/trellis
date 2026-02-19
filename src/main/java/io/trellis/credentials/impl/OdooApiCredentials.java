@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "odooApi",
-        displayName = "Odoo A P I",
-        description = "Odoo A P I authentication",
+        displayName = "Odoo API",
+        description = "Odoo API authentication",
         category = "Finance",
         icon = "odoo"
 )

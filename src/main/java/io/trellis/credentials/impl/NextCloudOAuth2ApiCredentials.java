@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "nextCloudOAuth2Api",
-        displayName = "Next Cloud O Auth2 A P I",
-        description = "Next Cloud O Auth2 A P I authentication",
+        displayName = "Next Cloud OAuth2 API",
+        description = "Next Cloud OAuth2 API authentication",
         category = "Storage",
         icon = "nextcloud",
         extendsType = "oAuth2Api"

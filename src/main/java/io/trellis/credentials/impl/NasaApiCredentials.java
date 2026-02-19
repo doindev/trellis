@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "nasaApi",
-        displayName = "Nasa A P I",
-        description = "Nasa A P I authentication",
+        displayName = "Nasa API",
+        description = "Nasa API authentication",
         category = "Analytics",
         icon = "nasa"
 )

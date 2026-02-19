@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "supabaseApi",
-        displayName = "Supabase A P I",
-        description = "Supabase A P I authentication",
+        displayName = "Supabase API",
+        description = "Supabase API authentication",
         category = "Other",
         icon = "supabase"
 )

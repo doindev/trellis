@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "sendyApi",
-        displayName = "Sendy A P I",
-        description = "Sendy A P I authentication",
+        displayName = "Sendy API",
+        description = "Sendy API authentication",
         category = "Email",
         icon = "sendy"
 )

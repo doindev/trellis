@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "cortexApi",
-        displayName = "Cortex A P I",
-        description = "Cortex A P I authentication",
+        displayName = "Cortex API",
+        description = "Cortex API authentication",
         category = "Security",
         icon = "cortex"
 )

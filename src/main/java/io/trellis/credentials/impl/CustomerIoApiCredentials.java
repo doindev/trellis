@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "customerIoApi",
-        displayName = "Customer.io A P I",
-        description = "Customer.io A P I authentication",
+        displayName = "Customer.io API",
+        description = "Customer.io API authentication",
         category = "Marketing",
         icon = "customerio"
 )

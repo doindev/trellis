@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "clockifyApi",
-        displayName = "Clockify A P I",
-        description = "Clockify A P I authentication",
+        displayName = "Clockify API",
+        description = "Clockify API authentication",
         category = "Analytics",
         icon = "clockify"
 )

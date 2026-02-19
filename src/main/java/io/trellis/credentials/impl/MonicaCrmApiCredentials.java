@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "monicaCrmApi",
-        displayName = "Monica CRM A P I",
-        description = "Monica CRM A P I authentication",
+        displayName = "Monica CRM API",
+        description = "Monica CRM API authentication",
         category = "CRM / Sales",
         icon = "monicacrm"
 )

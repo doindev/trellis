@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleDocsOAuth2Api",
-        displayName = "Google Docs O Auth2 A P I",
-        description = "Google Docs O Auth2 A P I authentication",
+        displayName = "Google Docs OAuth2 API",
+        description = "Google Docs OAuth2 API authentication",
         category = "Google Services",
         icon = "googledocs",
         extendsType = "oAuth2Api"

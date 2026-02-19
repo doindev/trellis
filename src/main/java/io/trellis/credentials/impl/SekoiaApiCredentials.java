@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "sekoiaApi",
-        displayName = "Sekoia A P I",
-        description = "Sekoia A P I authentication",
+        displayName = "Sekoia API",
+        description = "Sekoia API authentication",
         category = "Security",
         icon = "sekoia"
 )

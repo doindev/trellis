@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "rocketchatApi",
-        displayName = "Rocketchat A P I",
-        description = "Rocketchat A P I authentication",
+        displayName = "Rocket.Chat API",
+        description = "Rocket.Chat API authentication",
         category = "Communication",
         icon = "rocketchat"
 )

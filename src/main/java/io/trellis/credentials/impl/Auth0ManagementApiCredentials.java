@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "auth0ManagementApi",
-        displayName = "Auth0 Management A P I",
-        description = "Auth0 Management A P I authentication",
+        displayName = "Auth0 Management API",
+        description = "Auth0 Management API authentication",
         category = "Other",
         icon = "auth0management"
 )

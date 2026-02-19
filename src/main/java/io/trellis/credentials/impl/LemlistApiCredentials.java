@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "lemlistApi",
-        displayName = "Lemlist A P I",
-        description = "Lemlist A P I authentication",
+        displayName = "Lemlist API",
+        description = "Lemlist API authentication",
         category = "Marketing",
         icon = "lemlist"
 )

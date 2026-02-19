@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "emeliaApi",
-        displayName = "Emelia A P I",
-        description = "Emelia A P I authentication",
+        displayName = "Emelia API",
+        description = "Emelia API authentication",
         category = "Marketing",
         icon = "emelia"
 )

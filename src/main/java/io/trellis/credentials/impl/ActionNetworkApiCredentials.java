@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "actionNetworkApi",
-        displayName = "Action Network A P I",
-        description = "Action Network A P I authentication",
+        displayName = "Action Network API",
+        description = "Action Network API authentication",
         category = "Other",
         icon = "actionnetwork"
 )

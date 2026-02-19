@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "nocoDb",
-        displayName = "Noco D B",
-        description = "Noco D B authentication",
+        displayName = "Noco DB",
+        description = "Noco DB authentication",
         category = "Productivity",
         icon = "noco"
 )

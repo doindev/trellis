@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "egoiApi",
-        displayName = "Egoi A P I",
-        description = "Egoi A P I authentication",
+        displayName = "Egoi API",
+        description = "Egoi API authentication",
         category = "Email",
         icon = "egoi"
 )

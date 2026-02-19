@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "netlifyApi",
-        displayName = "Netlify A P I",
-        description = "Netlify A P I authentication",
+        displayName = "Netlify API",
+        description = "Netlify API authentication",
         category = "Developer Tools",
         icon = "netlify"
 )

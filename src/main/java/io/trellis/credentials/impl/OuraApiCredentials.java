@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "ouraApi",
-        displayName = "Oura A P I",
-        description = "Oura A P I authentication",
+        displayName = "Oura API",
+        description = "Oura API authentication",
         category = "Productivity",
         icon = "oura"
 )

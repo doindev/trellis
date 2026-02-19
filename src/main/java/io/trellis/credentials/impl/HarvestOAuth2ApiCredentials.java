@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "harvestOAuth2Api",
-        displayName = "Harvest O Auth2 A P I",
-        description = "Harvest O Auth2 A P I authentication",
+        displayName = "Harvest OAuth2 API",
+        description = "Harvest OAuth2 API authentication",
         category = "CRM / Sales",
         icon = "harvest",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleContactsOAuth2Api",
-        displayName = "Google Contacts O Auth2 A P I",
-        description = "Google Contacts O Auth2 A P I authentication",
+        displayName = "Google Contacts OAuth2 API",
+        description = "Google Contacts OAuth2 API authentication",
         category = "Google Services",
         icon = "googlecontacts",
         extendsType = "oAuth2Api"

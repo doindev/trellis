@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mondayComOAuth2Api",
-        displayName = "Monday.com O Auth2 A P I",
-        description = "Monday.com O Auth2 A P I authentication",
+        displayName = "Monday.com OAuth2 API",
+        description = "Monday.com OAuth2 API authentication",
         category = "Project Management",
         icon = "mondaycom",
         extendsType = "oAuth2Api"

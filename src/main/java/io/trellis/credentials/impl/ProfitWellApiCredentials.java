@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "profitWellApi",
-        displayName = "Profit Well A P I",
-        description = "Profit Well A P I authentication",
+        displayName = "Profit Well API",
+        description = "Profit Well API authentication",
         category = "Finance",
         icon = "profitwell"
 )

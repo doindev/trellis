@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "highLevelOAuth2Api",
-        displayName = "HighLevel O Auth2 A P I",
-        description = "HighLevel O Auth2 A P I authentication",
+        displayName = "HighLevel OAuth2 API",
+        description = "HighLevel OAuth2 API authentication",
         category = "CRM / Sales",
         icon = "highlevel",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "solarWindsObservabilityApi",
-        displayName = "SolarWinds Observability A P I",
-        description = "SolarWinds Observability A P I authentication",
+        displayName = "SolarWinds Observability API",
+        description = "SolarWinds Observability API authentication",
         category = "Security",
         icon = "solarwindsobservability"
 )

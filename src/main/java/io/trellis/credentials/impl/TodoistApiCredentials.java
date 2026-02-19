@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "todoistApi",
-        displayName = "Todoist A P I",
-        description = "Todoist A P I authentication",
+        displayName = "Todoist API",
+        description = "Todoist API authentication",
         category = "Project Management",
         icon = "todoist"
 )

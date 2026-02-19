@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "homeAssistantApi",
-        displayName = "Home Assistant A P I",
-        description = "Home Assistant A P I authentication",
+        displayName = "Home Assistant API",
+        description = "Home Assistant API authentication",
         category = "Infrastructure",
         icon = "homeassistant"
 )

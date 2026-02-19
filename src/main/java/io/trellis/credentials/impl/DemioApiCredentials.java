@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "demioApi",
-        displayName = "Demio A P I",
-        description = "Demio A P I authentication",
+        displayName = "Demio API",
+        description = "Demio API authentication",
         category = "Marketing",
         icon = "demio"
 )

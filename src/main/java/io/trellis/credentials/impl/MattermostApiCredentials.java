@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mattermostApi",
-        displayName = "Mattermost A P I",
-        description = "Mattermost A P I authentication",
+        displayName = "Mattermost API",
+        description = "Mattermost API authentication",
         category = "Communication",
         icon = "mattermost"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "sms77Api",
-        displayName = "Sms77 A P I",
-        description = "Sms77 A P I authentication",
+        displayName = "Sms77 API",
+        description = "Sms77 API authentication",
         category = "Communication",
         icon = "sms77"
 )

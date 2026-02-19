@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleFirebaseCloudFirestoreOAuth2Api",
-        displayName = "Google Firebase Cloud Firestore O Auth2 A P I",
-        description = "Google Firebase Cloud Firestore O Auth2 A P I authentication",
+        displayName = "Google Firebase Cloud Firestore OAuth2 API",
+        description = "Google Firebase Cloud Firestore OAuth2 API authentication",
         category = "Google Services",
         icon = "googlefirebasecloudfirestore",
         extendsType = "oAuth2Api"

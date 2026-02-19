@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "datadogApi",
-        displayName = "Datadog A P I",
-        description = "Datadog A P I authentication",
+        displayName = "Datadog API",
+        description = "Datadog API authentication",
         category = "Analytics",
         icon = "datadog"
 )

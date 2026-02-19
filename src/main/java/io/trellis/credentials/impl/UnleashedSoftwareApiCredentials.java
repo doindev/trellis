@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "unleashedSoftwareApi",
-        displayName = "Unleashed Software A P I",
-        description = "Unleashed Software A P I authentication",
+        displayName = "Unleashed Software API",
+        description = "Unleashed Software API authentication",
         category = "Finance",
         icon = "unleashedsoftware"
 )

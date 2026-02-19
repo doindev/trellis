@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "sentryIoServerApi",
-        displayName = "Sentry.io Server A P I",
-        description = "Sentry.io Server A P I authentication",
+        displayName = "Sentry.io Server API",
+        description = "Sentry.io Server API authentication",
         category = "Support",
         icon = "sentryioserver"
 )

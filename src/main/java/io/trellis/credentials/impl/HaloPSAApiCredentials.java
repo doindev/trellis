@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "haloPSAApi",
-        displayName = "HaloPSA A P I",
-        description = "HaloPSA A P I authentication",
+        displayName = "HaloPSA API",
+        description = "HaloPSA API authentication",
         category = "CRM / Sales",
         icon = "halopsa"
 )

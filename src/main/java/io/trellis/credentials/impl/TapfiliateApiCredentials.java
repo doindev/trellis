@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "tapfiliateApi",
-        displayName = "Tapfiliate A P I",
-        description = "Tapfiliate A P I authentication",
+        displayName = "Tapfiliate API",
+        description = "Tapfiliate API authentication",
         category = "Marketing",
         icon = "tapfiliate"
 )

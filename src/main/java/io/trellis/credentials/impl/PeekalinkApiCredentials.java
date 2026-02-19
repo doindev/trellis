@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "peekalinkApi",
-        displayName = "Peekalink A P I",
-        description = "Peekalink A P I authentication",
+        displayName = "Peekalink API",
+        description = "Peekalink API authentication",
         category = "Analytics",
         icon = "peekalink"
 )

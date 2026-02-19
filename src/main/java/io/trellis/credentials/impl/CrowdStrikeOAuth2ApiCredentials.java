@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "crowdStrikeOAuth2Api",
-        displayName = "CrowdStrike O Auth2 A P I",
-        description = "CrowdStrike O Auth2 A P I authentication",
+        displayName = "CrowdStrike OAuth2 API",
+        description = "CrowdStrike OAuth2 API authentication",
         category = "Security",
         icon = "crowdstrike",
         extendsType = "oAuth2Api"

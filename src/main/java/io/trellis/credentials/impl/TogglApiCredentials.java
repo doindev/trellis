@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "togglApi",
-        displayName = "Toggl A P I",
-        description = "Toggl A P I authentication",
+        displayName = "Toggl API",
+        description = "Toggl API authentication",
         category = "Analytics",
         icon = "toggl"
 )

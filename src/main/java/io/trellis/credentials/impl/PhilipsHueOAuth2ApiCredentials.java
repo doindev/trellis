@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "philipsHueOAuth2Api",
-        displayName = "Philips Hue O Auth2 A P I",
-        description = "Philips Hue O Auth2 A P I authentication",
+        displayName = "Philips Hue OAuth2 API",
+        description = "Philips Hue OAuth2 API authentication",
         category = "Productivity",
         icon = "philipshue",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mindeeReceiptApi",
-        displayName = "Mindee Receipt A P I",
-        description = "Mindee Receipt A P I authentication",
+        displayName = "Mindee Receipt API",
+        description = "Mindee Receipt API authentication",
         category = "Other",
         icon = "mindeereceipt"
 )

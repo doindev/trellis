@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleSheetsTriggerOAuth2Api",
-        displayName = "Google Sheets Trigger O Auth2 A P I",
-        description = "Google Sheets Trigger O Auth2 A P I authentication",
+        displayName = "Google Sheets Trigger OAuth2 API",
+        description = "Google Sheets Trigger OAuth2 API authentication",
         category = "Google Services",
         icon = "googlesheetstrigger",
         extendsType = "oAuth2Api"

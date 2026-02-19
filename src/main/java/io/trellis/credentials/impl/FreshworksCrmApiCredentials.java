@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "freshworksCrmApi",
-        displayName = "Freshworks Crm A P I",
-        description = "Freshworks Crm A P I authentication",
+        displayName = "Freshworks CRM API",
+        description = "Freshworks CRM API authentication",
         category = "CRM / Sales",
         icon = "freshworkscrm"
 )

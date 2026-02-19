@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "notionOAuth2Api",
-        displayName = "Notion O Auth2 A P I",
-        description = "Notion O Auth2 A P I authentication",
+        displayName = "Notion OAuth2 API",
+        description = "Notion OAuth2 API authentication",
         category = "Productivity",
         icon = "notion",
         extendsType = "oAuth2Api"

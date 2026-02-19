@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "npmApi",
-        displayName = "npm A P I",
-        description = "npm A P I authentication",
+        displayName = "npm API",
+        description = "npm API authentication",
         category = "Developer Tools",
         icon = "npm"
 )

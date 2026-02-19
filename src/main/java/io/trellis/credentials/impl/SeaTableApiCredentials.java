@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "seaTableApi",
-        displayName = "SeaTable A P I",
-        description = "SeaTable A P I authentication",
+        displayName = "SeaTable API",
+        description = "SeaTable API authentication",
         category = "Productivity",
         icon = "seatable"
 )

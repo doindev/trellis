@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mailjetEmailApi",
-        displayName = "Mailjet Email A P I",
-        description = "Mailjet Email A P I authentication",
+        displayName = "Mailjet Email API",
+        description = "Mailjet Email API authentication",
         category = "Email",
         icon = "mailjetemail"
 )

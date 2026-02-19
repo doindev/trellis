@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mailcheckApi",
-        displayName = "Mailcheck A P I",
-        description = "Mailcheck A P I authentication",
+        displayName = "Mailcheck API",
+        description = "Mailcheck API authentication",
         category = "Email",
         icon = "mailcheck"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "gSuiteAdminOAuth2Api",
-        displayName = "Google Workspace Admin O Auth2 A P I",
-        description = "Google Workspace Admin O Auth2 A P I authentication",
+        displayName = "Google Workspace Admin OAuth2 API",
+        description = "Google Workspace Admin OAuth2 API authentication",
         category = "Google Services",
         icon = "gsuiteadmin",
         extendsType = "oAuth2Api"

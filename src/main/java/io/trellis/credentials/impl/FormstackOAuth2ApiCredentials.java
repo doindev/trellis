@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "formstackOAuth2Api",
-        displayName = "Formstack O Auth2 A P I",
-        description = "Formstack O Auth2 A P I authentication",
+        displayName = "Formstack OAuth2 API",
+        description = "Formstack OAuth2 API authentication",
         category = "Project Management",
         icon = "formstack",
         extendsType = "oAuth2Api"

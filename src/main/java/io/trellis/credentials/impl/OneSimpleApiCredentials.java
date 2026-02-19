@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "oneSimpleApi",
-        displayName = "One Simple A P I",
-        description = "One Simple A P I authentication",
+        displayName = "One Simple API",
+        description = "One Simple API authentication",
         category = "Analytics",
         icon = "onesimple"
 )

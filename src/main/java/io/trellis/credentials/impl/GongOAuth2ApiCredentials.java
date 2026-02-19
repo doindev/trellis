@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "gongOAuth2Api",
-        displayName = "Gong O Auth2 A P I",
-        description = "Gong O Auth2 A P I authentication",
+        displayName = "Gong OAuth2 API",
+        description = "Gong OAuth2 API authentication",
         category = "Other",
         icon = "gong",
         extendsType = "oAuth2Api"

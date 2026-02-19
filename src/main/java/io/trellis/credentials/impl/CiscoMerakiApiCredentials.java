@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "ciscoMerakiApi",
-        displayName = "Cisco Meraki A P I",
-        description = "Cisco Meraki A P I authentication",
+        displayName = "Cisco Meraki API",
+        description = "Cisco Meraki API authentication",
         category = "Security",
         icon = "ciscomeraki"
 )

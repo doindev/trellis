@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "vonageApi",
-        displayName = "Vonage A P I",
-        description = "Vonage A P I authentication",
+        displayName = "Vonage API",
+        description = "Vonage API authentication",
         category = "Communication",
         icon = "vonage"
 )

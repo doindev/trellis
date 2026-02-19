@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "kibanaApi",
-        displayName = "Kibana A P I",
-        description = "Kibana A P I authentication",
+        displayName = "Kibana API",
+        description = "Kibana API authentication",
         category = "Analytics",
         icon = "kibana"
 )

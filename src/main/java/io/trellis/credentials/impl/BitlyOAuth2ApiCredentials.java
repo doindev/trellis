@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "bitlyOAuth2Api",
-        displayName = "Bitly O Auth2 A P I",
-        description = "Bitly O Auth2 A P I authentication",
+        displayName = "Bitly OAuth2 API",
+        description = "Bitly OAuth2 API authentication",
         category = "Other",
         icon = "bitly",
         extendsType = "oAuth2Api"

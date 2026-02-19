@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleBigQueryOAuth2Api",
-        displayName = "Google Big Query O Auth2 A P I",
-        description = "Google Big Query O Auth2 A P I authentication",
+        displayName = "Google Big Query OAuth2 API",
+        description = "Google Big Query OAuth2 API authentication",
         category = "Google Services",
         icon = "googlebigquery",
         extendsType = "oAuth2Api"

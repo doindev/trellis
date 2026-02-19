@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "rundeckApi",
-        displayName = "Rundeck A P I",
-        description = "Rundeck A P I authentication",
+        displayName = "Rundeck API",
+        description = "Rundeck API authentication",
         category = "Developer Tools",
         icon = "rundeck"
 )

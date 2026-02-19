@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "shopifyApi",
-        displayName = "Shopify A P I",
-        description = "Shopify A P I authentication",
+        displayName = "Shopify API",
+        description = "Shopify API authentication",
         category = "Finance",
         icon = "shopify"
 )

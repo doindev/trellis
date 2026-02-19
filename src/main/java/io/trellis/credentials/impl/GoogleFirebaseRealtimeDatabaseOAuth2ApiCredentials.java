@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleFirebaseRealtimeDatabaseOAuth2Api",
-        displayName = "Google Firebase Realtime Database O Auth2 A P I",
-        description = "Google Firebase Realtime Database O Auth2 A P I authentication",
+        displayName = "Google Firebase Realtime Database OAuth2 API",
+        description = "Google Firebase Realtime Database OAuth2 API authentication",
         category = "Google Services",
         icon = "googlefirebaserealtimedatabase",
         extendsType = "oAuth2Api"

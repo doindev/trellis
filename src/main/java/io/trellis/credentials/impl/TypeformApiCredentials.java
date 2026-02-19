@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "typeformApi",
-        displayName = "Typeform A P I",
-        description = "Typeform A P I authentication",
+        displayName = "Typeform API",
+        description = "Typeform API authentication",
         category = "Marketing",
         icon = "typeform"
 )

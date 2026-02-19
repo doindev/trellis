@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftExcelOAuth2Api",
-        displayName = "Microsoft Excel O Auth2 A P I",
-        description = "Microsoft Excel O Auth2 A P I authentication",
+        displayName = "Microsoft Excel OAuth2 API",
+        description = "Microsoft Excel OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsoftexcel",
         extendsType = "oAuth2Api"

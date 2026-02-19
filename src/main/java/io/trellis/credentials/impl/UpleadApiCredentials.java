@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "upleadApi",
-        displayName = "Uplead A P I",
-        description = "Uplead A P I authentication",
+        displayName = "Uplead API",
+        description = "Uplead API authentication",
         category = "Marketing",
         icon = "uplead"
 )

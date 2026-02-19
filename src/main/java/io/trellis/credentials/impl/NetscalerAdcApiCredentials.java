@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "netscalerAdcApi",
-        displayName = "NetScaler ADC A P I",
-        description = "NetScaler ADC A P I authentication",
+        displayName = "NetScaler ADC API",
+        description = "NetScaler ADC API authentication",
         category = "Security",
         icon = "netscaleradc"
 )

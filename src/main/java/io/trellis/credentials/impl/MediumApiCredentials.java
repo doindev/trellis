@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mediumApi",
-        displayName = "Medium A P I",
-        description = "Medium A P I authentication",
+        displayName = "Medium API",
+        description = "Medium API authentication",
         category = "Social Media",
         icon = "medium"
 )

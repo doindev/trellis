@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "gotifyApi",
-        displayName = "Gotify A P I",
-        description = "Gotify A P I authentication",
+        displayName = "Gotify API",
+        description = "Gotify API authentication",
         category = "Communication",
         icon = "gotify"
 )

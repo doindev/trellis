@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "convertKitApi",
-        displayName = "ConvertKit A P I",
-        description = "ConvertKit A P I authentication",
+        displayName = "ConvertKit API",
+        description = "ConvertKit API authentication",
         category = "Email",
         icon = "convertkit"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "koBoToolboxApi",
-        displayName = "KoBoToolbox A P I",
-        description = "KoBoToolbox A P I authentication",
+        displayName = "KoBoToolbox API",
+        description = "KoBoToolbox API authentication",
         category = "Other",
         icon = "kobotoolbox"
 )

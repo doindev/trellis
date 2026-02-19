@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "youTubeOAuth2Api",
-        displayName = "YouTube O Auth2 A P I",
-        description = "YouTube O Auth2 A P I authentication",
+        displayName = "YouTube OAuth2 API",
+        description = "YouTube OAuth2 API authentication",
         category = "Google Services",
         icon = "youtube",
         extendsType = "oAuth2Api"

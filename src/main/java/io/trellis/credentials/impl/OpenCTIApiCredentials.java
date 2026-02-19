@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "openCTIApi",
-        displayName = "OpenCTI A P I",
-        description = "OpenCTI A P I authentication",
+        displayName = "OpenCTI API",
+        description = "OpenCTI API authentication",
         category = "Security",
         icon = "opencti"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "msg91Api",
-        displayName = "Msg91 A P I",
-        description = "Msg91 A P I authentication",
+        displayName = "Msg91 API",
+        description = "Msg91 API authentication",
         category = "Communication",
         icon = "msg91"
 )

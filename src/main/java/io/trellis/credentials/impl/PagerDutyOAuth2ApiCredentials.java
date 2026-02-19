@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "pagerDutyOAuth2Api",
-        displayName = "PagerDuty O Auth2 A P I",
-        description = "PagerDuty O Auth2 A P I authentication",
+        displayName = "PagerDuty OAuth2 API",
+        description = "PagerDuty OAuth2 API authentication",
         category = "Support",
         icon = "pagerduty",
         extendsType = "oAuth2Api"

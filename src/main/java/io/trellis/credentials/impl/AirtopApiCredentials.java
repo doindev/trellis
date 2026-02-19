@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "airtopApi",
-        displayName = "Airtop A P I",
-        description = "Airtop A P I authentication",
+        displayName = "Airtop API",
+        description = "Airtop API authentication",
         category = "AI / LLM",
         icon = "airtop"
 )

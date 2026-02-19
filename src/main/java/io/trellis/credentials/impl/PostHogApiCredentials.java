@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "postHogApi",
-        displayName = "PostHog A P I",
-        description = "PostHog A P I authentication",
+        displayName = "PostHog API",
+        description = "PostHog API authentication",
         category = "Analytics",
         icon = "posthog"
 )

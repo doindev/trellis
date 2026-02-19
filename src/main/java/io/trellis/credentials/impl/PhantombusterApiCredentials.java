@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "phantombusterApi",
-        displayName = "Phantombuster A P I",
-        description = "Phantombuster A P I authentication",
+        displayName = "Phantombuster API",
+        description = "Phantombuster API authentication",
         category = "Other",
         icon = "phantombuster"
 )

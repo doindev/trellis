@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "payPalApi",
-        displayName = "PayPal A P I",
-        description = "PayPal A P I authentication",
+        displayName = "PayPal API",
+        description = "PayPal API authentication",
         category = "Finance",
         icon = "paypal"
 )

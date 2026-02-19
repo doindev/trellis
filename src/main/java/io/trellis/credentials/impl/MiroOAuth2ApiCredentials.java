@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "miroOAuth2Api",
-        displayName = "Miro O Auth2 A P I",
-        description = "Miro O Auth2 A P I authentication",
+        displayName = "Miro OAuth2 API",
+        description = "Miro OAuth2 API authentication",
         category = "Productivity",
         icon = "miro",
         extendsType = "oAuth2Api"

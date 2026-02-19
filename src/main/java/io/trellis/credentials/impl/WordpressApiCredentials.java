@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "wordpressApi",
-        displayName = "Wordpress A P I",
-        description = "Wordpress A P I authentication",
+        displayName = "Wordpress API",
+        description = "Wordpress API authentication",
         category = "Productivity",
         icon = "wordpress"
 )

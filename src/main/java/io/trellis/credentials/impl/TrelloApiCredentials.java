@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "trelloApi",
-        displayName = "Trello A P I",
-        description = "Trello A P I authentication",
+        displayName = "Trello API",
+        description = "Trello API authentication",
         category = "Project Management",
         icon = "trello"
 )

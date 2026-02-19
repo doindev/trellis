@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mistApi",
-        displayName = "Mist A P I",
-        description = "Mist A P I authentication",
+        displayName = "Mist API",
+        description = "Mist API authentication",
         category = "Security",
         icon = "mist"
 )

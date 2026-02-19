@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "cockpitApi",
-        displayName = "Cockpit A P I",
-        description = "Cockpit A P I authentication",
+        displayName = "Cockpit API",
+        description = "Cockpit API authentication",
         category = "Productivity",
         icon = "cockpit"
 )

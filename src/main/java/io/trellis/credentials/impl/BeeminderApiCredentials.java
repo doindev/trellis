@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "beeminderApi",
-        displayName = "Beeminder A P I",
-        description = "Beeminder A P I authentication",
+        displayName = "Beeminder API",
+        description = "Beeminder API authentication",
         category = "Marketing",
         icon = "beeminder"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "moceanApi",
-        displayName = "Mocean A P I",
-        description = "Mocean A P I authentication",
+        displayName = "Mocean API",
+        description = "Mocean API authentication",
         category = "Communication",
         icon = "mocean"
 )

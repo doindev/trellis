@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "erpNextApi",
-        displayName = "ERPNext A P I",
-        description = "ERPNext A P I authentication",
+        displayName = "ERPNext API",
+        description = "ERPNext API authentication",
         category = "Finance",
         icon = "erpnext"
 )

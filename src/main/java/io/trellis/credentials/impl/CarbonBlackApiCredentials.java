@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "carbonBlackApi",
-        displayName = "Carbon Black A P I",
-        description = "Carbon Black A P I authentication",
+        displayName = "Carbon Black API",
+        description = "Carbon Black API authentication",
         category = "Security",
         icon = "carbonblack"
 )

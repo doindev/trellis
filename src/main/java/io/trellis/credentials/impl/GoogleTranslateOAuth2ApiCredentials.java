@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleTranslateOAuth2Api",
-        displayName = "Google Translate O Auth2 A P I",
-        description = "Google Translate O Auth2 A P I authentication",
+        displayName = "Google Translate OAuth2 API",
+        description = "Google Translate OAuth2 API authentication",
         category = "Google Services",
         icon = "googletranslate",
         extendsType = "oAuth2Api"

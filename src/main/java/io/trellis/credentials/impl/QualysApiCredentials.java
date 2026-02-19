@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "qualysApi",
-        displayName = "Qualys A P I",
-        description = "Qualys A P I authentication",
+        displayName = "Qualys API",
+        description = "Qualys API authentication",
         category = "Security",
         icon = "qualys"
 )

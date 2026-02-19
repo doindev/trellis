@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "oktaApi",
-        displayName = "Okta A P I",
-        description = "Okta A P I authentication",
+        displayName = "Okta API",
+        description = "Okta API authentication",
         category = "Other",
         icon = "okta"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "dynatraceApi",
-        displayName = "Dynatrace A P I",
-        description = "Dynatrace A P I authentication",
+        displayName = "Dynatrace API",
+        description = "Dynatrace API authentication",
         category = "Analytics",
         icon = "dynatrace"
 )

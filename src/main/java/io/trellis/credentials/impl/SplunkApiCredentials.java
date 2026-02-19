@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "splunkApi",
-        displayName = "Splunk A P I",
-        description = "Splunk A P I authentication",
+        displayName = "Splunk API",
+        description = "Splunk API authentication",
         category = "Security",
         icon = "splunk"
 )

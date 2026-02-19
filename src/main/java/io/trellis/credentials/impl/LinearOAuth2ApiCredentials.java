@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "linearOAuth2Api",
-        displayName = "Linear O Auth2 A P I",
-        description = "Linear O Auth2 A P I authentication",
+        displayName = "Linear OAuth2 API",
+        description = "Linear OAuth2 API authentication",
         category = "Developer Tools",
         icon = "linear",
         extendsType = "oAuth2Api"

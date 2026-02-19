@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleAnalyticsOAuth2Api",
-        displayName = "Google Analytics O Auth2 A P I",
-        description = "Google Analytics O Auth2 A P I authentication",
+        displayName = "Google Analytics OAuth2 API",
+        description = "Google Analytics OAuth2 API authentication",
         category = "Google Services",
         icon = "googleanalytics",
         extendsType = "oAuth2Api"

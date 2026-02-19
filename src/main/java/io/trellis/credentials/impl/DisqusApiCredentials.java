@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "disqusApi",
-        displayName = "Disqus A P I",
-        description = "Disqus A P I authentication",
+        displayName = "Disqus API",
+        description = "Disqus API authentication",
         category = "Social Media",
         icon = "disqus"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "zabbixApi",
-        displayName = "Zabbix A P I",
-        description = "Zabbix A P I authentication",
+        displayName = "Zabbix API",
+        description = "Zabbix API authentication",
         category = "Other",
         icon = "zabbix"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleBooksOAuth2Api",
-        displayName = "Google Books O Auth2 A P I",
-        description = "Google Books O Auth2 A P I authentication",
+        displayName = "Google Books OAuth2 API",
+        description = "Google Books OAuth2 API authentication",
         category = "Google Services",
         icon = "googlebooks",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "ciscoWebexOAuth2Api",
-        displayName = "Cisco Webex O Auth2 A P I",
-        description = "Cisco Webex O Auth2 A P I authentication",
+        displayName = "Cisco Webex OAuth2 API",
+        description = "Cisco Webex OAuth2 API authentication",
         category = "Communication",
         icon = "ciscowebex",
         extendsType = "oAuth2Api"

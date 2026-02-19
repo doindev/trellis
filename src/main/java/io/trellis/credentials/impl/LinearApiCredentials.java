@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "linearApi",
-        displayName = "Linear A P I",
-        description = "Linear A P I authentication",
+        displayName = "Linear API",
+        description = "Linear API authentication",
         category = "Developer Tools",
         icon = "linear"
 )

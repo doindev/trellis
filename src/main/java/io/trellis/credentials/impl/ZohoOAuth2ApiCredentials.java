@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "zohoOAuth2Api",
-        displayName = "Zoho O Auth2 A P I",
-        description = "Zoho O Auth2 A P I authentication",
+        displayName = "Zoho OAuth2 API",
+        description = "Zoho OAuth2 API authentication",
         category = "Other",
         icon = "zoho",
         extendsType = "oAuth2Api"

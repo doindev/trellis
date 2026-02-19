@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "malcoreApi",
-        displayName = "Malcore A P I",
-        description = "Malcore A P I authentication",
+        displayName = "Malcore API",
+        description = "Malcore API authentication",
         category = "Security",
         icon = "malcore"
 )

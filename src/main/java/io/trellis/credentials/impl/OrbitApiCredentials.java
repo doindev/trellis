@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "orbitApi",
-        displayName = "Orbit A P I",
-        description = "Orbit A P I authentication",
+        displayName = "Orbit API",
+        description = "Orbit API authentication",
         category = "Other",
         icon = "orbit"
 )

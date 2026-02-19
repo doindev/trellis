@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mailerLiteApi",
-        displayName = "MailerLite A P I",
-        description = "MailerLite A P I authentication",
+        displayName = "MailerLite API",
+        description = "MailerLite API authentication",
         category = "Email",
         icon = "mailerlite"
 )

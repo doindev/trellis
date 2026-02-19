@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "gristApi",
-        displayName = "Grist A P I",
-        description = "Grist A P I authentication",
+        displayName = "Grist API",
+        description = "Grist API authentication",
         category = "Productivity",
         icon = "grist"
 )

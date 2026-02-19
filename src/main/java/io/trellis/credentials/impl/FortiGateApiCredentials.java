@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "fortiGateApi",
-        displayName = "Forti Gate A P I",
-        description = "Forti Gate A P I authentication",
+        displayName = "Forti Gate API",
+        description = "Forti Gate API authentication",
         category = "Security",
         icon = "fortigate"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleApi",
-        displayName = "Google A P I",
-        description = "Google A P I authentication",
+        displayName = "Google API",
+        description = "Google API authentication",
         category = "Google Services",
         icon = "google"
 )

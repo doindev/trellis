@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "ciscoUmbrellaApi",
-        displayName = "Cisco Umbrella A P I",
-        description = "Cisco Umbrella A P I authentication",
+        displayName = "Cisco Umbrella API",
+        description = "Cisco Umbrella API authentication",
         category = "Security",
         icon = "ciscoumbrella"
 )

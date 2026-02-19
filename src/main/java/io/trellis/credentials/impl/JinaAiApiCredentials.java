@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "jinaAiApi",
-        displayName = "Jina AI A P I",
-        description = "Jina AI A P I authentication",
+        displayName = "Jina AI API",
+        description = "Jina AI API authentication",
         category = "AI / LLM",
         icon = "jinaai"
 )

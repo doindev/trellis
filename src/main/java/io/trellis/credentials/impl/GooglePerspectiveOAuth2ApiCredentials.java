@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googlePerspectiveOAuth2Api",
-        displayName = "Google Perspective O Auth2 A P I",
-        description = "Google Perspective O Auth2 A P I authentication",
+        displayName = "Google Perspective OAuth2 API",
+        description = "Google Perspective OAuth2 API authentication",
         category = "Google Services",
         icon = "googleperspective",
         extendsType = "oAuth2Api"

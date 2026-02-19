@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "xeroOAuth2Api",
-        displayName = "Xero O Auth2 A P I",
-        description = "Xero O Auth2 A P I authentication",
+        displayName = "Xero OAuth2 API",
+        description = "Xero OAuth2 API authentication",
         category = "Finance",
         icon = "xero",
         extendsType = "oAuth2Api"

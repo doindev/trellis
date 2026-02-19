@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "pushbulletOAuth2Api",
-        displayName = "Pushbullet O Auth2 A P I",
-        description = "Pushbullet O Auth2 A P I authentication",
+        displayName = "Pushbullet OAuth2 API",
+        description = "Pushbullet OAuth2 API authentication",
         category = "Communication",
         icon = "pushbullet",
         extendsType = "oAuth2Api"

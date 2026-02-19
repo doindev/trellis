@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "calendlyApi",
-        displayName = "Calendly A P I",
-        description = "Calendly A P I authentication",
+        displayName = "Calendly API",
+        description = "Calendly API authentication",
         category = "Marketing",
         icon = "calendly"
 )

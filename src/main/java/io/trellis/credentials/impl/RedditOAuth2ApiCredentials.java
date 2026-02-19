@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "redditOAuth2Api",
-        displayName = "Reddit O Auth2 A P I",
-        description = "Reddit O Auth2 A P I authentication",
+        displayName = "Reddit OAuth2 API",
+        description = "Reddit OAuth2 API authentication",
         category = "Social Media",
         icon = "reddit",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "trellixEpoApi",
-        displayName = "Trellix ePO A P I",
-        description = "Trellix ePO A P I authentication",
+        displayName = "Trellix ePO API",
+        description = "Trellix ePO API authentication",
         category = "Security",
         icon = "trellixepo"
 )

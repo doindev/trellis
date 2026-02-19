@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "virusTotalApi",
-        displayName = "VirusTotal A P I",
-        description = "VirusTotal A P I authentication",
+        displayName = "VirusTotal API",
+        description = "VirusTotal API authentication",
         category = "Security",
         icon = "virustotal"
 )

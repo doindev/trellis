@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "keapOAuth2Api",
-        displayName = "Keap O Auth2 A P I",
-        description = "Keap O Auth2 A P I authentication",
+        displayName = "Keap OAuth2 API",
+        description = "Keap OAuth2 API authentication",
         category = "CRM / Sales",
         icon = "keap",
         extendsType = "oAuth2Api"

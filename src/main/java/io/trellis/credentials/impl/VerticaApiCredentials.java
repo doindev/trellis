@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "verticaApi",
-        displayName = "Vertica A P I",
-        description = "Vertica A P I authentication",
+        displayName = "Vertica API",
+        description = "Vertica API authentication",
         category = "Databases",
         icon = "vertica"
 )

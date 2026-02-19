@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "syncroMspApi",
-        displayName = "Syncro MSP A P I",
-        description = "Syncro MSP A P I authentication",
+        displayName = "Syncro MSP API",
+        description = "Syncro MSP API authentication",
         category = "Support",
         icon = "syncromsp"
 )

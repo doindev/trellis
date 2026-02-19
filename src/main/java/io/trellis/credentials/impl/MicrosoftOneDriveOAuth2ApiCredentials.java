@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftOneDriveOAuth2Api",
-        displayName = "Microsoft OneDrive O Auth2 A P I",
-        description = "Microsoft OneDrive O Auth2 A P I authentication",
+        displayName = "Microsoft OneDrive OAuth2 API",
+        description = "Microsoft OneDrive OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsoftonedrive",
         extendsType = "oAuth2Api"

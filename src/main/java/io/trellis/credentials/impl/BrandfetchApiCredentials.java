@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "brandfetchApi",
-        displayName = "Brandfetch A P I",
-        description = "Brandfetch A P I authentication",
+        displayName = "Brandfetch API",
+        description = "Brandfetch API authentication",
         category = "Marketing",
         icon = "brandfetch"
 )

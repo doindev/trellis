@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "iterableApi",
-        displayName = "Iterable A P I",
-        description = "Iterable A P I authentication",
+        displayName = "Iterable API",
+        description = "Iterable API authentication",
         category = "Marketing",
         icon = "iterable"
 )

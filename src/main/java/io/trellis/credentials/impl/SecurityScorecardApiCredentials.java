@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "securityScorecardApi",
-        displayName = "SecurityScorecard A P I",
-        description = "SecurityScorecard A P I authentication",
+        displayName = "SecurityScorecard API",
+        description = "SecurityScorecard API authentication",
         category = "Security",
         icon = "securityscorecard"
 )

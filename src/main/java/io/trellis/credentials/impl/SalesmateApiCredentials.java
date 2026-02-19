@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "salesmateApi",
-        displayName = "Salesmate A P I",
-        description = "Salesmate A P I authentication",
+        displayName = "Salesmate API",
+        description = "Salesmate API authentication",
         category = "CRM / Sales",
         icon = "salesmate"
 )

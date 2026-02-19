@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "lingvaNexApi",
-        displayName = "LingvaNex A P I",
-        description = "LingvaNex A P I authentication",
+        displayName = "LingvaNex API",
+        description = "LingvaNex API authentication",
         category = "AI / LLM",
         icon = "lingvanex"
 )

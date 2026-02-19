@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "highLevelApi",
-        displayName = "HighLevel A P I",
-        description = "HighLevel A P I authentication",
+        displayName = "HighLevel API",
+        description = "HighLevel API authentication",
         category = "CRM / Sales",
         icon = "highlevel"
 )

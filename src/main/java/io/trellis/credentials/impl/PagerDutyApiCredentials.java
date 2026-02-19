@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "pagerDutyApi",
-        displayName = "PagerDuty A P I",
-        description = "PagerDuty A P I authentication",
+        displayName = "PagerDuty API",
+        description = "PagerDuty API authentication",
         category = "Support",
         icon = "pagerduty"
 )

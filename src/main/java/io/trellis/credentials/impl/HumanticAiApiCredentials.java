@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "humanticAiApi",
-        displayName = "Humantic Ai A P I",
-        description = "Humantic Ai A P I authentication",
+        displayName = "Humantic Ai API",
+        description = "Humantic Ai API authentication",
         category = "Marketing",
         icon = "humanticai"
 )

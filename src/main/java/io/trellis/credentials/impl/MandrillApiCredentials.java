@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mandrillApi",
-        displayName = "Mandrill A P I",
-        description = "Mandrill A P I authentication",
+        displayName = "Mandrill API",
+        description = "Mandrill API authentication",
         category = "Email",
         icon = "mandrill"
 )

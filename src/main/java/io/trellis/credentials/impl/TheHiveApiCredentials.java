@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "theHiveApi",
-        displayName = "The Hive A P I",
-        description = "The Hive A P I authentication",
+        displayName = "The Hive API",
+        description = "The Hive API authentication",
         category = "Security",
         icon = "thehive"
 )

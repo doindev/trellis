@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "spotifyOAuth2Api",
-        displayName = "Spotify O Auth2 A P I",
-        description = "Spotify O Auth2 A P I authentication",
+        displayName = "Spotify OAuth2 API",
+        description = "Spotify OAuth2 API authentication",
         category = "Productivity",
         icon = "spotify",
         extendsType = "oAuth2Api"

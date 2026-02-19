@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "wufooApi",
-        displayName = "Wufoo A P I",
-        description = "Wufoo A P I authentication",
+        displayName = "Wufoo API",
+        description = "Wufoo API authentication",
         category = "Other",
         icon = "wufoo"
 )

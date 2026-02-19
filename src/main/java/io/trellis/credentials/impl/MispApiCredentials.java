@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mispApi",
-        displayName = "Misp A P I",
-        description = "Misp A P I authentication",
+        displayName = "MISP API",
+        description = "MISP API authentication",
         category = "Security",
         icon = "misp"
 )

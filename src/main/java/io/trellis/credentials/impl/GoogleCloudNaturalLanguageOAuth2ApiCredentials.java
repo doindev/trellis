@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleCloudNaturalLanguageOAuth2Api",
-        displayName = "Google Cloud Natural Language O Auth2 A P I",
-        description = "Google Cloud Natural Language O Auth2 A P I authentication",
+        displayName = "Google Cloud Natural Language OAuth2 API",
+        description = "Google Cloud Natural Language OAuth2 API authentication",
         category = "Google Services",
         icon = "googlecloudnaturallanguage",
         extendsType = "oAuth2Api"

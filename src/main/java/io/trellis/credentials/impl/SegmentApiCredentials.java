@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "segmentApi",
-        displayName = "Segment A P I",
-        description = "Segment A P I authentication",
+        displayName = "Segment API",
+        description = "Segment API authentication",
         category = "Marketing",
         icon = "segment"
 )

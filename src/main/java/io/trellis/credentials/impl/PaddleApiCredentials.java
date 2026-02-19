@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "paddleApi",
-        displayName = "Paddle A P I",
-        description = "Paddle A P I authentication",
+        displayName = "Paddle API",
+        description = "Paddle API authentication",
         category = "Finance",
         icon = "paddle"
 )

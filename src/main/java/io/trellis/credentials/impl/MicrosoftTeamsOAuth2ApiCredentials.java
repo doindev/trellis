@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftTeamsOAuth2Api",
-        displayName = "Microsoft Teams O Auth2 A P I",
-        description = "Microsoft Teams O Auth2 A P I authentication",
+        displayName = "Microsoft Teams OAuth2 API",
+        description = "Microsoft Teams OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsoftteams",
         extendsType = "oAuth2Api"

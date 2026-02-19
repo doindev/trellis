@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "zammadBasicAuthApi",
-        displayName = "Zammad Basic Auth A P I",
-        description = "Zammad Basic Auth A P I authentication",
+        displayName = "Zammad Basic Auth API",
+        description = "Zammad Basic Auth API authentication",
         category = "Other",
         icon = "zammadbasicauth"
 )

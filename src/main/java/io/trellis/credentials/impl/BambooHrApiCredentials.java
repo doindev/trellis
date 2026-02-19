@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "bambooHrApi",
-        displayName = "BambooHR A P I",
-        description = "BambooHR A P I authentication",
+        displayName = "BambooHR API",
+        description = "BambooHR API authentication",
         category = "Support",
         icon = "bamboohr"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftDynamicsOAuth2Api",
-        displayName = "Microsoft Dynamics 365 O Auth2 A P I",
-        description = "Microsoft Dynamics 365 O Auth2 A P I authentication",
+        displayName = "Microsoft Dynamics 365 OAuth2 API",
+        description = "Microsoft Dynamics 365 OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsoftdynamics",
         extendsType = "oAuth2Api"

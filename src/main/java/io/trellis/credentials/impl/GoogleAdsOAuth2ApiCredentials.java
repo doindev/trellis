@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleAdsOAuth2Api",
-        displayName = "Google Ads O Auth2 A P I",
-        description = "Google Ads O Auth2 A P I authentication",
+        displayName = "Google Ads OAuth2 API",
+        description = "Google Ads OAuth2 API authentication",
         category = "Google Services",
         icon = "googleads",
         extendsType = "oAuth2Api"

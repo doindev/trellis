@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "pipedriveOAuth2Api",
-        displayName = "Pipedrive O Auth2 A P I",
-        description = "Pipedrive O Auth2 A P I authentication",
+        displayName = "Pipedrive OAuth2 API",
+        description = "Pipedrive OAuth2 API authentication",
         category = "CRM / Sales",
         icon = "pipedrive",
         extendsType = "oAuth2Api"

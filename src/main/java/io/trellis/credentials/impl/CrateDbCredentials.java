@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "crateDb",
-        displayName = "Crate D B",
-        description = "Crate D B authentication",
+        displayName = "Crate DB",
+        description = "Crate DB authentication",
         category = "Databases",
         icon = "crate"
 )

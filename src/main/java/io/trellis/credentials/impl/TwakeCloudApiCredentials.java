@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "twakeCloudApi",
-        displayName = "Twake Cloud A P I",
-        description = "Twake Cloud A P I authentication",
+        displayName = "Twake Cloud API",
+        description = "Twake Cloud API authentication",
         category = "Communication",
         icon = "twakecloud"
 )

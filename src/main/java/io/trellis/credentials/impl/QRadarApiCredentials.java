@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "qRadarApi",
-        displayName = "Q Radar A P I",
-        description = "Q Radar A P I authentication",
+        displayName = "QRadar API",
+        description = "QRadar API authentication",
         category = "Security",
         icon = "qradar"
 )

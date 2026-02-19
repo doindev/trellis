@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "discordWebhookApi",
-        displayName = "Discord Webhook A P I",
-        description = "Discord Webhook A P I authentication",
+        displayName = "Discord Webhook API",
+        description = "Discord Webhook API authentication",
         category = "Communication",
         icon = "discordwebhook"
 )

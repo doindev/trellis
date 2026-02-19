@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "bannerbearApi",
-        displayName = "Bannerbear A P I",
-        description = "Bannerbear A P I authentication",
+        displayName = "Bannerbear API",
+        description = "Bannerbear API authentication",
         category = "Other",
         icon = "bannerbear"
 )

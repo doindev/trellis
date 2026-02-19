@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "alienVaultApi",
-        displayName = "Alien Vault A P I",
-        description = "Alien Vault A P I authentication",
+        displayName = "Alien Vault API",
+        description = "Alien Vault API authentication",
         category = "Security",
         icon = "alienvault"
 )

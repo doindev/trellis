@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "matrixApi",
-        displayName = "Matrix A P I",
-        description = "Matrix A P I authentication",
+        displayName = "Matrix API",
+        description = "Matrix API authentication",
         category = "Communication",
         icon = "matrix"
 )

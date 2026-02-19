@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "agileCrmApi",
-        displayName = "Agile Crm A P I",
-        description = "Agile Crm A P I authentication",
+        displayName = "Agile CRM API",
+        description = "Agile CRM API authentication",
         category = "CRM / Sales",
         icon = "agilecrm"
 )

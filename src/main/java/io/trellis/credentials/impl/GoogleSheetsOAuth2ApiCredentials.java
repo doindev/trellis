@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleSheetsOAuth2Api",
-        displayName = "Google Sheets O Auth2 A P I",
-        description = "Google Sheets O Auth2 A P I authentication",
+        displayName = "Google Sheets OAuth2 API",
+        description = "Google Sheets OAuth2 API authentication",
         category = "Google Services",
         icon = "googlesheets",
         extendsType = "oAuth2Api"

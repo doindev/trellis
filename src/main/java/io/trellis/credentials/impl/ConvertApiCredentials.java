@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "convertApi",
-        displayName = "Convert A P I",
-        description = "Convert A P I authentication",
+        displayName = "ConvertAPI",
+        description = "ConvertAPI authentication",
         category = "Other",
         icon = "convert"
 )

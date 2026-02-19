@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "cloudflareApi",
-        displayName = "Cloudflare A P I",
-        description = "Cloudflare A P I authentication",
+        displayName = "Cloudflare API",
+        description = "Cloudflare API authentication",
         category = "Infrastructure",
         icon = "cloudflare"
 )

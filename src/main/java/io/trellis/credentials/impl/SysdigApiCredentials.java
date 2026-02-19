@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "sysdigApi",
-        displayName = "Sysdig A P I",
-        description = "Sysdig A P I authentication",
+        displayName = "Sysdig API",
+        description = "Sysdig API authentication",
         category = "Security",
         icon = "sysdig"
 )

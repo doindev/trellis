@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "loneScaleApi",
-        displayName = "Lone Scale A P I",
-        description = "Lone Scale A P I authentication",
+        displayName = "Lone Scale API",
+        description = "Lone Scale API authentication",
         category = "Marketing",
         icon = "lonescale"
 )

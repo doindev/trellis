@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "hubspotDeveloperApi",
-        displayName = "Hubspot Developer A P I",
-        description = "Hubspot Developer A P I authentication",
+        displayName = "Hubspot Developer API",
+        description = "Hubspot Developer API authentication",
         category = "CRM / Sales",
         icon = "hubspotdeveloper"
 )

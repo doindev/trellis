@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "contentfulApi",
-        displayName = "Contentful A P I",
-        description = "Contentful A P I authentication",
+        displayName = "Contentful API",
+        description = "Contentful API authentication",
         category = "Productivity",
         icon = "contentful"
 )

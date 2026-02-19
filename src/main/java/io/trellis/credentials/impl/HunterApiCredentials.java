@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "hunterApi",
-        displayName = "Hunter A P I",
-        description = "Hunter A P I authentication",
+        displayName = "Hunter API",
+        description = "Hunter API authentication",
         category = "Marketing",
         icon = "hunter"
 )

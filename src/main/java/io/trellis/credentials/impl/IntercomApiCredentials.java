@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "intercomApi",
-        displayName = "Intercom A P I",
-        description = "Intercom A P I authentication",
+        displayName = "Intercom API",
+        description = "Intercom API authentication",
         category = "CRM / Sales",
         icon = "intercom"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleTasksOAuth2Api",
-        displayName = "Google Tasks O Auth2 A P I",
-        description = "Google Tasks O Auth2 A P I authentication",
+        displayName = "Google Tasks OAuth2 API",
+        description = "Google Tasks OAuth2 API authentication",
         category = "Google Services",
         icon = "googletasks",
         extendsType = "oAuth2Api"

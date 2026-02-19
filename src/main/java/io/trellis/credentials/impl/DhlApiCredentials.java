@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "dhlApi",
-        displayName = "Dhl A P I",
-        description = "Dhl A P I authentication",
+        displayName = "Dhl API",
+        description = "Dhl API authentication",
         category = "Other",
         icon = "dhl"
 )

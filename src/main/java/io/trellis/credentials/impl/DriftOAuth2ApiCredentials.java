@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "driftOAuth2Api",
-        displayName = "Drift O Auth2 A P I",
-        description = "Drift O Auth2 A P I authentication",
+        displayName = "Drift OAuth2 API",
+        description = "Drift OAuth2 API authentication",
         category = "CRM / Sales",
         icon = "drift",
         extendsType = "oAuth2Api"

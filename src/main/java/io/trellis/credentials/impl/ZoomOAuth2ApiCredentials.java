@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "zoomOAuth2Api",
-        displayName = "Zoom O Auth2 A P I",
-        description = "Zoom O Auth2 A P I authentication",
+        displayName = "Zoom OAuth2 API",
+        description = "Zoom OAuth2 API authentication",
         category = "Other",
         icon = "zoom",
         extendsType = "oAuth2Api"

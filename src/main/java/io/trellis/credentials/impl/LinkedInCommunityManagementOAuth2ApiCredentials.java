@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "linkedInCommunityManagementOAuth2Api",
-        displayName = "LinkedIn Community Management O Auth2 A P I",
-        description = "LinkedIn Community Management O Auth2 A P I authentication",
+        displayName = "LinkedIn Community Management OAuth2 API",
+        description = "LinkedIn Community Management OAuth2 API authentication",
         category = "Social Media",
         icon = "linkedincommunitymanagement",
         extendsType = "oAuth2Api"

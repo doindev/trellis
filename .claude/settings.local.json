@@ -64,7 +64,8 @@
       "WebFetch(domain:www.danvega.dev)",
       "WebFetch(domain:blog.nocodecreative.io)",
       "WebFetch(domain:khaisa.studio)",
-      "Bash(node generate-credentials.js:*)"
+      "Bash(node generate-credentials.js:*)",
+      "Bash(node:*)"
     ]
   }
 }

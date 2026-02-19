@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "nextCloudApi",
-        displayName = "Next Cloud A P I",
-        description = "Next Cloud A P I authentication",
+        displayName = "Next Cloud API",
+        description = "Next Cloud API authentication",
         category = "Storage",
         icon = "nextcloud"
 )

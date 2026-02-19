@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "calApi",
-        displayName = "Cal A P I",
-        description = "Cal A P I authentication",
+        displayName = "Cal API",
+        description = "Cal API authentication",
         category = "Marketing",
         icon = "cal"
 )

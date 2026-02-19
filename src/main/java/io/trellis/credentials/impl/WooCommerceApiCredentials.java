@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "wooCommerceApi",
-        displayName = "WooCommerce A P I",
-        description = "WooCommerce A P I authentication",
+        displayName = "WooCommerce API",
+        description = "WooCommerce API authentication",
         category = "Finance",
         icon = "woocommerce"
 )

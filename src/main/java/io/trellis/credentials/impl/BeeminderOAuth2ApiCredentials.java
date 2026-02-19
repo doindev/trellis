@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "beeminderOAuth2Api",
-        displayName = "Beeminder O Auth2 A P I",
-        description = "Beeminder O Auth2 A P I authentication",
+        displayName = "Beeminder OAuth2 API",
+        description = "Beeminder OAuth2 API authentication",
         category = "Marketing",
         icon = "beeminder",
         extendsType = "oAuth2Api"

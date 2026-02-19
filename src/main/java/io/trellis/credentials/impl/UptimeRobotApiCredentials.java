@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "uptimeRobotApi",
-        displayName = "Uptime Robot A P I",
-        description = "Uptime Robot A P I authentication",
+        displayName = "Uptime Robot API",
+        description = "Uptime Robot API authentication",
         category = "Analytics",
         icon = "uptimerobot"
 )

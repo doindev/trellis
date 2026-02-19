@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "dropboxApi",
-        displayName = "Dropbox A P I",
-        description = "Dropbox A P I authentication",
+        displayName = "Dropbox API",
+        description = "Dropbox API authentication",
         category = "Storage",
         icon = "dropbox"
 )

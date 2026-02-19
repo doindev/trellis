@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "jiraSoftwareServerApi",
-        displayName = "Jira Server A P I",
-        description = "Jira Server A P I authentication",
+        displayName = "Jira Server API",
+        description = "Jira Server API authentication",
         category = "Developer Tools",
         icon = "jirasoftwareserver"
 )

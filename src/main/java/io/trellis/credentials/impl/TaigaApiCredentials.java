@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "taigaApi",
-        displayName = "Taiga A P I",
-        description = "Taiga A P I authentication",
+        displayName = "Taiga API",
+        description = "Taiga API authentication",
         category = "Project Management",
         icon = "taiga"
 )

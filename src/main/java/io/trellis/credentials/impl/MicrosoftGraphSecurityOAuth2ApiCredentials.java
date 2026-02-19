@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftGraphSecurityOAuth2Api",
-        displayName = "Microsoft Graph Security O Auth2 A P I",
-        description = "Microsoft Graph Security O Auth2 A P I authentication",
+        displayName = "Microsoft Graph Security OAuth2 API",
+        description = "Microsoft Graph Security OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsoftgraphsecurity",
         extendsType = "oAuth2Api"

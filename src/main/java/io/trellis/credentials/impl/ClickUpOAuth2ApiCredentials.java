@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "clickUpOAuth2Api",
-        displayName = "ClickUp O Auth2 A P I",
-        description = "ClickUp O Auth2 A P I authentication",
+        displayName = "ClickUp OAuth2 API",
+        description = "ClickUp OAuth2 API authentication",
         category = "Project Management",
         icon = "clickup",
         extendsType = "oAuth2Api"

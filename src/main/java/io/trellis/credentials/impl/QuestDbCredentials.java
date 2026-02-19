@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "questDb",
-        displayName = "Quest D B",
-        description = "Quest D B authentication",
+        displayName = "Quest DB",
+        description = "Quest DB authentication",
         category = "Databases",
         icon = "quest"
 )

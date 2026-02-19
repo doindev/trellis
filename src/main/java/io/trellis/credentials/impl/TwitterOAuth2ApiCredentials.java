@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "twitterOAuth2Api",
-        displayName = "Twitter O Auth2 A P I",
-        description = "Twitter O Auth2 A P I authentication",
+        displayName = "Twitter OAuth2 API",
+        description = "Twitter OAuth2 API authentication",
         category = "Social Media",
         icon = "twitter",
         extendsType = "oAuth2Api"

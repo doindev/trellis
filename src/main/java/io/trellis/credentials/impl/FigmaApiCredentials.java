@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "figmaApi",
-        displayName = "Figma A P I",
-        description = "Figma A P I authentication",
+        displayName = "Figma API",
+        description = "Figma API authentication",
         category = "Productivity",
         icon = "figma"
 )

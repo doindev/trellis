@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "azureStorageSharedKeyApi",
-        displayName = "Azure Storage Shared Key A P I",
-        description = "Azure Storage Shared Key A P I authentication",
+        displayName = "Azure Storage Shared Key API",
+        description = "Azure Storage Shared Key API authentication",
         category = "Cloud Services",
         icon = "azurestoragesharedkey"
 )

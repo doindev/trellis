@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "airtableOAuth2Api",
-        displayName = "Airtable O Auth2 A P I",
-        description = "Airtable O Auth2 A P I authentication",
+        displayName = "Airtable OAuth2 API",
+        description = "Airtable OAuth2 API authentication",
         category = "Productivity",
         icon = "airtable",
         extendsType = "oAuth2Api"

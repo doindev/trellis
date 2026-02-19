@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "asanaApi",
-        displayName = "Asana A P I",
-        description = "Asana A P I authentication",
+        displayName = "Asana API",
+        description = "Asana API authentication",
         category = "Project Management",
         icon = "asana"
 )

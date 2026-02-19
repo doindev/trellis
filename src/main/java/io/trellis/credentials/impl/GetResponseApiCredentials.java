@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "getResponseApi",
-        displayName = "Get Response A P I",
-        description = "Get Response A P I authentication",
+        displayName = "Get Response API",
+        description = "Get Response API authentication",
         category = "Marketing",
         icon = "getresponse"
 )

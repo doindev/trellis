@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "raindropOAuth2Api",
-        displayName = "Raindrop O Auth2 A P I",
-        description = "Raindrop O Auth2 A P I authentication",
+        displayName = "Raindrop OAuth2 API",
+        description = "Raindrop OAuth2 API authentication",
         category = "Productivity",
         icon = "raindrop",
         extendsType = "oAuth2Api"

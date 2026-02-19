@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "impervaWafApi",
-        displayName = "Imperva WAF A P I",
-        description = "Imperva WAF A P I authentication",
+        displayName = "Imperva WAF API",
+        description = "Imperva WAF API authentication",
         category = "Security",
         icon = "impervawaf"
 )

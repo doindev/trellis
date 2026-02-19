@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "dropcontactApi",
-        displayName = "Dropcontact A P I",
-        description = "Dropcontact A P I authentication",
+        displayName = "Dropcontact API",
+        description = "Dropcontact API authentication",
         category = "Marketing",
         icon = "dropcontact"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "baserowApi",
-        displayName = "Baserow A P I",
-        description = "Baserow A P I authentication",
+        displayName = "Baserow API",
+        description = "Baserow API authentication",
         category = "Productivity",
         icon = "baserow"
 )

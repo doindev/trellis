@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "stravaOAuth2Api",
-        displayName = "Strava O Auth2 A P I",
-        description = "Strava O Auth2 A P I authentication",
+        displayName = "Strava OAuth2 API",
+        description = "Strava OAuth2 API authentication",
         category = "Productivity",
         icon = "strava",
         extendsType = "oAuth2Api"

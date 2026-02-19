@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "facebookGraphAppApi",
-        displayName = "Facebook Graph App A P I",
-        description = "Facebook Graph App A P I authentication",
+        displayName = "Facebook Graph App API",
+        description = "Facebook Graph App API authentication",
         category = "Social Media",
         icon = "facebookgraphapp"
 )

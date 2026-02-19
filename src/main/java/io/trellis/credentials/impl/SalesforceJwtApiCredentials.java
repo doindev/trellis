@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "salesforceJwtApi",
-        displayName = "Salesforce Jwt A P I",
-        description = "Salesforce Jwt A P I authentication",
+        displayName = "Salesforce Jwt API",
+        description = "Salesforce Jwt API authentication",
         category = "CRM / Sales",
         icon = "salesforcejwt"
 )

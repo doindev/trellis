@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftAzureCosmosDbSharedKeyApi",
-        displayName = "Azure Cosmos DB Shared Key A P I",
-        description = "Azure Cosmos DB Shared Key A P I authentication",
+        displayName = "Azure Cosmos DB Shared Key API",
+        description = "Azure Cosmos DB Shared Key API authentication",
         category = "Microsoft Services",
         icon = "microsoftazurecosmosdbsharedkey"
 )

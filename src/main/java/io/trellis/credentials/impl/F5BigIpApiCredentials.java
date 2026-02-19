@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "f5BigIpApi",
-        displayName = "F5 Big Ip A P I",
-        description = "F5 Big Ip A P I authentication",
+        displayName = "F5 Big Ip API",
+        description = "F5 Big Ip API authentication",
         category = "Security",
         icon = "f5bigip"
 )

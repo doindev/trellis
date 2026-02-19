@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "magento2Api",
-        displayName = "Magento2 A P I",
-        description = "Magento2 A P I authentication",
+        displayName = "Magento2 API",
+        description = "Magento2 API authentication",
         category = "Finance",
         icon = "magento2"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "gmailOAuth2Api",
-        displayName = "Gmail O Auth2 A P I",
-        description = "Gmail O Auth2 A P I authentication",
+        displayName = "Gmail OAuth2 API",
+        description = "Gmail OAuth2 API authentication",
         category = "Google Services",
         icon = "gmail",
         extendsType = "oAuth2Api"

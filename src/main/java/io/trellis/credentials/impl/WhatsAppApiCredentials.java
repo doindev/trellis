@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "whatsAppApi",
-        displayName = "WhatsApp A P I",
-        description = "WhatsApp A P I authentication",
+        displayName = "WhatsApp API",
+        description = "WhatsApp API authentication",
         category = "Communication",
         icon = "whatsapp"
 )

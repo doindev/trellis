@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "totpApi",
-        displayName = "Totp A P I",
-        description = "Totp A P I authentication",
+        displayName = "Totp API",
+        description = "Totp API authentication",
         category = "Generic",
         icon = "totp"
 )

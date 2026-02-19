@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftEntraOAuth2Api",
-        displayName = "Microsoft Entra ID O Auth2 A P I",
-        description = "Microsoft Entra ID O Auth2 A P I authentication",
+        displayName = "Microsoft Entra ID OAuth2 API",
+        description = "Microsoft Entra ID OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsoftentra",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "gumroadApi",
-        displayName = "Gumroad A P I",
-        description = "Gumroad A P I authentication",
+        displayName = "Gumroad API",
+        description = "Gumroad API authentication",
         category = "Marketing",
         icon = "gumroad"
 )

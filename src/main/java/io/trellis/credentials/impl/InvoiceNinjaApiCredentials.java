@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "invoiceNinjaApi",
-        displayName = "Invoice Ninja A P I",
-        description = "Invoice Ninja A P I authentication",
+        displayName = "Invoice Ninja API",
+        description = "Invoice Ninja API authentication",
         category = "Finance",
         icon = "invoiceninja"
 )

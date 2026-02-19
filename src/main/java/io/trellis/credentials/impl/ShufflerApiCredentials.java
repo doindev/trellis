@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "shufflerApi",
-        displayName = "Shuffler A P I",
-        description = "Shuffler A P I authentication",
+        displayName = "Shuffler API",
+        description = "Shuffler API authentication",
         category = "Other",
         icon = "shuffler"
 )

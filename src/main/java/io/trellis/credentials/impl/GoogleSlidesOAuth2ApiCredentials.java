@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleSlidesOAuth2Api",
-        displayName = "Google Slides O Auth2 A P I",
-        description = "Google Slides O Auth2 A P I authentication",
+        displayName = "Google Slides OAuth2 API",
+        description = "Google Slides OAuth2 API authentication",
         category = "Google Services",
         icon = "googleslides",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "goToWebinarOAuth2Api",
-        displayName = "GoToWebinar O Auth2 A P I",
-        description = "GoToWebinar O Auth2 A P I authentication",
+        displayName = "GoToWebinar OAuth2 API",
+        description = "GoToWebinar OAuth2 API authentication",
         category = "Marketing",
         icon = "gotowebinar",
         extendsType = "oAuth2Api"

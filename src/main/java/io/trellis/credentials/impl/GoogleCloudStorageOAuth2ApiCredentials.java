@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleCloudStorageOAuth2Api",
-        displayName = "Google Cloud Storage O Auth2 A P I",
-        description = "Google Cloud Storage O Auth2 A P I authentication",
+        displayName = "Google Cloud Storage OAuth2 API",
+        description = "Google Cloud Storage OAuth2 API authentication",
         category = "Google Services",
         icon = "googlecloudstorage",
         extendsType = "oAuth2Api"

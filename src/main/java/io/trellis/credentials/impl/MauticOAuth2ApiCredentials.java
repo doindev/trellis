@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mauticOAuth2Api",
-        displayName = "Mautic O Auth2 A P I",
-        description = "Mautic O Auth2 A P I authentication",
+        displayName = "Mautic OAuth2 API",
+        description = "Mautic OAuth2 API authentication",
         category = "CRM / Sales",
         icon = "mautic",
         extendsType = "oAuth2Api"

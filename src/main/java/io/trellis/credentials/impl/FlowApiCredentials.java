@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "flowApi",
-        displayName = "Flow A P I",
-        description = "Flow A P I authentication",
+        displayName = "Flow API",
+        description = "Flow API authentication",
         category = "Project Management",
         icon = "flow"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "copperApi",
-        displayName = "Copper A P I",
-        description = "Copper A P I authentication",
+        displayName = "Copper API",
+        description = "Copper API authentication",
         category = "CRM / Sales",
         icon = "copper"
 )

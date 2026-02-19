@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "zulipApi",
-        displayName = "Zulip A P I",
-        description = "Zulip A P I authentication",
+        displayName = "Zulip API",
+        description = "Zulip API authentication",
         category = "Communication",
         icon = "zulip"
 )

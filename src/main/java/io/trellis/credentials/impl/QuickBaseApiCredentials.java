@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "quickBaseApi",
-        displayName = "QuickBase A P I",
-        description = "QuickBase A P I authentication",
+        displayName = "QuickBase API",
+        description = "QuickBase API authentication",
         category = "Productivity",
         icon = "quickbase"
 )

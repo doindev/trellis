@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "ghostContentApi",
-        displayName = "Ghost Content A P I",
-        description = "Ghost Content A P I authentication",
+        displayName = "Ghost Content API",
+        description = "Ghost Content API authentication",
         category = "Productivity",
         icon = "ghostcontent"
 )

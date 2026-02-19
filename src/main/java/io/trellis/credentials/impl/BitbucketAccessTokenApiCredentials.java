@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "bitbucketAccessTokenApi",
-        displayName = "Bitbucket Access Token A P I",
-        description = "Bitbucket Access Token A P I authentication",
+        displayName = "Bitbucket Access Token API",
+        description = "Bitbucket Access Token API authentication",
         category = "Developer Tools",
         icon = "bitbucketaccesstoken"
 )

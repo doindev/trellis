@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "wiseApi",
-        displayName = "Wise A P I",
-        description = "Wise A P I authentication",
+        displayName = "Wise API",
+        description = "Wise API authentication",
         category = "Finance",
         icon = "wise"
 )

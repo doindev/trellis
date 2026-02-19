@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "apiTemplateIoApi",
-        displayName = "Api Template Io A P I",
-        description = "Api Template Io A P I authentication",
+        displayName = "APITemplate.io API",
+        description = "APITemplate.io API authentication",
         category = "Other",
         icon = "apitemplateio"
 )

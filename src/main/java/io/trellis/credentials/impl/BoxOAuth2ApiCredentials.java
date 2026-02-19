@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "boxOAuth2Api",
-        displayName = "Box O Auth2 A P I",
-        description = "Box O Auth2 A P I authentication",
+        displayName = "Box OAuth2 API",
+        description = "Box OAuth2 API authentication",
         category = "Storage",
         icon = "box",
         extendsType = "oAuth2Api"

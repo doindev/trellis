@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "perplexityApi",
-        displayName = "Perplexity A P I",
-        description = "Perplexity A P I authentication",
+        displayName = "Perplexity API",
+        description = "Perplexity API authentication",
         category = "AI / LLM",
         icon = "perplexity"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleBusinessProfileOAuth2Api",
-        displayName = "Google Business Profile O Auth2 A P I",
-        description = "Google Business Profile O Auth2 A P I authentication",
+        displayName = "Google Business Profile OAuth2 API",
+        description = "Google Business Profile OAuth2 API authentication",
         category = "Google Services",
         icon = "googlebusinessprofile",
         extendsType = "oAuth2Api"

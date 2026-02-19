@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "discourseApi",
-        displayName = "Discourse A P I",
-        description = "Discourse A P I authentication",
+        displayName = "Discourse API",
+        description = "Discourse API authentication",
         category = "Other",
         icon = "discourse"
 )

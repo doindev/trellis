@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "adaloApi",
-        displayName = "Adalo A P I",
-        description = "Adalo A P I authentication",
+        displayName = "Adalo API",
+        description = "Adalo API authentication",
         category = "Other",
         icon = "adalo"
 )

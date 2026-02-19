@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "wekanApi",
-        displayName = "Wekan A P I",
-        description = "Wekan A P I authentication",
+        displayName = "Wekan API",
+        description = "Wekan API authentication",
         category = "Project Management",
         icon = "wekan"
 )

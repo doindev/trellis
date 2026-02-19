@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "postmarkApi",
-        displayName = "Postmark A P I",
-        description = "Postmark A P I authentication",
+        displayName = "Postmark API",
+        description = "Postmark API authentication",
         category = "Email",
         icon = "postmark"
 )

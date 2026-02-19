@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "asanaOAuth2Api",
-        displayName = "Asana O Auth2 A P I",
-        description = "Asana O Auth2 A P I authentication",
+        displayName = "Asana OAuth2 API",
+        description = "Asana OAuth2 API authentication",
         category = "Project Management",
         icon = "asana",
         extendsType = "oAuth2Api"

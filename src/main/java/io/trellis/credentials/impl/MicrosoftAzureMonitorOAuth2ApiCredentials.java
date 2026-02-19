@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftAzureMonitorOAuth2Api",
-        displayName = "Azure Monitor O Auth2 A P I",
-        description = "Azure Monitor O Auth2 A P I authentication",
+        displayName = "Azure Monitor OAuth2 API",
+        description = "Azure Monitor OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsoftazuremonitor",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "formIoApi",
-        displayName = "Form.io A P I",
-        description = "Form.io A P I authentication",
+        displayName = "Form.io API",
+        description = "Form.io API authentication",
         category = "Project Management",
         icon = "formio"
 )

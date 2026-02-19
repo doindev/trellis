@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "bitwardenApi",
-        displayName = "Bitwarden A P I",
-        description = "Bitwarden A P I authentication",
+        displayName = "Bitwarden API",
+        description = "Bitwarden API authentication",
         category = "Other",
         icon = "bitwarden"
 )

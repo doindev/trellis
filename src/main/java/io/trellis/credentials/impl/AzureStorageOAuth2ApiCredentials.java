@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "azureStorageOAuth2Api",
-        displayName = "Azure Storage O Auth2 A P I",
-        description = "Azure Storage O Auth2 A P I authentication",
+        displayName = "Azure Storage OAuth2 API",
+        description = "Azure Storage OAuth2 API authentication",
         category = "Cloud Services",
         icon = "azurestorage",
         extendsType = "oAuth2Api"

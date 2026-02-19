@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "brevoApi",
-        displayName = "Brevo A P I",
-        description = "Brevo A P I authentication",
+        displayName = "Brevo API",
+        description = "Brevo API authentication",
         category = "Email",
         icon = "brevo"
 )

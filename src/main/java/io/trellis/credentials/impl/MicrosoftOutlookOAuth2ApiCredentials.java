@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftOutlookOAuth2Api",
-        displayName = "Microsoft Outlook O Auth2 A P I",
-        description = "Microsoft Outlook O Auth2 A P I authentication",
+        displayName = "Microsoft Outlook OAuth2 API",
+        description = "Microsoft Outlook OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsoftoutlook",
         extendsType = "oAuth2Api"

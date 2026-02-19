@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "jenkinsApi",
-        displayName = "Jenkins A P I",
-        description = "Jenkins A P I authentication",
+        displayName = "Jenkins API",
+        description = "Jenkins API authentication",
         category = "Developer Tools",
         icon = "jenkins"
 )

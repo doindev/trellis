@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftSharePointOAuth2Api",
-        displayName = "Microsoft SharePoint O Auth2 A P I",
-        description = "Microsoft SharePoint O Auth2 A P I authentication",
+        displayName = "Microsoft SharePoint OAuth2 API",
+        description = "Microsoft SharePoint OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsoftsharepoint",
         extendsType = "oAuth2Api"

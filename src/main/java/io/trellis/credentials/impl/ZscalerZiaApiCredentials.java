@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "zscalerZiaApi",
-        displayName = "Zscaler ZIA A P I",
-        description = "Zscaler ZIA A P I authentication",
+        displayName = "Zscaler ZIA API",
+        description = "Zscaler ZIA API authentication",
         category = "Security",
         icon = "zscalerzia"
 )

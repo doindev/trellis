@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "oracleDBApi",
-        displayName = "Oracle DB A P I",
-        description = "Oracle DB A P I authentication",
+        displayName = "Oracle DB API",
+        description = "Oracle DB API authentication",
         category = "Databases",
         icon = "oracle"
 )

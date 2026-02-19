@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "openWeatherMapApi",
-        displayName = "OpenWeatherMap A P I",
-        description = "OpenWeatherMap A P I authentication",
+        displayName = "OpenWeatherMap API",
+        description = "OpenWeatherMap API authentication",
         category = "Analytics",
         icon = "openweathermap"
 )

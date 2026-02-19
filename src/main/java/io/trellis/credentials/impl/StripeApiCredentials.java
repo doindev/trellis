@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "stripeApi",
-        displayName = "Stripe A P I",
-        description = "Stripe A P I authentication",
+        displayName = "Stripe API",
+        description = "Stripe API authentication",
         category = "Finance",
         icon = "stripe"
 )

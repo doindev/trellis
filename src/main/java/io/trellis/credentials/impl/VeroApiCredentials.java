@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "veroApi",
-        displayName = "Vero A P I",
-        description = "Vero A P I authentication",
+        displayName = "Vero API",
+        description = "Vero API authentication",
         category = "Other",
         icon = "vero"
 )

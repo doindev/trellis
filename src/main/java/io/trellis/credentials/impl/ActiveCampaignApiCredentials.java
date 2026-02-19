@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "activeCampaignApi",
-        displayName = "ActiveCampaign A P I",
-        description = "ActiveCampaign A P I authentication",
+        displayName = "ActiveCampaign API",
+        description = "ActiveCampaign API authentication",
         category = "CRM / Sales",
         icon = "activecampaign"
 )

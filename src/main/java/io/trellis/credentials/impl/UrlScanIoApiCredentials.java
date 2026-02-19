@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "urlScanIoApi",
-        displayName = "URLScan.io A P I",
-        description = "URLScan.io A P I authentication",
+        displayName = "URLScan.io API",
+        description = "URLScan.io API authentication",
         category = "Security",
         icon = "urlscanio"
 )

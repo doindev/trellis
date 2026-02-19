@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "chargebeeApi",
-        displayName = "Chargebee A P I",
-        description = "Chargebee A P I authentication",
+        displayName = "Chargebee API",
+        description = "Chargebee API authentication",
         category = "Finance",
         icon = "chargebee"
 )

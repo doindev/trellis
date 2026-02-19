@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "grafanaApi",
-        displayName = "Grafana A P I",
-        description = "Grafana A P I authentication",
+        displayName = "Grafana API",
+        description = "Grafana API authentication",
         category = "Analytics",
         icon = "grafana"
 )

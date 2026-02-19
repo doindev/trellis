@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "clearbitApi",
-        displayName = "Clearbit A P I",
-        description = "Clearbit A P I authentication",
+        displayName = "Clearbit API",
+        description = "Clearbit API authentication",
         category = "Marketing",
         icon = "clearbit"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "serviceNowBasicApi",
-        displayName = "Service Now Basic A P I",
-        description = "Service Now Basic A P I authentication",
+        displayName = "Service Now Basic API",
+        description = "Service Now Basic API authentication",
         category = "Support",
         icon = "servicenowbasic"
 )

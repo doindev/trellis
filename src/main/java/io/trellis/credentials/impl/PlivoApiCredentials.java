@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "plivoApi",
-        displayName = "Plivo A P I",
-        description = "Plivo A P I authentication",
+        displayName = "Plivo API",
+        description = "Plivo API authentication",
         category = "Communication",
         icon = "plivo"
 )

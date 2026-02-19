@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "messageBirdApi",
-        displayName = "Message Bird A P I",
-        description = "Message Bird A P I authentication",
+        displayName = "Message Bird API",
+        description = "Message Bird API authentication",
         category = "Communication",
         icon = "messagebird"
 )

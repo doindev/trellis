@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "filescanApi",
-        displayName = "Filescan A P I",
-        description = "Filescan A P I authentication",
+        displayName = "Filescan API",
+        description = "Filescan API authentication",
         category = "Security",
         icon = "filescan"
 )

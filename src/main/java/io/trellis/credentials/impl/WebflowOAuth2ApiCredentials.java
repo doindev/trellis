@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "webflowOAuth2Api",
-        displayName = "Webflow O Auth2 A P I",
-        description = "Webflow O Auth2 A P I authentication",
+        displayName = "Webflow OAuth2 API",
+        description = "Webflow OAuth2 API authentication",
         category = "Productivity",
         icon = "webflow",
         extendsType = "oAuth2Api"

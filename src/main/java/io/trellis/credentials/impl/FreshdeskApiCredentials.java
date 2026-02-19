@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "freshdeskApi",
-        displayName = "Freshdesk A P I",
-        description = "Freshdesk A P I authentication",
+        displayName = "Freshdesk API",
+        description = "Freshdesk API authentication",
         category = "Support",
         icon = "freshdesk"
 )

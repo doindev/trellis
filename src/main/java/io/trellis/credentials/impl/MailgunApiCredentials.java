@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mailgunApi",
-        displayName = "Mailgun A P I",
-        description = "Mailgun A P I authentication",
+        displayName = "Mailgun API",
+        description = "Mailgun API authentication",
         category = "Email",
         icon = "mailgun"
 )

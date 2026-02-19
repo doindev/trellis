@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "onfleetApi",
-        displayName = "Onfleet A P I",
-        description = "Onfleet A P I authentication",
+        displayName = "Onfleet API",
+        description = "Onfleet API authentication",
         category = "Marketing",
         icon = "onfleet"
 )

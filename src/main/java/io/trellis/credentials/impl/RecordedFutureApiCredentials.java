@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "recordedFutureApi",
-        displayName = "Recorded Future A P I",
-        description = "Recorded Future A P I authentication",
+        displayName = "Recorded Future API",
+        description = "Recorded Future API authentication",
         category = "Security",
         icon = "recordedfuture"
 )

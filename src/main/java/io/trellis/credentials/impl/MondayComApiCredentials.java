@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mondayComApi",
-        displayName = "Monday.com A P I",
-        description = "Monday.com A P I authentication",
+        displayName = "Monday.com API",
+        description = "Monday.com API authentication",
         category = "Project Management",
         icon = "mondaycom"
 )

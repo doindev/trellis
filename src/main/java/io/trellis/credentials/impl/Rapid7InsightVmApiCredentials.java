@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "rapid7InsightVmApi",
-        displayName = "Rapid7 Insight Vm A P I",
-        description = "Rapid7 Insight Vm A P I authentication",
+        displayName = "Rapid7 Insight Vm API",
+        description = "Rapid7 Insight Vm API authentication",
         category = "Security",
         icon = "rapid7insightvm"
 )

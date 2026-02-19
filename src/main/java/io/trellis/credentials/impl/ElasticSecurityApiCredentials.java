@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "elasticSecurityApi",
-        displayName = "Elastic Security A P I",
-        description = "Elastic Security A P I authentication",
+        displayName = "Elastic Security API",
+        description = "Elastic Security API authentication",
         category = "Security",
         icon = "elasticsecurity"
 )

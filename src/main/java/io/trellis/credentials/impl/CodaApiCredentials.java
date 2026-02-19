@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "codaApi",
-        displayName = "Coda A P I",
-        description = "Coda A P I authentication",
+        displayName = "Coda API",
+        description = "Coda API authentication",
         category = "Productivity",
         icon = "coda"
 )

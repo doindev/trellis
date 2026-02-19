@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "lineNotifyOAuth2Api",
-        displayName = "Line Notify O Auth2 A P I",
-        description = "Line Notify O Auth2 A P I authentication",
+        displayName = "Line Notify OAuth2 API",
+        description = "Line Notify OAuth2 API authentication",
         category = "Communication",
         icon = "linenotify",
         extendsType = "oAuth2Api"

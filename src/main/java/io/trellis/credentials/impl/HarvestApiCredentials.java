@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "harvestApi",
-        displayName = "Harvest A P I",
-        description = "Harvest A P I authentication",
+        displayName = "Harvest API",
+        description = "Harvest API authentication",
         category = "CRM / Sales",
         icon = "harvest"
 )

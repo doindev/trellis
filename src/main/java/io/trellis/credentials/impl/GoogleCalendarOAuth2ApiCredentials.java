@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleCalendarOAuth2Api",
-        displayName = "Google Calendar O Auth2 A P I",
-        description = "Google Calendar O Auth2 A P I authentication",
+        displayName = "Google Calendar OAuth2 API",
+        description = "Google Calendar OAuth2 API authentication",
         category = "Google Services",
         icon = "googlecalendar",
         extendsType = "oAuth2Api"

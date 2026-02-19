@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "dfirIrisApi",
-        displayName = "DFIR-IRIS A P I",
-        description = "DFIR-IRIS A P I authentication",
+        displayName = "DFIR-IRIS API",
+        description = "DFIR-IRIS API authentication",
         category = "Security",
         icon = "dfiriris"
 )

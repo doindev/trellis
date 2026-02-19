@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "oAuth1Api",
-        displayName = "O Auth1 A P I",
-        description = "O Auth1 A P I authentication",
+        displayName = "OAuth1 API",
+        description = "OAuth1 API authentication",
         category = "Generic"
 )
 public class OAuth1ApiCredentials implements CredentialProviderInterface {

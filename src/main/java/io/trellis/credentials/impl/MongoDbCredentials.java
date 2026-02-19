@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mongoDb",
-        displayName = "Mongo D B",
-        description = "Mongo D B authentication",
+        displayName = "Mongo DB",
+        description = "Mongo DB authentication",
         category = "Databases",
         icon = "mongo"
 )

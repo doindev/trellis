@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "circleCiApi",
-        displayName = "CircleCI A P I",
-        description = "CircleCI A P I authentication",
+        displayName = "CircleCI API",
+        description = "CircleCI API authentication",
         category = "Developer Tools",
         icon = "circleci"
 )

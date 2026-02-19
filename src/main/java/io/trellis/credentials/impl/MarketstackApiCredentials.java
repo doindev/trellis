@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "marketstackApi",
-        displayName = "Marketstack A P I",
-        description = "Marketstack A P I authentication",
+        displayName = "Marketstack API",
+        description = "Marketstack API authentication",
         category = "Finance",
         icon = "marketstack"
 )

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "currentsApi",
-        displayName = "Currents A P I",
-        description = "Currents A P I authentication",
+        displayName = "Currents API",
+        description = "Currents API authentication",
         category = "Analytics",
         icon = "currents"
 )

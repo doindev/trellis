@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "calendlyOAuth2Api",
-        displayName = "Calendly O Auth2 A P I",
-        description = "Calendly O Auth2 A P I authentication",
+        displayName = "Calendly OAuth2 API",
+        description = "Calendly OAuth2 API authentication",
         category = "Marketing",
         icon = "calendly",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "facebookLeadAdsOAuth2Api",
-        displayName = "Facebook Lead Ads O Auth2 A P I",
-        description = "Facebook Lead Ads O Auth2 A P I authentication",
+        displayName = "Facebook Lead Ads OAuth2 API",
+        description = "Facebook Lead Ads OAuth2 API authentication",
         category = "Social Media",
         icon = "facebookleadads",
         extendsType = "oAuth2Api"

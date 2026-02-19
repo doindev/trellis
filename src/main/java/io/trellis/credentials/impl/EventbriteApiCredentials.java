@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "eventbriteApi",
-        displayName = "Eventbrite A P I",
-        description = "Eventbrite A P I authentication",
+        displayName = "Eventbrite API",
+        description = "Eventbrite API authentication",
         category = "Marketing",
         icon = "eventbrite"
 )

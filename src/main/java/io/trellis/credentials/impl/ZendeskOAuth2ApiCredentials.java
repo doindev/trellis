@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "zendeskOAuth2Api",
-        displayName = "Zendesk O Auth2 A P I",
-        description = "Zendesk O Auth2 A P I authentication",
+        displayName = "Zendesk OAuth2 API",
+        description = "Zendesk OAuth2 API authentication",
         category = "Support",
         icon = "zendesk",
         extendsType = "oAuth2Api"

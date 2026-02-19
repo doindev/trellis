@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "mailchimpApi",
-        displayName = "Mailchimp A P I",
-        description = "Mailchimp A P I authentication",
+        displayName = "Mailchimp API",
+        description = "Mailchimp API authentication",
         category = "Email",
         icon = "mailchimp"
 )

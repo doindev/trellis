@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "gongApi",
-        displayName = "Gong A P I",
-        description = "Gong A P I authentication",
+        displayName = "Gong API",
+        description = "Gong API authentication",
         category = "Analytics",
         icon = "gong"
 )

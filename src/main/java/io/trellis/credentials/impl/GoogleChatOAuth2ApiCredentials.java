@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleChatOAuth2Api",
-        displayName = "Google Chat O Auth2 A P I",
-        description = "Google Chat O Auth2 A P I authentication",
+        displayName = "Google Chat OAuth2 API",
+        description = "Google Chat OAuth2 API authentication",
         category = "Google Services",
         icon = "googlechat",
         extendsType = "oAuth2Api"

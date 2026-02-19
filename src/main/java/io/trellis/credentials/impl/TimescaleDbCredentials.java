@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "timescaleDb",
-        displayName = "Timescale D B",
-        description = "Timescale D B authentication",
+        displayName = "Timescale DB",
+        description = "Timescale DB authentication",
         category = "Databases",
         icon = "timescale"
 )

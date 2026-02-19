@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "pushcutApi",
-        displayName = "Pushcut A P I",
-        description = "Pushcut A P I authentication",
+        displayName = "Pushcut API",
+        description = "Pushcut API authentication",
         category = "Communication",
         icon = "pushcut"
 )

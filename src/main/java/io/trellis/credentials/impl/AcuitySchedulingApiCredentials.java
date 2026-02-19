@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "acuitySchedulingApi",
-        displayName = "Acuity Scheduling A P I",
-        description = "Acuity Scheduling A P I authentication",
+        displayName = "Acuity Scheduling API",
+        description = "Acuity Scheduling API authentication",
         category = "Marketing",
         icon = "acuityscheduling"
 )

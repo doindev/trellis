@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "surveyMonkeyOAuth2Api",
-        displayName = "SurveyMonkey O Auth2 A P I",
-        description = "SurveyMonkey O Auth2 A P I authentication",
+        displayName = "SurveyMonkey OAuth2 API",
+        description = "SurveyMonkey OAuth2 API authentication",
         category = "Marketing",
         icon = "surveymonkey",
         extendsType = "oAuth2Api"

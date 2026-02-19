@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "stackbyApi",
-        displayName = "Stackby A P I",
-        description = "Stackby A P I authentication",
+        displayName = "Stackby API",
+        description = "Stackby API authentication",
         category = "Productivity",
         icon = "stackby"
 )

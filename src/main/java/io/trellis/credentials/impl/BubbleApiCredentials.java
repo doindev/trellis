@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "bubbleApi",
-        displayName = "Bubble A P I",
-        description = "Bubble A P I authentication",
+        displayName = "Bubble API",
+        description = "Bubble API authentication",
         category = "Productivity",
         icon = "bubble"
 )

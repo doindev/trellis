@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "metabaseApi",
-        displayName = "Metabase A P I",
-        description = "Metabase A P I authentication",
+        displayName = "Metabase API",
+        description = "Metabase API authentication",
         category = "Analytics",
         icon = "metabase"
 )

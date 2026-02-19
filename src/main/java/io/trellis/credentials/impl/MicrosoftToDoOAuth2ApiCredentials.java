@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftToDoOAuth2Api",
-        displayName = "Microsoft To Do O Auth2 A P I",
-        description = "Microsoft To Do O Auth2 A P I authentication",
+        displayName = "Microsoft To Do OAuth2 API",
+        description = "Microsoft To Do OAuth2 API authentication",
         category = "Microsoft Services",
         icon = "microsofttodo",
         extendsType = "oAuth2Api"

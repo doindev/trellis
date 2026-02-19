@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "signl4Api",
-        displayName = "Signl4 A P I",
-        description = "Signl4 A P I authentication",
+        displayName = "Signl4 API",
+        description = "Signl4 API authentication",
         category = "Communication",
         icon = "signl4"
 )

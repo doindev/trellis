@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "discordBotApi",
-        displayName = "Discord Bot A P I",
-        description = "Discord Bot A P I authentication",
+        displayName = "Discord Bot API",
+        description = "Discord Bot API authentication",
         category = "Communication",
         icon = "discordbot"
 )

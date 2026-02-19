@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "jotFormApi",
-        displayName = "JotForm A P I",
-        description = "JotForm A P I authentication",
+        displayName = "JotForm API",
+        description = "JotForm API authentication",
         category = "Project Management",
         icon = "jotform"
 )

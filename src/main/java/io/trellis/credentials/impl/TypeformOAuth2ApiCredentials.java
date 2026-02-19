@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "typeformOAuth2Api",
-        displayName = "Typeform O Auth2 A P I",
-        description = "Typeform O Auth2 A P I authentication",
+        displayName = "Typeform OAuth2 API",
+        description = "Typeform OAuth2 API authentication",
         category = "Marketing",
         icon = "typeform",
         extendsType = "oAuth2Api"

@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "quickBooksOAuth2Api",
-        displayName = "QuickBooks O Auth2 A P I",
-        description = "QuickBooks O Auth2 A P I authentication",
+        displayName = "QuickBooks OAuth2 API",
+        description = "QuickBooks OAuth2 API authentication",
         category = "Finance",
         icon = "quickbooks",
         extendsType = "oAuth2Api"

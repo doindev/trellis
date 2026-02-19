@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "salesforceOAuth2Api",
-        displayName = "Salesforce O Auth2 A P I",
-        description = "Salesforce O Auth2 A P I authentication",
+        displayName = "Salesforce OAuth2 API",
+        description = "Salesforce OAuth2 API authentication",
         category = "CRM / Sales",
         icon = "salesforce",
         extendsType = "oAuth2Api"

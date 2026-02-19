@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "pushoverApi",
-        displayName = "Pushover A P I",
-        description = "Pushover A P I authentication",
+        displayName = "Pushover API",
+        description = "Pushover API authentication",
         category = "Communication",
         icon = "pushover"
 )

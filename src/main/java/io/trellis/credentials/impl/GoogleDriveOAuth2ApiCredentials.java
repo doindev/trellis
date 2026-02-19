@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "googleDriveOAuth2Api",
-        displayName = "Google Drive O Auth2 A P I",
-        description = "Google Drive O Auth2 A P I authentication",
+        displayName = "Google Drive OAuth2 API",
+        description = "Google Drive OAuth2 API authentication",
         category = "Google Services",
         icon = "googledrive",
         extendsType = "oAuth2Api"

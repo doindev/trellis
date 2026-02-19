@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "storyblokManagementApi",
-        displayName = "Storyblok Management A P I",
-        description = "Storyblok Management A P I authentication",
+        displayName = "Storyblok Management API",
+        description = "Storyblok Management API authentication",
         category = "Productivity",
         icon = "storyblokmanagement"
 )

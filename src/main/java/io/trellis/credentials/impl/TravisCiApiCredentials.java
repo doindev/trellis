@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "travisCiApi",
-        displayName = "TravisCI A P I",
-        description = "TravisCI A P I authentication",
+        displayName = "TravisCI API",
+        description = "TravisCI API authentication",
         category = "Developer Tools",
         icon = "travisci"
 )

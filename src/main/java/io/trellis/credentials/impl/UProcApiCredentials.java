@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "uProcApi",
-        displayName = "U Proc A P I",
-        description = "U Proc A P I authentication",
+        displayName = "U Proc API",
+        description = "U Proc API authentication",
         category = "Marketing",
         icon = "uproc"
 )

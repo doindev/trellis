@@ -10,8 +10,8 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "ciscoSecureEndpointApi",
-        displayName = "Cisco Secure Endpoint A P I",
-        description = "Cisco Secure Endpoint A P I authentication",
+        displayName = "Cisco Secure Endpoint API",
+        description = "Cisco Secure Endpoint API authentication",
         category = "Security",
         icon = "ciscosecureendpoint"
 )
