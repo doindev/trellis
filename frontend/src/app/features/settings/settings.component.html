@@ -1,73 +1,305 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1 class="page-title">Settings</h1>
-    <p class="page-subtitle">Configure your Trellis instance</p>
-  </div>
-
-  <div class="settings-card">
-    <h3 class="section-title">General</h3>
-
-    <div class="setting-row">
-      <div class="setting-info">
-        <label class="setting-label">Timezone</label>
-        <p class="setting-description">Default timezone for workflow scheduling</p>
+<div class="settings-content">
+  <!-- USAGE -->
+  @if (activeSection === 'usage') {
+      <div class="section-page">
+        <h1 class="section-title">Usage</h1>
+        <p class="section-subtitle">Overview of your Trellis instance activity</p>
+        @if (usage) {
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">{{ usage.workflows }}</div>
+              <div class="stat-label">Workflows</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">{{ usage.executions }}</div>
+              <div class="stat-label">Total Executions</div>
+            </div>
+            <div class="stat-card success">
+              <div class="stat-value">{{ usage.executionsSuccess }}</div>
+              <div class="stat-label">Successful</div>
+            </div>
+            <div class="stat-card error">
+              <div class="stat-value">{{ usage.executionsError }}</div>
+              <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">{{ usage.credentials }}</div>
+              <div class="stat-label">Credentials</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">{{ usage.users }}</div>
+              <div class="stat-label">Users</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">{{ usage.activeWebhooks }}</div>
+              <div class="stat-label">Active Webhooks</div>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-state">Loading usage data...</div>
+        }
       </div>
-      <input type="text" class="form-control setting-input"
-             [(ngModel)]="settings.timezone">
-    </div>
+    }
 
-    <div class="setting-row">
-      <div class="setting-info">
-        <label class="setting-label">Execution Timeout (seconds)</label>
-        <p class="setting-description">Maximum time a workflow execution can run</p>
+    <!-- PERSONAL -->
+    @if (activeSection === 'personal') {
+      <div class="section-page">
+        <h1 class="section-title">Personal Settings</h1>
+        <p class="section-subtitle">Manage your account details</p>
+        <div class="settings-card">
+          <h3 class="card-title">Profile</h3>
+          <div class="form-row">
+            <label class="form-label">First name</label>
+            <input class="form-input" type="text" [(ngModel)]="personalForm.firstName" placeholder="First name">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Last name</label>
+            <input class="form-input" type="text" [(ngModel)]="personalForm.lastName" placeholder="Last name">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" [(ngModel)]="personalForm.email" placeholder="Email">
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3 class="card-title">Change Password</h3>
+          <div class="form-row">
+            <label class="form-label">Current password</label>
+            <input class="form-input" type="password" [(ngModel)]="personalForm.currentPassword" placeholder="Current password">
+          </div>
+          <div class="form-row">
+            <label class="form-label">New password</label>
+            <input class="form-input" type="password" [(ngModel)]="personalForm.newPassword" placeholder="New password">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" (click)="savePersonal()" [disabled]="personalSaving">
+            {{ personalSaving ? 'Saving...' : 'Save changes' }}
+          </button>
+        </div>
       </div>
-      <input type="number" class="form-control setting-input"
-             [(ngModel)]="settings.executionTimeout">
-    </div>
-  </div>
+    }
 
-  <div class="settings-card">
-    <h3 class="section-title">Executions</h3>
+    <!-- USERS -->
+    @if (activeSection === 'users') {
+      <div class="section-page">
+        <div class="section-header-row">
+          <div>
+            <h1 class="section-title">Users</h1>
+            <p class="section-subtitle">Manage who has access to this instance</p>
+          </div>
+          <button class="btn-primary" (click)="showAddUser = true">Invite user</button>
+        </div>
 
-    <div class="setting-row">
-      <div class="setting-info">
-        <label class="setting-label">Save Execution Progress</label>
-        <p class="setting-description">Save execution progress for each node as it completes</p>
-      </div>
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox"
-               [(ngModel)]="settings.saveExecutionProgress">
-      </div>
-    </div>
+        @if (showAddUser) {
+          <div class="settings-card">
+            <h3 class="card-title">Invite new user</h3>
+            <div class="form-row-inline">
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-input" type="email" [(ngModel)]="newUser.email" placeholder="user@example.com">
+              </div>
+              <div class="form-group">
+                <label class="form-label">First name</label>
+                <input class="form-input" type="text" [(ngModel)]="newUser.firstName" placeholder="Optional">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Last name</label>
+                <input class="form-input" type="text" [(ngModel)]="newUser.lastName" placeholder="Optional">
+              </div>
+            </div>
+            <div class="form-row-inline">
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <input class="form-input" type="password" [(ngModel)]="newUser.password" placeholder="Password">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Role</label>
+                <select class="form-input" [(ngModel)]="newUser.role">
+                  <option value="admin">Admin</option>
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions-inline">
+              <button class="btn-secondary" (click)="showAddUser = false">Cancel</button>
+              <button class="btn-primary" (click)="addUser()" [disabled]="addingUser || !newUser.email || !newUser.password">
+                {{ addingUser ? 'Adding...' : 'Add user' }}
+              </button>
+            </div>
+          </div>
+        }
 
-    <div class="setting-row">
-      <div class="setting-info">
-        <label class="setting-label">Save Manual Executions</label>
-        <p class="setting-description">Store results of manual workflow executions</p>
+        <div class="data-table">
+          <div class="table-header">
+            <div class="col-email">Email</div>
+            <div class="col-name">Name</div>
+            <div class="col-role">Role</div>
+            <div class="col-created">Created</div>
+            <div class="col-actions"></div>
+          </div>
+          @for (user of users; track user.id) {
+            <div class="table-row">
+              <div class="col-email">{{ user.email }}</div>
+              <div class="col-name">{{ (user.firstName || '') + ' ' + (user.lastName || '') }}</div>
+              <div class="col-role"><span class="role-badge">{{ getRoleLabel(user.role) }}</span></div>
+              <div class="col-created">{{ user.createdAt | date:'mediumDate' }}</div>
+              <div class="col-actions">
+                @if (user.role !== 'owner') {
+                  <button class="btn-icon-sm danger" (click)="deleteUser(user.id)" title="Delete user">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+          @if (users.length === 0) {
+            <div class="empty-row">No users found</div>
+          }
+        </div>
       </div>
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox"
-               [(ngModel)]="settings.saveManualExecutions">
-      </div>
-    </div>
+    }
 
-    <div class="setting-row">
-      <div class="setting-info">
-        <label class="setting-label">Default Execution Mode</label>
-        <p class="setting-description">Default mode for new workflow executions</p>
-      </div>
-      <select class="form-select setting-input"
-              [(ngModel)]="settings.defaultExecutionMode">
-        <option value="MANUAL">Manual</option>
-        <option value="TRIGGER">Trigger</option>
-        <option value="WEBHOOK">Webhook</option>
-      </select>
-    </div>
-  </div>
+    <!-- TRELLIS API -->
+    @if (activeSection === 'api') {
+      <div class="section-page">
+        <div class="section-header-row">
+          <div>
+            <h1 class="section-title">Trellis API</h1>
+            <p class="section-subtitle">Manage API keys for programmatic access</p>
+          </div>
+          <button class="btn-primary" (click)="showCreateKey = true">Create API key</button>
+        </div>
 
-  <div class="settings-footer">
-    <button class="btn btn-primary" (click)="saveSettings()">
-      Save Settings
-    </button>
-  </div>
+        @if (createdKeyValue) {
+          <div class="key-created-banner">
+            <div class="key-created-label">Your new API key (copy it now — it won't be shown again):</div>
+            <div class="key-created-row">
+              <code class="key-created-value">{{ createdKeyValue }}</code>
+              <button class="btn-copy" (click)="copyApiKey()">{{ copiedKey ? 'Copied!' : 'Copy' }}</button>
+              <button class="btn-secondary" (click)="dismissCreatedKey()">Done</button>
+            </div>
+          </div>
+        }
+
+        @if (showCreateKey) {
+          <div class="settings-card">
+            <h3 class="card-title">Create new API key</h3>
+            <div class="form-row">
+              <label class="form-label">Label</label>
+              <input class="form-input" type="text" [(ngModel)]="newKeyLabel" placeholder="e.g. CI/CD pipeline" (keydown.enter)="createApiKey()">
+            </div>
+            <div class="form-actions-inline">
+              <button class="btn-secondary" (click)="showCreateKey = false">Cancel</button>
+              <button class="btn-primary" (click)="createApiKey()" [disabled]="creatingKey || !newKeyLabel">
+                {{ creatingKey ? 'Creating...' : 'Create' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <div class="data-table">
+          <div class="table-header">
+            <div class="col-label">Label</div>
+            <div class="col-key">Key</div>
+            <div class="col-created">Created</div>
+            <div class="col-actions"></div>
+          </div>
+          @for (key of apiKeys; track key.id) {
+            <div class="table-row">
+              <div class="col-label">{{ key.label }}</div>
+              <div class="col-key"><code>{{ key.keyPrefix }}...</code></div>
+              <div class="col-created">{{ key.createdAt | date:'mediumDate' }}</div>
+              <div class="col-actions">
+                <button class="btn-icon-sm danger" (click)="deleteApiKey(key.id)" title="Revoke key">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+          @if (apiKeys.length === 0) {
+            <div class="empty-row">No API keys created yet</div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- EXTERNAL SECRETS -->
+    @if (activeSection === 'external-secrets') {
+      <div class="section-page">
+        <h1 class="section-title">External Secrets</h1>
+        <p class="section-subtitle">Connect external secret providers to manage credentials</p>
+        <div class="placeholder-card">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>
+            <path d="m7.9 7.9 2.7 2.7"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>
+            <path d="m13.4 10.6 2.7-2.7"/><circle cx="7.5" cy="16.5" r=".5" fill="currentColor"/>
+            <path d="m7.9 16.1 2.7-2.7"/><circle cx="16.5" cy="16.5" r=".5" fill="currentColor"/>
+            <path d="m13.4 13.4 2.7 2.7"/><circle cx="12" cy="12" r="2"/>
+          </svg>
+          <h3>No secret providers configured</h3>
+          <p>Connect an external secrets manager like HashiCorp Vault, AWS Secrets Manager, or Azure Key Vault to centrally manage your credentials.</p>
+          <button class="btn-primary" disabled>Set up provider</button>
+        </div>
+      </div>
+    }
+
+    <!-- ENVIRONMENTS -->
+    @if (activeSection === 'environments') {
+      <div class="section-page">
+        <h1 class="section-title">Environments</h1>
+        <p class="section-subtitle">Connect your Trellis instance to a git repository for version control</p>
+        <div class="placeholder-card">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
+          </svg>
+          <h3>Source control not connected</h3>
+          <p>Push and pull workflow changes to a git repository. Track changes across development, staging, and production environments.</p>
+          <button class="btn-primary" disabled>Connect repository</button>
+        </div>
+      </div>
+    }
+
+    <!-- LOG STREAMING -->
+    @if (activeSection === 'log-streaming') {
+      <div class="section-page">
+        <h1 class="section-title">Log Streaming</h1>
+        <p class="section-subtitle">Stream execution logs to external destinations</p>
+        <div class="placeholder-card">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m10 17 5-5-5-5m5 5H3m12-9h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          </svg>
+          <h3>No log destinations configured</h3>
+          <p>Forward execution logs and events to monitoring services like Datadog, Splunk, or a custom webhook endpoint.</p>
+          <button class="btn-primary" disabled>Add destination</button>
+        </div>
+      </div>
+    }
+
+    <!-- COMMUNITY NODES -->
+    @if (activeSection === 'community-nodes') {
+      <div class="section-page">
+        <h1 class="section-title">Community Nodes</h1>
+        <p class="section-subtitle">Installed workflow nodes ({{ nodeTypes.length }} total)</p>
+        <div class="nodes-grid">
+          @for (node of nodeTypes; track node.type) {
+            <div class="node-card">
+              <div class="node-card-header">
+                <span class="node-card-name">{{ node.displayName }}</span>
+                <span class="node-card-version">v{{ node.version }}</span>
+              </div>
+              <div class="node-card-meta">
+                <span class="node-card-type">{{ node.type }}</span>
+                <span class="node-card-category">{{ node.category }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
 </div>

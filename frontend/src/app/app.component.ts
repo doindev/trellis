@@ -1,7 +1,8 @@
-import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription, filter } from 'rxjs';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Table, Plus, Variable, Workflow } from 'lucide-angular';
 import { ProjectService } from './core/services/project.service';
 import { Project } from './core/models/project.model';
@@ -14,13 +15,13 @@ import { Project } from './core/models/project.model';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'Trellis';
   sidebarCollapsed = false;
   showAddDropdown = false;
   showCreateMenu = false;
+  settingsMode = false;
   projects: Project[] = [];
-  showSettingsMenu = false;
   showCreateProjectModal = false;
   newProjectName = '';
   newProjectDescription = '';
@@ -29,6 +30,7 @@ export class AppComponent implements OnInit {
   private addDropdownTimer: ReturnType<typeof setTimeout> | null = null;
   private createMenuTimer: ReturnType<typeof setTimeout> | null = null;
   private recentlyFocused = false;
+  private routerSub?: Subscription;
 
   @HostListener('window:focus')
   onWindowFocus(): void {
@@ -36,10 +38,20 @@ export class AppComponent implements OnInit {
     setTimeout(() => this.recentlyFocused = false, 300);
   }
 
-  constructor(private router: Router, private projectService: ProjectService, private elRef: ElementRef) {}
+  constructor(private router: Router, private projectService: ProjectService) {}
 
   ngOnInit(): void {
     this.loadProjects();
+    this.settingsMode = this.router.url.startsWith('/settings');
+    this.routerSub = this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd)
+    ).subscribe(e => {
+      this.settingsMode = e.urlAfterRedirects.startsWith('/settings');
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.routerSub?.unsubscribe();
   }
 
   loadProjects(): void {
@@ -154,26 +166,11 @@ export class AppComponent implements OnInit {
     this.router.navigate(['/home/data-tables']);
   }
 
-  toggleSettingsMenu(): void {
-    this.showSettingsMenu = !this.showSettingsMenu;
+  enterSettings(): void {
+    this.router.navigate(['/settings/usage']);
   }
 
-  onSettingsNav(route: string): void {
-    this.showSettingsMenu = false;
-    this.router.navigate([route]);
-  }
-
-  isSettingsRoute(): boolean {
-    return this.router.url.startsWith('/settings');
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: Event): void {
-    if (this.showSettingsMenu) {
-      const wrapper = this.elRef.nativeElement.querySelector('.settings-menu-wrapper');
-      if (wrapper && !wrapper.contains(event.target as Node)) {
-        this.showSettingsMenu = false;
-      }
-    }
+  exitSettings(): void {
+    this.router.navigate(['/home/workflows']);
   }
 }

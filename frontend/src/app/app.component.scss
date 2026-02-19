@@ -305,9 +305,31 @@
   }
 }
 
-/* Settings popover menu */
-.settings-menu-wrapper {
-  position: relative;
+/* Settings sidebar mode */
+.settings-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 68%);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  white-space: nowrap;
+
+  svg { flex-shrink: 0; color: hsl(0, 0%, 50%); }
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+    svg { color: hsl(0, 0%, 80%); }
+  }
+}
+
+.sidebar-collapsed .settings-back {
+  justify-content: center;
 }
 
 .settings-trigger {
@@ -329,56 +351,18 @@
   color: hsl(0, 0%, 68%);
 }
 
-.settings-popover {
-  position: absolute;
-  left: calc(100% + 8px);
-  bottom: 0;
-  background: hsl(0, 0%, 15%);
-  border: 1px solid hsl(0, 0%, 24%);
-  border-radius: 8px;
-  min-width: 210px;
-  padding: 4px;
-  z-index: 300;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-
-.settings-popover-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 12px;
-  background: none;
-  border: none;
-  color: hsl(0, 0%, 86%);
-  font-size: 0.8125rem;
-  font-family: inherit;
-  border-radius: 6px;
-  cursor: pointer;
-  text-align: left;
-  white-space: nowrap;
-
-  svg {
-    flex-shrink: 0;
-    color: hsl(0, 0%, 58%);
-  }
-
-  &:hover {
-    background: hsl(0, 0%, 20%);
-    color: hsl(0, 0%, 96%);
-
-    svg { color: hsl(0, 0%, 86%); }
-  }
-}
-
-.settings-popover-divider {
+.settings-bottom-divider {
   height: 1px;
   background: hsl(0, 0%, 24%);
-  margin: 4px 0;
+  margin: 0 4px 8px;
 }
 
-.sidebar-collapsed .settings-popover {
-  left: calc(100% + 4px);
+.sign-out-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
 }
 
 .main-content {

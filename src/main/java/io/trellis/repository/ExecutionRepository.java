@@ -15,4 +15,5 @@ public interface ExecutionRepository extends JpaRepository<ExecutionEntity, Stri
     Page<ExecutionEntity> findByStatus(ExecutionStatus status, Pageable pageable);
     Page<ExecutionEntity> findByWorkflowIdAndStatus(String workflowId, ExecutionStatus status, Pageable pageable);
     List<ExecutionEntity> findByStatus(ExecutionStatus status);
+    long countByStatus(ExecutionStatus status);
 }

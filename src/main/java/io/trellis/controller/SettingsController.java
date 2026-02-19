@@ -8,6 +8,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.trellis.entity.ExecutionEntity;
+import io.trellis.repository.CredentialRepository;
+import io.trellis.repository.ExecutionRepository;
+import io.trellis.repository.UserRepository;
+import io.trellis.repository.WebhookRepository;
+import io.trellis.repository.WorkflowRepository;
 import io.trellis.service.SecurityChainInfoService;
 import lombok.RequiredArgsConstructor;
 
@@ -17,6 +23,11 @@ import lombok.RequiredArgsConstructor;
 public class SettingsController {
 
     private final SecurityChainInfoService securityChainInfoService;
+    private final WorkflowRepository workflowRepository;
+    private final ExecutionRepository executionRepository;
+    private final CredentialRepository credentialRepository;
+    private final UserRepository userRepository;
+    private final WebhookRepository webhookRepository;
 
     @Value("${server.port:5678}")
     private int serverPort;
@@ -50,5 +61,18 @@ public class SettingsController {
         settings.put("version", "1.0.0");
         settings.put("platform", "trellis");
         return settings;
+    }
+
+    @GetMapping("/usage")
+    public Map<String, Object> getUsage() {
+        Map<String, Object> usage = new LinkedHashMap<>();
+        usage.put("workflows", workflowRepository.count());
+        usage.put("executions", executionRepository.count());
+        usage.put("executionsSuccess", executionRepository.countByStatus(ExecutionEntity.ExecutionStatus.SUCCESS));
+        usage.put("executionsError", executionRepository.countByStatus(ExecutionEntity.ExecutionStatus.ERROR));
+        usage.put("credentials", credentialRepository.count());
+        usage.put("users", userRepository.count());
+        usage.put("activeWebhooks", webhookRepository.count());
+        return usage;
     }
 }
