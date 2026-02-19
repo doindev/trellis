@@ -3,6 +3,7 @@
     [workflowName]="store.workflow()?.name || 'New Workflow'"
     [published]="store.workflow()?.published || false"
     [currentVersion]="store.workflow()?.currentVersion || 0"
+    [versionIsDirty]="store.workflow()?.versionIsDirty || false"
     [isDirty]="store.isDirty()"
     [isSaving]="store.isSaving()"
     [isExecuting]="store.isExecuting()"

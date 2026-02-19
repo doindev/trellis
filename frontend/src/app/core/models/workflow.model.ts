@@ -6,6 +6,7 @@ export interface Workflow {
   published: boolean;
   archived?: boolean;
   currentVersion: number;
+  versionIsDirty?: boolean;
   nodes: WorkflowNode[];
   connections: Record<string, any>;
   settings?: Record<string, any>;

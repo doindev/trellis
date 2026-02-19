@@ -14,6 +14,7 @@ public class WorkflowResponse {
     private boolean published;
     private boolean archived;
     private int currentVersion;
+    private boolean versionIsDirty;
     private Object nodes;
     private Object connections;
     private Object settings;

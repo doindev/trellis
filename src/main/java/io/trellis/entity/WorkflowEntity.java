@@ -40,6 +40,10 @@ public class WorkflowEntity {
     @Column(nullable = false)
     private int currentVersion = 0;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean versionIsDirty = false;
+
     @Lob
     @Convert(converter = JsonObjectConverter.class)
     @Column(columnDefinition = "TEXT")

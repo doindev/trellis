@@ -64,6 +64,11 @@ public class WorkflowService {
         if (request.getSettings() != null) entity.setSettings(request.getSettings());
         if (request.getStaticData() != null) entity.setStaticData(request.getStaticData());
         if (request.getPinData() != null) entity.setPinData(request.getPinData());
+
+        if (entity.isPublished() && (request.getNodes() != null || request.getConnections() != null)) {
+            entity.setVersionIsDirty(true);
+        }
+
         return toResponse(workflowRepository.save(entity));
     }
 
@@ -101,6 +106,7 @@ public class WorkflowService {
 
         entity.setCurrentVersion(newVersion);
         entity.setPublished(true);
+        entity.setVersionIsDirty(false);
         entity = workflowRepository.save(entity);
 
         webhookService.registerWorkflowWebhooks(entity);
@@ -176,6 +182,7 @@ public class WorkflowService {
                 .published(entity.isPublished())
                 .archived(entity.isArchived())
                 .currentVersion(entity.getCurrentVersion())
+                .versionIsDirty(entity.isVersionIsDirty())
                 .nodes(entity.getNodes())
                 .connections(entity.getConnections())
                 .settings(entity.getSettings())

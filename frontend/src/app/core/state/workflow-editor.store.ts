@@ -168,9 +168,7 @@ export class WorkflowEditorStore {
         this.workflow.set(saved);
         this.isDirty.set(false);
         this.isSaving.set(false);
-        if (isNew && saved.id) {
-          onSaved?.(saved);
-        }
+        onSaved?.(saved);
       },
       error: (err) => {
         console.error('Failed to save workflow:', err);

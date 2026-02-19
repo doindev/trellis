@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, ClockCheck, ClockPlus, ClockFading } from 'lucide-angular';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, ClockCheck, ClockPlus, ClockFading, Aperture } from 'lucide-angular';
 
 export type ToolbarAction =
   | 'editDescription'
@@ -22,7 +22,7 @@ export type ToolbarAction =
   providers: [{
     provide: LUCIDE_ICONS,
     multi: true,
-    useValue: new LucideIconProvider({ ClockCheck, ClockPlus, ClockFading })
+    useValue: new LucideIconProvider({ ClockCheck, ClockPlus, ClockFading, Aperture })
   }],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.scss'
@@ -31,6 +31,12 @@ export class ToolbarComponent {
   @Input() workflowName = '';
   @Input() published = false;
   @Input() currentVersion = 0;
+  @Input() versionIsDirty = false;
+
+  get publishStatus(): 'current' | 'stale' | 'unpublished' {
+    if (!this.published) return 'unpublished';
+    return this.versionIsDirty ? 'stale' : 'current';
+  }
   @Input() isDirty = false;
   @Input() isExecuting = false;
   @Input() isSaving = false;

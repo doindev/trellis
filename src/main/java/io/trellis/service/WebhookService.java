@@ -76,6 +76,7 @@ public class WebhookService {
     @Transactional
     public void deregisterWorkflowWebhooks(String workflowId) {
         webhookRepository.deleteByWorkflowId(workflowId);
+        webhookRepository.flush();
     }
 
     public Optional<WebhookEntity> resolveWebhook(String method, String path, boolean isTest) {
