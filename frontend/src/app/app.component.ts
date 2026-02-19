@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +20,7 @@ export class AppComponent implements OnInit {
   showAddDropdown = false;
   showCreateMenu = false;
   projects: Project[] = [];
+  showSettingsMenu = false;
   showCreateProjectModal = false;
   newProjectName = '';
   newProjectDescription = '';
@@ -35,7 +36,7 @@ export class AppComponent implements OnInit {
     setTimeout(() => this.recentlyFocused = false, 300);
   }
 
-  constructor(private router: Router, private projectService: ProjectService) {}
+  constructor(private router: Router, private projectService: ProjectService, private elRef: ElementRef) {}
 
   ngOnInit(): void {
     this.loadProjects();
@@ -151,5 +152,28 @@ export class AppComponent implements OnInit {
   onAddDataTable(): void {
     this.showCreateMenu = false;
     this.router.navigate(['/home/data-tables']);
+  }
+
+  toggleSettingsMenu(): void {
+    this.showSettingsMenu = !this.showSettingsMenu;
+  }
+
+  onSettingsNav(route: string): void {
+    this.showSettingsMenu = false;
+    this.router.navigate([route]);
+  }
+
+  isSettingsRoute(): boolean {
+    return this.router.url.startsWith('/settings');
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    if (this.showSettingsMenu) {
+      const wrapper = this.elRef.nativeElement.querySelector('.settings-menu-wrapper');
+      if (wrapper && !wrapper.contains(event.target as Node)) {
+        this.showSettingsMenu = false;
+      }
+    }
   }
 }

@@ -24,8 +24,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/insights/insights.component').then(m => m.InsightsComponent)
   },
+  { path: 'settings', redirectTo: '/settings/usage', pathMatch: 'full' },
   {
-    path: 'settings',
+    path: 'settings/:section',
     loadComponent: () =>
       import('./features/settings/settings.component').then(m => m.SettingsComponent)
   },

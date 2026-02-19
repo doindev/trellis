@@ -305,6 +305,82 @@
   }
 }
 
+/* Settings popover menu */
+.settings-menu-wrapper {
+  position: relative;
+}
+
+.settings-trigger {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.settings-chevron {
+  margin-left: auto;
+  color: hsl(0, 0%, 44%);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.settings-trigger:hover .settings-chevron {
+  color: hsl(0, 0%, 68%);
+}
+
+.settings-popover {
+  position: absolute;
+  left: calc(100% + 8px);
+  bottom: 0;
+  background: hsl(0, 0%, 15%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  min-width: 210px;
+  padding: 4px;
+  z-index: 300;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.settings-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 86%);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+
+  svg {
+    flex-shrink: 0;
+    color: hsl(0, 0%, 58%);
+  }
+
+  &:hover {
+    background: hsl(0, 0%, 20%);
+    color: hsl(0, 0%, 96%);
+
+    svg { color: hsl(0, 0%, 86%); }
+  }
+}
+
+.settings-popover-divider {
+  height: 1px;
+  background: hsl(0, 0%, 24%);
+  margin: 4px 0;
+}
+
+.sidebar-collapsed .settings-popover {
+  left: calc(100% + 4px);
+}
+
 .main-content {
   flex: 1;
   overflow: hidden;
