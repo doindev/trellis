@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -27,6 +27,13 @@ export class AppComponent implements OnInit {
   creatingProject = false;
   private addDropdownTimer: ReturnType<typeof setTimeout> | null = null;
   private createMenuTimer: ReturnType<typeof setTimeout> | null = null;
+  private recentlyFocused = false;
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {
+    this.recentlyFocused = true;
+    setTimeout(() => this.recentlyFocused = false, 300);
+  }
 
   constructor(private router: Router, private projectService: ProjectService) {}
 
@@ -49,6 +56,7 @@ export class AppComponent implements OnInit {
   }
 
   toggleSidebar(): void {
+    if (this.recentlyFocused) return;
     this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 
