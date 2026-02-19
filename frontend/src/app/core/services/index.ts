@@ -7,3 +7,4 @@ export * from './variable.service';
 export * from './websocket.service';
 export * from './chat.service';
 export * from './settings.service';
+export * from './project.service';

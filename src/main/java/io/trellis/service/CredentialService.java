@@ -26,6 +26,12 @@ public class CredentialService {
                 .toList();
     }
 
+    public List<CredentialResponse> listCredentialsByProject(String projectId) {
+        return credentialRepository.findByProjectId(projectId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     public List<CredentialResponse> listCredentialsByType(String type) {
         return credentialRepository.findByType(type).stream()
                 .map(this::toResponse)
@@ -46,6 +52,7 @@ public class CredentialService {
         CredentialEntity entity = CredentialEntity.builder()
                 .name(request.getName())
                 .type(request.getType())
+                .projectId(request.getProjectId())
                 .data(encryptionService.encrypt(request.getData()))
                 .build();
         return toResponse(credentialRepository.save(entity));
@@ -73,6 +80,7 @@ public class CredentialService {
     private CredentialResponse toResponse(CredentialEntity entity) {
         return CredentialResponse.builder()
                 .id(entity.getId())
+                .projectId(entity.getProjectId())
                 .name(entity.getName())
                 .type(entity.getType())
                 .createdAt(entity.getCreatedAt())

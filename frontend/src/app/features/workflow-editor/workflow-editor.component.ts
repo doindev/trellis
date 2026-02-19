@@ -105,6 +105,13 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       });
     } else {
       this.store.createNew();
+      const projectId = this.route.snapshot.queryParamMap.get('projectId');
+      if (projectId) {
+        const wf = this.store.workflow();
+        if (wf) {
+          this.store.workflow.set({ ...wf, projectId });
+        }
+      }
     }
 
     this.startAutoSaveTimer();

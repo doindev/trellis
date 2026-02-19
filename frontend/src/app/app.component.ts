@@ -1,25 +1,52 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Table, Plus, Variable, Workflow } from 'lucide-angular';
+import { ProjectService } from './core/services/project.service';
+import { Project } from './core/models/project.model';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Table, Plus, Variable, Workflow }) }],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'Trellis';
   sidebarCollapsed = false;
   showAddDropdown = false;
   showCreateMenu = false;
+  projects: Project[] = [];
+  showCreateProjectModal = false;
+  newProjectName = '';
+  newProjectDescription = '';
+  newProjectIcon = '';
+  creatingProject = false;
   private addDropdownTimer: ReturnType<typeof setTimeout> | null = null;
   private createMenuTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private projectService: ProjectService) {}
+
+  ngOnInit(): void {
+    this.loadProjects();
+  }
+
+  loadProjects(): void {
+    this.projectService.list().subscribe({
+      next: (projects) => this.projects = projects.filter(p => p.type === 'TEAM'),
+      error: () => this.projects = []
+    });
+  }
+
+  getProjectIcon(project: Project): string {
+    if (project.icon?.type === 'emoji' && project.icon.value) {
+      return project.icon.value;
+    }
+    return '';
+  }
 
   toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;
@@ -68,7 +95,35 @@ export class AppComponent {
   onAddProject(): void {
     this.showAddDropdown = false;
     this.showCreateMenu = false;
-    this.router.navigate(['/home/projects']);
+    this.newProjectName = '';
+    this.newProjectDescription = '';
+    this.newProjectIcon = '';
+    this.showCreateProjectModal = true;
+  }
+
+  onCreateProjectConfirm(): void {
+    if (!this.newProjectName.trim() || this.creatingProject) return;
+    this.creatingProject = true;
+    const icon = this.newProjectIcon.trim()
+      ? { type: 'emoji', value: this.newProjectIcon.trim() } as any
+      : undefined;
+    this.projectService.create({
+      name: this.newProjectName.trim(),
+      description: this.newProjectDescription.trim() || undefined,
+      icon
+    }).subscribe({
+      next: (project) => {
+        this.creatingProject = false;
+        this.showCreateProjectModal = false;
+        this.loadProjects();
+        this.router.navigate(['/projects', project.id, 'workflows']);
+      },
+      error: () => this.creatingProject = false
+    });
+  }
+
+  onCreateProjectCancel(): void {
+    this.showCreateProjectModal = false;
   }
 
   onAddVariable(): void {

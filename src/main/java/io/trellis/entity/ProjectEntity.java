@@ -6,28 +6,31 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "credentials")
+@Table(name = "projects", indexes = {
+    @Index(name = "idx_project_type", columnList = "type")
+})
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CredentialEntity {
+public class ProjectEntity {
 
     @Id
     @NanoId
     private String id;
 
-    private String projectId;
-
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String type;
+    private ProjectType type;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
-    private String data;
+    private String icon;
+
+    @Column(length = 512)
+    private String description;
 
     @Builder.Default
     @Column(nullable = false, updatable = false)
@@ -40,5 +43,9 @@ public class CredentialEntity {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = Instant.now();
+    }
+
+    public enum ProjectType {
+        PERSONAL, TEAM
     }
 }

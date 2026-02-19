@@ -9,4 +9,6 @@ import java.util.List;
 public interface CredentialRepository extends JpaRepository<CredentialEntity, String> {
     List<CredentialEntity> findByType(String type);
     List<CredentialEntity> findByNameContainingIgnoreCase(String name);
+    List<CredentialEntity> findByProjectId(String projectId);
+    List<CredentialEntity> findByProjectIdIsNull();
 }

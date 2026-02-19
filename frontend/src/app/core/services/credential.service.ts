@@ -13,6 +13,10 @@ export class CredentialService {
     return this.api.get<Credential[]>(this.path);
   }
 
+  listByProject(projectId: string): Observable<Credential[]> {
+    return this.api.get<Credential[]>(this.path, { projectId });
+  }
+
   get(id: string): Observable<Credential> {
     return this.api.get<Credential>(`${this.path}/${id}`);
   }

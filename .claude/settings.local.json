@@ -44,7 +44,10 @@
       "Bash(dir:*)",
       "Bash(gh search:*)",
       "Bash(python3:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(pkill:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

@@ -126,6 +126,7 @@
                 @for (workflow of pagedWorkflows(); track workflow.id) {
                   <app-workflow-card
                     [workflow]="workflow"
+                    [projectName]="getProjectName(workflow.projectId)"
                     (open)="openWorkflow($event)"
                     (duplicate)="duplicateWorkflow($event)"
                     (delete)="confirmDelete($event)" />

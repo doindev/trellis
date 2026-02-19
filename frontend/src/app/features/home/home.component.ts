@@ -2,8 +2,8 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { WorkflowService, ExecutionService, CredentialService } from '../../core/services';
-import { Workflow, Execution, Credential } from '../../core/models';
+import { WorkflowService, ExecutionService, CredentialService, ProjectService } from '../../core/services';
+import { Workflow, Execution, Credential, Project } from '../../core/models';
 import { WorkflowCardComponent } from '../../shared/components/workflow-card/workflow-card.component';
 import { VariableListComponent } from '../variables/variable-list.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -187,6 +187,9 @@ export class HomeComponent implements OnInit {
   execFilterActive = computed(() => isFilterActive(this.execFilters()));
   private execRefreshInterval: any = null;
 
+  // Projects
+  projectMap = new Map<string, string>();
+
   // Create dropdown
   showCreateDropdown = false;
   private createDropdownTimer: ReturnType<typeof setTimeout> | null = null;
@@ -196,7 +199,8 @@ export class HomeComponent implements OnInit {
     private route: ActivatedRoute,
     private workflowService: WorkflowService,
     private executionService: ExecutionService,
-    private credentialService: CredentialService
+    private credentialService: CredentialService,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
@@ -209,6 +213,7 @@ export class HomeComponent implements OnInit {
     this.loadWorkflows();
     this.loadExecutions();
     this.loadCredentials();
+    this.loadProjects();
   }
 
   setTab(tab: 'workflows' | 'credentials' | 'executions' | 'variables' | 'datatables'): void {
@@ -236,6 +241,22 @@ export class HomeComponent implements OnInit {
       },
       error: () => this.loadingExecutions.set(false)
     });
+  }
+
+  loadProjects(): void {
+    this.projectService.list().subscribe({
+      next: (projects) => {
+        this.projectMap.clear();
+        projects.forEach(p => {
+          if (p.id) this.projectMap.set(p.id, p.name);
+        });
+      }
+    });
+  }
+
+  getProjectName(projectId?: string): string {
+    if (!projectId) return '';
+    return this.projectMap.get(projectId) || '';
   }
 
   scheduleCreateDropdownClose(): void {

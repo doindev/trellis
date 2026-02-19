@@ -228,6 +228,20 @@
   min-width: 170px;
 }
 
+.sidebar-projects-label {
+  padding: 12px 12px 4px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(0, 0%, 44%);
+}
+
+.project-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
 .sidebar-nav {
   flex: 1;
   padding: 8px 8px;
@@ -298,4 +312,177 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* Create Project Modal */
+.cp-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-dialog {
+  position: relative;
+  z-index: 10001;
+  width: 480px;
+  max-width: calc(100vw - 40px);
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+
+.cp-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: hsl(0, 0%, 96%);
+  margin: 0;
+}
+
+.cp-close {
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 52%);
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+
+  &:hover {
+    background: hsl(0, 0%, 20%);
+    color: hsl(0, 0%, 96%);
+  }
+}
+
+.cp-body {
+  padding: 20px 24px;
+}
+
+.cp-field {
+  margin-bottom: 16px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.cp-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 68%);
+  margin-bottom: 6px;
+}
+
+.cp-optional {
+  font-weight: 400;
+  color: hsl(0, 0%, 44%);
+}
+
+.cp-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  color: hsl(0, 0%, 96%);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+
+  &::placeholder {
+    color: hsl(0, 0%, 38%);
+  }
+
+  &:focus {
+    border-color: var(--bs-primary);
+  }
+}
+
+.cp-input-icon {
+  max-width: 100px;
+}
+
+.cp-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  color: hsl(0, 0%, 96%);
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+
+  &::placeholder {
+    color: hsl(0, 0%, 38%);
+  }
+
+  &:focus {
+    border-color: var(--bs-primary);
+  }
+}
+
+.cp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 24px 20px;
+}
+
+.cp-btn-cancel {
+  padding: 8px 18px;
+  background: none;
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  color: hsl(0, 0%, 76%);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: hsl(0, 0%, 17%);
+    border-color: hsl(0, 0%, 32%);
+  }
+}
+
+.cp-btn-create {
+  padding: 8px 18px;
+  background: var(--bs-primary);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(0.9);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }

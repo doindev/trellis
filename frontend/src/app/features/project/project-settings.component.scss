@@ -1,0 +1,236 @@
+.settings-container {
+  padding: 32px 48px;
+  width: 100%;
+  max-width: 720px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.settings-header {
+  margin-bottom: 32px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--trellis-text-secondary);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  margin-bottom: 12px;
+
+  &:hover {
+    color: var(--trellis-text-primary);
+  }
+}
+
+.settings-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--trellis-text-primary);
+  margin: 0;
+}
+
+.settings-section {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--trellis-border);
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--trellis-text-primary);
+  margin: 0 0 16px;
+
+  &.danger {
+    color: var(--trellis-error-color);
+  }
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--trellis-text-secondary);
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid var(--trellis-border);
+  border-radius: 6px;
+  color: var(--trellis-text-primary);
+  font-size: 0.8125rem;
+  outline: none;
+
+  &::placeholder { color: hsl(0, 0%, 40%); }
+  &:focus { border-color: var(--bs-primary); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.form-input-small {
+  max-width: 120px;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid var(--trellis-border);
+  border-radius: 6px;
+  color: var(--trellis-text-primary);
+  font-size: 0.8125rem;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+
+  &::placeholder { color: hsl(0, 0%, 40%); }
+  &:focus { border-color: var(--bs-primary); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-save {
+  padding: 8px 20px;
+  background: var(--bs-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { filter: brightness(0.9); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+// Members
+.members-table {
+  margin-bottom: 16px;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid hsl(0, 0%, 15%);
+  gap: 16px;
+
+  &.member-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--trellis-text-secondary);
+    border-bottom: 1px solid var(--trellis-border);
+  }
+}
+
+.member-email {
+  flex: 1;
+  font-size: 0.8125rem;
+  color: var(--trellis-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-name {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--trellis-text-secondary);
+}
+
+.member-role {
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.member-actions {
+  width: 80px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.role-badge {
+  font-size: 0.75rem;
+  color: var(--trellis-text-secondary);
+}
+
+.role-select {
+  padding: 4px 8px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid var(--trellis-border);
+  border-radius: 6px;
+  color: var(--trellis-text-primary);
+  font-size: 0.8125rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: var(--trellis-error-color);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+
+  &:hover {
+    background: hsla(355, 83%, 52%, 0.1);
+  }
+}
+
+.add-member-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  .form-input {
+    flex: 1;
+  }
+}
+
+.btn-add-member {
+  padding: 8px 16px;
+  background: var(--bs-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover { filter: brightness(0.9); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// Danger zone
+.danger-zone {
+  border-bottom: none;
+}
+
+.danger-description {
+  font-size: 0.8125rem;
+  color: var(--trellis-text-secondary);
+  margin: 0 0 16px;
+}
+
+.btn-danger {
+  padding: 8px 20px;
+  background: var(--trellis-error-color);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { filter: brightness(0.9); }
+}

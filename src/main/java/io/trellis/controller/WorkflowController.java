@@ -16,7 +16,10 @@ public class WorkflowController {
     private final WorkflowService workflowService;
 
     @GetMapping
-    public List<WorkflowResponse> list() {
+    public List<WorkflowResponse> list(@RequestParam(required = false) String projectId) {
+        if (projectId != null) {
+            return workflowService.listWorkflowsByProject(projectId);
+        }
         return workflowService.listWorkflows();
     }
 

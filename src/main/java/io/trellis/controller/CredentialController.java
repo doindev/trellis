@@ -22,7 +22,10 @@ public class CredentialController {
     private final CredentialTypeRegistry credentialTypeRegistry;
 
     @GetMapping
-    public List<CredentialResponse> list() {
+    public List<CredentialResponse> list(@RequestParam(required = false) String projectId) {
+        if (projectId != null) {
+            return credentialService.listCredentialsByProject(projectId);
+        }
         return credentialService.listCredentials();
     }
 

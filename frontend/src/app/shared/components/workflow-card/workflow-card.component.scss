@@ -69,6 +69,18 @@
   flex-shrink: 0;
 }
 
+.project-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.6875rem;
+  color: var(--trellis-text-secondary);
+  background: hsla(0, 0%, 50%, 0.1);
+  padding: 3px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
 .status-badge {
   font-size: 0.75rem;
   font-weight: 500;

@@ -11,6 +11,7 @@ import { Workflow } from '../../../core/models';
 })
 export class WorkflowCardComponent {
   @Input({ required: true }) workflow!: Workflow;
+  @Input() projectName?: string;
   @Output() open = new EventEmitter<Workflow>();
   @Output() duplicate = new EventEmitter<Workflow>();
   @Output() delete = new EventEmitter<Workflow>();

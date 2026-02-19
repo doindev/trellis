@@ -30,6 +30,13 @@ public class WorkflowService {
                 .toList();
     }
 
+    public List<WorkflowResponse> listWorkflowsByProject(String projectId) {
+        return workflowRepository.findByProjectId(projectId).stream()
+                .filter(w -> !w.isArchived())
+                .map(this::toResponse)
+                .toList();
+    }
+
     public WorkflowResponse getWorkflow(String id) {
         return toResponse(findById(id));
     }
@@ -39,6 +46,7 @@ public class WorkflowService {
         WorkflowEntity entity = WorkflowEntity.builder()
                 .name(request.getName())
                 .description(request.getDescription())
+                .projectId(request.getProjectId())
                 .nodes(request.getNodes())
                 .connections(request.getConnections())
                 .settings(request.getSettings())
@@ -121,6 +129,7 @@ public class WorkflowService {
         WorkflowEntity duplicate = WorkflowEntity.builder()
                 .name("Copy of " + original.getName())
                 .description(original.getDescription())
+                .projectId(original.getProjectId())
                 .nodes(original.getNodes())
                 .connections(original.getConnections())
                 .settings(original.getSettings())
@@ -161,6 +170,7 @@ public class WorkflowService {
     private WorkflowResponse toResponse(WorkflowEntity entity) {
         return WorkflowResponse.builder()
                 .id(entity.getId())
+                .projectId(entity.getProjectId())
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .published(entity.isPublished())

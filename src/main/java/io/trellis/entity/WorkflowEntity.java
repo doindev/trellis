@@ -7,7 +7,9 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "workflows")
+@Table(name = "workflows", indexes = {
+    @Index(name = "idx_workflow_project", columnList = "projectId")
+})
 @Data
 @Builder
 @NoArgsConstructor
@@ -17,6 +19,8 @@ public class WorkflowEntity {
     @Id
     @NanoId
     private String id;
+
+    private String projectId;
 
     @Column(nullable = false)
     private String name;

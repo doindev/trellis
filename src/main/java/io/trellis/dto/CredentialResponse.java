@@ -8,6 +8,7 @@ import java.time.Instant;
 @Builder
 public class CredentialResponse {
     private String id;
+    private String projectId;
     private String name;
     private String type;
     private Instant createdAt;

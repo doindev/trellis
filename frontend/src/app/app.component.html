@@ -85,6 +85,25 @@
           <span class="nav-label">Personal</span>
         }
       </a>
+      @if (projects.length > 0) {
+        @if (!sidebarCollapsed) {
+          <div class="sidebar-projects-label">Projects</div>
+        }
+        @for (project of projects; track project.id) {
+          <a class="nav-item" [routerLink]="['/projects', project.id, 'workflows']" routerLinkActive="active">
+            <span class="nav-icon project-icon">
+              @if (getProjectIcon(project)) {
+                {{ getProjectIcon(project) }}
+              } @else {
+                <lucide-icon name="folder" [size]="20"></lucide-icon>
+              }
+            </span>
+            @if (!sidebarCollapsed) {
+              <span class="nav-label">{{ project.name }}</span>
+            }
+          </a>
+        }
+      }
       <a class="nav-item" routerLink="/home/chat">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -141,3 +160,39 @@
     <router-outlet />
   </main>
 </div>
+
+<!-- Create Project Modal -->
+@if (showCreateProjectModal) {
+  <div class="cp-overlay" (click)="onCreateProjectCancel()">
+    <div class="cp-dialog" (click)="$event.stopPropagation()">
+      <div class="cp-header">
+        <h3 class="cp-title">Create project</h3>
+        <button class="cp-close" (click)="onCreateProjectCancel()">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="cp-body">
+        <div class="cp-field">
+          <label class="cp-label" for="cpName">Project name</label>
+          <input id="cpName" class="cp-input" type="text" [(ngModel)]="newProjectName" placeholder="My project" autofocus (keydown.enter)="onCreateProjectConfirm()">
+        </div>
+        <div class="cp-field">
+          <label class="cp-label" for="cpDesc">Description <span class="cp-optional">optional</span></label>
+          <textarea id="cpDesc" class="cp-textarea" rows="3" [(ngModel)]="newProjectDescription" placeholder="What is this project about?"></textarea>
+        </div>
+        <div class="cp-field">
+          <label class="cp-label" for="cpIcon">Icon <span class="cp-optional">optional</span></label>
+          <input id="cpIcon" class="cp-input cp-input-icon" type="text" [(ngModel)]="newProjectIcon" placeholder="e.g. &#128640;">
+        </div>
+      </div>
+      <div class="cp-footer">
+        <button class="cp-btn-cancel" (click)="onCreateProjectCancel()">Cancel</button>
+        <button class="cp-btn-create" (click)="onCreateProjectConfirm()" [disabled]="!newProjectName.trim() || creatingProject">
+          {{ creatingProject ? 'Creating...' : 'Create project' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

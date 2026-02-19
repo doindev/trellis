@@ -9,8 +9,8 @@ export class WorkflowService {
 
   constructor(private api: ApiService) {}
 
-  list(): Observable<Workflow[]> {
-    return this.api.get<Workflow[]>(this.path);
+  list(params?: Record<string, string>): Observable<Workflow[]> {
+    return this.api.get<Workflow[]>(this.path, params);
   }
 
   get(id: string): Observable<Workflow> {

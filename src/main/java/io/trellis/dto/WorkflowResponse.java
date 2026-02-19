@@ -8,6 +8,7 @@ import java.time.Instant;
 @Builder
 public class WorkflowResponse {
     private String id;
+    private String projectId;
     private String name;
     private String description;
     private boolean published;
