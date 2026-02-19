@@ -16,196 +16,132 @@
     </div>
 
     <div class="drawer-body">
-      @if (activeTab === 'logs') {
-        <div class="logs-content">
-          <!-- Left: node list -->
-          <div class="logs-overview">
-            <div class="logs-overview-header">
-              <span class="logs-title">Logs</span>
+      <div class="logs-content">
+        <!-- Left: node list (always visible) -->
+        <div class="logs-overview">
+          <div class="logs-overview-header">
+            <span class="logs-title">Logs</span>
+          </div>
+          <div class="logs-overview-body">
+            <div class="logs-summary" [class]="'status-' + (executionStatus || 'success').toLowerCase()">
+              <span>{{ overallSummaryText }}</span>
             </div>
-            <div class="logs-overview-body">
-              <div class="logs-summary" [class]="'status-' + (executionStatus || 'success').toLowerCase()">
-                <span>{{ overallSummaryText }}</span>
-              </div>
-              <div class="logs-node-list">
-                @for (item of logsNodeList; track item.node.id) {
-                  <div class="logs-node-item"
-                       [class.selected]="item.node.id === selectedLogsNodeId"
-                       (click)="onLogsNodeClick(item.node.id)">
-                    <span class="node-status-dot" [class]="'dot-' + item.status"></span>
-                    <span class="node-icon" [innerHTML]="getNodeIconHtml(item.iconName)"></span>
-                    <span class="node-name">{{ item.displayName }}</span>
-                    <span class="node-duration">{{ formatMs(item.duration) }}</span>
-                    <button class="btn-open-node" (click)="openNodeDetail.emit(item.node.id); $event.stopPropagation()" title="Open node details">
-                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
-                      </svg>
-                    </button>
-                  </div>
-                }
-              </div>
+            <div class="logs-node-list">
+              @for (item of logsNodeList; track item.node.id) {
+                <div class="logs-node-item"
+                     [class.selected]="item.node.id === selectedLogsNodeId"
+                     (click)="onLogsNodeClick(item.node.id)">
+                  <span class="node-status-dot" [class]="'dot-' + item.status"></span>
+                  <span class="node-icon" [innerHTML]="getNodeIconHtml(item.iconName)"></span>
+                  <span class="node-name">{{ item.displayName }}</span>
+                  <span class="node-duration">{{ formatMs(item.duration) }}</span>
+                  <button class="btn-open-node" (click)="openNodeDetail.emit(item.node.id); $event.stopPropagation()" title="Open node details">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
+                    </svg>
+                  </button>
+                </div>
+              }
             </div>
           </div>
+        </div>
 
-          <!-- Right: selected node detail -->
-          <div class="logs-detail">
+        <!-- Right: detail panel (always visible) -->
+        <div class="logs-detail">
+          <div class="logs-detail-header">
             @if (selectedLogsEntry) {
-              <div class="logs-detail-header">
-                <div class="detail-title">
-                  <span class="node-icon" [innerHTML]="getNodeIconHtml(selectedLogsEntry.iconName)"></span>
-                  <span class="detail-node-name">{{ selectedLogsEntry.displayName }}</span>
-                  <span class="detail-summary" [class]="'status-text-' + selectedLogsEntry.status">{{ selectedNodeSummary }}</span>
-                </div>
-                <div class="detail-actions">
-                  <button class="btn-io-toggle" [class.active]="detailView === 'input'" (click)="detailView = 'input'">Input</button>
-                  <button class="btn-io-toggle" [class.active]="detailView === 'output'" (click)="detailView = 'output'">Output</button>
-                </div>
-                <button class="btn-collapse" [class.expanded]="expanded" (click)="toggleExpanded()" [title]="expanded ? 'Collapse drawer (L)' : 'Expand drawer (L)'">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </button>
+              <div class="detail-title">
+                <span class="node-icon" [innerHTML]="getNodeIconHtml(selectedLogsEntry.iconName)"></span>
+                <span class="detail-node-name">{{ selectedLogsEntry.displayName }}</span>
+                <span class="detail-summary" [class]="'status-text-' + selectedLogsEntry.status">{{ selectedNodeSummary }}</span>
               </div>
-              <div class="logs-detail-body">
-                <div class="detail-output-bar">
-                  <span class="output-label">{{ detailView === 'input' ? 'Input' : 'Output' }}</span>
-                  <div class="display-mode-toggle">
-                    <button class="btn-display-mode" [class.active]="displayMode === 'table'" (click)="displayMode = 'table'" title="Table view">
-                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18"/>
-                      </svg>
-                    </button>
-                    <button class="btn-display-mode" [class.active]="displayMode === 'json'" (click)="displayMode = 'json'" title="JSON view">
-                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1m8 0h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>
-                      </svg>
-                    </button>
-                  </div>
-                  <span class="output-item-count">{{ activeDetailItemCount }} {{ activeDetailItemCount === 1 ? 'item' : 'items' }}</span>
-                </div>
-
-                @if (displayMode === 'json') {
-                  <pre class="output-json">{{ activeDetailJson }}</pre>
-                } @else if (activeDetailColumns.length > 0) {
-                  <div class="output-table-wrapper">
-                    <table class="output-table">
-                      <thead>
-                        <tr>
-                          @for (col of activeDetailColumns; track col) {
-                            <th>{{ col }}</th>
-                          }
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (item of activeDetailItems; track $index) {
-                          <tr>
-                            @for (col of activeDetailColumns; track col) {
-                              <td>
-                                @if (isEmptyObject(item[col])) {
-                                  <span class="empty-value">{{ '{' }}empty object{{ '}' }}</span>
-                                } @else if (isArray(item[col])) {
-                                  @if (item[col].length === 0) {
-                                    <span class="empty-value">[empty array]</span>
-                                  } @else {
-                                    <span class="cell-value">{{ formatCellValue(item[col]) }}</span>
-                                  }
-                                } @else if (isObjectValue(item[col])) {
-                                  <div class="cell-tree">
-                                    @for (entry of getObjectEntries(item[col]); track entry[0]) {
-                                      <div class="tree-row">
-                                        <span class="tree-key">{{ entry[0] }}</span><span class="tree-sep">:</span>
-                                        <span class="tree-value">{{ formatCellValue(entry[1]) }}</span>
-                                      </div>
-                                    }
-                                  </div>
-                                } @else {
-                                  <span class="cell-value">{{ formatCellValue(item[col]) }}</span>
-                                }
-                              </td>
-                            }
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
-                } @else {
-                  <pre class="output-json">{{ activeDetailJson }}</pre>
-                }
-              </div>
-            } @else {
-              <div class="empty-state">
-                <p>Select a node to see its output</p>
+              <div class="detail-actions">
+                <button class="btn-io-toggle" [class.active]="detailView === 'input'" (click)="detailView = 'input'">Input</button>
+                <button class="btn-io-toggle" [class.active]="detailView === 'output'" (click)="detailView = 'output'">Output</button>
               </div>
             }
-          </div>
-        </div>
-      }
-
-      @if (activeTab === 'output') {
-        <div class="output-content">
-          @if (isExecuting) {
-            <div class="empty-state">
-              <div class="spinner-border spinner-border-sm text-warning"></div>
-              <span>Executing workflow...</span>
-            </div>
-          } @else if (!executionData) {
-            <div class="empty-state">
-              <p>Execute the workflow to see results here</p>
-            </div>
-          } @else if (!selectedNodeId) {
-            <div class="empty-state">
-              <p>Select a node to see its output</p>
-            </div>
-          } @else if (!nodeExecutionData) {
-            <div class="empty-state">
-              <p>No output data for this node</p>
-            </div>
-          } @else {
-            <pre class="output-json">{{ outputJson }}</pre>
-          }
-        </div>
-      }
-
-      @if (activeTab === 'chat') {
-        <div class="chat-content">
-          <div class="chat-messages" #chatMessages>
-            @if (messages.length === 0 && !isTyping) {
-              <div class="chat-empty">
-                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <p>Ask questions about your workflow or get help building automations</p>
-              </div>
-            }
-            @for (msg of messages; track msg.timestamp) {
-              <div class="chat-bubble" [class]="'role-' + msg.role">
-                <div class="bubble-content">{{ msg.content }}</div>
-              </div>
-            }
-            @if (isTyping) {
-              <div class="chat-bubble role-assistant">
-                <div class="typing-indicator">
-                  <span></span><span></span><span></span>
-                </div>
-              </div>
-            }
-          </div>
-          <div class="chat-input-area">
-            <textarea
-              class="chat-input"
-              [(ngModel)]="chatInput"
-              (keydown)="onChatKeydown($event)"
-              placeholder="Type a message..."
-              rows="1"></textarea>
-            <button class="btn-send" (click)="sendMessage()" [disabled]="!chatInput.trim()">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            <button class="btn-collapse" [class.expanded]="expanded" (click)="toggleExpanded()" [title]="expanded ? 'Collapse drawer (L)' : 'Expand drawer (L)'">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
               </svg>
             </button>
           </div>
+
+          @if (selectedLogsEntry) {
+            <div class="logs-detail-body">
+              <div class="detail-output-bar">
+                <span class="output-label">{{ detailView === 'input' ? 'Input' : 'Output' }}</span>
+                <div class="display-mode-toggle">
+                  <button class="btn-display-mode" [class.active]="displayMode === 'table'" (click)="displayMode = 'table'" title="Table view">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18"/>
+                    </svg>
+                  </button>
+                  <button class="btn-display-mode" [class.active]="displayMode === 'json'" (click)="displayMode = 'json'" title="JSON view">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1m8 0h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>
+                    </svg>
+                  </button>
+                </div>
+                <span class="output-item-count">{{ activeDetailItemCount }} {{ activeDetailItemCount === 1 ? 'item' : 'items' }}</span>
+              </div>
+
+              @if (displayMode === 'json') {
+                <pre class="output-json">{{ activeDetailJson }}</pre>
+              } @else if (activeDetailColumns.length > 0) {
+                <div class="output-table-wrapper">
+                  <table class="output-table">
+                    <thead>
+                      <tr>
+                        @for (col of activeDetailColumns; track col) {
+                          <th>{{ col }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of activeDetailItems; track $index) {
+                        <tr>
+                          @for (col of activeDetailColumns; track col) {
+                            <td>
+                              @if (isEmptyObject(item[col])) {
+                                <span class="empty-value">{{ '{' }}empty object{{ '}' }}</span>
+                              } @else if (isArray(item[col])) {
+                                @if (item[col].length === 0) {
+                                  <span class="empty-value">[empty array]</span>
+                                } @else {
+                                  <span class="cell-value">{{ formatCellValue(item[col]) }}</span>
+                                }
+                              } @else if (isObjectValue(item[col])) {
+                                <div class="cell-tree">
+                                  @for (entry of getObjectEntries(item[col]); track entry[0]) {
+                                    <div class="tree-row">
+                                      <span class="tree-key">{{ entry[0] }}</span><span class="tree-sep">:</span>
+                                      <span class="tree-value">{{ formatCellValue(entry[1]) }}</span>
+                                    </div>
+                                  }
+                                </div>
+                              } @else {
+                                <span class="cell-value">{{ formatCellValue(item[col]) }}</span>
+                              }
+                            </td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <pre class="output-json">{{ activeDetailJson }}</pre>
+              }
+            </div>
+          } @else {
+            <div class="empty-state">
+              <p>Select a node to see its output</p>
+            </div>
+          }
         </div>
-      }
+      </div>
     </div>
   }
 </div>

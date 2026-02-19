@@ -71,13 +71,17 @@
         @if (activeSelectedNode) {
           <app-parameter-panel
             [node]="activeSelectedNode"
+            [workflowId]="store.workflow()?.id || ''"
             [nodeType]="nodeTypeStore.getByType(activeSelectedNode.type)"
             [allNodes]="activeTab === 'executions' && executionWorkflow ? executionWorkflow.nodes : store.nodes()"
             [connections]="activeTab === 'executions' && executionWorkflow ? executionWorkflow.connections : store.connections()"
             [executionData]="activeTab === 'executions' ? executionDataById : store.executionData()"
+            [webhookTestData]="webhookTestData"
             [nodeTypeMap]="nodeTypeStore.nodeTypes()"
-            [readOnly]="activeTab === 'executions' || !!store.executionData()"
+            [readOnly]="activeTab === 'executions'"
             (parameterChanged)="store.updateNode(store.selectedNodeId()!, { parameters: $event })"
+            (webhookTestDataReceived)="onWebhookTestData($event)"
+            (nodeExecuted)="onNodeExecuted($event)"
             (close)="store.selectNode(null)"
             (deleteNode)="store.removeNode(store.selectedNodeId()!)"
             (navigateToNode)="store.selectNode($event)" />

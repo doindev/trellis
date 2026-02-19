@@ -199,8 +199,12 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     if (!raw) return '';
 
     const run = Array.isArray(raw) ? raw[0] : raw;
-    const outputData = run?.data?.main?.[0] || run?.data || run;
-    return JSON.stringify(outputData, null, 2);
+    const mainOutput = run?.data?.main?.[0];
+    if (Array.isArray(mainOutput)) {
+      const items = mainOutput.map((item: any) => item?.json || item || {});
+      return JSON.stringify(items, null, 2);
+    }
+    return JSON.stringify(run?.data || run, null, 2);
   }
 
   get selectedNodeOutputItems(): Record<string, any>[] {
@@ -260,8 +264,12 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     const raw = this.executionData[this.selectedLogsNodeId];
     if (!raw) return '';
     const run = Array.isArray(raw) ? raw[0] : raw;
-    const inputData = run?.inputData?.main?.[0] || run?.inputData || {};
-    return JSON.stringify(inputData, null, 2);
+    const mainInput = run?.inputData?.main?.[0];
+    if (Array.isArray(mainInput)) {
+      const items = mainInput.map((item: any) => item?.json || item || {});
+      return JSON.stringify(items, null, 2);
+    }
+    return JSON.stringify(run?.inputData || {}, null, 2);
   }
 
   get activeDetailItems(): Record<string, any>[] {

@@ -462,8 +462,13 @@
     margin-left: auto;
   }
 
-  .btn-collapse {
+  > .btn-collapse {
     flex-shrink: 0;
+
+    // When collapse button is the only child (no node selected), push to right
+    &:first-child {
+      margin-left: auto;
+    }
   }
 }
 

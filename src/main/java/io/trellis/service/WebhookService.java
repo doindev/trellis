@@ -58,12 +58,14 @@ public class WebhookService {
 
             // Register webhook for the configured HTTP method
             String method = (String) parameters.getOrDefault("httpMethod", "GET");
+            String responseMode = (String) parameters.getOrDefault("responseMode", "onReceived");
             WebhookEntity webhook = WebhookEntity.builder()
                     .workflowId(workflow.getId())
                     .nodeId(nodeId)
                     .method(method.toUpperCase())
                     .path(normalizedPath)
                     .securityChain(authentication)
+                    .responseMode(responseMode)
                     .build();
 
             webhookRepository.save(webhook);
@@ -76,8 +78,8 @@ public class WebhookService {
         webhookRepository.deleteByWorkflowId(workflowId);
     }
 
-    public Optional<WebhookEntity> resolveWebhook(String method, String path) {
-        return webhookRepository.findByMethodAndPath(method.toUpperCase(), path);
+    public Optional<WebhookEntity> resolveWebhook(String method, String path, boolean isTest) {
+        return webhookRepository.findByMethodAndPathAndIsTest(method.toUpperCase(), path, isTest);
     }
 
     @Transactional
@@ -91,6 +93,11 @@ public class WebhookService {
                 .isTest(true)
                 .build();
         return webhookRepository.save(webhook);
+    }
+
+    @Transactional
+    public void deregisterTestWebhooks(String workflowId) {
+        webhookRepository.deleteByWorkflowIdAndIsTest(workflowId, true);
     }
 
     public List<WebhookEntity> getWorkflowWebhooks(String workflowId) {

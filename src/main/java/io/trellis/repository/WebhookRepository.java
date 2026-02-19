@@ -9,7 +9,9 @@ import java.util.Optional;
 @Repository
 public interface WebhookRepository extends JpaRepository<WebhookEntity, String> {
     Optional<WebhookEntity> findByMethodAndPath(String method, String path);
+    Optional<WebhookEntity> findByMethodAndPathAndIsTest(String method, String path, boolean isTest);
     List<WebhookEntity> findByWorkflowId(String workflowId);
     List<WebhookEntity> findByWorkflowIdAndIsTest(String workflowId, boolean isTest);
     void deleteByWorkflowId(String workflowId);
+    void deleteByWorkflowIdAndIsTest(String workflowId, boolean isTest);
 }

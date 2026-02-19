@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -57,5 +58,21 @@ public class ExecutionController {
             @RequestBody(required = false) Map<String, Object> inputData) {
         String executionId = workflowEngine.startExecution(workflowId, inputData);
         return Map.of("executionId", executionId);
+    }
+
+    @SuppressWarnings("unchecked")
+    @PostMapping("/api/nodes/execute")
+    public Map<String, Object> executeNode(@RequestBody Map<String, Object> request) {
+        String nodeType = (String) request.get("nodeType");
+        int typeVersion = request.get("typeVersion") != null
+                ? ((Number) request.get("typeVersion")).intValue() : 1;
+        Map<String, Object> parameters = (Map<String, Object>) request.get("parameters");
+        Map<String, Object> credentials = (Map<String, Object>) request.get("credentials");
+        List<Map<String, Object>> inputData = (List<Map<String, Object>>) request.get("inputData");
+        String workflowId = (String) request.get("workflowId");
+        String nodeId = (String) request.get("nodeId");
+
+        return workflowEngine.executeSingleNode(
+                nodeType, typeVersion, parameters, credentials, inputData, workflowId, nodeId);
     }
 }

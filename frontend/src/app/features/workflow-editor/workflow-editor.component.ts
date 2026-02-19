@@ -66,6 +66,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   viewingExecution: Execution | null = null;
   executionWorkflow: Workflow | null = null;
   executionDataById: Record<string, any> | null = null;
+  webhookTestData: Record<string, any> = {};
   private executionSub?: Subscription;
   private currentExecutionId: string | null = null;
   private autoSaveInterval: ReturnType<typeof setInterval> | null = null;
@@ -390,6 +391,21 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.viewingExecution = null;
     this.executionWorkflow = null;
     this.executionDataById = null;
+  }
+
+  onWebhookTestData(event: { nodeId: string; data: any }): void {
+    this.webhookTestData = { ...this.webhookTestData, [event.nodeId]: event.data };
+  }
+
+  onNodeExecuted(event: { nodeId: string; data: any }): void {
+    const current = this.store.executionData() || {};
+    if (event.data === null) {
+      // Clear this node's data (execution starting)
+      const { [event.nodeId]: _, ...rest } = current;
+      this.store.setExecutionData(Object.keys(rest).length > 0 ? rest : null);
+    } else {
+      this.store.setExecutionData({ ...current, [event.nodeId]: event.data });
+    }
   }
 
   onPublishClicked(): void {

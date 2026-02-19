@@ -6,7 +6,7 @@ import lombok.*;
 
 @Entity
 @Table(name = "webhooks", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"method", "path"})
+    @UniqueConstraint(columnNames = {"method", "path", "is_test"})
 })
 @Data
 @Builder
@@ -37,4 +37,8 @@ public class WebhookEntity {
     @Builder.Default
     @Column(nullable = false)
     private boolean isTest = false;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private String responseMode = "onReceived";
 }

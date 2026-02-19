@@ -71,24 +71,156 @@
       <!-- Input column -->
       <div class="column column-input" [style.width.%]="leftWidthPercent">
         <div class="column-header">
-          <span class="column-label">Input</span>
+          <span class="column-label">{{ isWebhookNode && !readOnly ? 'Test' : 'Input' }}</span>
           @if (executionData && inputItemCount > 0) {
             <span class="item-count-badge">{{ inputItemCount }} items</span>
           }
-        </div>
-        <div class="column-body">
-          @if (previousNodes.length === 0) {
-            <div class="empty-state">No input connections</div>
-          } @else {
-            @for (prev of previousNodes; track prev.node.id) {
-              <div class="data-block">
-                <div class="data-block-header">{{ prev.node.name }}</div>
-                @if (getNodeOutputJson(prev.node.id)) {
-                  <pre class="data-json">{{ getNodeOutputJson(prev.node.id) }}</pre>
-                } @else {
-                  <div class="empty-state-sm">No execution data</div>
+          @if (hasInputData && !(isWebhookNode && !readOnly)) {
+            <div class="column-header-controls">
+              <div class="header-search" [class.expanded]="inputSearchExpanded">
+                <button class="search-toggle" (click)="toggleSearch('input')" title="Search">
+                  <lucide-icon name="search" [size]="14"></lucide-icon>
+                </button>
+                @if (inputSearchExpanded) {
+                  <input #inputSearchEl type="text" class="search-input" placeholder="Search..."
+                         [(ngModel)]="inputSearch"
+                         (blur)="onSearchBlur('input')">
                 }
               </div>
+              <div class="display-mode-toggle" role="radiogroup">
+                <button class="mode-btn" [class.active]="inputDisplayMode === 'schema'"
+                        (click)="inputDisplayMode = 'schema'">Schema</button>
+                <button class="mode-btn" [class.active]="inputDisplayMode === 'table'"
+                        (click)="inputDisplayMode = 'table'">Table</button>
+                <button class="mode-btn" [class.active]="inputDisplayMode === 'json'"
+                        (click)="inputDisplayMode = 'json'">JSON</button>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="column-body">
+          @if (isWebhookNode && !readOnly) {
+            <!-- Trigger panel for webhook nodes in edit mode -->
+            <div class="trigger-panel">
+              @if (!isListening && !receivedTestData) {
+                <!-- Initial state: ready to listen -->
+                <div class="trigger-icon">
+                  <lucide-icon name="webhook" [size]="40"></lucide-icon>
+                </div>
+                <div class="trigger-title">Test workflow</div>
+                <div class="trigger-hint">
+                  Send a <strong>{{ currentHttpMethod }}</strong> request to the URL to execute the workflow
+                </div>
+                <div class="trigger-url">
+                  <div class="trigger-url-display">
+                    <span class="trigger-url-method">{{ currentHttpMethod }}</span>
+                    <span class="trigger-url-text" (click)="copyTestUrl()" title="Click to copy">{{ fullWebhookTestUrl }}</span>
+                    <button class="trigger-url-copy" (click)="copyTestUrl()" title="Copy URL">
+                      <lucide-icon [name]="copiedField === 'testUrl' ? 'check-circle' : 'copy'" [size]="14"></lucide-icon>
+                    </button>
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-primary trigger-btn" (click)="startListening()">
+                  Listen for test event
+                </button>
+              } @else if (isListening) {
+                <!-- Listening state -->
+                <div class="trigger-icon trigger-icon-listening">
+                  <lucide-icon name="webhook" [size]="40"></lucide-icon>
+                </div>
+                <div class="trigger-title">Listening for test event...</div>
+                <div class="trigger-hint">
+                  Waiting for a <strong>{{ currentHttpMethod }}</strong> request at:
+                </div>
+                <div class="trigger-url">
+                  <div class="trigger-url-display">
+                    <span class="trigger-url-method">{{ currentHttpMethod }}</span>
+                    <span class="trigger-url-text" (click)="copyTestUrl()" title="Click to copy">{{ listeningTestUrl || fullWebhookTestUrl }}</span>
+                    <button class="trigger-url-copy" (click)="copyTestUrl()" title="Copy URL">
+                      <lucide-icon [name]="copiedField === 'testUrl' ? 'check-circle' : 'copy'" [size]="14"></lucide-icon>
+                    </button>
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-outline-danger trigger-btn" (click)="stopListening()">
+                  <lucide-icon name="square" [size]="14"></lucide-icon>
+                  Stop listening
+                </button>
+              } @else if (receivedTestData) {
+                <!-- Data received — output shown in right column -->
+                <div class="trigger-icon trigger-icon-success">
+                  <lucide-icon name="check-circle" [size]="40"></lucide-icon>
+                </div>
+                <div class="trigger-title">Test event received</div>
+                <div class="trigger-hint">See the Output panel for the received data</div>
+                <button class="btn btn-sm btn-primary trigger-btn" (click)="startListening()">
+                  Listen again
+                </button>
+              }
+            </div>
+          } @else {
+            <!-- Normal input column for non-webhook nodes or read-only mode -->
+            @if (previousNodes.length === 0) {
+              <div class="empty-state">No input connections</div>
+            } @else if (inputDisplayMode === 'schema' && hasInputData) {
+              @if (inputSchemaNodes.length === 0) {
+                <div class="empty-state-sm">{{ inputSearch ? 'No matching fields' : 'No data' }}</div>
+              } @else {
+                <div class="schema-tree">
+                  @for (node of inputSchemaNodes; track node.path) {
+                    <div class="schema-row" [style.padding-left.px]="node.level * 16 + 8">
+                      @if (node.children && node.children.length > 0) {
+                        <button class="schema-expand" (click)="toggleSchemaNode(node.path, 'input')"
+                                [class.collapsed]="isSchemaCollapsed(node.path, 'input')">
+                          <lucide-icon name="chevron-right" [size]="12"></lucide-icon>
+                        </button>
+                      } @else {
+                        <span class="schema-expand-spacer"></span>
+                      }
+                      <span class="schema-type-pill" [attr.data-type]="node.type">{{ typeIcon(node.type) }}</span>
+                      <span class="schema-key" [innerHTML]="node.key | highlight:inputSearch"></span>
+                      <span class="schema-value" [innerHTML]="node.value | highlight:inputSearch"></span>
+                    </div>
+                  }
+                </div>
+              }
+            } @else if (inputDisplayMode === 'table' && hasInputData) {
+              @if (inputTableRows.length === 0) {
+                <div class="empty-state-sm">{{ inputSearch ? 'No matching items' : 'No data' }}</div>
+              } @else {
+                <div class="data-table-wrapper">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        @for (header of inputTableHeaders; track header) {
+                          <th><span [innerHTML]="header | highlight:inputSearch"></span></th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of inputTableRows; track $index) {
+                        <tr>
+                          @for (header of inputTableHeaders; track header) {
+                            <td [title]="formatCell(row[header])">
+                              <span [innerHTML]="formatCell(row[header]) | highlight:inputSearch"></span>
+                            </td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            } @else {
+              @for (prev of previousNodes; track prev.node.id) {
+                <div class="data-block">
+                  <div class="data-block-header">{{ prev.node.name }}</div>
+                  @if (getFilteredInputJson(prev.node.id); as json) {
+                    <pre class="data-json" [innerHTML]="json | highlight:inputSearch"></pre>
+                  } @else {
+                    <div class="empty-state-sm">{{ inputSearch ? 'No matching items' : 'No execution data' }}</div>
+                  }
+                </div>
+              }
             }
           }
         </div>
@@ -111,6 +243,17 @@
           <button class="tab" [class.active]="activeTab === 'settings'" (click)="activeTab = 'settings'">
             Settings
           </button>
+          @if (!isTriggerNode && !readOnly) {
+            <button class="btn btn-sm btn-execute-node" (click)="executeNode()" [disabled]="isNodeExecuting">
+              @if (isNodeExecuting) {
+                <span class="execute-spinner"></span>
+                Executing...
+              } @else {
+                <lucide-icon name="play" [size]="13"></lucide-icon>
+                Execute node
+              }
+            </button>
+          }
         </div>
 
         <div class="column-body">
@@ -386,12 +529,112 @@
           @if (executionData && outputItemCount > 0) {
             <span class="item-count-badge">{{ outputItemCount }} items</span>
           }
+          @if (hasOutputData) {
+            <div class="column-header-controls">
+              <div class="header-search" [class.expanded]="outputSearchExpanded">
+                <button class="search-toggle" (click)="toggleSearch('output')" title="Search">
+                  <lucide-icon name="search" [size]="14"></lucide-icon>
+                </button>
+                @if (outputSearchExpanded) {
+                  <input #outputSearchEl type="text" class="search-input" placeholder="Search..."
+                         [(ngModel)]="outputSearch"
+                         (blur)="onSearchBlur('output')">
+                }
+              </div>
+              <div class="display-mode-toggle" role="radiogroup">
+                <button class="mode-btn" [class.active]="outputDisplayMode === 'schema'"
+                        (click)="outputDisplayMode = 'schema'">Schema</button>
+                <button class="mode-btn" [class.active]="outputDisplayMode === 'table'"
+                        (click)="outputDisplayMode = 'table'">Table</button>
+                <button class="mode-btn" [class.active]="outputDisplayMode === 'json'"
+                        (click)="outputDisplayMode = 'json'">JSON</button>
+              </div>
+            </div>
+          }
         </div>
         <div class="column-body">
-          @if (outputJson) {
-            <pre class="data-json">{{ outputJson }}</pre>
+          @if (isNodeExecuting) {
+            <div class="executing-state">
+              <div class="executing-spinner">
+                <div class="spinner-ring"></div>
+              </div>
+              <div class="executing-title">Executing node...</div>
+              <div class="executing-hint">Running {{ node.name }}</div>
+            </div>
+          } @else if (nodeExecutionError && !hasOutputData) {
+            <div class="execution-error-state">
+              <div class="error-icon">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+              </div>
+              <div class="error-title">Execution failed</div>
+              <div class="error-message">{{ nodeExecutionError }}</div>
+            </div>
+          } @else if (hasOutputData && outputDisplayMode === 'schema') {
+            @if (nodeExecutionError) {
+              <div class="execution-error-banner">{{ nodeExecutionError }}</div>
+            }
+            @if (outputSchemaNodes.length === 0) {
+              <div class="empty-state-sm">{{ outputSearch ? 'No matching fields' : 'No data' }}</div>
+            } @else {
+              <div class="schema-tree">
+                @for (node of outputSchemaNodes; track node.path) {
+                  <div class="schema-row" [style.padding-left.px]="node.level * 16 + 8">
+                    @if (node.children && node.children.length > 0) {
+                      <button class="schema-expand" (click)="toggleSchemaNode(node.path, 'output')"
+                              [class.collapsed]="isSchemaCollapsed(node.path, 'output')">
+                        <lucide-icon name="chevron-right" [size]="12"></lucide-icon>
+                      </button>
+                    } @else {
+                      <span class="schema-expand-spacer"></span>
+                    }
+                    <span class="schema-type-pill" [attr.data-type]="node.type">{{ typeIcon(node.type) }}</span>
+                    <span class="schema-key" [innerHTML]="node.key | highlight:outputSearch"></span>
+                    <span class="schema-value" [innerHTML]="node.value | highlight:outputSearch"></span>
+                  </div>
+                }
+              </div>
+            }
+          } @else if (hasOutputData && outputDisplayMode === 'table') {
+            @if (nodeExecutionError) {
+              <div class="execution-error-banner">{{ nodeExecutionError }}</div>
+            }
+            @if (outputTableRows.length === 0) {
+              <div class="empty-state-sm">{{ outputSearch ? 'No matching items' : 'No data' }}</div>
+            } @else {
+              <div class="data-table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      @for (header of outputTableHeaders; track header) {
+                        <th><span [innerHTML]="header | highlight:outputSearch"></span></th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of outputTableRows; track $index) {
+                      <tr>
+                        @for (header of outputTableHeaders; track header) {
+                          <td [title]="formatCell(row[header])">
+                            <span [innerHTML]="formatCell(row[header]) | highlight:outputSearch"></span>
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          } @else if (filteredOutputJson) {
+            @if (nodeExecutionError) {
+              <div class="execution-error-banner">{{ nodeExecutionError }}</div>
+            }
+            <pre class="data-json" [innerHTML]="filteredOutputJson | highlight:outputSearch"></pre>
+          } @else if (isWebhookNode && !readOnly && isListening) {
+            <div class="empty-state">Waiting for test event...</div>
           } @else {
-            <div class="empty-state">No execution data</div>
+            <div class="empty-state">{{ outputSearch ? 'No matching items' : 'No execution data' }}</div>
           }
         </div>
       </div>

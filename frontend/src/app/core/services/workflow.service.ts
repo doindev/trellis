@@ -53,6 +53,18 @@ export class WorkflowService {
     return this.api.post<any>(`${this.path}/${id}/run`, inputData || {});
   }
 
+  executeNode(request: {
+    nodeType: string;
+    typeVersion: number;
+    parameters: Record<string, any>;
+    credentials?: Record<string, any>;
+    inputData: any[];
+    workflowId: string;
+    nodeId: string;
+  }): Observable<{ output: any[][]; error?: string }> {
+    return this.api.post('/nodes/execute', request);
+  }
+
   stopExecution(executionId: string): Observable<any> {
     return this.api.post<any>(`/executions/${executionId}/stop`, {});
   }

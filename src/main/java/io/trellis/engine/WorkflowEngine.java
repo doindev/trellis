@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -30,6 +31,7 @@ public class WorkflowEngine {
     private final ObjectMapper objectMapper;
 
     private final Map<String, WorkflowExecutionState> runningExecutions = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<Map<String, Object>>> pendingWebhookResponses = new ConcurrentHashMap<>();
 
     public String startExecution(String workflowId, Map<String, Object> inputData) {
         WorkflowEntity workflow = workflowService.findById(workflowId);
@@ -65,6 +67,34 @@ public class WorkflowEngine {
 
         executeAsync(execution.getId(), workflow, triggerInput, NodeExecutionContext.ExecutionMode.WEBHOOK);
         return execution.getId();
+    }
+
+    /**
+     * Start a webhook execution and return a future that will be completed with the
+     * webhook response data (from a RespondToWebhook node or last node output).
+     */
+    public CompletableFuture<Map<String, Object>> startWebhookExecutionWithResponse(
+            String workflowId, String triggerNodeId, Map<String, Object> webhookData) {
+        WorkflowEntity workflow = workflowService.findById(workflowId);
+
+        Map<String, Object> workflowSnapshot = new LinkedHashMap<>();
+        workflowSnapshot.put("id", workflow.getId());
+        workflowSnapshot.put("name", workflow.getName());
+        workflowSnapshot.put("nodes", workflow.getNodes());
+        workflowSnapshot.put("connections", workflow.getConnections());
+
+        var execution = executionService.createExecution(
+                workflowId, workflowSnapshot, ExecutionMode.WEBHOOK);
+
+        CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();
+        pendingWebhookResponses.put(execution.getId(), future);
+
+        Map<String, Object> triggerInput = new LinkedHashMap<>();
+        triggerInput.put("triggerNodeId", triggerNodeId);
+        triggerInput.put("webhookData", webhookData);
+
+        executeAsync(execution.getId(), workflow, triggerInput, NodeExecutionContext.ExecutionMode.WEBHOOK);
+        return future;
     }
 
     public void stopExecution(String executionId) {
@@ -188,6 +218,8 @@ public class WorkflowEngine {
 
                     if (result.getStaticData() != null) {
                         state.getWorkflowStaticData().putAll(result.getStaticData());
+                        // Check if a respondToWebhook node produced a response
+                        completeWebhookResponseIfPresent(executionId, state);
                     }
 
                     webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
@@ -220,14 +252,128 @@ public class WorkflowEngine {
                     state.buildResultData(), null);
             webSocketService.sendExecutionFinished(executionId, "SUCCESS", state.buildResultData());
 
+            // For lastNode mode: complete any pending webhook response with last node output
+            completeWebhookResponseWithLastOutput(executionId, state, order);
+
         } catch (Exception e) {
             log.error("Workflow execution failed: {}", executionId, e);
             executionService.finish(executionId, ExecutionStatus.ERROR, null, e.getMessage());
             webSocketService.sendExecutionFinished(executionId, "ERROR",
                     Map.of("error", e.getMessage()));
+            // Complete pending webhook response with error
+            CompletableFuture<Map<String, Object>> future = pendingWebhookResponses.remove(executionId);
+            if (future != null && !future.isDone()) {
+                future.completeExceptionally(e);
+            }
         } finally {
             runningExecutions.remove(executionId);
+            // Safety net: complete any remaining future
+            CompletableFuture<Map<String, Object>> leftover = pendingWebhookResponses.remove(executionId);
+            if (leftover != null && !leftover.isDone()) {
+                leftover.complete(Map.of("statusCode", 200, "body", Map.of("message", "Workflow completed")));
+            }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> executeSingleNode(String nodeType, int typeVersion,
+                                                  Map<String, Object> parameters,
+                                                  Map<String, Object> credentialRefs,
+                                                  List<Map<String, Object>> inputData,
+                                                  String workflowId, String nodeId) {
+        Optional<NodeRegistry.NodeRegistration> regOpt = nodeRegistry.getNode(nodeType, typeVersion);
+        if (regOpt.isEmpty()) {
+            regOpt = nodeRegistry.getNode(nodeType);
+        }
+        if (regOpt.isEmpty()) {
+            Map<String, Object> err = new LinkedHashMap<>();
+            err.put("error", "Node type not found: " + nodeType);
+            err.put("output", List.of(List.of()));
+            return err;
+        }
+
+        NodeRegistry.NodeRegistration registration = regOpt.get();
+        NodeInterface nodeInstance = registration.getNodeInstance();
+
+        if (inputData == null) inputData = List.of();
+
+        Map<String, String> variables = variableService.getAllVariablesAsMap();
+        Map<String, Object> resolvedParams = resolveParameters(
+                parameters, inputData, null, variables, "single-node");
+        Map<String, Object> credentials = resolveCredentials(credentialRefs);
+
+        NodeExecutionContext context = NodeExecutionContext.builder()
+                .executionId("single-node-" + System.currentTimeMillis())
+                .workflowId(workflowId != null ? workflowId : "")
+                .nodeId(nodeId != null ? nodeId : "")
+                .nodeType(nodeType)
+                .nodeVersion(typeVersion)
+                .inputData(inputData)
+                .parameters(resolvedParams)
+                .credentials(credentials)
+                .staticData(new HashMap<>())
+                .workflowStaticData(new HashMap<>())
+                .executionMode(NodeExecutionContext.ExecutionMode.MANUAL)
+                .build();
+
+        try {
+            nodeInstance.beforeExecute(context);
+            NodeExecutionResult result = nodeInstance.execute(context);
+            nodeInstance.afterExecute(context, result);
+
+            Map<String, Object> response = new LinkedHashMap<>();
+            if (result.getError() != null) {
+                response.put("output", result.getOutput() != null ? result.getOutput() : List.of(List.of()));
+                response.put("error", result.getError().getMessage());
+            } else {
+                List<List<Map<String, Object>>> output = result.getOutput();
+                if (output == null) output = List.of(List.of());
+                response.put("output", output);
+            }
+            return response;
+        } catch (Exception e) {
+            log.error("Single node execution failed: {} ({})", nodeType, nodeId, e);
+            Map<String, Object> err = new LinkedHashMap<>();
+            err.put("error", e.getMessage());
+            err.put("output", List.of(List.of()));
+            return err;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void completeWebhookResponseIfPresent(String executionId, WorkflowExecutionState state) {
+        Object webhookResponse = state.getWorkflowStaticData().get("webhookResponse");
+        if (webhookResponse instanceof Map) {
+            CompletableFuture<Map<String, Object>> future = pendingWebhookResponses.remove(executionId);
+            if (future != null && !future.isDone()) {
+                future.complete((Map<String, Object>) webhookResponse);
+            }
+        }
+    }
+
+    private void completeWebhookResponseWithLastOutput(String executionId,
+                                                        WorkflowExecutionState state,
+                                                        List<String> order) {
+        CompletableFuture<Map<String, Object>> future = pendingWebhookResponses.remove(executionId);
+        if (future == null || future.isDone()) return;
+
+        // Find the last node that produced output
+        Object body = Map.of();
+        for (int i = order.size() - 1; i >= 0; i--) {
+            List<List<Map<String, Object>>> outputs = state.getNodeOutputs().get(order.get(i));
+            if (outputs != null && !outputs.isEmpty() && !outputs.get(0).isEmpty()) {
+                // Unwrap json from items for a cleaner response
+                List<Object> items = new ArrayList<>();
+                for (Map<String, Object> item : outputs.get(0)) {
+                    items.add(item.getOrDefault("json", item));
+                }
+                body = items.size() == 1 ? items.get(0) : items;
+                break;
+            }
+        }
+        future.complete(Map.of("statusCode", 200,
+                "headers", Map.of("Content-Type", "application/json"),
+                "body", body));
     }
 
     @SuppressWarnings("unchecked")

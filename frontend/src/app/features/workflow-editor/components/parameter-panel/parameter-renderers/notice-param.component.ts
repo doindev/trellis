@@ -8,7 +8,7 @@ import { NodeParameter } from '../../../../../core/models';
   imports: [CommonModule],
   template: `
     <div class="notice-block">
-      <span class="notice-text" [innerHTML]="param.description"></span>
+      <span class="notice-text" [innerHTML]="cleanDescription"></span>
     </div>
   `,
   styles: [`
@@ -34,4 +34,8 @@ import { NodeParameter } from '../../../../../core/models';
 })
 export class NoticeParamComponent {
   @Input() param!: NodeParameter;
+
+  get cleanDescription(): string {
+    return (this.param.description || '').replace(/<a\b[^>]*>.*?<\/a>/gi, '').trim();
+  }
 }
