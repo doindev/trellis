@@ -32,6 +32,25 @@ export interface ApiKeyInfo {
   apiKey?: string; // only returned on creation
 }
 
+export interface AiSettings {
+  provider: string;
+  apiKey: string;
+  model: string;
+  baseUrl: string | null;
+  enabled: boolean;
+}
+
+export interface McpSettings {
+  enabled: boolean;
+  sseUrl: string;
+}
+
+export interface McpWorkflow {
+  id: string;
+  name: string;
+  mcpEnabled: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private settings$?: Observable<any>;
@@ -79,5 +98,31 @@ export class SettingsService {
 
   deleteApiKey(id: string): Observable<void> {
     return this.api.delete<void>(`/api-keys/${id}`);
+  }
+
+  // AI Settings
+  getAiSettings(): Observable<AiSettings> {
+    return this.api.get<AiSettings>('/settings/ai');
+  }
+
+  updateAiSettings(settings: Partial<AiSettings>): Observable<AiSettings> {
+    return this.api.put<AiSettings>('/settings/ai', settings);
+  }
+
+  // MCP Settings
+  getMcpSettings(): Observable<McpSettings> {
+    return this.api.get<McpSettings>('/settings/mcp');
+  }
+
+  updateMcpSettings(settings: Partial<McpSettings>): Observable<McpSettings> {
+    return this.api.put<McpSettings>('/settings/mcp', settings);
+  }
+
+  getMcpWorkflows(): Observable<McpWorkflow[]> {
+    return this.api.get<McpWorkflow[]>('/settings/mcp/workflows');
+  }
+
+  revokeMcpWorkflow(workflowId: string): Observable<void> {
+    return this.api.delete<void>(`/settings/mcp/workflows/${workflowId}`);
   }
 }

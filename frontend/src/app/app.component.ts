@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ElementRef } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,6 +21,7 @@ export class AppComponent implements OnInit, OnDestroy {
   showAddDropdown = false;
   showCreateMenu = false;
   settingsMode = false;
+  showSettingsPopover = false;
   projects: Project[] = [];
   showCreateProjectModal = false;
   newProjectName = '';
@@ -36,6 +37,16 @@ export class AppComponent implements OnInit, OnDestroy {
   onWindowFocus(): void {
     this.recentlyFocused = true;
     setTimeout(() => this.recentlyFocused = false, 300);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.showSettingsPopover) {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.settings-popover-wrapper')) {
+        this.showSettingsPopover = false;
+      }
+    }
   }
 
   constructor(private router: Router, private projectService: ProjectService) {}
@@ -110,7 +121,7 @@ export class AppComponent implements OnInit, OnDestroy {
   onAddCredential(): void {
     this.showAddDropdown = false;
     this.showCreateMenu = false;
-    this.router.navigate(['/home/credentials']);
+    this.router.navigate(['/home/credentials'], { queryParams: { action: 'create-credential' } });
   }
 
   onAddProject(): void {
@@ -164,6 +175,15 @@ export class AppComponent implements OnInit, OnDestroy {
   onAddDataTable(): void {
     this.showCreateMenu = false;
     this.router.navigate(['/home/data-tables']);
+  }
+
+  toggleSettingsPopover(): void {
+    this.showSettingsPopover = !this.showSettingsPopover;
+  }
+
+  onSettingsNav(section: string): void {
+    this.showSettingsPopover = false;
+    this.router.navigate(['/settings', section]);
   }
 
   enterSettings(): void {

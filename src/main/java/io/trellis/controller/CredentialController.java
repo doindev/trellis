@@ -51,6 +51,13 @@ public class CredentialController {
         credentialService.deleteCredential(id);
     }
 
+    @GetMapping("/types")
+    public List<CredentialType> listTypes() {
+        return credentialTypeRegistry.getAllTypes().stream()
+                .sorted(java.util.Comparator.comparing(CredentialType::getDisplayName))
+                .toList();
+    }
+
     @GetMapping("/schema/{type}")
     public CredentialType getSchema(@PathVariable String type) {
         return credentialTypeRegistry.getType(type)

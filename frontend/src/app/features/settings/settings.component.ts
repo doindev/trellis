@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SettingsService, UsageStats, UserInfo, ApiKeyInfo } from '../../core/services/settings.service';
+import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow } from '../../core/services/settings.service';
 import { NodeTypeService } from '../../core/services/node-type.service';
 import { NodeTypeDescription } from '../../core/models';
 
@@ -38,6 +38,17 @@ export class SettingsComponent implements OnInit, OnDestroy {
   creatingKey = false;
   createdKeyValue: string | null = null;
   copiedKey = false;
+
+  // AI / Chat
+  aiSettings: AiSettings = { provider: 'openai', apiKey: '', model: 'gpt-4o-mini', baseUrl: null, enabled: false };
+  aiSettingsSaving = false;
+
+  // MCP
+  mcpSettings: McpSettings | null = null;
+  mcpWorkflows: McpWorkflow[] = [];
+  mcpSaving = false;
+  showMcpConnectionDetails = false;
+  copiedSseUrl = false;
 
   // Community Nodes
   nodeTypes: NodeTypeDescription[] = [];
@@ -85,6 +96,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
         break;
       case 'api':
         this.loadApiKeys();
+        break;
+      case 'chat':
+        this.loadAiSettings();
+        break;
+      case 'mcp':
+        this.loadMcpSettings();
         break;
       case 'community-nodes':
         this.nodeTypeService.getAll().subscribe({
@@ -198,6 +215,69 @@ export class SettingsComponent implements OnInit, OnDestroy {
       case 'editor': return 'Editor';
       case 'viewer': return 'Viewer';
       default: return role;
+    }
+  }
+
+  // AI Settings
+  private loadAiSettings(): void {
+    this.settingsService.getAiSettings().subscribe({
+      next: settings => this.aiSettings = settings,
+      error: () => {}
+    });
+  }
+
+  saveAiSettings(): void {
+    this.aiSettingsSaving = true;
+    this.settingsService.updateAiSettings(this.aiSettings).subscribe({
+      next: settings => {
+        this.aiSettings = settings;
+        this.aiSettingsSaving = false;
+      },
+      error: () => this.aiSettingsSaving = false
+    });
+  }
+
+  showBaseUrl(): boolean {
+    return ['ollama', 'azure-openai', 'bedrock'].includes(this.aiSettings.provider);
+  }
+
+  // MCP Settings
+  private loadMcpSettings(): void {
+    this.settingsService.getMcpSettings().subscribe({
+      next: settings => this.mcpSettings = settings,
+      error: () => {}
+    });
+    this.settingsService.getMcpWorkflows().subscribe({
+      next: workflows => this.mcpWorkflows = workflows,
+      error: () => this.mcpWorkflows = []
+    });
+  }
+
+  toggleMcp(): void {
+    if (!this.mcpSettings) return;
+    this.mcpSaving = true;
+    this.settingsService.updateMcpSettings({ enabled: !this.mcpSettings.enabled }).subscribe({
+      next: settings => {
+        this.mcpSettings = settings;
+        this.mcpSaving = false;
+      },
+      error: () => this.mcpSaving = false
+    });
+  }
+
+  revokeMcpWorkflow(workflowId: string): void {
+    this.settingsService.revokeMcpWorkflow(workflowId).subscribe({
+      next: () => {
+        this.mcpWorkflows = this.mcpWorkflows.filter(wf => wf.id !== workflowId);
+      }
+    });
+  }
+
+  copySseUrl(): void {
+    if (this.mcpSettings?.sseUrl) {
+      navigator.clipboard.writeText(this.mcpSettings.sseUrl);
+      this.copiedSseUrl = true;
+      setTimeout(() => this.copiedSseUrl = false, 2000);
     }
   }
 }

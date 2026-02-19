@@ -10,6 +10,7 @@ export interface Credential {
 export interface CredentialSchema {
   type: string;
   displayName: string;
+  description?: string;
   properties: CredentialProperty[];
 }
 
@@ -18,6 +19,8 @@ export interface CredentialProperty {
   displayName: string;
   type: string;
   required: boolean;
-  default?: any;
-  placeholder?: string;
+  defaultValue?: any;
+  placeHolder?: string;
+  options?: { name: string; value: any }[];
+  typeOptions?: Record<string, any>;
 }

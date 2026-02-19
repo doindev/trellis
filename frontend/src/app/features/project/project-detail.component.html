@@ -16,12 +16,35 @@
       }
     </div>
     <div class="header-actions">
-      <button class="btn-create" (click)="createWorkflow()">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Workflow
-      </button>
+      <div class="create-dropdown-wrapper" (mouseenter)="cancelCreateDropdownClose()" (mouseleave)="scheduleCreateDropdownClose()">
+        <button class="btn-create" (click)="createWorkflow()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Workflow
+        </button>
+        <button class="btn-create-chevron" (click)="showCreateDropdown = !showCreateDropdown">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        @if (showCreateDropdown) {
+          <div class="create-dropdown">
+            <button class="dropdown-item" (click)="openCreateCredential()">
+              <lucide-icon name="key-round" [size]="14"></lucide-icon>
+              Credential
+            </button>
+            <button class="dropdown-item" (click)="createVariable()">
+              <lucide-icon name="variable" [size]="14"></lucide-icon>
+              Variable
+            </button>
+            <button class="dropdown-item" (click)="createDataTable()">
+              <lucide-icon name="table" [size]="14"></lucide-icon>
+              Data table
+            </button>
+          </div>
+        }
+      </div>
     </div>
   </div>
 
@@ -152,7 +175,7 @@
 
             <div class="credential-cards">
               @for (cred of filteredCredentials(); track cred.id) {
-                <div class="cred-card">
+                <div class="cred-card" (click)="openEditCredential(cred)">
                   <div class="cred-card-icon">
                     <lucide-icon name="key-round" [size]="20"></lucide-icon>
                   </div>
@@ -195,6 +218,10 @@
     }
   </div>
 </div>
+
+<app-credential-create-modal #credModal
+  (saved)="onCredentialSaved()"
+  (closed)="null" />
 
 <app-confirm-dialog
   [isOpen]="showDeleteConfirm()"

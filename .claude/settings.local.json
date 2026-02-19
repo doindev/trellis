@@ -47,7 +47,23 @@
       "Bash(powershell:*)",
       "Bash(pkill:*)",
       "Bash(netstat:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "WebFetch(domain:www.baeldung.com)",
+      "WebFetch(domain:www.leanware.co)",
+      "WebFetch(domain:mvnrepository.com)",
+      "WebFetch(domain:www.sohamkamani.com)",
+      "WebFetch(domain:mydeveloperplanet.com)",
+      "WebFetch(domain:addrom.com)",
+      "WebFetch(domain:generect.com)",
+      "WebFetch(domain:bootcamptoprod.com)",
+      "WebFetch(domain:agence-scroll.com)",
+      "WebFetch(domain:central.sonatype.com)",
+      "WebFetch(domain:genaiunplugged.substack.com)",
+      "WebFetch(domain:jaxlondon.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.danvega.dev)",
+      "WebFetch(domain:blog.nocodecreative.io)",
+      "WebFetch(domain:khaisa.studio)"
     ]
   }
 }

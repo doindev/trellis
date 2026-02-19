@@ -36,4 +36,8 @@ export class CredentialService {
   getSchema(type: string): Observable<CredentialSchema> {
     return this.api.get<CredentialSchema>(`${this.path}/schema/${type}`);
   }
+
+  listTypes(): Observable<CredentialSchema[]> {
+    return this.api.get<CredentialSchema[]>(`${this.path}/types`);
+  }
 }

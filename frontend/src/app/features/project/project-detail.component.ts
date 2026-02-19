@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,7 +6,8 @@ import { WorkflowService, CredentialService, ProjectService } from '../../core/s
 import { Workflow, Credential, Project } from '../../core/models';
 import { WorkflowCardComponent } from '../../shared/components/workflow-card/workflow-card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Settings } from 'lucide-angular';
+import { CredentialCreateModalComponent } from '../../shared/components/credential-create-modal/credential-create-modal.component';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Settings, Workflow as WorkflowIcon, Variable, Table } from 'lucide-angular';
 
 @Component({
   selector: 'app-project-detail',
@@ -17,16 +18,23 @@ import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Settin
     RouterLink,
     WorkflowCardComponent,
     ConfirmDialogComponent,
+    CredentialCreateModalComponent,
     LucideAngularModule
   ],
-  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Settings }) }],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Settings, Workflow: WorkflowIcon, Variable, Table }) }],
   templateUrl: './project-detail.component.html',
   styleUrl: './project-detail.component.scss'
 })
 export class ProjectDetailComponent implements OnInit {
+  @ViewChild('credModal') credModal!: CredentialCreateModalComponent;
+
   projectId = '';
   project = signal<Project | null>(null);
   activeTab = signal<'workflows' | 'credentials'>('workflows');
+
+  // Create dropdown
+  showCreateDropdown = false;
+  private createDropdownTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Workflow state
   workflows = signal<Workflow[]>([]);
@@ -262,5 +270,43 @@ export class ProjectDetailComponent implements OnInit {
     const p = this.project();
     if (p?.icon?.type === 'emoji' && p.icon.value) return p.icon.value;
     return '';
+  }
+
+  // Create dropdown
+  scheduleCreateDropdownClose(): void {
+    this.cancelCreateDropdownClose();
+    this.createDropdownTimer = setTimeout(() => {
+      this.showCreateDropdown = false;
+    }, 300);
+  }
+
+  cancelCreateDropdownClose(): void {
+    if (this.createDropdownTimer) {
+      clearTimeout(this.createDropdownTimer);
+      this.createDropdownTimer = null;
+    }
+  }
+
+  openCreateCredential(): void {
+    this.showCreateDropdown = false;
+    this.credModal?.openCreate();
+  }
+
+  openEditCredential(cred: Credential): void {
+    this.credModal?.openEdit(cred);
+  }
+
+  onCredentialSaved(): void {
+    this.loadCredentials();
+  }
+
+  createVariable(): void {
+    this.showCreateDropdown = false;
+    this.router.navigate(['/home/variables']);
+  }
+
+  createDataTable(): void {
+    this.showCreateDropdown = false;
+    this.router.navigate(['/home/data-tables']);
   }
 }

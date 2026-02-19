@@ -168,7 +168,7 @@
       <div class="section-page">
         <div class="section-header-row">
           <div>
-            <h1 class="section-title">Trellis API</h1>
+            <h1 class="section-title">API keys</h1>
             <p class="section-subtitle">Manage API keys for programmatic access</p>
           </div>
           <button class="btn-primary" (click)="showCreateKey = true">Create API key</button>
@@ -229,6 +229,64 @@
       </div>
     }
 
+    <!-- CHAT / AI -->
+    @if (activeSection === 'chat') {
+      <div class="section-page">
+        <h1 class="section-title">Chat</h1>
+        <p class="section-subtitle">Configure the AI model provider for the workflow chat assistant</p>
+
+        <div class="settings-card">
+          <h3 class="card-title">AI Provider</h3>
+
+          <div class="form-row toggle-row">
+            <label class="form-label">Enable AI chat</label>
+            <label class="toggle">
+              <input type="checkbox" [(ngModel)]="aiSettings.enabled">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Provider</label>
+            <select class="form-input" [(ngModel)]="aiSettings.provider">
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="google">Google</option>
+              <option value="ollama">Ollama</option>
+              <option value="mistral">Mistral</option>
+              <option value="azure-openai">Azure OpenAI</option>
+              <option value="bedrock">AWS Bedrock</option>
+              <option value="cohere">Cohere</option>
+              <option value="hugging-face">Hugging Face</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">API Key</label>
+            <input class="form-input" type="password" [(ngModel)]="aiSettings.apiKey" placeholder="sk-...">
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Model</label>
+            <input class="form-input" type="text" [(ngModel)]="aiSettings.model" placeholder="gpt-4o-mini">
+          </div>
+
+          @if (showBaseUrl()) {
+            <div class="form-row">
+              <label class="form-label">Base URL</label>
+              <input class="form-input" type="text" [(ngModel)]="aiSettings.baseUrl" placeholder="http://localhost:11434">
+            </div>
+          }
+
+          <div class="form-actions">
+            <button class="btn-primary" (click)="saveAiSettings()" [disabled]="aiSettingsSaving">
+              {{ aiSettingsSaving ? 'Saving...' : 'Save changes' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- EXTERNAL SECRETS -->
     @if (activeSection === 'external-secrets') {
       <div class="section-page">
@@ -262,6 +320,63 @@
           <p>Push and pull workflow changes to a git repository. Track changes across development, staging, and production environments.</p>
           <button class="btn-primary" disabled>Connect repository</button>
         </div>
+      </div>
+    }
+
+    <!-- MCP -->
+    @if (activeSection === 'mcp') {
+      <div class="section-page">
+        <div class="section-header-row">
+          <div>
+            <h1 class="section-title">Instance-level MCP</h1>
+            <p class="section-subtitle">Expose workflows to AI assistants via Model Context Protocol</p>
+          </div>
+          <button class="btn-primary" (click)="showMcpConnectionDetails = !showMcpConnectionDetails">Connection details</button>
+        </div>
+
+        @if (showMcpConnectionDetails && mcpSettings) {
+          <div class="settings-card mcp-connection-card">
+            <h3 class="card-title">Connection Details</h3>
+            <div class="form-row">
+              <label class="form-label">SSE URL</label>
+              <div class="key-created-row">
+                <code class="key-created-value">{{ mcpSettings.sseUrl }}</code>
+                <button class="btn-copy" (click)="copySseUrl()">{{ copiedSseUrl ? 'Copied!' : 'Copy' }}</button>
+              </div>
+            </div>
+            <p class="mcp-note">MCP server will be available when Spring MCP server dependencies are configured</p>
+          </div>
+        }
+
+        <div class="settings-card">
+          <div class="toggle-row">
+            <span class="toggle-label">Enable MCP access</span>
+            <label class="toggle">
+              <input type="checkbox" [checked]="mcpSettings?.enabled" (change)="toggleMcp()" [disabled]="mcpSaving">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        @if (mcpSettings?.enabled) {
+          <div class="data-table">
+            <div class="table-header">
+              <div class="col-name">Workflow</div>
+              <div class="col-actions"></div>
+            </div>
+            @for (wf of mcpWorkflows; track wf.id) {
+              <div class="table-row">
+                <div class="col-name">{{ wf.name }}</div>
+                <div class="col-actions">
+                  <button class="btn-secondary btn-sm" (click)="revokeMcpWorkflow(wf.id)">Revoke</button>
+                </div>
+              </div>
+            }
+            @if (mcpWorkflows.length === 0) {
+              <div class="empty-row">No workflows enabled for MCP access</div>
+            }
+          </div>
+        }
       </div>
     }
 

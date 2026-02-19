@@ -45,8 +45,6 @@ public class SettingsController {
         Map<String, Object> features = new LinkedHashMap<>();
         features.put("variables", true);
         features.put("externalSecrets", true);
-        features.put("saml", true);
-        features.put("ldap", true);
         features.put("advancedExecutionFilters", true);
         features.put("sharing", true);
         features.put("auditLogs", true);

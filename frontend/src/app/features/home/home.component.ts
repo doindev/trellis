@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,7 @@ import { Workflow, Execution, Credential, Project } from '../../core/models';
 import { WorkflowCardComponent } from '../../shared/components/workflow-card/workflow-card.component';
 import { VariableListComponent } from '../variables/variable-list.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { CredentialCreateModalComponent } from '../../shared/components/credential-create-modal/credential-create-modal.component';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Folder, Table } from 'lucide-angular';
 import {
   ExecutionFilterModalComponent,
@@ -26,6 +27,7 @@ import {
     WorkflowCardComponent,
     VariableListComponent,
     ConfirmDialogComponent,
+    CredentialCreateModalComponent,
     LucideAngularModule,
     ExecutionFilterModalComponent
   ],
@@ -34,6 +36,8 @@ import {
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit {
+  @ViewChild('credModal') credModal!: CredentialCreateModalComponent;
+
   activeTab = signal<'workflows' | 'credentials' | 'executions' | 'variables' | 'datatables'>('workflows');
 
   // Workflow state
@@ -210,6 +214,14 @@ export class HomeComponent implements OnInit {
       this.activeTab.set(tabFromRoute as any);
     }
 
+    // Auto-open credential create modal from sidebar navigation
+    const action = this.route.snapshot.queryParamMap.get('action');
+    if (action === 'create-credential') {
+      this.activeTab.set('credentials');
+      // Defer to next tick so ViewChild is available
+      setTimeout(() => this.credModal?.openCreate(), 0);
+    }
+
     this.loadWorkflows();
     this.loadExecutions();
     this.loadCredentials();
@@ -353,6 +365,20 @@ export class HomeComponent implements OnInit {
     this.wfTagsFilter.set('');
     this.wfStatusFilter.set('all');
     this.wfShowArchived.set(false);
+  }
+
+  openCreateCredential(): void {
+    this.showCreateDropdown = false;
+    this.activeTab.set('credentials');
+    setTimeout(() => this.credModal?.openCreate(), 0);
+  }
+
+  openEditCredential(cred: Credential): void {
+    this.credModal?.openEdit(cred);
+  }
+
+  onCredentialSaved(): void {
+    this.loadCredentials();
   }
 
   navigateToCredentials(): void {

@@ -1,23 +1,19 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CredentialService } from '../../core/services';
-import { Credential, CredentialSchema } from '../../core/models';
-import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
+import { CredentialService } from '../../../core/services';
+import { Credential, CredentialSchema } from '../../../core/models';
 
 @Component({
-  selector: 'app-credential-list',
+  selector: 'app-credential-create-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
-  templateUrl: './credential-list.component.html',
-  styleUrl: './credential-list.component.scss'
+  imports: [CommonModule, FormsModule],
+  templateUrl: './credential-create-modal.component.html',
+  styleUrl: './credential-create-modal.component.scss'
 })
-export class CredentialListComponent implements OnInit {
-  credentials = signal<Credential[]>([]);
-  loading = signal(true);
-  showDeleteConfirm = signal(false);
-  deleteTarget = signal<Credential | null>(null);
+export class CredentialCreateModalComponent implements OnInit {
+  @Output() saved = new EventEmitter<Credential>();
+  @Output() closed = new EventEmitter<void>();
 
   // All available credential types (loaded once)
   credentialTypes = signal<CredentialSchema[]>([]);
@@ -49,19 +45,7 @@ export class CredentialListComponent implements OnInit {
   constructor(private credentialService: CredentialService) {}
 
   ngOnInit(): void {
-    this.loadCredentials();
     this.loadTypes();
-  }
-
-  loadCredentials(): void {
-    this.loading.set(true);
-    this.credentialService.list().subscribe({
-      next: (data) => {
-        this.credentials.set(data);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false)
-    });
   }
 
   loadTypes(): void {
@@ -71,13 +55,29 @@ export class CredentialListComponent implements OnInit {
     });
   }
 
-  // --- Modal 1: Type selection ---
+  // --- Public API ---
 
-  openCreateModal(): void {
+  openCreate(): void {
     this.typeSearchTerm.set('');
     this.selectedType.set(null);
     this.showTypeSelectModal.set(true);
   }
+
+  openEdit(cred: Credential): void {
+    this.editorCredential.set({ ...cred });
+    this.isEditing.set(true);
+    this.editorTab.set('connection');
+    this.showEditorModal.set(true);
+
+    if (cred.type) {
+      this.credentialService.getSchema(cred.type).subscribe({
+        next: (s) => this.editorSchema.set(s),
+        error: () => this.editorSchema.set(null)
+      });
+    }
+  }
+
+  // --- Modal 1: Type selection ---
 
   onTypeSearch(term: string): void {
     this.typeSearchTerm.set(term);
@@ -105,24 +105,10 @@ export class CredentialListComponent implements OnInit {
 
   closeTypeSelectModal(): void {
     this.showTypeSelectModal.set(false);
+    this.closed.emit();
   }
 
   // --- Modal 2: Credential editor ---
-
-  openEditModal(cred: Credential): void {
-    this.editorCredential.set({ ...cred });
-    this.isEditing.set(true);
-    this.editorTab.set('connection');
-    this.showEditorModal.set(true);
-
-    // Load schema for the credential type
-    if (cred.type) {
-      this.credentialService.getSchema(cred.type).subscribe({
-        next: (s) => this.editorSchema.set(s),
-        error: () => this.editorSchema.set(null)
-      });
-    }
-  }
 
   updateCredentialName(name: string): void {
     const cred = this.editorCredential();
@@ -145,10 +131,10 @@ export class CredentialListComponent implements OnInit {
       : this.credentialService.create(cred);
 
     operation.subscribe({
-      next: () => {
+      next: (result) => {
         this.saving.set(false);
         this.showEditorModal.set(false);
-        this.loadCredentials();
+        this.saved.emit(result);
       },
       error: () => this.saving.set(false)
     });
@@ -156,34 +142,10 @@ export class CredentialListComponent implements OnInit {
 
   closeEditorModal(): void {
     this.showEditorModal.set(false);
+    this.closed.emit();
   }
 
   isPasswordField(prop: any): boolean {
     return prop.typeOptions?.password === true || prop.type === 'password';
-  }
-
-  // --- Delete ---
-
-  confirmDelete(cred: Credential, event: Event): void {
-    event.stopPropagation();
-    this.deleteTarget.set(cred);
-    this.showDeleteConfirm.set(true);
-  }
-
-  onDeleteConfirmed(): void {
-    const target = this.deleteTarget();
-    if (target?.id) {
-      this.credentialService.delete(target.id).subscribe({
-        next: () => {
-          this.credentials.update(list => list.filter(c => c.id !== target.id));
-          this.showDeleteConfirm.set(false);
-        }
-      });
-    }
-  }
-
-  onDeleteCancelled(): void {
-    this.showDeleteConfirm.set(false);
-    this.deleteTarget.set(null);
   }
 }

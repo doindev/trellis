@@ -20,7 +20,7 @@
         </button>
         @if (showCreateDropdown) {
           <div class="create-dropdown">
-            <button class="dropdown-item" (click)="showCreateDropdown = false; setTab('credentials')">
+            <button class="dropdown-item" (click)="openCreateCredential()">
               <lucide-icon name="key-round" [size]="14"></lucide-icon>
               Credential
             </button>
@@ -182,7 +182,7 @@
               </div>
               <h3 class="empty-action-heading">Let's set up a credential</h3>
               <p class="empty-action-description">Credentials let workflows interact with your apps and services</p>
-              <button class="btn-secondary-action" (click)="navigateToCredentials()">Add first credential</button>
+              <button class="btn-secondary-action" (click)="openCreateCredential()">Add first credential</button>
             </div>
           } @else {
             <!-- Credential filters -->
@@ -203,12 +203,18 @@
                 <option value="name">Name A-Z</option>
                 <option value="nameDesc">Name Z-A</option>
               </select>
+              <button class="btn-create-inline" (click)="openCreateCredential()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                New Credential
+              </button>
             </div>
 
             <!-- Credential cards -->
             <div class="credential-cards">
               @for (cred of filteredCredentials(); track cred.id) {
-                <div class="cred-card">
+                <div class="cred-card" (click)="openEditCredential(cred)">
                   <div class="cred-card-icon">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
@@ -432,6 +438,10 @@
     (filtersChange)="onExecFiltersChange($event)"
     (closed)="showExecFilterModal.set(false)" />
 }
+
+<app-credential-create-modal #credModal
+  (saved)="onCredentialSaved()"
+  (closed)="null" />
 
 <app-confirm-dialog
   [isOpen]="showDeleteConfirm()"

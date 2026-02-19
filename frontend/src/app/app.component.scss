@@ -351,6 +351,65 @@
   color: hsl(0, 0%, 68%);
 }
 
+/* Settings popover */
+.settings-popover-wrapper {
+  position: relative;
+}
+
+.settings-popover {
+  position: absolute;
+  bottom: 0;
+  left: calc(100% + 8px);
+  background: hsl(0, 0%, 15%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 10px;
+  min-width: 200px;
+  padding: 4px;
+  z-index: 300;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.settings-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 80%);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  font-family: inherit;
+
+  svg {
+    flex-shrink: 0;
+    color: hsl(0, 0%, 50%);
+  }
+
+  &:hover {
+    background: hsl(0, 0%, 20%);
+    color: hsl(0, 0%, 96%);
+
+    svg { color: hsl(0, 0%, 72%); }
+  }
+}
+
+.settings-popover-divider {
+  height: 1px;
+  background: hsl(0, 0%, 24%);
+  margin: 4px 8px;
+}
+
+.sidebar-collapsed .settings-popover {
+  bottom: 0;
+  left: calc(100% + 6px);
+}
+
 .settings-bottom-divider {
   height: 1px;
   background: hsl(0, 0%, 24%);

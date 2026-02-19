@@ -70,6 +70,10 @@ public class WorkflowEntity {
     private Object pinData;
 
     @Builder.Default
+    @Column(name = "mcp_enabled", nullable = false)
+    private boolean mcpEnabled = false;
+
+    @Builder.Default
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
