@@ -77,10 +77,10 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   executions = signal<Execution[]>([]);
   showDatePicker = signal(false);
 
-  selectedPreset = signal('Last 7 days');
-  rangeStart = signal(this.daysAgo(7));
-  rangeEnd = signal(this.today());
-  rollingHours = signal(false);
+  selectedPreset = signal('Last 30 minutes');
+  rangeStart = signal(new Date(Date.now() - 30 * 60000));
+  rangeEnd = signal(new Date());
+  rollingHours = signal(true);
   customRangeActive = signal(false);
   customRangeStep = signal<'start' | 'end'>('start');
   calendarMonth = signal(new Date().getMonth());

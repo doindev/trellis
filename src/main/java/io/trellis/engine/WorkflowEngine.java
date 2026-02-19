@@ -158,6 +158,8 @@ public class WorkflowEngine {
                     }
                 }
 
+                state.storeInput(nodeId, nodeInput);
+
                 Map<String, Object> resolvedParams = resolveParameters(
                         graphNode.getParameters(), nodeInput, state, variables, executionId);
 

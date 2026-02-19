@@ -15,6 +15,7 @@ public class WorkflowExecutionState {
     private volatile boolean cancelled = false;
 
     private final Map<String, List<List<Map<String, Object>>>> nodeOutputs = new ConcurrentHashMap<>();
+    private final Map<String, List<Map<String, Object>>> nodeInputs = new ConcurrentHashMap<>();
     private final Map<String, NodeExecutionMetadata> nodeMetadata = new ConcurrentHashMap<>();
     private final Map<String, Object> workflowStaticData = new ConcurrentHashMap<>();
 
@@ -37,6 +38,10 @@ public class WorkflowExecutionState {
         this.executionId = executionId;
         this.workflowId = workflowId;
         this.graph = graph;
+    }
+
+    public void storeInput(String nodeId, List<Map<String, Object>> input) {
+        nodeInputs.put(nodeId, input);
     }
 
     public void storeOutput(String nodeId, List<List<Map<String, Object>>> output) {
@@ -81,6 +86,11 @@ public class WorkflowExecutionState {
             nodeResult.put("executionTime", meta.getDurationMs());
             nodeResult.put("status", meta.getStatus());
             nodeResult.put("error", meta.getErrorMessage());
+
+            List<Map<String, Object>> inputs = nodeInputs.get(nodeId);
+            if (inputs != null) {
+                nodeResult.put("inputData", Map.of("main", List.of(inputs)));
+            }
 
             List<List<Map<String, Object>>> outputs = nodeOutputs.get(nodeId);
             if (outputs != null) {
