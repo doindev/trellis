@@ -148,4 +148,8 @@
     confirmBtnClass="btn-danger"
     (confirmed)="onArchiveConfirmed()"
     (cancelled)="showArchiveConfirm = false" />
+
+  @if (toastMessage) {
+    <div class="editor-toast">{{ toastMessage }}</div>
+  }
 </div>

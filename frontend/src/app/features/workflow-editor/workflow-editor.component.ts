@@ -408,6 +408,15 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
   }
 
+  toastMessage = '';
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  showToast(message: string): void {
+    this.toastMessage = message;
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => this.toastMessage = '', 3000);
+  }
+
   onPublishClicked(): void {
     const wf = this.store.workflow();
     if (!wf?.id) {
@@ -416,6 +425,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         this.replaceUrlOnFirstSave(saved);
         this.showPublishModal = true;
       });
+      return;
+    }
+    if (wf.published && !wf.versionIsDirty && !this.store.isDirty()) {
+      this.showToast('The latest workflow changes have already been published.');
       return;
     }
     if (this.store.isDirty()) {
