@@ -1,15 +1,19 @@
 package io.trellis.controller;
 
+import java.net.InetAddress;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.trellis.engine.WorkflowEngine;
 import io.trellis.entity.WebhookEntity;
@@ -39,6 +45,7 @@ public class WebhookController {
     private final WebhookService webhookService;
     private final WorkflowEngine workflowEngine;
     private final WebSocketService webSocketService;
+    private final ObjectMapper objectMapper;
 
     private static final long TEST_WEBHOOK_TIMEOUT_MS = 120_000; // 2 minutes
     private static final long WEBHOOK_RESPONSE_TIMEOUT_MS = 30_000; // 30 seconds
@@ -131,12 +138,49 @@ public class WebhookController {
 
         WebhookEntity webhook = webhookOpt.get();
 
+        // Parse webhook options
+        Map<String, Object> options = parseWebhookOptions(webhook.getWebhookOptions());
+
+        // Check ignoreBots — reject requests from known bots/crawlers
+        if (Boolean.TRUE.equals(options.get("ignoreBots"))) {
+            String userAgent = request.getHeader("User-Agent");
+            if (userAgent != null && isBot(userAgent)) {
+                log.debug("Webhook rejected bot request: UA={}", userAgent);
+                deferredResult.setResult(ResponseEntity.status(403)
+                        .body(Map.of("error", "Bot requests are not allowed")));
+                return deferredResult;
+            }
+        }
+
+        // Check IP allowlist
+        String ipWhitelist = (String) options.getOrDefault("ipWhitelist", "");
+        if (ipWhitelist != null && !ipWhitelist.isBlank()) {
+            String clientIp = getClientIp(request);
+            if (!isIpAllowed(clientIp, ipWhitelist)) {
+                log.debug("Webhook rejected IP: {} not in allowlist {}", clientIp, ipWhitelist);
+                deferredResult.setResult(ResponseEntity.status(403)
+                        .body(Map.of("error", "IP address not allowed")));
+                return deferredResult;
+            }
+        }
+
         Map<String, Object> webhookData = new LinkedHashMap<>();
         webhookData.put("headers", extractHeaders(request));
         webhookData.put("params", queryParams);
-        webhookData.put("body", body != null ? body : Map.of());
         webhookData.put("method", method);
         webhookData.put("path", path);
+
+        // rawBody option — store body as JSON string instead of parsed object
+        if (Boolean.TRUE.equals(options.get("rawBody"))) {
+            try {
+                String rawBodyStr = body != null ? objectMapper.writeValueAsString(body) : "";
+                webhookData.put("body", rawBodyStr);
+            } catch (Exception e) {
+                webhookData.put("body", body != null ? body : Map.of());
+            }
+        } else {
+            webhookData.put("body", body != null ? body : Map.of());
+        }
 
         if (isTest) {
             webSocketService.sendWebhookTestData(webhook.getWorkflowId(), webhookData);
@@ -155,8 +199,26 @@ public class WebhookController {
             // Fire and forget — return immediately
             String executionId = workflowEngine.startWebhookExecution(
                     webhook.getWorkflowId(), webhook.getNodeId(), webhookData);
-            deferredResult.setResult(ResponseEntity.ok(
-                    Map.of("executionId", executionId, "message", "Workflow triggered")));
+
+            int responseCode = 200;
+            Object rcObj = options.get("responseCode");
+            if (rcObj instanceof Number) {
+                responseCode = ((Number) rcObj).intValue();
+            }
+
+            boolean noResponseBody = Boolean.TRUE.equals(options.get("noResponseBody"));
+            if (noResponseBody) {
+                deferredResult.setResult(ResponseEntity.status(responseCode).build());
+            } else {
+                Object customResponseData = options.get("responseData");
+                if (customResponseData != null && !String.valueOf(customResponseData).isBlank()) {
+                    deferredResult.setResult(ResponseEntity.status(responseCode)
+                            .body(customResponseData));
+                } else {
+                    deferredResult.setResult(ResponseEntity.status(responseCode)
+                            .body(Map.of("executionId", executionId, "message", "Workflow triggered")));
+                }
+            }
         } else {
             // responseNode or lastNode — wait for workflow to produce response
             CompletableFuture<Map<String, Object>> future = workflowEngine.startWebhookExecutionWithResponse(
@@ -220,5 +282,86 @@ public class WebhookController {
             headers.put(name, request.getHeader(name));
         }
         return headers;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseWebhookOptions(Object optionsObj) {
+        if (optionsObj instanceof Map) {
+            return (Map<String, Object>) optionsObj;
+        }
+        return Map.of();
+    }
+
+    private static final Pattern BOT_PATTERN = Pattern.compile(
+        "(?i)(bot|crawl|spider|slurp|bingpreview|mediapartners|google|facebookexternalhit"
+        + "|linkedinbot|twitterbot|whatsapp|telegrambot|applebot|yandex|baiduspider"
+        + "|duckduckbot|semrushbot|ahrefsbot|dotbot|petalbot|mj12bot|sogou)",
+        Pattern.CASE_INSENSITIVE);
+
+    private boolean isBot(String userAgent) {
+        return BOT_PATTERN.matcher(userAgent).find();
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        // Check common proxy headers
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isBlank()) {
+            // X-Forwarded-For can contain multiple IPs; first is the original client
+            return ip.split(",")[0].trim();
+        }
+        ip = request.getHeader("X-Real-IP");
+        if (ip != null && !ip.isBlank()) {
+            return ip.trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    private boolean isIpAllowed(String clientIp, String whitelist) {
+        if (whitelist == null || whitelist.isBlank()) return true;
+
+        String[] entries = whitelist.split(",");
+        for (String entry : entries) {
+            String trimmed = entry.trim();
+            if (trimmed.isEmpty()) continue;
+
+            if (trimmed.contains("/")) {
+                // CIDR notation
+                if (isIpInCidr(clientIp, trimmed)) return true;
+            } else {
+                // Exact IP match
+                if (trimmed.equals(clientIp)) return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isIpInCidr(String ip, String cidr) {
+        try {
+            String[] parts = cidr.split("/");
+            InetAddress network = InetAddress.getByName(parts[0].trim());
+            int prefixLength = Integer.parseInt(parts[1].trim());
+
+            byte[] networkBytes = network.getAddress();
+            byte[] ipBytes = InetAddress.getByName(ip).getAddress();
+
+            if (networkBytes.length != ipBytes.length) return false;
+
+            int fullBytes = prefixLength / 8;
+            int remainingBits = prefixLength % 8;
+
+            for (int i = 0; i < fullBytes; i++) {
+                if (networkBytes[i] != ipBytes[i]) return false;
+            }
+
+            if (remainingBits > 0 && fullBytes < networkBytes.length) {
+                int mask = 0xFF << (8 - remainingBits);
+                if ((networkBytes[fullBytes] & mask) != (ipBytes[fullBytes] & mask)) return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            log.warn("Failed to parse CIDR {}: {}", cidr, e.getMessage());
+            return false;
+        }
     }
 }

@@ -12,7 +12,6 @@ import io.trellis.nodes.core.NodeExecutionResult;
 import io.trellis.nodes.core.NodeInput;
 import io.trellis.nodes.core.NodeOutput;
 import io.trellis.nodes.core.NodeParameter;
-import io.trellis.nodes.core.NodeParameter.ParameterOption;
 import io.trellis.nodes.core.NodeParameter.ParameterType;
 import lombok.extern.slf4j.Slf4j;
 

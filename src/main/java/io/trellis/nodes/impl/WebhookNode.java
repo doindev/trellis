@@ -303,20 +303,14 @@ public class WebhookNode extends AbstractTriggerNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String httpMethod = context.getParameter("httpMethod", "GET");
 		String path = context.getParameter("path", "/");
 		String authentication = context.getParameter("authentication", "none");
 		String responseMode = context.getParameter("responseMode", "onReceived");
 
-		// Read options collection
-		Map<String, Object> options = context.getParameter("options", Map.of());
-		boolean ignoreBots = Boolean.TRUE.equals(options.get("ignoreBots"));
-		boolean rawBody = Boolean.TRUE.equals(options.get("rawBody"));
-		boolean noResponseBody = Boolean.TRUE.equals(options.get("noResponseBody"));
-		String ipWhitelist = (String) options.getOrDefault("ipWhitelist", "");
-		int responseCode = toInt(options.getOrDefault("responseCode", 200), 200);
+		// Options (ignoreBots, ipWhitelist, rawBody, noResponseBody, responseCode)
+		// are enforced by WebhookController at HTTP level before this node executes.
 
 		log.debug("Webhook triggered: method={}, path={}, auth={}, workflow={}",
 			httpMethod, path, authentication, context.getWorkflowId());
@@ -344,7 +338,6 @@ public class WebhookNode extends AbstractTriggerNode {
 		webhookData.put("_webhookTimestamp", Instant.now().toString());
 		webhookData.put("_webhookAuthentication", authentication);
 		webhookData.put("responseMode", responseMode);
-		webhookData.put("responseCode", responseCode);
 
 		Map<String, Object> triggerItem = createTriggerItem(webhookData);
 		return NodeExecutionResult.success(List.of(triggerItem));

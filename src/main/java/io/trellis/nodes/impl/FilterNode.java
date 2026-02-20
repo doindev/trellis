@@ -496,7 +496,6 @@ public class FilterNode extends AbstractNode {
 
 	// ── Array operations ──
 
-	@SuppressWarnings("unchecked")
 	private boolean evaluateArray(Object leftRaw, String operation, Object rightRaw,
 			boolean exists, boolean ignoreCase, boolean looseType) {
 		switch (operation) {
@@ -564,7 +563,6 @@ public class FilterNode extends AbstractNode {
 
 	// ── Object operations ──
 
-	@SuppressWarnings("unchecked")
 	private boolean evaluateObject(Object leftRaw, String operation, boolean exists) {
 		switch (operation) {
 			case "empty":

@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "removeDuplicates",
 	displayName = "Remove Duplicates",
 	description = "Remove duplicate items from the input based on field comparison.",
-	category = "Flow",
+	category = "Data Transformation",
 	icon = "copy-minus"
 )
 public class RemoveDuplicatesNode extends AbstractNode {
@@ -255,7 +255,6 @@ public class RemoveDuplicatesNode extends AbstractNode {
 	 * Create a stable string representation of a map for comparison.
 	 * Keys are sorted to ensure consistent comparison regardless of insertion order.
 	 */
-	@SuppressWarnings("unchecked")
 	private String stableStringify(Map<String, Object> map) {
 		if (map == null || map.isEmpty()) return "{}";
 

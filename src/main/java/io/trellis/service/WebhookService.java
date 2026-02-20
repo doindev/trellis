@@ -59,6 +59,7 @@ public class WebhookService {
             // Register webhook for the configured HTTP method
             String method = (String) parameters.getOrDefault("httpMethod", "GET");
             String responseMode = (String) parameters.getOrDefault("responseMode", "onReceived");
+            Object nodeOptions = parameters.get("options");
             WebhookEntity webhook = WebhookEntity.builder()
                     .workflowId(workflow.getId())
                     .nodeId(nodeId)
@@ -66,6 +67,7 @@ public class WebhookService {
                     .path(normalizedPath)
                     .securityChain(authentication)
                     .responseMode(responseMode)
+                    .webhookOptions(nodeOptions)
                     .build();
 
             webhookRepository.save(webhook);

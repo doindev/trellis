@@ -1,7 +1,6 @@
 package io.trellis.nodes.impl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -198,7 +197,6 @@ public class SortNode extends AbstractNode {
 	 * Compare two values with type-aware logic.
 	 * Handles null, Number, String (case-insensitive), Boolean, and falls back to toString.
 	 */
-	@SuppressWarnings("unchecked")
 	private int compareValues(Object a, Object b) {
 		// Nulls sort last
 		if (a == null && b == null) return 0;

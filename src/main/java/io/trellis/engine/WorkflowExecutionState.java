@@ -65,11 +65,25 @@ public class WorkflowExecutionState {
             return List.of();
         }
 
+        // Check if the target node has multiple inputs
+        boolean multiInput = incoming.stream()
+                .map(WorkflowGraph.Connection::getTargetInputIndex)
+                .distinct().count() > 1;
+
         List<Map<String, Object>> combined = new ArrayList<>();
         for (WorkflowGraph.Connection conn : incoming) {
             List<Map<String, Object>> sourceOutput = getNodeOutput(
                     conn.getSourceNodeId(), conn.getSourceOutputIndex());
-            combined.addAll(sourceOutput);
+            if (multiInput) {
+                // Tag items with their target input index for multi-input nodes
+                for (Map<String, Object> item : sourceOutput) {
+                    Map<String, Object> tagged = new LinkedHashMap<>(item);
+                    tagged.put("_inputIndex", conn.getTargetInputIndex());
+                    combined.add(tagged);
+                }
+            } else {
+                combined.addAll(sourceOutput);
+            }
         }
         return combined;
     }

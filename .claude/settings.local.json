@@ -71,7 +71,9 @@
       "WebFetch(domain:www.aifire.co)",
       "WebFetch(domain:www.helpnetsecurity.com)",
       "WebFetch(domain:snyk.io)",
-      "WebFetch(domain:ryanandmattdatascience.com)"
+      "WebFetch(domain:ryanandmattdatascience.com)",
+      "WebFetch(domain:unpkg.com)",
+      "WebFetch(domain:lucide.dev)"
     ]
   }
 }

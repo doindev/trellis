@@ -1,5 +1,6 @@
 package io.trellis.entity;
 
+import io.trellis.util.JsonObjectConverter;
 import io.trellis.util.NanoId;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,4 +42,8 @@ public class WebhookEntity {
     @Builder.Default
     @Column(nullable = false)
     private String responseMode = "onReceived";
+
+    @Column(columnDefinition = "TEXT")
+    @Convert(converter = JsonObjectConverter.class)
+    private Object webhookOptions;
 }
