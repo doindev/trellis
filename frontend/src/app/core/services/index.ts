@@ -9,3 +9,4 @@ export * from './chat.service';
 export * from './settings.service';
 export * from './project.service';
 export * from './webhook-test.service';
+export * from './chat-agent.service';

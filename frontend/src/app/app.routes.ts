@@ -4,6 +4,16 @@ export const routes: Routes = [
   { path: '', redirectTo: '/home/workflows', pathMatch: 'full' },
   { path: 'home', redirectTo: '/home/workflows', pathMatch: 'full' },
   {
+    path: 'home/chat',
+    loadComponent: () =>
+      import('./features/chat/chat.component').then(m => m.ChatComponent)
+  },
+  {
+    path: 'home/chat/:view',
+    loadComponent: () =>
+      import('./features/chat/chat.component').then(m => m.ChatComponent)
+  },
+  {
     path: 'home/:tab',
     loadComponent: () =>
       import('./features/home/home.component').then(m => m.HomeComponent)

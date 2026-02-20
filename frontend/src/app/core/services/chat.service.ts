@@ -2,17 +2,12 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { WebSocketService } from './websocket.service';
-
-export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: Date;
-}
+import { ChatSession, ChatMessage } from '../models/chat.model';
 
 @Injectable({ providedIn: 'root' })
 export class ChatService implements OnDestroy {
   private messagesSubject = new Subject<ChatMessage>();
-  private subscribedWorkflowId: string | null = null;
+  private subscribedSessionId: string | null = null;
 
   messages$: Observable<ChatMessage> = this.messagesSubject.asObservable();
 
@@ -21,19 +16,48 @@ export class ChatService implements OnDestroy {
     private ws: WebSocketService
   ) {}
 
-  connect(workflowId: string): void {
-    if (this.subscribedWorkflowId === workflowId) return;
+  // Session CRUD
+  listSessions(): Observable<ChatSession[]> {
+    return this.api.get<ChatSession[]>('/chat/sessions');
+  }
+
+  createSession(title?: string, agentId?: string): Observable<ChatSession> {
+    return this.api.post<ChatSession>('/chat/sessions', { title: title || 'New Chat', agentId });
+  }
+
+  updateSession(id: string, title: string): Observable<ChatSession> {
+    return this.api.put<ChatSession>(`/chat/sessions/${id}`, { title });
+  }
+
+  deleteSession(id: string): Observable<void> {
+    return this.api.delete<void>(`/chat/sessions/${id}`);
+  }
+
+  // Messages
+  getMessages(sessionId: string): Observable<ChatMessage[]> {
+    return this.api.get<ChatMessage[]>(`/chat/sessions/${sessionId}/messages`);
+  }
+
+  sendMessage(sessionId: string, content: string): Observable<ChatMessage> {
+    return this.api.post<ChatMessage>(`/chat/sessions/${sessionId}/messages`, { content });
+  }
+
+  // WebSocket
+  connect(sessionId: string): void {
+    if (this.subscribedSessionId === sessionId) return;
 
     this.disconnect();
-    this.subscribedWorkflowId = workflowId;
+    this.subscribedSessionId = sessionId;
 
-    this.ws.subscribe(`/topic/chat/${workflowId}`, (message) => {
+    this.ws.subscribe(`/topic/chat/${sessionId}`, (message) => {
       try {
         const data = JSON.parse(message.body);
         this.messagesSubject.next({
+          id: data.id,
+          sessionId,
           role: data.role || 'assistant',
           content: data.content,
-          timestamp: new Date(data.timestamp || Date.now())
+          createdAt: data.timestamp || new Date().toISOString()
         });
       } catch (e) {
         console.error('Failed to parse chat message:', e);
@@ -42,18 +66,10 @@ export class ChatService implements OnDestroy {
   }
 
   disconnect(): void {
-    if (this.subscribedWorkflowId) {
-      this.ws.unsubscribe(`/topic/chat/${this.subscribedWorkflowId}`);
-      this.subscribedWorkflowId = null;
+    if (this.subscribedSessionId) {
+      this.ws.unsubscribe(`/topic/chat/${this.subscribedSessionId}`);
+      this.subscribedSessionId = null;
     }
-  }
-
-  sendMessage(workflowId: string, content: string): Observable<any> {
-    return this.api.post(`/chat/${workflowId}/messages`, { content });
-  }
-
-  getHistory(workflowId: string): Observable<ChatMessage[]> {
-    return this.api.get<ChatMessage[]>(`/chat/${workflowId}/messages`);
   }
 
   ngOnDestroy(): void {

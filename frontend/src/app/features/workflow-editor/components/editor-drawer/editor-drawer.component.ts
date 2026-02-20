@@ -2,7 +2,8 @@ import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterVie
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { ChatService, ChatMessage } from '../../../../core/services/chat.service';
+import { ChatService } from '../../../../core/services/chat.service';
+import { ChatMessage } from '../../../../core/models/chat.model';
 import { WorkflowNode } from '../../../../core/models';
 
 export interface LogsNodeEntry {
@@ -83,6 +84,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   messages: ChatMessage[] = [];
   isTyping = false;
   private shouldScrollChat = false;
+  private chatSessionId: string | null = null;
 
   selectedLogsNodeId: string | null = null;
   detailView: 'input' | 'output' = 'output';
@@ -389,32 +391,32 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   // Chat methods
   private connectChat(): void {
     if (!this.workflowId) return;
-    if (this.messages.length === 0) {
-      this.chatService.getHistory(this.workflowId).subscribe({
-        next: (msgs) => {
-          this.messages = msgs;
-          this.shouldScrollChat = true;
-        }
-      });
-    }
-    this.chatService.connect(this.workflowId);
-    this.chatService.messages$.subscribe(msg => {
-      this.isTyping = false;
-      this.messages.push(msg);
-      this.shouldScrollChat = true;
+    // Create a session for this workflow's chat drawer
+    this.chatService.createSession('Workflow Chat').subscribe({
+      next: (session) => {
+        this.chatSessionId = session.id;
+        this.chatService.connect(session.id);
+        this.chatService.messages$.subscribe(msg => {
+          if (msg.sessionId === this.chatSessionId) {
+            this.isTyping = false;
+            this.messages.push(msg);
+            this.shouldScrollChat = true;
+          }
+        });
+      }
     });
   }
 
   sendMessage(): void {
     const content = this.chatInput.trim();
-    if (!content || !this.workflowId) return;
+    if (!content || !this.chatSessionId) return;
 
-    this.messages.push({ role: 'user', content, timestamp: new Date() });
+    this.messages.push({ id: 'temp-' + Date.now(), sessionId: this.chatSessionId, role: 'user', content, createdAt: new Date().toISOString() });
     this.chatInput = '';
     this.isTyping = true;
     this.shouldScrollChat = true;
 
-    this.chatService.sendMessage(this.workflowId, content).subscribe({
+    this.chatService.sendMessage(this.chatSessionId, content).subscribe({
       error: () => {
         this.isTyping = false;
       }

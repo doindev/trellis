@@ -5,7 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { Subscription, filter } from 'rxjs';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Table, Plus, Variable, Workflow } from 'lucide-angular';
 import { ProjectService } from './core/services/project.service';
+import { ChatService } from './core/services/chat.service';
 import { Project } from './core/models/project.model';
+import { ChatSession } from './core/models/chat.model';
 
 @Component({
   selector: 'app-root',
@@ -21,7 +23,9 @@ export class AppComponent implements OnInit, OnDestroy {
   showAddDropdown = false;
   showCreateMenu = false;
   settingsMode = false;
+  chatMode = false;
   showSettingsPopover = false;
+  chatSessions: ChatSession[] = [];
   projects: Project[] = [];
   showCreateProjectModal = false;
   newProjectName = '';
@@ -49,16 +53,25 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  constructor(private router: Router, private projectService: ProjectService) {}
+  constructor(private router: Router, private projectService: ProjectService, private chatService: ChatService) {}
 
   ngOnInit(): void {
     this.loadProjects();
-    this.settingsMode = this.router.url.startsWith('/settings');
+    this.updateModes(this.router.url);
     this.routerSub = this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd)
     ).subscribe(e => {
-      this.settingsMode = e.urlAfterRedirects.startsWith('/settings');
+      this.updateModes(e.urlAfterRedirects);
     });
+  }
+
+  private updateModes(url: string): void {
+    this.settingsMode = url.startsWith('/settings');
+    const wasChatMode = this.chatMode;
+    this.chatMode = url.startsWith('/home/chat');
+    if (this.chatMode && !wasChatMode) {
+      this.loadChatSessions();
+    }
   }
 
   ngOnDestroy(): void {
@@ -192,5 +205,69 @@ export class AppComponent implements OnInit, OnDestroy {
 
   exitSettings(): void {
     this.router.navigate(['/home/workflows']);
+  }
+
+  // ── Chat ──
+
+  loadChatSessions(): void {
+    this.chatService.listSessions().subscribe({
+      next: (sessions) => this.chatSessions = sessions,
+      error: () => this.chatSessions = []
+    });
+  }
+
+  onNewChat(): void {
+    this.chatService.createSession().subscribe({
+      next: (session) => {
+        this.loadChatSessions();
+        this.router.navigate(['/home/chat', session.id]);
+      }
+    });
+  }
+
+  onDeleteSession(session: ChatSession, event: MouseEvent): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.chatService.deleteSession(session.id).subscribe({
+      next: () => {
+        this.loadChatSessions();
+        if (this.router.url.includes(session.id)) {
+          this.router.navigate(['/home/chat']);
+        }
+      }
+    });
+  }
+
+  exitChat(): void {
+    this.router.navigate(['/home/workflows']);
+  }
+
+  getGroupedChatSessions(): { label: string; sessions: ChatSession[] }[] {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 86400000);
+    const weekAgo = new Date(today.getTime() - 7 * 86400000);
+
+    const groups: { label: string; sessions: ChatSession[] }[] = [
+      { label: 'Today', sessions: [] },
+      { label: 'Yesterday', sessions: [] },
+      { label: 'Previous 7 Days', sessions: [] },
+      { label: 'Older', sessions: [] }
+    ];
+
+    for (const s of this.chatSessions) {
+      const d = new Date(s.updatedAt);
+      if (d >= today) {
+        groups[0].sessions.push(s);
+      } else if (d >= yesterday) {
+        groups[1].sessions.push(s);
+      } else if (d >= weekAgo) {
+        groups[2].sessions.push(s);
+      } else {
+        groups[3].sessions.push(s);
+      }
+    }
+
+    return groups.filter(g => g.sessions.length > 0);
   }
 }

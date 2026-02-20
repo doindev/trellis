@@ -65,7 +65,11 @@
       "WebFetch(domain:blog.nocodecreative.io)",
       "WebFetch(domain:khaisa.studio)",
       "Bash(node generate-credentials.js:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(cmd /c \"where gh\")",
+      "WebFetch(domain:www.wisdomai.com)",
+      "WebFetch(domain:www.aifire.co)",
+      "WebFetch(domain:www.helpnetsecurity.com)"
     ]
   }
 }
