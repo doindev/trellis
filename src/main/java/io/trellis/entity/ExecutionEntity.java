@@ -57,6 +57,6 @@ public class ExecutionEntity {
     }
 
     public enum ExecutionMode {
-        MANUAL, TRIGGER, WEBHOOK, POLLING, RETRY
+        MANUAL, TRIGGER, WEBHOOK, POLLING, RETRY, INTERNAL
     }
 }

@@ -33,6 +33,9 @@ public class WorkflowEngine {
     private final Map<String, WorkflowExecutionState> runningExecutions = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Map<String, Object>>> pendingWebhookResponses = new ConcurrentHashMap<>();
 
+    private static final ThreadLocal<Integer> SUB_WORKFLOW_DEPTH = ThreadLocal.withInitial(() -> 0);
+    private static final int MAX_SUB_WORKFLOW_DEPTH = 10;
+
     public String startExecution(String workflowId, Map<String, Object> inputData) {
         WorkflowEntity workflow = workflowService.findById(workflowId);
 
@@ -103,6 +106,112 @@ public class WorkflowEngine {
             state.setCancelled(true);
         }
         executionService.stop(executionId);
+    }
+
+    /**
+     * Execute a sub-workflow synchronously and return its last node's output.
+     * Called by ExecuteWorkflowNode to run another workflow inline.
+     * Includes recursion depth protection to prevent infinite loops.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> executeSubWorkflow(String workflowId, List<Map<String, Object>> inputItems) {
+        int depth = SUB_WORKFLOW_DEPTH.get();
+        if (depth >= MAX_SUB_WORKFLOW_DEPTH) {
+            throw new RuntimeException("Maximum sub-workflow depth (" + MAX_SUB_WORKFLOW_DEPTH
+                + ") exceeded. Check for recursive workflow calls.");
+        }
+        SUB_WORKFLOW_DEPTH.set(depth + 1);
+
+        try {
+            WorkflowEntity workflow = workflowService.findById(workflowId);
+
+            Map<String, Object> workflowSnapshot = new LinkedHashMap<>();
+            workflowSnapshot.put("id", workflow.getId());
+            workflowSnapshot.put("name", workflow.getName());
+            workflowSnapshot.put("nodes", workflow.getNodes());
+            workflowSnapshot.put("connections", workflow.getConnections());
+
+            var execution = executionService.createExecution(
+                    workflowId, workflowSnapshot, ExecutionMode.INTERNAL);
+
+            executionService.updateStatus(execution.getId(), ExecutionStatus.RUNNING);
+
+            WorkflowGraph graph = WorkflowGraph.parse(
+                    workflow.getNodes(), workflow.getConnections(), objectMapper);
+
+            WorkflowExecutionState state = new WorkflowExecutionState(
+                    execution.getId(), workflowId, graph);
+            runningExecutions.put(execution.getId(), state);
+
+            try {
+                List<String> order = graph.getTopologicalOrder();
+                Map<String, String> variables = variableService.getAllVariablesAsMap();
+
+                // Wrap the input items for the start node injection mechanism
+                Map<String, Object> inputData = null;
+                if (inputItems != null && !inputItems.isEmpty()) {
+                    inputData = Map.of("_subWorkflowItems", (Object) inputItems);
+                }
+
+                for (String nodeId : order) {
+                    if (state.isCancelled()) {
+                        executionService.finish(execution.getId(), ExecutionStatus.CANCELED,
+                                state.buildResultData(), "Sub-workflow cancelled");
+                        return List.of();
+                    }
+
+                    boolean ok = executeNodeInWorkflow(nodeId, execution.getId(), workflow, inputData,
+                            NodeExecutionContext.ExecutionMode.INTERNAL, graph, state, variables);
+                    if (!ok) return List.of();
+
+                    // Handle loop nodes
+                    WorkflowGraph.WorkflowNode graphNode = graph.getNodes().get(nodeId);
+                    if (graphNode != null && "loopOverItems".equals(graphNode.getType())) {
+                        List<String> loopBody = graph.findLoopBodyNodes(nodeId);
+                        if (!loopBody.isEmpty()) {
+                            for (int iteration = 0; iteration < 10_000; iteration++) {
+                                if (state.isCancelled()) break;
+                                List<Map<String, Object>> loopOutput = state.getNodeOutput(nodeId, 1);
+                                if (loopOutput.isEmpty()) break;
+                                for (String bodyNodeId : loopBody) {
+                                    if (state.isCancelled()) break;
+                                    boolean bodyOk = executeNodeInWorkflow(bodyNodeId, execution.getId(),
+                                            workflow, null, NodeExecutionContext.ExecutionMode.INTERNAL,
+                                            graph, state, variables);
+                                    if (!bodyOk) return List.of();
+                                }
+                                boolean loopOk = executeNodeInWorkflow(nodeId, execution.getId(),
+                                        workflow, null, NodeExecutionContext.ExecutionMode.INTERNAL,
+                                        graph, state, variables);
+                                if (!loopOk) return List.of();
+                            }
+                        }
+                    }
+                }
+
+                executionService.finish(execution.getId(), ExecutionStatus.SUCCESS,
+                        state.buildResultData(), null);
+
+                // Return last node's output
+                for (int i = order.size() - 1; i >= 0; i--) {
+                    List<List<Map<String, Object>>> outputs = state.getNodeOutputs().get(order.get(i));
+                    if (outputs != null && !outputs.isEmpty() && !outputs.get(0).isEmpty()) {
+                        return new ArrayList<>(outputs.get(0));
+                    }
+                }
+                return List.of();
+
+            } finally {
+                runningExecutions.remove(execution.getId());
+            }
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Sub-workflow execution failed: " + e.getMessage(), e);
+        } finally {
+            SUB_WORKFLOW_DEPTH.set(depth);
+        }
     }
 
     @Async("workflowExecutor")
@@ -222,7 +331,12 @@ public class WorkflowEngine {
 
         if (nodeInput.isEmpty() && inputData != null && graph.getStartNode() != null
                 && graph.getStartNode().getId().equals(nodeId)) {
-            if (inputData.containsKey("webhookData")) {
+            if (inputData.containsKey("_subWorkflowItems")) {
+                // Sub-workflow execution: items are already in the correct format
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> subItems = (List<Map<String, Object>>) inputData.get("_subWorkflowItems");
+                nodeInput = subItems;
+            } else if (inputData.containsKey("webhookData")) {
                 nodeInput = List.of(Map.of("json", inputData.get("webhookData")));
             } else {
                 nodeInput = List.of(Map.of("json", inputData));
