@@ -77,7 +77,8 @@
       "WebFetch(domain:fossies.org)",
       "WebFetch(domain:logicworkflow.com)",
       "Bash(mvn spring-boot:run:*)",
-      "Bash(timeout 20 tail:*)"
+      "Bash(timeout 20 tail:*)",
+      "Bash(kill:*)"
     ]
   }
 }
