@@ -75,7 +75,9 @@
       "WebFetch(domain:unpkg.com)",
       "WebFetch(domain:lucide.dev)",
       "WebFetch(domain:fossies.org)",
-      "WebFetch(domain:logicworkflow.com)"
+      "WebFetch(domain:logicworkflow.com)",
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(timeout 20 tail:*)"
     ]
   }
 }
