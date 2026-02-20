@@ -1,7 +1,6 @@
 package io.trellis.nodes.impl;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -329,7 +328,6 @@ public class DataTableNode extends AbstractNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String resource = context.getParameter("resource", "row");
 
@@ -346,7 +344,6 @@ public class DataTableNode extends AbstractNode {
 
 	// ---- Table Operations ----
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeTableOperation(NodeExecutionContext context) {
 		String operation = context.getParameter("tableOperation", "create");
 
@@ -358,7 +355,6 @@ public class DataTableNode extends AbstractNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCreateTable(NodeExecutionContext context) {
 		String tableName = context.getParameter("tableName", "");
 		if (tableName.isBlank()) {
