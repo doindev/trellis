@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 	displayName = "Filter",
 	description = "Remove items matching a condition. Items that pass go to 'Kept', others go to 'Discarded'.",
 	category = "Flow",
-	icon = "filter"
+	icon = "list-filter"
 )
 public class FilterNode extends AbstractNode {
 

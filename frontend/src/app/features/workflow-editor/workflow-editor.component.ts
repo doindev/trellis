@@ -143,7 +143,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   togglePalette(): void {
     this.showPalette = !this.showPalette;
     if (this.showPalette) {
-      setTimeout(() => this.nodePalette?.focusSearch(), 260);
+      setTimeout(() => {
+        if (this.nodePalette) {
+          this.nodePalette.triggerOnly.set(false);
+          this.nodePalette.focusSearch();
+        }
+      }, 260);
     } else {
       this.pendingConnection = null;
     }
@@ -153,7 +158,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.showPalette = true;
     setTimeout(() => {
       if (this.nodePalette) {
-        this.nodePalette.searchTerm.set('trigger');
+        this.nodePalette.triggerOnly.set(true);
+        this.nodePalette.searchTerm.set('');
         this.nodePalette.focusSearch();
       }
     }, 260);
@@ -220,6 +226,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (this.pendingConnection) {
       this.addConnectionFromPending(newNodeId);
       this.pendingConnection = null;
+    }
+    // Once a trigger node is placed, dismiss the trigger-only filter
+    if (nodeType.isTrigger && this.nodePalette?.triggerOnly()) {
+      this.nodePalette.triggerOnly.set(false);
     }
     this.showPalette = false;
   }

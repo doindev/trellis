@@ -15,7 +15,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   'code': <><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></>,
 
   // Flow nodes
-  'filter': <><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z" /></>,
+  'list-filter': <><path d="M2 5h20" /><path d="M6 12h12" /><path d="M9 19h6" /></>,
   'repeat': <><path d="m17 2 4 4-4 4" /><path d="M3 11v-1a4 4 0 0 1 4-4h14" /><path d="m7 22-4-4 4-4" /><path d="M21 13v1a4 4 0 0 1-4 4H3" /></>,
   'arrow-up-narrow-wide': <><path d="m3 8 4-4 4 4" /><path d="M7 4v16" /><path d="M11 12h4" /><path d="M11 16h7" /><path d="M11 20h10" /></>,
   'list-end': <><path d="M16 5H3" /><path d="M16 12H3" /><path d="M9 19H3" /><path d="m16 16-3 3 3 3" /><path d="M21 5v12a2 2 0 0 1-2 2h-6" /></>,

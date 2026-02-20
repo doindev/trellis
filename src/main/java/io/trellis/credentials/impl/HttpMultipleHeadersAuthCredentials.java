@@ -1,12 +1,11 @@
 package io.trellis.credentials.impl;
 
+import java.util.List;
+
 import io.trellis.credentials.CredentialProviderInterface;
 import io.trellis.credentials.annotation.CredentialProvider;
 import io.trellis.nodes.core.NodeParameter;
 import io.trellis.nodes.core.NodeParameter.ParameterType;
-
-import java.util.List;
-import java.util.Map;
 
 @CredentialProvider(
         type = "httpMultipleHeadersAuth",

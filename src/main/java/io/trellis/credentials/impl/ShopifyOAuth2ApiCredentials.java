@@ -3,10 +3,8 @@ package io.trellis.credentials.impl;
 import io.trellis.credentials.CredentialProviderInterface;
 import io.trellis.credentials.annotation.CredentialProvider;
 import io.trellis.nodes.core.NodeParameter;
-import io.trellis.nodes.core.NodeParameter.ParameterType;
 
 import java.util.List;
-import java.util.Map;
 
 @CredentialProvider(
         type = "shopifyOAuth2Api",

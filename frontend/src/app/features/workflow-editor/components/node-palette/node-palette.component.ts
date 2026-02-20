@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
   Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
-  UnfoldVertical, Route, Pen, Code
+  UnfoldVertical, Route, Pen, Code,
+  CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
+  Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma
 } from 'lucide-angular';
 import { NodeTypeDescription } from '../../../../core/models';
 
@@ -17,7 +19,9 @@ import { NodeTypeDescription } from '../../../../core/models';
     multi: true,
     useValue: new LucideIconProvider({
       Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
-      UnfoldVertical, Route, Pen, Code
+      UnfoldVertical, Route, Pen, Code,
+      CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
+      Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma
     })
   }],
   templateUrl: './node-palette.component.html',
@@ -34,19 +38,27 @@ export class NodePaletteComponent {
 
   private _nodeTypes = signal<Map<string, NodeTypeDescription[]>>(new Map());
   searchTerm = signal('');
+  triggerOnly = signal(false);
 
   filteredTypes = computed(() => {
     const term = this.searchTerm().toLowerCase();
+    const triggersOnly = this.triggerOnly();
     const types = this._nodeTypes();
-    if (!term) return types;
+    if (!term && !triggersOnly) return types;
 
     const filtered = new Map<string, NodeTypeDescription[]>();
     types.forEach((nodes, category) => {
-      const matching = nodes.filter(n =>
-        n.displayName.toLowerCase().includes(term) ||
-        n.type.toLowerCase().includes(term) ||
-        n.description?.toLowerCase().includes(term)
-      );
+      let matching = nodes;
+      if (triggersOnly) {
+        matching = matching.filter(n => n.isTrigger);
+      }
+      if (term) {
+        matching = matching.filter(n =>
+          n.displayName.toLowerCase().includes(term) ||
+          n.type.toLowerCase().includes(term) ||
+          n.description?.toLowerCase().includes(term)
+        );
+      }
       if (matching.length > 0) {
         filtered.set(category, matching);
       }
@@ -77,7 +89,7 @@ export class NodePaletteComponent {
   }
 
   isCategoryExpanded(category: string): boolean {
-    return this.expandedCategories.has(category) || this.searchTerm().length > 0;
+    return this.expandedCategories.has(category) || this.searchTerm().length > 0 || this.triggerOnly();
   }
 
   onDragStart(event: DragEvent, nodeType: NodeTypeDescription): void {
