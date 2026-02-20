@@ -60,7 +60,7 @@ public class CredentialTypeRegistry {
     }
 
     private void resolveInheritance() {
-        // Keep a reference to the original child properties before merging
+        // Build provider map for override lookups
         Map<String, CredentialProviderInterface> providerMap = new HashMap<>();
         Map<String, Object> beans = applicationContext.getBeansWithAnnotation(CredentialProvider.class);
         for (Object bean : beans.values()) {
@@ -72,52 +72,63 @@ public class CredentialTypeRegistry {
             }
         }
 
-        for (CredentialType childType : types.values()) {
-            if (childType.getExtendsType() == null) {
-                continue;
-            }
-
-            CredentialType parentType = types.get(childType.getExtendsType());
-            if (parentType == null) {
-                log.warn("Credential type '{}' extends unknown type '{}'",
-                        childType.getType(), childType.getExtendsType());
-                continue;
-            }
-
-            CredentialProviderInterface childProvider = providerMap.get(childType.getType());
-            Map<String, NodeParameter> overrides = childProvider != null
-                    ? childProvider.getPropertyOverrides()
-                    : Map.of();
-
-            // Build a set of property names the child defines directly
-            Set<String> childPropertyNames = new HashSet<>();
-            for (NodeParameter p : childType.getProperties()) {
-                childPropertyNames.add(p.getName());
-            }
-
-            // Merge: start with parent properties (with overrides applied), then append child-only properties
-            List<NodeParameter> merged = new ArrayList<>();
-
-            for (NodeParameter parentProp : parentType.getProperties()) {
-                if (childPropertyNames.contains(parentProp.getName())) {
-                    // Child fully redefines this property — skip parent version
-                    continue;
-                }
-
-                if (overrides.containsKey(parentProp.getName())) {
-                    // Apply partial override to parent property
-                    merged.add(applyOverride(parentProp, overrides.get(parentProp.getName())));
-                } else {
-                    // Pass through unchanged
-                    merged.add(parentProp);
-                }
-            }
-
-            // Append child's own properties at the end
-            merged.addAll(childType.getProperties());
-
-            childType.setProperties(merged);
+        // Resolve in topological order: parents before children
+        Set<String> resolved = new HashSet<>();
+        for (CredentialType type : types.values()) {
+            resolveType(type, providerMap, resolved, new HashSet<>());
         }
+    }
+
+    private void resolveType(CredentialType childType, Map<String, CredentialProviderInterface> providerMap,
+                             Set<String> resolved, Set<String> visiting) {
+        if (resolved.contains(childType.getType()) || childType.getExtendsType() == null) {
+            return;
+        }
+
+        // Detect cycles
+        if (!visiting.add(childType.getType())) {
+            log.warn("Circular inheritance detected for credential type '{}'", childType.getType());
+            return;
+        }
+
+        CredentialType parentType = types.get(childType.getExtendsType());
+        if (parentType == null) {
+            log.warn("Credential type '{}' extends unknown type '{}'",
+                    childType.getType(), childType.getExtendsType());
+            return;
+        }
+
+        // Ensure parent is resolved first
+        resolveType(parentType, providerMap, resolved, visiting);
+
+        CredentialProviderInterface childProvider = providerMap.get(childType.getType());
+        Map<String, NodeParameter> overrides = childProvider != null
+                ? childProvider.getPropertyOverrides()
+                : Map.of();
+
+        // Build a set of property names the child defines directly
+        Set<String> childPropertyNames = new HashSet<>();
+        for (NodeParameter p : childType.getProperties()) {
+            childPropertyNames.add(p.getName());
+        }
+
+        // Merge: start with parent properties (with overrides applied), then append child-only properties
+        List<NodeParameter> merged = new ArrayList<>();
+
+        for (NodeParameter parentProp : parentType.getProperties()) {
+            if (childPropertyNames.contains(parentProp.getName())) {
+                continue;
+            }
+            if (overrides.containsKey(parentProp.getName())) {
+                merged.add(applyOverride(parentProp, overrides.get(parentProp.getName())));
+            } else {
+                merged.add(parentProp);
+            }
+        }
+
+        merged.addAll(childType.getProperties());
+        childType.setProperties(merged);
+        resolved.add(childType.getType());
     }
 
     private NodeParameter applyOverride(NodeParameter parent, NodeParameter override) {

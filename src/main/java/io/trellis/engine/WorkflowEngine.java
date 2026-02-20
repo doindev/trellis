@@ -163,7 +163,8 @@ public class WorkflowEngine {
                 Map<String, Object> resolvedParams = resolveParameters(
                         graphNode.getParameters(), nodeInput, state, variables, executionId);
 
-                Map<String, Object> credentials = resolveCredentials(graphNode.getCredentials());
+                Map<String, Object> credentials = resolveCredentials(
+                        graphNode.getCredentials(), nodeInput, state, variables, executionId);
 
                 NodeExecutionContext context = NodeExecutionContext.builder()
                         .executionId(executionId)
@@ -302,7 +303,8 @@ public class WorkflowEngine {
         Map<String, String> variables = variableService.getAllVariablesAsMap();
         Map<String, Object> resolvedParams = resolveParameters(
                 parameters, inputData, null, variables, "single-node");
-        Map<String, Object> credentials = resolveCredentials(credentialRefs);
+        Map<String, Object> credentials = resolveCredentials(
+                credentialRefs, inputData, null, variables, "single-node");
 
         NodeExecutionContext context = NodeExecutionContext.builder()
                 .executionId("single-node-" + System.currentTimeMillis())
@@ -411,7 +413,11 @@ public class WorkflowEngine {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> resolveCredentials(Map<String, Object> credentialRefs) {
+    private Map<String, Object> resolveCredentials(Map<String, Object> credentialRefs,
+                                                     List<Map<String, Object>> inputItems,
+                                                     WorkflowExecutionState state,
+                                                     Map<String, String> variables,
+                                                     String executionId) {
         if (credentialRefs == null || credentialRefs.isEmpty()) return Map.of();
 
         Map<String, Object> resolved = new LinkedHashMap<>();
@@ -432,6 +438,29 @@ public class WorkflowEngine {
                     log.warn("Failed to resolve credential {}: {}", credentialId, e.getMessage());
                 }
             }
+        }
+
+        // Resolve any ={{...}} expressions in credential values
+        Map<String, Object> currentItemData = Map.of();
+        if (inputItems != null && !inputItems.isEmpty()) {
+            Map<String, Object> first = inputItems.get(0);
+            Object json = first.get("json");
+            if (json instanceof Map) {
+                currentItemData = (Map<String, Object>) json;
+            }
+        }
+
+        ExpressionEvaluator.ExpressionContext ctx = ExpressionEvaluator.ExpressionContext.builder()
+                .currentItemData(currentItemData)
+                .inputItems(inputItems)
+                .variables(variables)
+                .executionId(executionId)
+                .runIndex(0)
+                .build();
+
+        Object result = expressionEvaluator.resolveExpressions(resolved, ctx);
+        if (result instanceof Map) {
+            return (Map<String, Object>) result;
         }
         return resolved;
     }

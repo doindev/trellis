@@ -10,29 +10,46 @@ import java.util.Map;
 
 @CredentialProvider(
         type = "microsoftEntraOAuth2Api",
-        displayName = "Microsoft Entra ID OAuth2 API",
-        description = "Microsoft Entra ID OAuth2 API authentication",
-        category = "Microsoft Services",
-        icon = "microsoftentra",
-        extendsType = "oAuth2Api"
+        displayName = "Microsoft Entra ID (Azure AD)",
+        description = "App-only (client credentials) authentication for APIs secured by Microsoft Entra ID",
+        category = "Cloud Services",
+        icon = "microsoft"
 )
 public class MicrosoftEntraOAuth2ApiCredentials implements CredentialProviderInterface {
 
     @Override
     public List<NodeParameter> getProperties() {
-        return List.of();
-    }
-
-    @Override
-    public Map<String, NodeParameter> getPropertyOverrides() {
-        return Map.of(
-                "authorizationUrl", NodeParameter.builder()
-                        .type(ParameterType.STRING)
-                        .defaultValue("https://login.microsoftonline.com/common/oauth2/v2.0/authorize")
+        return List.of(
+                NodeParameter.builder()
+                        .name("tenantId").displayName("Tenant ID")
+                        .type(ParameterType.STRING).required(true)
+                        .placeHolder("e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+                        .description("Azure Portal > Microsoft Entra ID > Overview > Tenant ID")
                         .build(),
-                "accessTokenUrl", NodeParameter.builder()
+                NodeParameter.builder()
+                        .name("clientId").displayName("Client ID (Application ID)")
+                        .type(ParameterType.STRING).required(true)
+                        .placeHolder("e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+                        .description("Azure Portal > App registrations > your app > Application (client) ID")
+                        .build(),
+                NodeParameter.builder()
+                        .name("clientSecret").displayName("Client Secret")
+                        .type(ParameterType.STRING).required(true)
+                        .typeOptions(Map.of("password", true))
+                        .description("Azure Portal > App registrations > your app > Certificates & secrets")
+                        .build(),
+                NodeParameter.builder()
+                        .name("scope").displayName("Scope")
                         .type(ParameterType.STRING)
-                        .defaultValue("https://login.microsoftonline.com/common/oauth2/v2.0/token")
+                        .defaultValue("https://graph.microsoft.com/.default")
+                        .description("For Microsoft Graph use https://graph.microsoft.com/.default — "
+                                + "for custom APIs use api://{app-id}/.default")
+                        .build(),
+                NodeParameter.builder()
+                        .name("tokenUrl").displayName("Token Endpoint URL")
+                        .type(ParameterType.STRING)
+                        .defaultValue("https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token")
+                        .description("Replace {tenantId} with your Tenant ID, or leave as-is and it will be resolved automatically")
                         .build()
         );
     }

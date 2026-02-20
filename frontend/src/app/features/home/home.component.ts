@@ -215,12 +215,12 @@ export class HomeComponent implements OnInit {
     }
 
     // Auto-open credential create modal from sidebar navigation
-    const action = this.route.snapshot.queryParamMap.get('action');
-    if (action === 'create-credential') {
-      this.activeTab.set('credentials');
-      // Defer to next tick so ViewChild is available
-      setTimeout(() => this.credModal?.openCreate(), 0);
-    }
+    this.route.queryParams.subscribe(params => {
+      if (params['action'] === 'create-credential') {
+        this.activeTab.set('credentials');
+        setTimeout(() => this.credModal?.openCreate(), 0);
+      }
+    });
 
     this.loadWorkflows();
     this.loadExecutions();

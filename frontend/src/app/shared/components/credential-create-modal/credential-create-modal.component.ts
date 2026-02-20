@@ -183,6 +183,28 @@ export class CredentialCreateModalComponent implements OnInit {
     return true;
   }
 
+  // --- Expression toggle ---
+
+  isExpressionValue(fieldName: string): boolean {
+    const val = this.editorCredential().data?.[fieldName];
+    return typeof val === 'string' && val.startsWith('={{');
+  }
+
+  setExpressionMode(fieldName: string): void {
+    if (!this.isExpressionValue(fieldName)) {
+      this.onDataFieldChange(fieldName, '={{ }}');
+    }
+  }
+
+  setFixedMode(fieldName: string, prop: CredentialProperty): void {
+    if (this.isExpressionValue(fieldName)) {
+      const defaultVal = prop.type === 'boolean' ? (prop.defaultValue ?? false)
+        : prop.type === 'options' ? (prop.defaultValue ?? '')
+        : (prop.defaultValue ?? '');
+      this.onDataFieldChange(fieldName, defaultVal);
+    }
+  }
+
   // Keep original insertion order for KeyValuePipe
   keepOrder = () => 0;
 }

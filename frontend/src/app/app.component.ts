@@ -121,7 +121,7 @@ export class AppComponent implements OnInit, OnDestroy {
   onAddCredential(): void {
     this.showAddDropdown = false;
     this.showCreateMenu = false;
-    this.router.navigate(['/home/credentials'], { queryParams: { action: 'create-credential' } });
+    this.router.navigate(['/home/credentials'], { queryParams: { action: 'create-credential', t: Date.now() } });
   }
 
   onAddProject(): void {
