@@ -38,6 +38,14 @@
               </svg>
             </button>
           }
+          @if (activeTab === 'editor' && store.nodes().length === 0) {
+            <div class="canvas-empty-prompt" (click)="openPaletteWithTrigger()">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              <span>Click here to add a trigger node to get started</span>
+            </div>
+          }
           <app-react-flow-wrapper
             [workflow]="activeTab === 'executions' && executionWorkflow ? executionWorkflow : store.workflow()"
             [nodeTypeMap]="nodeTypeStore.nodeTypes()"

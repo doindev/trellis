@@ -149,13 +149,16 @@ export class WorkflowEditorStore {
     this.workflow.set(wf);
     this.selectedNodeId.set(null);
     this.executionData.set(null);
-    this.isDirty.set(true);
+    this.isDirty.set(false);
     this.resetHistory(wf);
   }
 
   saveWorkflow(onSaved?: (savedWorkflow: Workflow) => void): void {
     const wf = this.workflow();
     if (!wf || this.isSaving()) return;
+
+    // Don't persist a new workflow until it has at least one node
+    if (!wf.id && wf.nodes.length === 0) return;
 
     this.isSaving.set(true);
     const isNew = !wf.id;

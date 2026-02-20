@@ -131,122 +131,37 @@ public class WorkflowEngine {
                     return;
                 }
 
+                boolean ok = executeNodeInWorkflow(nodeId, executionId, workflow, inputData,
+                        mode, graph, state, variables);
+                if (!ok) return; // fatal error
+
+                // Handle loop nodes: if this node is a loopOverItems and its loop output
+                // (index 1) has data, re-execute the loop body iteratively.
                 WorkflowGraph.WorkflowNode graphNode = graph.getNodes().get(nodeId);
-                if (graphNode == null || graphNode.isDisabled()) continue;
+                if (graphNode != null && "loopOverItems".equals(graphNode.getType())) {
+                    List<String> loopBody = graph.findLoopBodyNodes(nodeId);
+                    if (!loopBody.isEmpty()) {
+                        int maxIterations = 10_000;
+                        for (int iteration = 0; iteration < maxIterations; iteration++) {
+                            if (state.isCancelled()) break;
 
-                Optional<NodeRegistry.NodeRegistration> regOpt = nodeRegistry.getNode(
-                        graphNode.getType(), graphNode.getTypeVersion());
-                if (regOpt.isEmpty()) {
-                    regOpt = nodeRegistry.getNode(graphNode.getType());
-                }
-                if (regOpt.isEmpty()) {
-                    log.warn("Node type not found: {}", graphNode.getType());
-                    continue;
-                }
+                            // Check if loop output (index 1) has data
+                            List<Map<String, Object>> loopOutput = state.getNodeOutput(nodeId, 1);
+                            if (loopOutput.isEmpty()) break; // Loop complete
 
-                NodeRegistry.NodeRegistration registration = regOpt.get();
-                NodeInterface nodeInstance = registration.getNodeInstance();
+                            // Execute all loop body nodes
+                            for (String bodyNodeId : loopBody) {
+                                if (state.isCancelled()) break;
+                                boolean bodyOk = executeNodeInWorkflow(bodyNodeId, executionId,
+                                        workflow, null, mode, graph, state, variables);
+                                if (!bodyOk) return;
+                            }
 
-                List<Map<String, Object>> nodeInput = state.collectInputForNode(nodeId);
-
-                if (nodeInput.isEmpty() && inputData != null && graph.getStartNode() != null
-                        && graph.getStartNode().getId().equals(nodeId)) {
-                    if (inputData.containsKey("webhookData")) {
-                        nodeInput = List.of(Map.of("json", inputData.get("webhookData")));
-                    } else {
-                        nodeInput = List.of(Map.of("json", inputData));
-                    }
-                }
-
-                state.storeInput(nodeId, nodeInput);
-
-                Map<String, Object> resolvedParams = resolveParameters(
-                        graphNode.getParameters(), nodeInput, state, variables, executionId);
-
-                Map<String, Object> credentials = resolveCredentials(
-                        graphNode.getCredentials(), nodeInput, state, variables, executionId);
-
-                NodeExecutionContext context = NodeExecutionContext.builder()
-                        .executionId(executionId)
-                        .workflowId(workflow.getId())
-                        .nodeId(nodeId)
-                        .nodeType(graphNode.getType())
-                        .nodeVersion(graphNode.getTypeVersion())
-                        .inputData(nodeInput)
-                        .parameters(resolvedParams)
-                        .credentials(credentials)
-                        .staticData(new HashMap<>())
-                        .workflowStaticData(state.getWorkflowStaticData())
-                        .executionMode(mode)
-                        .continueOnFail(graphNode.isContinueOnFail())
-                        .build();
-
-                WorkflowExecutionState.NodeExecutionMetadata meta = new WorkflowExecutionState.NodeExecutionMetadata();
-                meta.setNodeId(nodeId);
-                meta.setNodeName(graphNode.getName());
-                meta.setStartedAt(Instant.now());
-                meta.setStatus("running");
-                state.getNodeMetadata().put(nodeId, meta);
-
-                try {
-                    nodeInstance.beforeExecute(context);
-                    NodeExecutionResult result = nodeInstance.execute(context);
-                    nodeInstance.afterExecute(context, result);
-
-                    meta.setFinishedAt(Instant.now());
-
-                    if (result.getError() != null) {
-                        meta.setStatus("error");
-                        meta.setErrorMessage(result.getError().getMessage());
-
-                        if (!graphNode.isContinueOnFail()) {
-                            state.storeOutput(nodeId, result.getOutput() != null ?
-                                    result.getOutput() : List.of(List.of()));
-                            executionService.finish(executionId, ExecutionStatus.ERROR,
-                                    state.buildResultData(), result.getError().getMessage());
-                            webSocketService.sendExecutionFinished(
-                                    executionId, "ERROR", state.buildResultData());
-                            return;
+                            // Re-execute the loop node itself (it reads new input from loop body)
+                            boolean loopOk = executeNodeInWorkflow(nodeId, executionId,
+                                    workflow, null, mode, graph, state, variables);
+                            if (!loopOk) return;
                         }
-
-                        List<Map<String, Object>> errorItems = List.of(
-                                Map.of("json", Map.of("error", result.getError().getMessage())));
-                        state.storeOutput(nodeId, List.of(errorItems));
-                    } else {
-                        meta.setStatus("success");
-                        List<List<Map<String, Object>>> output = result.getOutput();
-                        if (output == null) output = List.of(List.of());
-                        state.storeOutput(nodeId, output);
-                    }
-
-                    if (result.getStaticData() != null) {
-                        state.getWorkflowStaticData().putAll(result.getStaticData());
-                        // Check if a respondToWebhook node produced a response
-                        completeWebhookResponseIfPresent(executionId, state);
-                    }
-
-                    webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
-                            state.getNodeOutputs().get(nodeId));
-
-                } catch (Exception e) {
-                    meta.setFinishedAt(Instant.now());
-                    meta.setStatus("error");
-                    meta.setErrorMessage(e.getMessage());
-
-                    log.error("Node execution failed: {} ({})", graphNode.getName(), nodeId, e);
-
-                    if (graphNode.isContinueOnFail()) {
-                        List<Map<String, Object>> errorItems = List.of(
-                                Map.of("json", Map.of("error", e.getMessage())));
-                        state.storeOutput(nodeId, List.of(errorItems));
-                        webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
-                                state.getNodeOutputs().get(nodeId));
-                    } else {
-                        executionService.finish(executionId, ExecutionStatus.ERROR,
-                                state.buildResultData(), e.getMessage());
-                        webSocketService.sendExecutionFinished(
-                                executionId, "ERROR", state.buildResultData());
-                        return;
                     }
                 }
             }
@@ -276,6 +191,137 @@ public class WorkflowEngine {
                 leftover.complete(Map.of("statusCode", 200, "body", Map.of("message", "Workflow completed")));
             }
         }
+    }
+
+    /**
+     * Execute a single node within a workflow execution. Returns true if execution
+     * should continue, false if a fatal error occurred and the workflow should stop.
+     */
+    private boolean executeNodeInWorkflow(String nodeId, String executionId,
+                                           WorkflowEntity workflow, Map<String, Object> inputData,
+                                           NodeExecutionContext.ExecutionMode mode,
+                                           WorkflowGraph graph, WorkflowExecutionState state,
+                                           Map<String, String> variables) {
+        WorkflowGraph.WorkflowNode graphNode = graph.getNodes().get(nodeId);
+        if (graphNode == null || graphNode.isDisabled()) return true;
+
+        Optional<NodeRegistry.NodeRegistration> regOpt = nodeRegistry.getNode(
+                graphNode.getType(), graphNode.getTypeVersion());
+        if (regOpt.isEmpty()) {
+            regOpt = nodeRegistry.getNode(graphNode.getType());
+        }
+        if (regOpt.isEmpty()) {
+            log.warn("Node type not found: {}", graphNode.getType());
+            return true;
+        }
+
+        NodeRegistry.NodeRegistration registration = regOpt.get();
+        NodeInterface nodeInstance = registration.getNodeInstance();
+
+        List<Map<String, Object>> nodeInput = state.collectInputForNode(nodeId);
+
+        if (nodeInput.isEmpty() && inputData != null && graph.getStartNode() != null
+                && graph.getStartNode().getId().equals(nodeId)) {
+            if (inputData.containsKey("webhookData")) {
+                nodeInput = List.of(Map.of("json", inputData.get("webhookData")));
+            } else {
+                nodeInput = List.of(Map.of("json", inputData));
+            }
+        }
+
+        state.storeInput(nodeId, nodeInput);
+
+        Map<String, Object> resolvedParams = resolveParameters(
+                graphNode.getParameters(), nodeInput, state, variables, executionId);
+
+        Map<String, Object> credentials = resolveCredentials(
+                graphNode.getCredentials(), nodeInput, state, variables, executionId);
+
+        NodeExecutionContext context = NodeExecutionContext.builder()
+                .executionId(executionId)
+                .workflowId(workflow.getId())
+                .nodeId(nodeId)
+                .nodeType(graphNode.getType())
+                .nodeVersion(graphNode.getTypeVersion())
+                .inputData(nodeInput)
+                .parameters(resolvedParams)
+                .credentials(credentials)
+                .staticData(new HashMap<>())
+                .workflowStaticData(state.getWorkflowStaticData())
+                .nodeContextData(state.getOrCreateNodeContext(nodeId))
+                .executionMode(mode)
+                .continueOnFail(graphNode.isContinueOnFail())
+                .build();
+
+        WorkflowExecutionState.NodeExecutionMetadata meta = new WorkflowExecutionState.NodeExecutionMetadata();
+        meta.setNodeId(nodeId);
+        meta.setNodeName(graphNode.getName());
+        meta.setStartedAt(Instant.now());
+        meta.setStatus("running");
+        state.getNodeMetadata().put(nodeId, meta);
+
+        try {
+            nodeInstance.beforeExecute(context);
+            NodeExecutionResult result = nodeInstance.execute(context);
+            nodeInstance.afterExecute(context, result);
+
+            meta.setFinishedAt(Instant.now());
+
+            if (result.getError() != null) {
+                meta.setStatus("error");
+                meta.setErrorMessage(result.getError().getMessage());
+
+                if (!graphNode.isContinueOnFail()) {
+                    state.storeOutput(nodeId, result.getOutput() != null ?
+                            result.getOutput() : List.of(List.of()));
+                    executionService.finish(executionId, ExecutionStatus.ERROR,
+                            state.buildResultData(), result.getError().getMessage());
+                    webSocketService.sendExecutionFinished(
+                            executionId, "ERROR", state.buildResultData());
+                    return false;
+                }
+
+                List<Map<String, Object>> errorItems = List.of(
+                        Map.of("json", Map.of("error", result.getError().getMessage())));
+                state.storeOutput(nodeId, List.of(errorItems));
+            } else {
+                meta.setStatus("success");
+                List<List<Map<String, Object>>> output = result.getOutput();
+                if (output == null) output = List.of(List.of());
+                state.storeOutput(nodeId, output);
+            }
+
+            if (result.getStaticData() != null) {
+                state.getWorkflowStaticData().putAll(result.getStaticData());
+                completeWebhookResponseIfPresent(executionId, state);
+            }
+
+            webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                    state.getNodeOutputs().get(nodeId));
+
+        } catch (Exception e) {
+            meta.setFinishedAt(Instant.now());
+            meta.setStatus("error");
+            meta.setErrorMessage(e.getMessage());
+
+            log.error("Node execution failed: {} ({})", graphNode.getName(), nodeId, e);
+
+            if (graphNode.isContinueOnFail()) {
+                List<Map<String, Object>> errorItems = List.of(
+                        Map.of("json", Map.of("error", e.getMessage())));
+                state.storeOutput(nodeId, List.of(errorItems));
+                webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                        state.getNodeOutputs().get(nodeId));
+            } else {
+                executionService.finish(executionId, ExecutionStatus.ERROR,
+                        state.buildResultData(), e.getMessage());
+                webSocketService.sendExecutionFinished(
+                        executionId, "ERROR", state.buildResultData());
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @SuppressWarnings("unchecked")

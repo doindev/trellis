@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Node(
 	type = "webhook",
-	displayName = "Webhook",
+	displayName = "On webhook call",
 	description = "Starts the workflow when an HTTP request is received at the configured path.",
 	category = "Core Triggers",
 	icon = "webhook",

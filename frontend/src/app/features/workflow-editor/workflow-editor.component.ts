@@ -149,6 +149,16 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
   }
 
+  openPaletteWithTrigger(): void {
+    this.showPalette = true;
+    setTimeout(() => {
+      if (this.nodePalette) {
+        this.nodePalette.searchTerm.set('trigger');
+        this.nodePalette.focusSearch();
+      }
+    }, 260);
+  }
+
   get drawerExpanded(): boolean {
     return this.activeTab === 'executions' ? this.drawerExpandedExecutions : this.drawerExpandedEditor;
   }

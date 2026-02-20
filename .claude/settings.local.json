@@ -69,7 +69,9 @@
       "Bash(cmd /c \"where gh\")",
       "WebFetch(domain:www.wisdomai.com)",
       "WebFetch(domain:www.aifire.co)",
-      "WebFetch(domain:www.helpnetsecurity.com)"
+      "WebFetch(domain:www.helpnetsecurity.com)",
+      "WebFetch(domain:snyk.io)",
+      "WebFetch(domain:ryanandmattdatascience.com)"
     ]
   }
 }

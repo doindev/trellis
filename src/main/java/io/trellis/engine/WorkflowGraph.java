@@ -151,20 +151,81 @@ public class WorkflowGraph {
         }
 
         List<String> order = new ArrayList<>();
-        while (!queue.isEmpty()) {
+        Set<String> processed = new HashSet<>();
+
+        while (!queue.isEmpty() || processed.size() < nodes.size()) {
+            if (queue.isEmpty()) {
+                // Remaining nodes are in cycles. Break the cycle by forcing
+                // a cycle node into the queue, preferring loopOverItems nodes.
+                String forced = null;
+                for (String nodeId : nodes.keySet()) {
+                    if (!processed.contains(nodeId)) {
+                        WorkflowNode n = nodes.get(nodeId);
+                        if ("loopOverItems".equals(n.getType())) {
+                            forced = nodeId;
+                            break;
+                        }
+                        if (forced == null) {
+                            forced = nodeId;
+                        }
+                    }
+                }
+                if (forced == null) break;
+                queue.add(forced);
+            }
+
             String nodeId = queue.poll();
+            if (processed.contains(nodeId)) continue;
+            processed.add(nodeId);
             order.add(nodeId);
 
             List<Connection> outgoing = outgoingConnections.getOrDefault(nodeId, List.of());
             for (Connection conn : outgoing) {
                 int newDegree = inDegree.merge(conn.getTargetNodeId(), -1, Integer::sum);
-                if (newDegree == 0) {
+                if (newDegree <= 0 && !processed.contains(conn.getTargetNodeId())) {
                     queue.add(conn.getTargetNodeId());
                 }
             }
         }
 
         return order;
+    }
+
+    /**
+     * Find the nodes that form the loop body for a given loop node.
+     * Traces from the loop output (outputIndex 1) through downstream nodes
+     * until reaching the loop node's input again.
+     */
+    public List<String> findLoopBodyNodes(String loopNodeId) {
+        List<String> body = new ArrayList<>();
+        Set<String> visited = new LinkedHashSet<>();
+        Queue<String> bfs = new LinkedList<>();
+
+        // Start from successors of the loop output (output index 1)
+        for (Connection conn : getSuccessors(loopNodeId, 1)) {
+            String target = conn.getTargetNodeId();
+            if (!target.equals(loopNodeId) && !visited.contains(target)) {
+                bfs.add(target);
+                visited.add(target);
+            }
+        }
+
+        while (!bfs.isEmpty()) {
+            String nodeId = bfs.poll();
+            body.add(nodeId);
+
+            for (Connection conn : outgoingConnections.getOrDefault(nodeId, List.of())) {
+                String target = conn.getTargetNodeId();
+                // Stop when we reach back to the loop node
+                if (target.equals(loopNodeId)) continue;
+                if (!visited.contains(target)) {
+                    visited.add(target);
+                    bfs.add(target);
+                }
+            }
+        }
+
+        return body;
     }
 
     public List<Connection> getSuccessors(String nodeId, int outputIndex) {

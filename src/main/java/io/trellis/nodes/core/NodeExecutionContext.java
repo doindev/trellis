@@ -21,6 +21,7 @@ public class NodeExecutionContext {
 	private Map<String, Object> credentials;
 	private Map<String, Object> staticData;
 	private Map<String, Object> workflowStaticData;
+	private Map<String, Object> nodeContextData;
 	
 	private ExecutionMode executionMode;
 	private boolean continueOnFail;

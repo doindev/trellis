@@ -18,6 +18,7 @@ public class WorkflowExecutionState {
     private final Map<String, List<Map<String, Object>>> nodeInputs = new ConcurrentHashMap<>();
     private final Map<String, NodeExecutionMetadata> nodeMetadata = new ConcurrentHashMap<>();
     private final Map<String, Object> workflowStaticData = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, Object>> nodeContextData = new ConcurrentHashMap<>();
 
     @Data
     public static class NodeExecutionMetadata {
@@ -71,6 +72,10 @@ public class WorkflowExecutionState {
             combined.addAll(sourceOutput);
         }
         return combined;
+    }
+
+    public Map<String, Object> getOrCreateNodeContext(String nodeId) {
+        return nodeContextData.computeIfAbsent(nodeId, k -> new ConcurrentHashMap<>());
     }
 
     public Map<String, Object> buildResultData() {
