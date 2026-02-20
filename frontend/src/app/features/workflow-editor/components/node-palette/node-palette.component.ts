@@ -6,7 +6,8 @@ import {
   Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
   UnfoldVertical, Route, Pen, Code,
   CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
-  Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma
+  Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
+  Table2
 } from 'lucide-angular';
 import { NodeTypeDescription } from '../../../../core/models';
 
@@ -21,7 +22,8 @@ import { NodeTypeDescription } from '../../../../core/models';
       Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
       UnfoldVertical, Route, Pen, Code,
       CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
-      Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma
+      Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
+      Table2
     })
   }],
   templateUrl: './node-palette.component.html',

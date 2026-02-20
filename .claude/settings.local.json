@@ -78,7 +78,9 @@
       "WebFetch(domain:logicworkflow.com)",
       "Bash(mvn spring-boot:run:*)",
       "Bash(timeout 20 tail:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "WebFetch(domain:darrelltw.medium.com)",
+      "WebFetch(domain:templacity.com)"
     ]
   }
 }
