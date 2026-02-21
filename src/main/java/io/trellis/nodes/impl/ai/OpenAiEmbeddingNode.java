@@ -24,9 +24,9 @@ public class OpenAiEmbeddingNode extends AbstractEmbeddingNode {
 	@Override
 	protected EmbeddingModel createEmbeddingModel(NodeExecutionContext context) {
 		String apiKey = context.getCredentialString("apiKey");
+		String baseUrl = context.getCredentialString("baseUrl", "");
 		String model = context.getParameter("model", "text-embedding-3-small");
 		int dimensions = toInt(context.getParameters().get("dimensions"), 0);
-		String baseUrl = context.getParameter("baseUrl", "");
 
 		var builder = OpenAiEmbeddingModel.builder()
 				.apiKey(apiKey)
@@ -58,12 +58,7 @@ public class OpenAiEmbeddingNode extends AbstractEmbeddingNode {
 						.name("dimensions").displayName("Dimensions")
 						.type(ParameterType.NUMBER)
 						.defaultValue(0)
-						.description("Output dimensions. 0 for model default.").build(),
-				NodeParameter.builder()
-						.name("baseUrl").displayName("Base URL")
-						.type(ParameterType.STRING)
-						.defaultValue("")
-						.description("Override default API base URL").build()
+						.description("Output dimensions. 0 for model default.").build()
 		);
 	}
 }

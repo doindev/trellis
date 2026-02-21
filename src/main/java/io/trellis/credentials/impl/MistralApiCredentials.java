@@ -24,7 +24,13 @@ public class MistralApiCredentials implements CredentialProviderInterface {
                         .name("apiKey").displayName("API Key")
                         .type(ParameterType.STRING).required(true)
                         .description("Get your API key from console.mistral.ai")
-                        .typeOptions(Map.of("password", true)).build()
+                        .typeOptions(Map.of("password", true)).build(),
+                NodeParameter.builder()
+                        .name("baseUrl").displayName("Base URL")
+                        .type(ParameterType.STRING)
+                        .defaultValue("https://api.mistral.ai/v1")
+                        .description("Override for proxies or compatible APIs")
+                        .build()
         );
     }
 }

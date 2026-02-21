@@ -24,10 +24,10 @@ public class OpenAiChatModelNode extends AbstractChatModelNode {
 	@Override
 	protected ChatModel createChatModel(NodeExecutionContext context) {
 		String apiKey = context.getCredentialString("apiKey");
+		String baseUrl = context.getCredentialString("baseUrl", "");
 		String model = context.getParameter("model", "gpt-4o");
 		double temperature = toDouble(context.getParameters().get("temperature"), 0.7);
 		int maxTokens = toInt(context.getParameters().get("maxTokens"), 0);
-		String baseUrl = context.getParameter("baseUrl", "");
 
 		var builder = OpenAiChatModel.builder()
 				.apiKey(apiKey)
@@ -69,12 +69,6 @@ public class OpenAiChatModelNode extends AbstractChatModelNode {
 						.type(ParameterType.NUMBER)
 						.defaultValue(0)
 						.description("Maximum number of tokens to generate. 0 for model default.")
-						.build(),
-				NodeParameter.builder()
-						.name("baseUrl").displayName("Base URL")
-						.type(ParameterType.STRING)
-						.defaultValue("")
-						.description("Override the default API base URL (for proxies or compatible APIs)")
 						.build()
 		);
 	}

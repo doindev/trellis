@@ -24,7 +24,13 @@ public class GoogleAiApiCredentials implements CredentialProviderInterface {
                         .name("apiKey").displayName("API Key")
                         .type(ParameterType.STRING).required(true)
                         .description("Get your API key from ai.google.dev")
-                        .typeOptions(Map.of("password", true)).build()
+                        .typeOptions(Map.of("password", true)).build(),
+                NodeParameter.builder()
+                        .name("baseUrl").displayName("Base URL")
+                        .type(ParameterType.STRING)
+                        .defaultValue("https://generativelanguage.googleapis.com")
+                        .description("Override for proxies or compatible APIs")
+                        .build()
         );
     }
 }

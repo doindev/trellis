@@ -24,16 +24,22 @@ public class AnthropicChatModelNode extends AbstractChatModelNode {
 	@Override
 	protected ChatModel createChatModel(NodeExecutionContext context) {
 		String apiKey = context.getCredentialString("apiKey");
+		String baseUrl = context.getCredentialString("baseUrl", "");
 		String model = context.getParameter("model", "claude-sonnet-4-20250514");
 		double temperature = toDouble(context.getParameters().get("temperature"), 0.7);
 		int maxTokens = toInt(context.getParameters().get("maxTokens"), 1024);
 
-		return AnthropicChatModel.builder()
+		var builder = AnthropicChatModel.builder()
 				.apiKey(apiKey)
 				.modelName(model)
 				.temperature(temperature)
-				.maxTokens(maxTokens)
-				.build();
+				.maxTokens(maxTokens);
+
+		if (baseUrl != null && !baseUrl.isBlank()) {
+			builder.baseUrl(baseUrl);
+		}
+
+		return builder.build();
 	}
 
 	@Override

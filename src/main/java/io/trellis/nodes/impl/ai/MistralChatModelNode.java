@@ -24,6 +24,7 @@ public class MistralChatModelNode extends AbstractChatModelNode {
 	@Override
 	protected ChatModel createChatModel(NodeExecutionContext context) {
 		String apiKey = context.getCredentialString("apiKey");
+		String baseUrl = context.getCredentialString("baseUrl", "");
 		String model = context.getParameter("model", "mistral-large-latest");
 		double temperature = toDouble(context.getParameters().get("temperature"), 0.7);
 		int maxTokens = toInt(context.getParameters().get("maxTokens"), 0);
@@ -35,6 +36,9 @@ public class MistralChatModelNode extends AbstractChatModelNode {
 
 		if (maxTokens > 0) {
 			builder.maxTokens(maxTokens);
+		}
+		if (baseUrl != null && !baseUrl.isBlank()) {
+			builder.baseUrl(baseUrl);
 		}
 
 		return builder.build();

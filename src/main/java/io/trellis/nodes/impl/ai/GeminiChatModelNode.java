@@ -24,6 +24,7 @@ public class GeminiChatModelNode extends AbstractChatModelNode {
 	@Override
 	protected ChatModel createChatModel(NodeExecutionContext context) {
 		String apiKey = context.getCredentialString("apiKey");
+		String baseUrl = context.getCredentialString("baseUrl", "");
 		String model = context.getParameter("model", "gemini-2.0-flash");
 		double temperature = toDouble(context.getParameters().get("temperature"), 0.7);
 		int maxTokens = toInt(context.getParameters().get("maxTokens"), 0);
@@ -35,6 +36,9 @@ public class GeminiChatModelNode extends AbstractChatModelNode {
 
 		if (maxTokens > 0) {
 			builder.maxOutputTokens(maxTokens);
+		}
+		if (baseUrl != null && !baseUrl.isBlank()) {
+			builder.baseUrl(baseUrl);
 		}
 
 		return builder.build();

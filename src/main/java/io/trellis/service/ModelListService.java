@@ -37,35 +37,47 @@ public class ModelListService {
     }
 
     private List<ModelInfo> listOpenAiModels(Map<String, Object> data, String modelType) {
-        var catalog = dev.langchain4j.model.openai.OpenAiModelCatalog.builder()
-                .apiKey(getString(data, "apiKey"))
-                .build();
+        var builder = dev.langchain4j.model.openai.OpenAiModelCatalog.builder()
+                .apiKey(getString(data, "apiKey"));
+        String baseUrl = getString(data, "baseUrl");
+        if (baseUrl != null && !baseUrl.isBlank()) {
+            builder.baseUrl(baseUrl);
+        }
 
-        return filterAndMap(catalog.listModels(), modelType);
+        return filterAndMap(builder.build().listModels(), modelType);
     }
 
     private List<ModelInfo> listAnthropicModels(Map<String, Object> data, String modelType) {
-        var catalog = dev.langchain4j.model.anthropic.AnthropicModelCatalog.builder()
-                .apiKey(getString(data, "apiKey"))
-                .build();
+        var builder = dev.langchain4j.model.anthropic.AnthropicModelCatalog.builder()
+                .apiKey(getString(data, "apiKey"));
+        String baseUrl = getString(data, "baseUrl");
+        if (baseUrl != null && !baseUrl.isBlank()) {
+            builder.baseUrl(baseUrl);
+        }
 
-        return filterAndMap(catalog.listModels(), modelType);
+        return filterAndMap(builder.build().listModels(), modelType);
     }
 
     private List<ModelInfo> listGeminiModels(Map<String, Object> data, String modelType) {
-        var catalog = dev.langchain4j.model.googleai.GoogleAiGeminiModelCatalog.builder()
-                .apiKey(getString(data, "apiKey"))
-                .build();
+        var builder = dev.langchain4j.model.googleai.GoogleAiGeminiModelCatalog.builder()
+                .apiKey(getString(data, "apiKey"));
+        String baseUrl = getString(data, "baseUrl");
+        if (baseUrl != null && !baseUrl.isBlank()) {
+            builder.baseUrl(baseUrl);
+        }
 
-        return filterAndMap(catalog.listModels(), modelType);
+        return filterAndMap(builder.build().listModels(), modelType);
     }
 
     private List<ModelInfo> listMistralModels(Map<String, Object> data, String modelType) {
-        var catalog = dev.langchain4j.model.mistralai.MistralAiModelCatalog.builder()
-                .apiKey(getString(data, "apiKey"))
-                .build();
+        var builder = dev.langchain4j.model.mistralai.MistralAiModelCatalog.builder()
+                .apiKey(getString(data, "apiKey"));
+        String baseUrl = getString(data, "baseUrl");
+        if (baseUrl != null && !baseUrl.isBlank()) {
+            builder.baseUrl(baseUrl);
+        }
 
-        return filterAndMap(catalog.listModels(), modelType);
+        return filterAndMap(builder.build().listModels(), modelType);
     }
 
     private List<ModelInfo> listOllamaModels(Map<String, Object> data) {

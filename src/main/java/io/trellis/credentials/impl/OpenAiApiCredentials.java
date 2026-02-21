@@ -28,7 +28,13 @@ public class OpenAiApiCredentials implements CredentialProviderInterface {
                 NodeParameter.builder()
                         .name("apiKey").displayName("API Key")
                         .type(ParameterType.STRING).required(true)
-                        .typeOptions(Map.of("password", true)).build()
+                        .typeOptions(Map.of("password", true)).build(),
+                NodeParameter.builder()
+                        .name("baseUrl").displayName("Base URL")
+                        .type(ParameterType.STRING)
+                        .defaultValue("https://api.openai.com/v1")
+                        .description("Override for proxies or compatible APIs (e.g. LM Studio, Azure proxy)")
+                        .build()
         );
     }
 }
