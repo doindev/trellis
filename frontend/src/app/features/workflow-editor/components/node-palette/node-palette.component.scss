@@ -63,6 +63,10 @@
   font-size: 0.8125rem;
   outline: none;
 
+  &.has-value {
+    padding-right: 30px;
+  }
+
   &::placeholder {
     color: hsl(0, 0%, 46%);
   }
@@ -70,6 +74,25 @@
   &:focus {
     border-color: hsl(247, 49%, 53%);
     box-shadow: 0 0 0 2px hsla(247, 49%, 53%, 0.15);
+  }
+}
+
+.search-clear {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-75%);
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 46%);
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
   }
 }
 

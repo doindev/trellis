@@ -162,6 +162,12 @@ export class NodePaletteComponent {
     this.actionPanel.set(null);
   }
 
+  clearSearch(): void {
+    this.searchTerm.set('');
+    this.actionPanel.set(null);
+    this.focusSearch();
+  }
+
   getCategoryEntries(): [string, NodeTypeDescription[]][] {
     return Array.from(this.filteredTypes().entries());
   }
