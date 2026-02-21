@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.LinkedHashMap;
 
 @Slf4j
 @Service
@@ -44,7 +45,7 @@ public class WebhookService {
 
         for (Map<String, Object> node : nodes) {
             String type = (String) node.get("type");
-            if (!"webhook".equals(type)) continue;
+            if (!"webhook".equals(type) && !"formTrigger".equals(type)) continue;
 
             String nodeId = (String) node.get("id");
             Map<String, Object> parameters = (Map<String, Object>) node.getOrDefault("parameters", Map.of());
@@ -56,22 +57,59 @@ public class WebhookService {
 
             String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
 
-            // Register webhook for the configured HTTP method
-            String method = (String) parameters.getOrDefault("httpMethod", "GET");
-            String responseMode = (String) parameters.getOrDefault("responseMode", "onReceived");
-            Object nodeOptions = parameters.get("options");
-            WebhookEntity webhook = WebhookEntity.builder()
-                    .workflowId(workflow.getId())
-                    .nodeId(nodeId)
-                    .method(method.toUpperCase())
-                    .path(normalizedPath)
-                    .securityChain(authentication)
-                    .responseMode(responseMode)
-                    .webhookOptions(nodeOptions)
-                    .build();
+            if ("formTrigger".equals(type)) {
+                // Register both GET (serve form) and POST (submit) for form triggers
+                // Store form configuration in webhookOptions for rendering
+                Map<String, Object> formConfig = new LinkedHashMap<>();
+                formConfig.put("formTitle", parameters.getOrDefault("formTitle", "Form"));
+                formConfig.put("formDescription", parameters.getOrDefault("formDescription", ""));
+                formConfig.put("formFields", parameters.get("formFields"));
+                formConfig.put("buttonLabel", parameters.getOrDefault("buttonLabel", "Submit"));
+                formConfig.put("nodeType", "formTrigger");
 
-            webhookRepository.save(webhook);
-            log.info("Registered webhook: {} {} for workflow {}", method, path, workflow.getId());
+                // Register GET for form rendering
+                WebhookEntity getWebhook = WebhookEntity.builder()
+                        .workflowId(workflow.getId())
+                        .nodeId(nodeId)
+                        .method("GET")
+                        .path(normalizedPath)
+                        .securityChain(authentication)
+                        .responseMode("formTrigger")
+                        .webhookOptions(formConfig)
+                        .build();
+                webhookRepository.save(getWebhook);
+
+                // Register POST for form submission
+                WebhookEntity postWebhook = WebhookEntity.builder()
+                        .workflowId(workflow.getId())
+                        .nodeId(nodeId)
+                        .method("POST")
+                        .path(normalizedPath)
+                        .securityChain(authentication)
+                        .responseMode("formTrigger")
+                        .webhookOptions(formConfig)
+                        .build();
+                webhookRepository.save(postWebhook);
+
+                log.info("Registered form trigger: {} for workflow {}", path, workflow.getId());
+            } else {
+                // Register webhook for the configured HTTP method
+                String method = (String) parameters.getOrDefault("httpMethod", "GET");
+                String responseMode = (String) parameters.getOrDefault("responseMode", "onReceived");
+                Object nodeOptions = parameters.get("options");
+                WebhookEntity webhook = WebhookEntity.builder()
+                        .workflowId(workflow.getId())
+                        .nodeId(nodeId)
+                        .method(method.toUpperCase())
+                        .path(normalizedPath)
+                        .securityChain(authentication)
+                        .responseMode(responseMode)
+                        .webhookOptions(nodeOptions)
+                        .build();
+
+                webhookRepository.save(webhook);
+                log.info("Registered webhook: {} {} for workflow {}", method, path, workflow.getId());
+            }
         }
     }
 

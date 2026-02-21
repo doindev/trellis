@@ -3,9 +3,11 @@ package io.trellis.engine;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.trellis.entity.ExecutionEntity.ExecutionMode;
 import io.trellis.entity.ExecutionEntity.ExecutionStatus;
+import io.trellis.entity.WaitEntity.WaitType;
 import io.trellis.entity.WorkflowEntity;
 import io.trellis.nodes.core.*;
 import io.trellis.service.*;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -29,12 +31,19 @@ public class WorkflowEngine {
     private final NodeRegistry nodeRegistry;
     private final ExpressionEvaluator expressionEvaluator;
     private final ObjectMapper objectMapper;
+    private final WaitService waitService;
+    private final WaitPollerService waitPollerService;
 
     private final Map<String, WorkflowExecutionState> runningExecutions = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Map<String, Object>>> pendingWebhookResponses = new ConcurrentHashMap<>();
 
     private static final ThreadLocal<Integer> SUB_WORKFLOW_DEPTH = ThreadLocal.withInitial(() -> 0);
     private static final int MAX_SUB_WORKFLOW_DEPTH = 10;
+
+    @PostConstruct
+    void init() {
+        waitPollerService.setResumeHandler(this::resumeFromWait);
+    }
 
     public String startExecution(String workflowId, Map<String, Object> inputData) {
         WorkflowEntity workflow = workflowService.findById(workflowId);
@@ -105,6 +114,7 @@ public class WorkflowEngine {
         if (state != null) {
             state.setCancelled(true);
         }
+        waitService.cancelAllForExecution(executionId);
         executionService.stop(executionId);
     }
 
@@ -212,6 +222,252 @@ public class WorkflowEngine {
         } finally {
             SUB_WORKFLOW_DEPTH.set(depth);
         }
+    }
+
+    /**
+     * Resume a workflow execution from a wait checkpoint. Called by WaitPollerService
+     * (for time-based waits) and FormController (for form/webhook resumes).
+     */
+    @SuppressWarnings("unchecked")
+    @Async("workflowExecutor")
+    public void resumeFromWait(String executionId, String waitNodeId,
+                                Map<String, Object> resumeData, Object checkpointState) {
+        try {
+            var executionResponse = executionService.getExecution(executionId);
+            Object workflowData = executionResponse.getWorkflowData();
+            String workflowId = executionResponse.getWorkflowId();
+
+            Map<String, Object> wfMap = (Map<String, Object>) workflowData;
+            WorkflowGraph graph = WorkflowGraph.parse(
+                    wfMap.get("nodes"), wfMap.get("connections"), objectMapper);
+
+            Map<String, Object> checkpoint = (Map<String, Object>) checkpointState;
+            WorkflowExecutionState state = WorkflowExecutionState.fromCheckpoint(
+                    executionId, workflowId, graph, checkpoint);
+
+            runningExecutions.put(executionId, state);
+            executionService.updateStatus(executionId, ExecutionStatus.RUNNING);
+
+            // Inject resumeData as the wait node's output
+            List<Map<String, Object>> resumeItems;
+            if (resumeData != null && !resumeData.isEmpty()) {
+                resumeItems = List.of(Map.of("json", (Object) resumeData));
+            } else {
+                resumeItems = List.of(Map.of("json", (Object) Map.of()));
+            }
+            state.storeOutput(waitNodeId, List.of(resumeItems));
+
+            // Update wait node metadata to show it's completed
+            WorkflowExecutionState.NodeExecutionMetadata waitMeta = state.getNodeMetadata().get(waitNodeId);
+            if (waitMeta != null) {
+                waitMeta.setStatus("success");
+                waitMeta.setFinishedAt(Instant.now());
+            }
+            webSocketService.sendNodeFinished(executionId, waitNodeId,
+                    waitMeta != null ? waitMeta.getNodeName() : waitNodeId,
+                    state.getNodeOutputs().get(waitNodeId));
+
+            // Continue execution from the node AFTER the wait node
+            List<String> order = graph.getTopologicalOrder();
+            int waitIndex = order.indexOf(waitNodeId);
+            Map<String, String> variables = variableService.getAllVariablesAsMap();
+
+            for (int i = waitIndex + 1; i < order.size(); i++) {
+                String nodeId = order.get(i);
+
+                if (state.isCancelled()) {
+                    executionService.finish(executionId, ExecutionStatus.CANCELED,
+                            state.buildResultData(), "Execution cancelled by user");
+                    webSocketService.sendExecutionFinished(executionId, "CANCELED", state.buildResultData());
+                    return;
+                }
+
+                // Use a null workflow entity — we use the graph from the snapshot
+                boolean ok = executeNodeInResumedWorkflow(nodeId, executionId, workflowId,
+                        graph, state, variables);
+                if (!ok) return;
+
+                // Handle loop nodes
+                WorkflowGraph.WorkflowNode graphNode = graph.getNodes().get(nodeId);
+                if (graphNode != null && "loopOverItems".equals(graphNode.getType())) {
+                    List<String> loopBody = graph.findLoopBodyNodes(nodeId);
+                    if (!loopBody.isEmpty()) {
+                        for (int iteration = 0; iteration < 10_000; iteration++) {
+                            if (state.isCancelled()) break;
+                            List<Map<String, Object>> loopOutput = state.getNodeOutput(nodeId, 1);
+                            if (loopOutput.isEmpty()) break;
+                            for (String bodyNodeId : loopBody) {
+                                if (state.isCancelled()) break;
+                                boolean bodyOk = executeNodeInResumedWorkflow(bodyNodeId, executionId,
+                                        workflowId, graph, state, variables);
+                                if (!bodyOk) return;
+                            }
+                            boolean loopOk = executeNodeInResumedWorkflow(nodeId, executionId,
+                                    workflowId, graph, state, variables);
+                            if (!loopOk) return;
+                        }
+                    }
+                }
+            }
+
+            executionService.finish(executionId, ExecutionStatus.SUCCESS,
+                    state.buildResultData(), null);
+            webSocketService.sendExecutionFinished(executionId, "SUCCESS", state.buildResultData());
+
+            completeWebhookResponseWithLastOutput(executionId, state, order);
+
+        } catch (Exception e) {
+            log.error("Resume from wait failed: {}", executionId, e);
+            executionService.finish(executionId, ExecutionStatus.ERROR, null, e.getMessage());
+            webSocketService.sendExecutionFinished(executionId, "ERROR",
+                    Map.of("error", e.getMessage()));
+        } finally {
+            runningExecutions.remove(executionId);
+        }
+    }
+
+    /**
+     * Execute a node during a resumed workflow. Similar to executeNodeInWorkflow but
+     * works with a WorkflowGraph + workflowId instead of a WorkflowEntity.
+     */
+    private boolean executeNodeInResumedWorkflow(String nodeId, String executionId,
+                                                  String workflowId, WorkflowGraph graph,
+                                                  WorkflowExecutionState state,
+                                                  Map<String, String> variables) {
+        WorkflowGraph.WorkflowNode graphNode = graph.getNodes().get(nodeId);
+        if (graphNode == null || graphNode.isDisabled()) return true;
+
+        Optional<NodeRegistry.NodeRegistration> regOpt = nodeRegistry.getNode(
+                graphNode.getType(), graphNode.getTypeVersion());
+        if (regOpt.isEmpty()) {
+            regOpt = nodeRegistry.getNode(graphNode.getType());
+        }
+        if (regOpt.isEmpty()) {
+            log.warn("Node type not found: {}", graphNode.getType());
+            return true;
+        }
+
+        NodeRegistry.NodeRegistration registration = regOpt.get();
+        NodeInterface nodeInstance = registration.getNodeInstance();
+
+        List<Map<String, Object>> nodeInput = state.collectInputForNode(nodeId);
+        state.storeInput(nodeId, nodeInput);
+
+        Map<String, Object> resolvedParams = resolveParameters(
+                graphNode.getParameters(), nodeInput, state, variables, executionId);
+
+        Map<String, Object> credentials = resolveCredentials(
+                graphNode.getCredentials(), nodeInput, state, variables, executionId);
+
+        NodeExecutionContext context = NodeExecutionContext.builder()
+                .executionId(executionId)
+                .workflowId(workflowId)
+                .nodeId(nodeId)
+                .nodeType(graphNode.getType())
+                .nodeVersion(graphNode.getTypeVersion())
+                .inputData(nodeInput)
+                .parameters(resolvedParams)
+                .credentials(credentials)
+                .staticData(new HashMap<>())
+                .workflowStaticData(state.getWorkflowStaticData())
+                .nodeContextData(state.getOrCreateNodeContext(nodeId))
+                .executionMode(NodeExecutionContext.ExecutionMode.MANUAL)
+                .continueOnFail(graphNode.isContinueOnFail())
+                .build();
+
+        WorkflowExecutionState.NodeExecutionMetadata meta = new WorkflowExecutionState.NodeExecutionMetadata();
+        meta.setNodeId(nodeId);
+        meta.setNodeName(graphNode.getName());
+        meta.setStartedAt(Instant.now());
+        meta.setStatus("running");
+        state.getNodeMetadata().put(nodeId, meta);
+
+        try {
+            nodeInstance.beforeExecute(context);
+            NodeExecutionResult result = nodeInstance.execute(context);
+            nodeInstance.afterExecute(context, result);
+
+            // Handle nested waiting result during resume
+            if (result.getWaitConfig() != null) {
+                meta.setFinishedAt(Instant.now());
+                meta.setStatus("waiting");
+                state.storeOutput(nodeId, List.of(List.of()));
+
+                Map<String, Object> checkpoint = state.toCheckpoint();
+                NodeExecutionResult.WaitConfig wc = result.getWaitConfig();
+                WaitType waitType = switch (wc.getWaitType()) {
+                    case "form" -> WaitType.FORM;
+                    case "webhook" -> WaitType.WEBHOOK;
+                    case "timeInterval" -> WaitType.TIME_INTERVAL;
+                    case "specificTime" -> WaitType.SPECIFIC_TIME;
+                    default -> WaitType.WEBHOOK;
+                };
+
+                waitService.createWait(executionId, state.getWorkflowId(), nodeId,
+                        waitType, wc.getResumeAt(), wc.getFormDefinition(), checkpoint);
+                executionService.updateStatus(executionId, ExecutionStatus.WAITING);
+                webSocketService.sendExecutionWaiting(executionId, nodeId, wc.getWaitType());
+
+                log.info("Resumed execution {} re-waiting at node {} (type={})",
+                        executionId, nodeId, wc.getWaitType());
+                return false;
+            }
+
+            meta.setFinishedAt(Instant.now());
+
+            if (result.getError() != null) {
+                meta.setStatus("error");
+                meta.setErrorMessage(result.getError().getMessage());
+
+                if (!graphNode.isContinueOnFail()) {
+                    state.storeOutput(nodeId, result.getOutput() != null ?
+                            result.getOutput() : List.of(List.of()));
+                    executionService.finish(executionId, ExecutionStatus.ERROR,
+                            state.buildResultData(), result.getError().getMessage());
+                    webSocketService.sendExecutionFinished(executionId, "ERROR", state.buildResultData());
+                    return false;
+                }
+
+                List<Map<String, Object>> errorItems = List.of(
+                        Map.of("json", Map.of("error", result.getError().getMessage())));
+                state.storeOutput(nodeId, List.of(errorItems));
+            } else {
+                meta.setStatus("success");
+                List<List<Map<String, Object>>> output = result.getOutput();
+                if (output == null) output = List.of(List.of());
+                state.storeOutput(nodeId, output);
+            }
+
+            if (result.getStaticData() != null) {
+                state.getWorkflowStaticData().putAll(result.getStaticData());
+                completeWebhookResponseIfPresent(executionId, state);
+            }
+
+            webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                    state.getNodeOutputs().get(nodeId));
+
+        } catch (Exception e) {
+            meta.setFinishedAt(Instant.now());
+            meta.setStatus("error");
+            meta.setErrorMessage(e.getMessage());
+
+            log.error("Node execution failed during resume: {} ({})", graphNode.getName(), nodeId, e);
+
+            if (graphNode.isContinueOnFail()) {
+                List<Map<String, Object>> errorItems = List.of(
+                        Map.of("json", Map.of("error", e.getMessage())));
+                state.storeOutput(nodeId, List.of(errorItems));
+                webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                        state.getNodeOutputs().get(nodeId));
+            } else {
+                executionService.finish(executionId, ExecutionStatus.ERROR,
+                        state.buildResultData(), e.getMessage());
+                webSocketService.sendExecutionFinished(executionId, "ERROR", state.buildResultData());
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Async("workflowExecutor")
@@ -378,6 +634,35 @@ public class WorkflowEngine {
             nodeInstance.beforeExecute(context);
             NodeExecutionResult result = nodeInstance.execute(context);
             nodeInstance.afterExecute(context, result);
+
+            // Handle waiting result — checkpoint state to DB and release thread
+            if (result.getWaitConfig() != null) {
+                meta.setFinishedAt(Instant.now());
+                meta.setStatus("waiting");
+
+                // Store empty output for the wait node so result data is consistent
+                state.storeOutput(nodeId, List.of(List.of()));
+
+                Map<String, Object> checkpoint = state.toCheckpoint();
+
+                NodeExecutionResult.WaitConfig wc = result.getWaitConfig();
+                WaitType waitType = switch (wc.getWaitType()) {
+                    case "form" -> WaitType.FORM;
+                    case "webhook" -> WaitType.WEBHOOK;
+                    case "timeInterval" -> WaitType.TIME_INTERVAL;
+                    case "specificTime" -> WaitType.SPECIFIC_TIME;
+                    default -> WaitType.WEBHOOK;
+                };
+
+                waitService.createWait(executionId, state.getWorkflowId(), nodeId,
+                        waitType, wc.getResumeAt(), wc.getFormDefinition(), checkpoint);
+
+                executionService.updateStatus(executionId, ExecutionStatus.WAITING);
+                webSocketService.sendExecutionWaiting(executionId, nodeId, wc.getWaitType());
+
+                log.info("Execution {} waiting at node {} (type={})", executionId, nodeId, wc.getWaitType());
+                return false; // stop the execution loop, release thread
+            }
 
             meta.setFinishedAt(Instant.now());
 

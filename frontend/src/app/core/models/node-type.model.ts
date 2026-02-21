@@ -36,6 +36,7 @@ export interface ParameterOption {
   name: string;
   value: any;
   description: string;
+  action?: string;
 }
 
 export interface NodeIO {

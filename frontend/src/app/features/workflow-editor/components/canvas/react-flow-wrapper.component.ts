@@ -221,7 +221,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   }
 
   /** Add a node at the center of the visible viewport, offset to avoid overlap. Returns the new node ID. */
-  addNodeAtViewportCenter(type: string, displayName: string, version: number): string {
+  addNodeAtViewportCenter(type: string, displayName: string, version: number, initialParams?: Record<string, any>): string {
     const NODE_W = 150;
     const NODE_H = 50;
     const OFFSET_STEP = 60;
@@ -252,7 +252,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       name: displayName,
       type,
       typeVersion: version,
-      parameters: {},
+      parameters: initialParams || {},
       position: [x, y],
     };
     this.nodeAdded.emit(newNode);

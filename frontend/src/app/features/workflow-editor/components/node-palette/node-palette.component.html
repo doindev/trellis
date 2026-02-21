@@ -50,9 +50,10 @@
           <div class="category-items">
             @for (nodeType of entry[1]; track nodeType.type) {
               <div class="node-item"
+                   [class.action-open]="actionMenuNode()?.type === nodeType.type"
                    draggable="true"
                    (dragstart)="onDragStart($event, nodeType)"
-                   (click)="nodeClicked.emit(nodeType)">
+                   (click)="onNodeItemClick(nodeType)">
                 <div class="node-icon" [class.trigger]="nodeType.isTrigger">
                   @if (nodeType.icon) {
                     <lucide-icon [name]="nodeType.icon" [size]="16"></lucide-icon>
@@ -72,7 +73,26 @@
                     <span class="node-desc">{{ nodeType.description }}</span>
                   }
                 </div>
+                @if (getActionOptions(nodeType)) {
+                  <svg class="action-chevron" [class.expanded]="actionMenuNode()?.type === nodeType.type"
+                       viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                }
               </div>
+              @if (actionMenuNode()?.type === nodeType.type) {
+                @let actions = getActionOptions(nodeType);
+                @if (actions) {
+                  <div class="action-submenu">
+                    @for (opt of actions.options; track opt.value) {
+                      <div class="action-item"
+                           (click)="onActionSelected(nodeType, actions.paramName, opt.value); $event.stopPropagation()">
+                        <span class="action-label">{{ opt.action }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              }
             }
           </div>
         }

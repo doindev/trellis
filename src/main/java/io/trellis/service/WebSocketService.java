@@ -41,6 +41,15 @@ public class WebSocketService {
         ));
     }
 
+    public void sendExecutionWaiting(String executionId, String nodeId, String waitType) {
+        send("/topic/execution/" + executionId, Map.of(
+                "event", "executionWaiting",
+                "executionId", executionId,
+                "nodeId", nodeId,
+                "waitType", waitType
+        ));
+    }
+
     public void sendWebhookTestData(String workflowId, Object data) {
         send("/topic/webhook-test/" + workflowId, Map.of(
                 "event", "testData",

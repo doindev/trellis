@@ -7,9 +7,15 @@ import {
   UnfoldVertical, Route, Pen, Code,
   CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
   Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
-  Table2
+  Table2, Timer, ClipboardList, FileInput
 } from 'lucide-angular';
-import { NodeTypeDescription } from '../../../../core/models';
+import { NodeTypeDescription, ParameterOption } from '../../../../core/models';
+
+export interface NodeClickedWithAction {
+  nodeType: NodeTypeDescription;
+  paramName: string;
+  paramValue: any;
+}
 
 @Component({
   selector: 'app-node-palette',
@@ -23,7 +29,7 @@ import { NodeTypeDescription } from '../../../../core/models';
       UnfoldVertical, Route, Pen, Code,
       CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
       Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
-      Table2
+      Table2, Timer, ClipboardList, FileInput
     })
   }],
   templateUrl: './node-palette.component.html',
@@ -37,10 +43,12 @@ export class NodePaletteComponent {
   }
   @Output() close = new EventEmitter<void>();
   @Output() nodeClicked = new EventEmitter<NodeTypeDescription>();
+  @Output() nodeClickedWithAction = new EventEmitter<NodeClickedWithAction>();
 
   private _nodeTypes = signal<Map<string, NodeTypeDescription[]>>(new Map());
   searchTerm = signal('');
   triggerOnly = signal(false);
+  actionMenuNode = signal<NodeTypeDescription | null>(null);
 
   filteredTypes = computed(() => {
     const term = this.searchTerm().toLowerCase();
@@ -94,6 +102,33 @@ export class NodePaletteComponent {
     return this.expandedCategories.has(category) || this.searchTerm().length > 0 || this.triggerOnly();
   }
 
+  getActionOptions(nodeType: NodeTypeDescription): { paramName: string; options: ParameterOption[] } | null {
+    if (!nodeType.parameters) return null;
+    const param = nodeType.parameters.find(p =>
+      p.type === 'options' && (p.name === 'operation' || p.name === 'action') &&
+      p.options?.some(o => o.action)
+    );
+    if (!param) return null;
+    return { paramName: param.name, options: param.options.filter(o => o.action) };
+  }
+
+  onNodeItemClick(nodeType: NodeTypeDescription): void {
+    const actions = this.getActionOptions(nodeType);
+    if (actions && actions.options.length > 0) {
+      this.actionMenuNode.set(
+        this.actionMenuNode()?.type === nodeType.type ? null : nodeType
+      );
+    } else {
+      this.actionMenuNode.set(null);
+      this.nodeClicked.emit(nodeType);
+    }
+  }
+
+  onActionSelected(nodeType: NodeTypeDescription, paramName: string, value: any): void {
+    this.actionMenuNode.set(null);
+    this.nodeClickedWithAction.emit({ nodeType, paramName, paramValue: value });
+  }
+
   onDragStart(event: DragEvent, nodeType: NodeTypeDescription): void {
     if (event.dataTransfer) {
       event.dataTransfer.setData('application/trellis-node-type', JSON.stringify({
@@ -107,6 +142,7 @@ export class NodePaletteComponent {
 
   onSearchChange(value: string): void {
     this.searchTerm.set(value);
+    this.actionMenuNode.set(null);
   }
 
   getCategoryEntries(): [string, NodeTypeDescription[]][] {

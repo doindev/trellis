@@ -290,6 +290,13 @@
 			<artifactId>mongodb-driver-sync</artifactId>
 		</dependency>
 
+		<!-- Apache Commons Net for FTP -->
+		<dependency>
+			<groupId>commons-net</groupId>
+			<artifactId>commons-net</artifactId>
+			<version>3.11.1</version>
+		</dependency>
+
 		<!-- Jakarta Mail for email sending -->
 		<dependency>
 			<groupId>org.eclipse.angus</groupId>

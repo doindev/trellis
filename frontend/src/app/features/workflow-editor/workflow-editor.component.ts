@@ -8,7 +8,7 @@ import { WorkflowEditorStore } from '../../core/state/workflow-editor.store';
 import { NodeTypeStore } from '../../core/state/node-type.store';
 import { ExecutionsSidebarComponent } from './components/executions-sidebar/executions-sidebar.component';
 import { ToolbarComponent, ToolbarAction } from './components/toolbar/toolbar.component';
-import { NodePaletteComponent } from './components/node-palette/node-palette.component';
+import { NodePaletteComponent, NodeClickedWithAction } from './components/node-palette/node-palette.component';
 import { ReactFlowWrapperComponent } from './components/canvas/react-flow-wrapper.component';
 import { ParameterPanelComponent } from './components/parameter-panel/parameter-panel.component';
 import { EditorDrawerComponent } from './components/editor-drawer/editor-drawer.component';
@@ -228,6 +228,22 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       this.pendingConnection = null;
     }
     // Once a trigger node is placed, dismiss the trigger-only filter
+    if (nodeType.isTrigger && this.nodePalette?.triggerOnly()) {
+      this.nodePalette.triggerOnly.set(false);
+    }
+    this.showPalette = false;
+  }
+
+  onPaletteNodeClickedWithAction(event: NodeClickedWithAction): void {
+    const { nodeType, paramName, paramValue } = event;
+    const initialParams = { [paramName]: paramValue };
+    const newNodeId = this.canvasWrapper.addNodeAtViewportCenter(
+      nodeType.type, nodeType.displayName, nodeType.version, initialParams
+    );
+    if (this.pendingConnection) {
+      this.addConnectionFromPending(newNodeId);
+      this.pendingConnection = null;
+    }
     if (nodeType.isTrigger && this.nodePalette?.triggerOnly()) {
       this.nodePalette.triggerOnly.set(false);
     }

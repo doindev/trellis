@@ -73,7 +73,8 @@
             <app-node-palette
               [nodeTypes]="nodeTypeStore.groupedByCategory()"
               (close)="togglePalette()"
-              (nodeClicked)="onPaletteNodeClicked($event)" />
+              (nodeClicked)="onPaletteNodeClicked($event)"
+              (nodeClickedWithAction)="onPaletteNodeClickedWithAction($event)" />
           </div>
         }
 

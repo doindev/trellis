@@ -212,6 +212,41 @@
   text-overflow: ellipsis;
 }
 
+.action-chevron {
+  color: hsl(0, 0%, 46%);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  margin-left: auto;
+
+  &.expanded {
+    transform: rotate(90deg);
+  }
+}
+
+.node-item.action-open {
+  background: hsl(0, 0%, 17%);
+}
+
+.action-submenu {
+  padding: 2px 0 4px 46px;
+}
+
+.action-item {
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+
+  &:hover {
+    background: hsl(0, 0%, 20%);
+  }
+}
+
+.action-label {
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 72%);
+}
+
 .empty-palette {
   padding: 32px 24px;
   text-align: center;

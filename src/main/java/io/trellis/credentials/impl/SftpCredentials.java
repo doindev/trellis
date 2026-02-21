@@ -33,7 +33,12 @@ public class SftpCredentials implements CredentialProviderInterface {
                 NodeParameter.builder()
                         .name("password").displayName("Password")
                         .type(ParameterType.STRING)
-                        .typeOptions(Map.of("password", true)).build()
+                        .typeOptions(Map.of("password", true)).build(),
+                NodeParameter.builder()
+                        .name("privateKey").displayName("Private Key")
+                        .description("PEM-formatted private key for key-based authentication (optional)")
+                        .type(ParameterType.STRING)
+                        .typeOptions(Map.of("rows", 5)).build()
         );
     }
 }

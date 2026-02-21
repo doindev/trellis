@@ -92,6 +92,104 @@ public class WorkflowExecutionState {
         return nodeContextData.computeIfAbsent(nodeId, k -> new ConcurrentHashMap<>());
     }
 
+    /**
+     * Serialize the current execution state to a checkpoint map for persistence.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> toCheckpoint() {
+        Map<String, Object> checkpoint = new LinkedHashMap<>();
+
+        // Deep-copy nodeOutputs: Map<String, List<List<Map>>>
+        Map<String, Object> outputs = new LinkedHashMap<>();
+        for (Map.Entry<String, List<List<Map<String, Object>>>> entry : nodeOutputs.entrySet()) {
+            List<List<Map<String, Object>>> outputLists = new ArrayList<>();
+            for (List<Map<String, Object>> list : entry.getValue()) {
+                outputLists.add(new ArrayList<>(list));
+            }
+            outputs.put(entry.getKey(), outputLists);
+        }
+        checkpoint.put("nodeOutputs", outputs);
+
+        // Deep-copy nodeInputs: Map<String, List<Map>>
+        Map<String, Object> inputs = new LinkedHashMap<>();
+        for (Map.Entry<String, List<Map<String, Object>>> entry : nodeInputs.entrySet()) {
+            inputs.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        checkpoint.put("nodeInputs", inputs);
+
+        // Metadata: serialize to maps
+        Map<String, Object> metaMap = new LinkedHashMap<>();
+        for (Map.Entry<String, NodeExecutionMetadata> entry : nodeMetadata.entrySet()) {
+            NodeExecutionMetadata meta = entry.getValue();
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("nodeId", meta.getNodeId());
+            m.put("nodeName", meta.getNodeName());
+            m.put("status", meta.getStatus());
+            m.put("startedAt", meta.getStartedAt() != null ? meta.getStartedAt().toString() : null);
+            m.put("finishedAt", meta.getFinishedAt() != null ? meta.getFinishedAt().toString() : null);
+            m.put("errorMessage", meta.getErrorMessage());
+            metaMap.put(entry.getKey(), m);
+        }
+        checkpoint.put("nodeMetadata", metaMap);
+        checkpoint.put("workflowStaticData", new LinkedHashMap<>(workflowStaticData));
+        checkpoint.put("nodeContextData", new LinkedHashMap<>(nodeContextData));
+
+        return checkpoint;
+    }
+
+    /**
+     * Restore execution state from a checkpoint map.
+     */
+    @SuppressWarnings("unchecked")
+    public static WorkflowExecutionState fromCheckpoint(
+            String executionId, String workflowId,
+            WorkflowGraph graph, Map<String, Object> checkpoint) {
+
+        WorkflowExecutionState state = new WorkflowExecutionState(executionId, workflowId, graph);
+
+        Map<String, Object> outputs = (Map<String, Object>) checkpoint.get("nodeOutputs");
+        if (outputs != null) {
+            for (Map.Entry<String, Object> entry : outputs.entrySet()) {
+                state.nodeOutputs.put(entry.getKey(), (List<List<Map<String, Object>>>) entry.getValue());
+            }
+        }
+
+        Map<String, Object> inputs = (Map<String, Object>) checkpoint.get("nodeInputs");
+        if (inputs != null) {
+            for (Map.Entry<String, Object> entry : inputs.entrySet()) {
+                state.nodeInputs.put(entry.getKey(), (List<Map<String, Object>>) entry.getValue());
+            }
+        }
+
+        Map<String, Object> metaMap = (Map<String, Object>) checkpoint.get("nodeMetadata");
+        if (metaMap != null) {
+            for (Map.Entry<String, Object> entry : metaMap.entrySet()) {
+                Map<String, Object> m = (Map<String, Object>) entry.getValue();
+                NodeExecutionMetadata meta = new NodeExecutionMetadata();
+                meta.setNodeId((String) m.get("nodeId"));
+                meta.setNodeName((String) m.get("nodeName"));
+                meta.setStatus((String) m.get("status"));
+                if (m.get("startedAt") != null) meta.setStartedAt(Instant.parse((String) m.get("startedAt")));
+                if (m.get("finishedAt") != null) meta.setFinishedAt(Instant.parse((String) m.get("finishedAt")));
+                meta.setErrorMessage((String) m.get("errorMessage"));
+                state.nodeMetadata.put(entry.getKey(), meta);
+            }
+        }
+
+        Map<String, Object> staticData = (Map<String, Object>) checkpoint.get("workflowStaticData");
+        if (staticData != null) {
+            state.workflowStaticData.putAll(staticData);
+        }
+
+        Map<String, Map<String, Object>> contextData =
+                (Map<String, Map<String, Object>>) checkpoint.get("nodeContextData");
+        if (contextData != null) {
+            state.nodeContextData.putAll(contextData);
+        }
+
+        return state;
+    }
+
     public Map<String, Object> buildResultData() {
         Map<String, Object> resultData = new LinkedHashMap<>();
         Map<String, Object> runData = new LinkedHashMap<>();

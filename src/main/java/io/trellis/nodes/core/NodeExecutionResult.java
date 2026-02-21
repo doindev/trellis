@@ -1,5 +1,6 @@
 package io.trellis.nodes.core;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,9 @@ public class NodeExecutionResult {
 	
 	// static data to persist between executions
 	private Map<String, Object> staticData;
+
+	// wait configuration — when set, the engine checkpoints state and releases the thread
+	private WaitConfig waitConfig;
 	
 	// creates a successful result with a single output
 	public static NodeExecutionResult success(List<Map<String, Object>> items) {
@@ -65,6 +69,14 @@ public class NodeExecutionResult {
 				.output(List.of(List.of()))
 				.build();
 	}
+
+	// create a waiting result — the engine will checkpoint state and release the thread
+	public static NodeExecutionResult waiting(WaitConfig config) {
+		return NodeExecutionResult.builder()
+				.waitConfig(config)
+				.continueExecution(false)
+				.build();
+	}
 	
 	@Data
 	@Builder
@@ -76,6 +88,14 @@ public class NodeExecutionResult {
 		private String storageLocation; // "db", "fs", "s3"
 	}
 	
+	@Data
+	@Builder
+	public static class WaitConfig {
+		private String waitType;       // "form", "webhook", "timeInterval", "specificTime"
+		private Instant resumeAt;      // for time-based waits
+		private Object formDefinition; // for form waits
+	}
+
 	@Data
 	@Builder
 	public static class NodeExecutionError {

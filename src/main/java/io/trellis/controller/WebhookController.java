@@ -32,6 +32,8 @@ import io.trellis.engine.WorkflowEngine;
 import io.trellis.entity.WebhookEntity;
 import io.trellis.service.WebSocketService;
 import io.trellis.service.WebhookService;
+import io.trellis.util.FormHtmlGenerator;
+import org.springframework.http.MediaType;
 import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -164,6 +166,11 @@ public class WebhookController {
             }
         }
 
+        // Handle form trigger webhooks — serve form on GET, process submission on POST
+        if ("formTrigger".equals(webhook.getResponseMode())) {
+            return processFormTrigger(webhook, method, body, queryParams, request, isTest, deferredResult, options);
+        }
+
         Map<String, Object> webhookData = new LinkedHashMap<>();
         webhookData.put("headers", extractHeaders(request));
         webhookData.put("params", queryParams);
@@ -236,6 +243,84 @@ public class WebhookController {
         }
 
         return deferredResult;
+    }
+
+    @SuppressWarnings("unchecked")
+    private DeferredResult<ResponseEntity<Object>> processFormTrigger(
+            WebhookEntity webhook, String method, Map<String, Object> body,
+            Map<String, String> queryParams, HttpServletRequest request,
+            boolean isTest, DeferredResult<ResponseEntity<Object>> deferredResult,
+            Map<String, Object> options) {
+
+        if ("GET".equalsIgnoreCase(method)) {
+            // Serve the HTML form
+            String formTitle = (String) options.getOrDefault("formTitle", "Form");
+            String formDescription = (String) options.getOrDefault("formDescription", "");
+            Object formFields = options.get("formFields");
+            String buttonLabel = (String) options.getOrDefault("buttonLabel", "Submit");
+
+            // Extract field definitions from FIXED_COLLECTION format
+            List<Map<String, Object>> fields = extractFormFields(formFields);
+
+            String postUrl = request.getRequestURI();
+            String html = FormHtmlGenerator.generateForm(
+                    fields, postUrl, formTitle, formDescription, buttonLabel);
+
+            deferredResult.setResult(ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(html));
+        } else if ("POST".equalsIgnoreCase(method)) {
+            // Process form submission — merge form data with query params
+            Map<String, Object> formData = new LinkedHashMap<>();
+            if (queryParams != null) formData.putAll(queryParams);
+            if (body != null) formData.putAll(body);
+
+            if (isTest) {
+                webSocketService.sendWebhookTestData(webhook.getWorkflowId(), formData);
+                cancelTimeout(webhook.getWorkflowId());
+                webhookService.deregisterTestWebhooks(webhook.getWorkflowId());
+                String html = FormHtmlGenerator.completionPage("Test Received", "Form data was captured for testing.");
+                deferredResult.setResult(ResponseEntity.ok()
+                        .contentType(MediaType.TEXT_HTML)
+                        .body(html));
+            } else {
+                // Trigger workflow with form data
+                Map<String, Object> webhookData = new LinkedHashMap<>();
+                webhookData.put("formData", formData);
+                webhookData.put("method", method);
+                webhookData.put("path", webhook.getPath());
+                webhookData.put("submittedAt", java.time.Instant.now().toString());
+
+                workflowEngine.startWebhookExecution(
+                        webhook.getWorkflowId(), webhook.getNodeId(), webhookData);
+
+                String html = FormHtmlGenerator.completionPage("Thank You!",
+                        "Your response has been submitted successfully.");
+                deferredResult.setResult(ResponseEntity.ok()
+                        .contentType(MediaType.TEXT_HTML)
+                        .body(html));
+            }
+        } else {
+            deferredResult.setResult(ResponseEntity.status(405)
+                    .body(Map.of("error", "Method not allowed for form trigger")));
+        }
+
+        return deferredResult;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> extractFormFields(Object formFields) {
+        if (formFields instanceof List) {
+            return (List<Map<String, Object>>) formFields;
+        }
+        if (formFields instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) formFields;
+            Object values = map.get("values");
+            if (values instanceof List) {
+                return (List<Map<String, Object>>) values;
+            }
+        }
+        return List.of();
     }
 
     @SuppressWarnings("unchecked")

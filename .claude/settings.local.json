@@ -80,7 +80,11 @@
       "Bash(timeout 20 tail:*)",
       "Bash(kill:*)",
       "WebFetch(domain:darrelltw.medium.com)",
-      "WebFetch(domain:templacity.com)"
+      "WebFetch(domain:templacity.com)",
+      "Bash(done)",
+      "WebFetch(domain:rolandsoftwares.com)",
+      "Bash(del \"C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\src\\\\main\\\\java\\\\io\\\\trellis\\\\service\\\\WaitResumeService.java\")",
+      "Bash(cd:*)"
     ]
   }
 }
