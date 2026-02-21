@@ -121,10 +121,13 @@ export class NodePaletteComponent {
   onNodeItemClick(nodeType: NodeTypeDescription): void {
     const actions = this.getActionOptions(nodeType);
     if (actions && actions.options.length > 0) {
+      const sorted = [...actions.options].sort((a, b) =>
+        (a.action || a.name).localeCompare(b.action || b.name)
+      );
       this.actionPanel.set({
         nodeType,
         paramName: actions.paramName,
-        options: actions.options
+        options: sorted
       });
     } else {
       this.nodeClicked.emit(nodeType);
@@ -169,6 +172,11 @@ export class NodePaletteComponent {
   }
 
   getCategoryEntries(): [string, NodeTypeDescription[]][] {
-    return Array.from(this.filteredTypes().entries());
+    return Array.from(this.filteredTypes().entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([cat, nodes]) => [
+        cat,
+        [...nodes].sort((a, b) => a.displayName.localeCompare(b.displayName))
+      ]);
   }
 }
