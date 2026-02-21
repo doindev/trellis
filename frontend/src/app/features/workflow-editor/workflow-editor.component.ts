@@ -235,8 +235,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   onPaletteNodeClickedWithAction(event: NodeClickedWithAction): void {
-    const { nodeType, paramName, paramValue } = event;
-    const initialParams = { [paramName]: paramValue };
+    const { nodeType, initialParams } = event;
     const newNodeId = this.canvasWrapper.addNodeAtViewportCenter(
       nodeType.type, nodeType.displayName, nodeType.version, initialParams
     );

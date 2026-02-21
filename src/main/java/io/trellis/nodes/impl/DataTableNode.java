@@ -29,10 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 @Node(
 	type = "dataTable",
 	displayName = "Data Table",
-	description = "Permanently save and retrieve data across workflow executions in a table.",
+	description = "Permanently save data across workflow executions in a table.",
 	category = "Core",
-	icon = "table-2",
-	subtitle = "={{$parameter[\"resource\"]}} / {{$parameter[\"rowOperation\"] || $parameter[\"tableOperation\"]}}"
+	icon = "table-2"
 )
 public class DataTableNode extends AbstractNode {
 
@@ -78,15 +77,15 @@ public class DataTableNode extends AbstractNode {
 				.displayOptions(Map.of("show", Map.of("resource", List.of("row"))))
 				.options(List.of(
 					ParameterOption.builder().name("Insert Row").value("insert")
-						.description("Insert a new row from input data").build(),
+						.description("Insert a new row from input data").action("Insert a row").build(),
 					ParameterOption.builder().name("Get Rows").value("get")
-						.description("Get rows from the table, optionally filtered").build(),
+						.description("Get rows from the table, optionally filtered").action("Get rows").build(),
 					ParameterOption.builder().name("Delete Rows").value("deleteRows")
-						.description("Delete rows matching conditions").build(),
+						.description("Delete rows matching conditions").action("Delete rows").build(),
 					ParameterOption.builder().name("Update Rows").value("update")
-						.description("Update rows matching conditions with new values").build(),
+						.description("Update rows matching conditions with new values").action("Update rows").build(),
 					ParameterOption.builder().name("Upsert Row").value("upsert")
-						.description("Update a matching row or insert a new one").build()
+						.description("Update a matching row or insert a new one").action("Upsert a row").build()
 				))
 				.build(),
 
@@ -100,11 +99,11 @@ public class DataTableNode extends AbstractNode {
 				.displayOptions(Map.of("show", Map.of("resource", List.of("table"))))
 				.options(List.of(
 					ParameterOption.builder().name("Create Table").value("create")
-						.description("Create a new data table with specified columns").build(),
+						.description("Create a new data table with specified columns").action("Create a table").build(),
 					ParameterOption.builder().name("Delete Table").value("deleteTable")
-						.description("Permanently delete a data table and all its rows").build(),
+						.description("Permanently delete a data table and all its rows").action("Delete a table").build(),
 					ParameterOption.builder().name("List Tables").value("list")
-						.description("List all available data tables").build()
+						.description("List all available data tables").action("List tables").build()
 				))
 				.build(),
 

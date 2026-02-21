@@ -82,7 +82,7 @@
                       <span class="node-desc">{{ nodeType.description }}</span>
                     }
                   </div>
-                  @if (getActionOptions(nodeType)) {
+                  @if (hasActions(nodeType)) {
                     <svg class="action-chevron"
                          viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="9 18 15 12 9 6"/>
@@ -116,13 +116,25 @@
           <span class="action-panel-title">{{ panel.nodeType.displayName }}</span>
         </div>
         <div class="action-panel-body">
-          @for (opt of panel.options; track opt.value) {
-            <div class="action-panel-item" (click)="onActionSelected(opt.value)">
-              <span class="action-panel-label">{{ opt.action }}</span>
-              @if (opt.description) {
-                <span class="action-panel-desc">{{ opt.description }}</span>
-              }
-            </div>
+          @for (group of panel.groups; track group.label) {
+            @if (group.label) {
+              <div class="action-group-header">{{ group.label }}</div>
+            }
+            @for (item of group.items; track item.action) {
+              <div class="action-panel-item" (click)="onActionSelected(item)">
+                @if (panel.nodeType.icon) {
+                  <div class="action-item-icon">
+                    <lucide-icon [name]="panel.nodeType.icon" [size]="14"></lucide-icon>
+                  </div>
+                }
+                <div class="action-item-text">
+                  <span class="action-panel-label">{{ item.action }}</span>
+                  @if (item.description) {
+                    <span class="action-panel-desc">{{ item.description }}</span>
+                  }
+                </div>
+              </div>
+            }
           }
         </div>
       }

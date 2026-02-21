@@ -3,18 +3,27 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
 import { NODE_ICON_SET } from '../../../../shared/node-icons';
-import { NodeTypeDescription, ParameterOption } from '../../../../core/models';
+import { NodeTypeDescription, NodeParameter, ParameterOption } from '../../../../core/models';
 
 export interface NodeClickedWithAction {
   nodeType: NodeTypeDescription;
-  paramName: string;
-  paramValue: any;
+  initialParams: Record<string, any>;
+}
+
+interface ActionGroup {
+  label: string;
+  items: ActionItem[];
+}
+
+interface ActionItem {
+  action: string;
+  description?: string;
+  params: Record<string, any>;
 }
 
 interface ActionPanel {
   nodeType: NodeTypeDescription;
-  paramName: string;
-  options: ParameterOption[];
+  groups: ActionGroup[];
 }
 
 @Component({
@@ -96,40 +105,106 @@ export class NodePaletteComponent {
     return this.expandedCategories.has(category) || this.searchTerm().length > 0 || this.triggerOnly();
   }
 
-  getActionOptions(nodeType: NodeTypeDescription): { paramName: string; options: ParameterOption[] } | null {
+  /** Check if a node has any action-bearing parameters (for showing the chevron). */
+  hasActions(nodeType: NodeTypeDescription): boolean {
+    if (!nodeType.parameters) return false;
+    return nodeType.parameters.some(p =>
+      p.type === 'options' && p.options?.some(o => o.action)
+    );
+  }
+
+  /** Build grouped action panel data for a node type. */
+  private buildActionPanel(nodeType: NodeTypeDescription): ActionPanel | null {
     if (!nodeType.parameters) return null;
-    const param = nodeType.parameters.find(p =>
+
+    // Detect resource/operation pattern: a "resource" parameter whose displayOptions
+    // control which operation parameters are shown
+    const resourceParam = nodeType.parameters.find(p =>
+      p.type === 'options' && p.name === 'resource'
+    );
+
+    if (resourceParam?.options?.length) {
+      // Grouped pattern: each resource value maps to an operation parameter
+      const groups: ActionGroup[] = [];
+
+      for (const resOpt of resourceParam.options) {
+        // Find operation parameters that are shown when this resource is selected
+        const opParams = nodeType.parameters.filter(p =>
+          p.type === 'options' && p.name !== 'resource' &&
+          p.options?.some(o => o.action) &&
+          this.isShownForResource(p, resourceParam.name, resOpt.value)
+        );
+
+        for (const opParam of opParams) {
+          const items: ActionItem[] = opParam.options
+            .filter(o => o.action)
+            .map(o => ({
+              action: o.action!,
+              description: o.description,
+              params: { [resourceParam.name]: resOpt.value, [opParam.name]: o.value }
+            }))
+            .sort((a, b) => a.action.localeCompare(b.action));
+
+          if (items.length > 0) {
+            groups.push({ label: resOpt.name + ' Actions', items });
+          }
+        }
+      }
+
+      if (groups.length > 0) {
+        return { nodeType, groups };
+      }
+    }
+
+    // Flat pattern: single operation/action parameter with action fields
+    const actionParam = nodeType.parameters.find(p =>
       p.type === 'options' && (p.name === 'operation' || p.name === 'action') &&
       p.options?.some(o => o.action)
     );
-    if (!param) return null;
-    return { paramName: param.name, options: param.options.filter(o => o.action) };
+
+    if (actionParam) {
+      const items: ActionItem[] = actionParam.options
+        .filter(o => o.action)
+        .map(o => ({
+          action: o.action!,
+          description: o.description,
+          params: { [actionParam.name]: o.value }
+        }))
+        .sort((a, b) => a.action.localeCompare(b.action));
+
+      if (items.length > 0) {
+        return { nodeType, groups: [{ label: '', items }] };
+      }
+    }
+
+    return null;
+  }
+
+  /** Check if a parameter's displayOptions show it for a given resource value. */
+  private isShownForResource(param: NodeParameter, resourceName: string, resourceValue: any): boolean {
+    const show = param.displayOptions?.show;
+    if (!show) return true;
+    const allowed = show[resourceName];
+    if (!allowed) return true;
+    return Array.isArray(allowed) && allowed.includes(resourceValue);
   }
 
   onNodeItemClick(nodeType: NodeTypeDescription): void {
-    const actions = this.getActionOptions(nodeType);
-    if (actions && actions.options.length > 0) {
-      const sorted = [...actions.options].sort((a, b) =>
-        (a.action || a.name).localeCompare(b.action || b.name)
-      );
-      this.actionPanel.set({
-        nodeType,
-        paramName: actions.paramName,
-        options: sorted
-      });
+    const panel = this.buildActionPanel(nodeType);
+    if (panel) {
+      this.actionPanel.set(panel);
     } else {
       this.nodeClicked.emit(nodeType);
     }
   }
 
-  onActionSelected(value: any): void {
+  onActionSelected(item: ActionItem): void {
     const panel = this.actionPanel();
     if (!panel) return;
     this.actionPanel.set(null);
     this.nodeClickedWithAction.emit({
       nodeType: panel.nodeType,
-      paramName: panel.paramName,
-      paramValue: value
+      initialParams: item.params
     });
   }
 
