@@ -294,6 +294,14 @@
               </div>
             }
 
+            @if (nodeType?.credentials?.length) {
+              <app-credential-param
+                [credentialTypes]="nodeType!.credentials"
+                [currentCredentials]="node.credentials || {}"
+                [readOnly]="readOnly"
+                (credentialChanged)="credentialChanged.emit($event)" />
+            }
+
             @if (visibleParameters.length === 0) {
               <div class="empty-state">No parameters to configure</div>
             }

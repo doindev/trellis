@@ -13,6 +13,7 @@ import { JsonParamComponent } from './parameter-renderers/json-param.component';
 import { CollectionParamComponent } from './parameter-renderers/collection-param.component';
 import { FixedCollectionParamComponent } from './parameter-renderers/fixed-collection-param.component';
 import { NoticeParamComponent } from './parameter-renderers/notice-param.component';
+import { CredentialParamComponent } from './parameter-renderers/credential-param.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
   CheckCircle, Copy, Square, Search, ChevronRight,
@@ -60,6 +61,7 @@ export class HighlightPipe implements PipeTransform {
     CollectionParamComponent,
     FixedCollectionParamComponent,
     NoticeParamComponent,
+    CredentialParamComponent,
   ],
   providers: [{
     provide: LUCIDE_ICONS,
@@ -82,6 +84,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   @Input() readOnly = false;
   @Input() webhookTestData: Record<string, any> = {};
   @Output() parameterChanged = new EventEmitter<Record<string, any>>();
+  @Output() credentialChanged = new EventEmitter<Record<string, any>>();
   @Output() webhookTestDataReceived = new EventEmitter<{ nodeId: string; data: any }>();
   @Output() close = new EventEmitter<void>();
   @Output() deleteNode = new EventEmitter<void>();

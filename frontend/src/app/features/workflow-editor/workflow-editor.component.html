@@ -90,6 +90,7 @@
             [nodeTypeMap]="nodeTypeStore.nodeTypes()"
             [readOnly]="activeTab === 'executions'"
             (parameterChanged)="store.updateNode(store.selectedNodeId()!, { parameters: $event })"
+            (credentialChanged)="store.updateNode(store.selectedNodeId()!, { credentials: $event })"
             (webhookTestDataReceived)="onWebhookTestData($event)"
             (nodeExecuted)="onNodeExecuted($event)"
             (close)="store.selectNode(null)"
