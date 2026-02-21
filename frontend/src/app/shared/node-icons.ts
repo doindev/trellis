@@ -5,7 +5,7 @@ import {
   Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
   Table2, Timer, ClipboardList, FileInput,
   Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
-  Database,
+  Database, HardDriveUpload,
   LucideIconData,
 } from 'lucide-angular';
 
@@ -62,6 +62,6 @@ export const NODE_ICON_SET = {
   Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
   Table2, Timer, ClipboardList, FileInput,
   Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
-  Database,
+  Database, HardDriveUpload,
   Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily,
 };

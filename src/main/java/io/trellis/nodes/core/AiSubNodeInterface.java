@@ -7,4 +7,13 @@ package io.trellis.nodes.core;
  */
 public interface AiSubNodeInterface {
 	Object supplyData(NodeExecutionContext context) throws Exception;
+
+	/**
+	 * Determines whether the engine should route this node to supplyData() or execute().
+	 * Returns true by default (pure sub-nodes always supply data).
+	 * Hybrid nodes (e.g. vector stores) override this based on their operation mode.
+	 */
+	default boolean shouldSupplyData(NodeExecutionContext context) {
+		return true;
+	}
 }

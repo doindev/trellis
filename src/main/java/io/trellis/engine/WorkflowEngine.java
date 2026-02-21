@@ -387,7 +387,7 @@ public class WorkflowEngine {
 
         try {
             // AI sub-node: call supplyData() and store result, skip normal execute()
-            if (nodeInstance instanceof AiSubNodeInterface aiSubNode) {
+            if (nodeInstance instanceof AiSubNodeInterface aiSubNode && aiSubNode.shouldSupplyData(context)) {
                 Object aiData = aiSubNode.supplyData(context);
                 state.storeAiData(nodeId, aiData);
                 state.storeOutput(nodeId, List.of(List.of()));
@@ -651,7 +651,7 @@ public class WorkflowEngine {
 
         try {
             // AI sub-node: call supplyData() and store result, skip normal execute()
-            if (nodeInstance instanceof AiSubNodeInterface aiSubNode) {
+            if (nodeInstance instanceof AiSubNodeInterface aiSubNode && aiSubNode.shouldSupplyData(context)) {
                 Object aiData = aiSubNode.supplyData(context);
                 state.storeAiData(nodeId, aiData);
                 state.storeOutput(nodeId, List.of(List.of()));
