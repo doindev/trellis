@@ -45,9 +45,14 @@
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: hsl(0, 0%, 17%);
-  color: hsl(7, 100%, 68%);
+  background: hsla(0, 0%, 100%, 0.12);
+  color: hsl(0, 0%, 100%);
   flex-shrink: 0;
+
+  &.trigger {
+    background: hsla(7, 100%, 68%, 0.12);
+    color: hsl(7, 100%, 68%);
+  }
 }
 
 .header-info {

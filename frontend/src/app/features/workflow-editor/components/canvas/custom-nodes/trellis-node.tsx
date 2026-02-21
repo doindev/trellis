@@ -198,7 +198,7 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
       onMouseEnter={onProximityEnter}
       onMouseLeave={onProximityLeave}
     >
-      <NodeActionToolbar nodeId={id} selected={!!selected} nearby={nearby} disabled={data.disabled} />
+      <NodeActionToolbar nodeId={id} selected={!!selected} nearby={nearby} disabled={data.disabled} isSubNode={mainInputs.length === 0 && mainOutputs.length === 0} />
       {nodeContent}
     </div>
   );

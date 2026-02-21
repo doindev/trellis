@@ -105,7 +105,8 @@
       "WebFetch(domain:www.npmjs.com)",
       "WebFetch(domain:www.hostinger.com)",
       "WebFetch(domain:blog.marcnuri.com)",
-      "WebFetch(domain:glaforge.dev)"
+      "WebFetch(domain:glaforge.dev)",
+      "Bash(timeout 5 cat:*)"
     ]
   }
 }

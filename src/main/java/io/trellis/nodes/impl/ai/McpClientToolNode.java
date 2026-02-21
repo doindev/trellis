@@ -97,7 +97,7 @@ public class McpClientToolNode extends AbstractAiToolNode {
 		}
 	}
 
-	@SuppressWarnings("removal") // HttpMcpTransport is deprecated but needed for legacy SSE servers
+	@SuppressWarnings({ "removal", "deprecation" }) // HttpMcpTransport is deprecated but needed for legacy SSE servers
 	private McpTransport createTransport(String type, String url, String command,
 										 String args, String envVars,
 										 Map<String, String> headers, int timeout) {

@@ -59,6 +59,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   'mistral': <><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 8h8" /><path d="M8 12h8" /><path d="M8 16h8" /></>,
   'azure': <><path d="M6 21L13.5 3H17l-4 8h5L7 21h-1z" /></>,
   'tavily': <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /><path d="M11 8v6" /><path d="M8 11h6" /></>,
+  'mcp': <><path d="M4 6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z" /><path d="M13 15a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z" /><path d="M9 8h3a3 3 0 0 1 3 3v3" /><path d="M15 11v3" /></>,
 };
 
 export function NodeIcon({ name, size = 16 }: { name: string; size?: number }) {

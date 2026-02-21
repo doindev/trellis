@@ -49,6 +49,13 @@ const Tavily: LucideIconData = [
   ['path', { d: 'M8 11h6' }],
 ];
 
+const Mcp: LucideIconData = [
+  ['path', { d: 'M4 6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z' }],
+  ['path', { d: 'M13 15a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z' }],
+  ['path', { d: 'M9 8h3a3 3 0 0 1 3 3v3' }],
+  ['path', { d: 'M15 11v3' }],
+];
+
 /**
  * All icons used as node icons across the application.
  * Includes standard Lucide icons and custom brand icons.
@@ -63,5 +70,5 @@ export const NODE_ICON_SET = {
   Table2, Timer, ClipboardList, FileInput,
   Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
   Database, HardDriveUpload,
-  Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily,
+  Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily, Mcp,
 };

@@ -7,9 +7,10 @@ interface NodeActionToolbarProps {
   selected: boolean;
   nearby: boolean;
   disabled?: boolean;
+  isSubNode?: boolean;
 }
 
-export default function NodeActionToolbar({ nodeId, selected, nearby, disabled }: NodeActionToolbarProps) {
+export default function NodeActionToolbar({ nodeId, selected, nearby, disabled, isSubNode }: NodeActionToolbarProps) {
   const ctx = useContext(CanvasActionsContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -54,11 +55,13 @@ export default function NodeActionToolbar({ nodeId, selected, nearby, disabled }
   return (
     <NodeToolbar isVisible={isVisible} position={Position.Top} align="center" offset={8}>
       <div className="node-action-toolbar" onClick={(e) => { e.stopPropagation(); ensureSelected(); }}>
-        <button className="nat-btn" title="Execute from this node" onClick={stop(() => ctx.executeFromNode(nodeId))}>
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
-            <polygon points="6 3 20 12 6 21 6 3" />
-          </svg>
-        </button>
+        {!isSubNode && (
+          <button className="nat-btn" title="Execute from this node" onClick={stop(() => ctx.executeFromNode(nodeId))}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
+              <polygon points="6 3 20 12 6 21 6 3" />
+            </svg>
+          </button>
+        )}
         <button
           className={`nat-btn${disabled ? ' nat-active' : ''}`}
           title={disabled ? 'Enable node' : 'Disable node'}
