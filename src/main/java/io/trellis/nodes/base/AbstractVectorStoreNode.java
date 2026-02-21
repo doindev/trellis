@@ -99,7 +99,6 @@ public abstract class AbstractVectorStoreNode extends AbstractNode implements Ai
 		List<TextSegment> segments = new ArrayList<>();
 
 		for (Map<String, Object> item : inputData) {
-			Map<String, Object> json = unwrapJson(item);
 			Object textValue = getNestedValue(item, textField);
 			if (textValue == null) {
 				textValue = getNestedValue(item, "json." + textField);

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CredentialService } from '../../../../../core/services';
@@ -16,7 +16,7 @@ import { CredentialCreateModalComponent } from '../../../../../shared/components
           <label class="param-label">Credential to connect with</label>
         </div>
         <select class="form-select param-input"
-                [ngModel]="getSelectedId(credType)"
+                [ngModel]="selectModel[credType]"
                 (ngModelChange)="onSelectionChange(credType, $event)"
                 [disabled]="readOnly">
           <option [ngValue]="null">-- Select credential --</option>
@@ -47,7 +47,7 @@ import { CredentialCreateModalComponent } from '../../../../../shared/components
     .create-option { color: hsl(247,49%,53%); font-style: italic; }
   `]
 })
-export class CredentialParamComponent implements OnInit {
+export class CredentialParamComponent implements OnInit, OnChanges {
   @Input() credentialTypes: string[] = [];
   @Input() currentCredentials: Record<string, any> = {};
   @Input() readOnly = false;
@@ -57,14 +57,30 @@ export class CredentialParamComponent implements OnInit {
 
   allCredentials: Credential[] = [];
   credentialSchemas: CredentialSchema[] = [];
+
+  /** Explicitly tracked select values — avoids Angular not re-writing the same value */
+  selectModel: Record<string, string | null> = {};
+
   private pendingCreateType: string | null = null;
-  private previousSelections: Record<string, string | null> = {};
 
   constructor(private credentialService: CredentialService) {}
 
   ngOnInit(): void {
+    this.syncSelectModel();
     this.loadCredentials();
     this.loadTypes();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['currentCredentials']) {
+      this.syncSelectModel();
+    }
+  }
+
+  private syncSelectModel(): void {
+    for (const type of this.credentialTypes) {
+      this.selectModel[type] = this.currentCredentials?.[type]?.id || null;
+    }
   }
 
   private loadCredentials(): void {
@@ -90,18 +106,21 @@ export class CredentialParamComponent implements OnInit {
     return schema?.displayName || type;
   }
 
-  getSelectedId(type: string): string | null {
-    return this.currentCredentials?.[type]?.id || null;
-  }
-
   onSelectionChange(type: string, value: string | null): void {
     if (value === '__create__') {
-      this.previousSelections[type] = this.getSelectedId(type);
       this.pendingCreateType = type;
-      this.createModal.openCreate();
+      // Force select back to previous value so it's not stuck on __create__.
+      // Write a sentinel first so Angular detects the subsequent real value as a change.
+      this.selectModel = { ...this.selectModel, [type]: '__resetting__' as any };
+      setTimeout(() => {
+        this.selectModel = { ...this.selectModel, [type]: this.currentCredentials?.[type]?.id || null };
+      });
+      // Open directly to the matching credential type editor, skip type selection
+      this.createModal.openCreateForType(type);
       return;
     }
 
+    this.selectModel[type] = value;
     const updated = { ...this.currentCredentials };
     if (value) {
       updated[type] = { id: value };
@@ -114,16 +133,16 @@ export class CredentialParamComponent implements OnInit {
   onCredentialCreated(cred: Credential): void {
     this.allCredentials = [...this.allCredentials, cred];
     if (this.pendingCreateType) {
+      const type = this.pendingCreateType;
       const updated = { ...this.currentCredentials };
-      updated[this.pendingCreateType] = { id: cred.id };
+      updated[type] = { id: cred.id };
+      this.selectModel[type] = cred.id!;
       this.credentialChanged.emit(updated);
     }
     this.pendingCreateType = null;
   }
 
   onCreateClosed(): void {
-    // Modal was closed without saving — revert dropdown to previous selection
-    // (Angular will reflect currentCredentials binding automatically)
     this.pendingCreateType = null;
   }
 }

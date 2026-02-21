@@ -77,6 +77,35 @@ export class CredentialCreateModalComponent implements OnInit {
     this.showTypeSelectModal.set(true);
   }
 
+  /**
+   * Opens the credential editor directly for a known type, skipping type selection.
+   * Falls back to openCreate() if the type is not found.
+   */
+  openCreateForType(typeName: string): void {
+    const type = this.credentialTypes().find(t => t.type === typeName);
+    if (!type) {
+      this.openCreate();
+      return;
+    }
+
+    const data: Record<string, any> = {};
+    for (const prop of type.properties) {
+      if (prop.defaultValue != null) {
+        data[prop.name] = prop.defaultValue;
+      }
+    }
+
+    this.editorCredential.set({
+      name: type.displayName + ' account',
+      type: type.type,
+      data
+    });
+    this.editorSchema.set(type);
+    this.editorTab.set('connection');
+    this.isEditing.set(false);
+    this.showEditorModal.set(true);
+  }
+
   openEdit(cred: Credential): void {
     this.editorCredential.set({ ...cred });
     this.isEditing.set(true);

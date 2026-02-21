@@ -100,7 +100,12 @@
       "Bash(powershell.exe -NoProfile -Command \"Get-Content ''C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend\\\\node_modules\\\\lucide-angular\\\\src\\\\icons\\\\index.d.ts'' -Head 20\")",
       "WebFetch(domain:repo1.maven.org)",
       "Bash(mvn dependency:tree:*)",
-      "WebFetch(domain:javadoc.io)"
+      "WebFetch(domain:javadoc.io)",
+      "WebFetch(domain:docs.langchain4j.dev)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:www.hostinger.com)",
+      "WebFetch(domain:blog.marcnuri.com)",
+      "WebFetch(domain:glaforge.dev)"
     ]
   }
 }

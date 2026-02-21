@@ -66,6 +66,13 @@ public class AiAgentNode extends AbstractNode {
 			for (Object toolObj : tools) {
 				if (toolObj instanceof DynamicTool dt) {
 					toolMap.put(dt.specification(), dt.executor());
+				} else if (toolObj instanceof List<?> toolList) {
+					// List of DynamicTools (e.g. from MCP Client Tool)
+					for (Object item : toolList) {
+						if (item instanceof DynamicTool dt) {
+							toolMap.put(dt.specification(), dt.executor());
+						}
+					}
 				} else {
 					// @Tool-annotated object — extract specs and build executors
 					for (Method method : toolObj.getClass().getDeclaredMethods()) {

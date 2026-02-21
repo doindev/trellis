@@ -1,5 +1,7 @@
 package io.trellis.nodes.impl.ai;
 
+import java.util.List;
+
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
@@ -7,10 +9,7 @@ import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractVectorStoreNode;
 import io.trellis.nodes.core.NodeExecutionContext;
 import io.trellis.nodes.core.NodeParameter;
-import io.trellis.nodes.core.NodeParameter.ParameterOption;
 import io.trellis.nodes.core.NodeParameter.ParameterType;
-
-import java.util.List;
 
 @Node(
 		type = "vectorStorePGVector",
