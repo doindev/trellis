@@ -1,14 +1,8 @@
 import { Component, Input, Output, EventEmitter, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
-  Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
-  UnfoldVertical, Route, Pen, Code,
-  CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
-  Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
-  Table2, Timer, ClipboardList, FileInput
-} from 'lucide-angular';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
+import { NODE_ICON_SET } from '../../../../shared/node-icons';
 import { NodeTypeDescription, ParameterOption } from '../../../../core/models';
 
 export interface NodeClickedWithAction {
@@ -30,13 +24,7 @@ interface ActionPanel {
   providers: [{
     provide: LUCIDE_ICONS,
     multi: true,
-    useValue: new LucideIconProvider({
-      Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
-      UnfoldVertical, Route, Pen, Code,
-      CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
-      Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
-      Table2, Timer, ClipboardList, FileInput
-    })
+    useValue: new LucideIconProvider(NODE_ICON_SET)
   }],
   templateUrl: './node-palette.component.html',
   styleUrl: './node-palette.component.scss'

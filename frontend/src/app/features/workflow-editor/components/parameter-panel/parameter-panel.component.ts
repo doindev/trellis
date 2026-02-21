@@ -15,9 +15,9 @@ import { FixedCollectionParamComponent } from './parameter-renderers/fixed-colle
 import { NoticeParamComponent } from './parameter-renderers/notice-param.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
-  Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
-  UnfoldVertical, Route, Pen, Code, CheckCircle, Copy, Square, Search, ChevronRight,
+  CheckCircle, Copy, Square, Search, ChevronRight,
 } from 'lucide-angular';
+import { NODE_ICON_SET } from '../../../../shared/node-icons';
 
 /** Schema node for the Schema tree view */
 export interface SchemaNode {
@@ -65,8 +65,7 @@ export class HighlightPipe implements PipeTransform {
     provide: LUCIDE_ICONS,
     multi: true,
     useValue: new LucideIconProvider({
-      Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
-      UnfoldVertical, Route, Pen, Code, CheckCircle, Copy, Square, Search, ChevronRight
+      ...NODE_ICON_SET, CheckCircle, Copy, Square, Search, ChevronRight
     })
   }],
   templateUrl: './parameter-panel.component.html',
