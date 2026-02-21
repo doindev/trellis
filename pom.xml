@@ -290,6 +290,12 @@
 			<artifactId>mongodb-driver-sync</artifactId>
 		</dependency>
 
+		<!-- PostgreSQL JDBC driver for Postgres Chat Memory -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+		</dependency>
+
 		<!-- Apache Commons Net for FTP -->
 		<dependency>
 			<groupId>commons-net</groupId>
