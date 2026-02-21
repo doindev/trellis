@@ -34,79 +34,90 @@
     </div>
   }
 
-  <div class="palette-body">
-    @for (entry of getCategoryEntries(); track entry[0]) {
-      <div class="category">
-        <div class="category-header" (click)="toggleCategory(entry[0])">
-          <svg class="category-chevron"
-               [class.expanded]="isCategoryExpanded(entry[0])"
-               viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-          <span class="category-name">{{ entry[0] }}</span>
-          <span class="category-count">{{ entry[1].length }}</span>
-        </div>
-        @if (isCategoryExpanded(entry[0])) {
-          <div class="category-items">
-            @for (nodeType of entry[1]; track nodeType.type) {
-              <div class="node-item"
-                   [class.action-open]="actionMenuNode()?.type === nodeType.type"
-                   draggable="true"
-                   (dragstart)="onDragStart($event, nodeType)"
-                   (click)="onNodeItemClick(nodeType)">
-                <div class="node-icon" [class.trigger]="nodeType.isTrigger">
-                  @if (nodeType.icon) {
-                    <lucide-icon [name]="nodeType.icon" [size]="16"></lucide-icon>
-                  } @else if (nodeType.isTrigger) {
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                    </svg>
-                  } @else {
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                  }
-                </div>
-                <div class="node-info">
-                  <span class="node-name">{{ nodeType.displayName }}</span>
-                  @if (nodeType.description) {
-                    <span class="node-desc">{{ nodeType.description }}</span>
-                  }
-                </div>
-                @if (getActionOptions(nodeType)) {
-                  <svg class="action-chevron" [class.expanded]="actionMenuNode()?.type === nodeType.type"
-                       viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"/>
-                  </svg>
-                }
-              </div>
-              @if (actionMenuNode()?.type === nodeType.type) {
-                @let actions = getActionOptions(nodeType);
-                @if (actions) {
-                  <div class="action-submenu">
-                    @for (opt of actions.options; track opt.value) {
-                      <div class="action-item"
-                           (click)="onActionSelected(nodeType, actions.paramName, opt.value); $event.stopPropagation()">
-                        <span class="action-label">{{ opt.action }}</span>
-                      </div>
+  <div class="palette-content" [class.panel-open]="actionPanel()">
+    <!-- Main node list -->
+    <div class="palette-body">
+      @for (entry of getCategoryEntries(); track entry[0]) {
+        <div class="category">
+          <div class="category-header" (click)="toggleCategory(entry[0])">
+            <svg class="category-chevron"
+                 [class.expanded]="isCategoryExpanded(entry[0])"
+                 viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+            <span class="category-name">{{ entry[0] }}</span>
+            <span class="category-count">{{ entry[1].length }}</span>
+          </div>
+          @if (isCategoryExpanded(entry[0])) {
+            <div class="category-items">
+              @for (nodeType of entry[1]; track nodeType.type) {
+                <div class="node-item"
+                     draggable="true"
+                     (dragstart)="onDragStart($event, nodeType)"
+                     (click)="onNodeItemClick(nodeType)">
+                  <div class="node-icon" [class.trigger]="nodeType.isTrigger">
+                    @if (nodeType.icon) {
+                      <lucide-icon [name]="nodeType.icon" [size]="16"></lucide-icon>
+                    } @else if (nodeType.isTrigger) {
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                      </svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
                     }
                   </div>
-                }
+                  <div class="node-info">
+                    <span class="node-name">{{ nodeType.displayName }}</span>
+                    @if (nodeType.description) {
+                      <span class="node-desc">{{ nodeType.description }}</span>
+                    }
+                  </div>
+                  @if (getActionOptions(nodeType)) {
+                    <svg class="action-chevron"
+                         viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                  }
+                </div>
               }
-            }
-          </div>
-        }
-      </div>
-    }
+            </div>
+          }
+        </div>
+      }
 
-    @if (getCategoryEntries().length === 0) {
-      <div class="empty-palette">
-        @if (searchTerm()) {
-          <p>No nodes matching "{{ searchTerm() }}"</p>
-        } @else {
-          <p>No node types available</p>
-        }
-      </div>
-    }
+      @if (getCategoryEntries().length === 0) {
+        <div class="empty-palette">
+          @if (searchTerm()) {
+            <p>No nodes matching "{{ searchTerm() }}"</p>
+          } @else {
+            <p>No node types available</p>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Sliding action panel -->
+    <div class="action-panel" [class.open]="actionPanel()">
+      @if (actionPanel(); as panel) {
+        <div class="action-panel-header" (click)="closeActionPanel()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          <span class="action-panel-title">{{ panel.nodeType.displayName }}</span>
+        </div>
+        <div class="action-panel-body">
+          @for (opt of panel.options; track opt.value) {
+            <div class="action-panel-item" (click)="onActionSelected(opt.value)">
+              <span class="action-panel-label">{{ opt.action }}</span>
+              @if (opt.description) {
+                <span class="action-panel-desc">{{ opt.description }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
   </div>
 </div>

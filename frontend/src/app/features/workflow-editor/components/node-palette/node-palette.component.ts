@@ -17,6 +17,12 @@ export interface NodeClickedWithAction {
   paramValue: any;
 }
 
+interface ActionPanel {
+  nodeType: NodeTypeDescription;
+  paramName: string;
+  options: ParameterOption[];
+}
+
 @Component({
   selector: 'app-node-palette',
   standalone: true,
@@ -48,7 +54,7 @@ export class NodePaletteComponent {
   private _nodeTypes = signal<Map<string, NodeTypeDescription[]>>(new Map());
   searchTerm = signal('');
   triggerOnly = signal(false);
-  actionMenuNode = signal<NodeTypeDescription | null>(null);
+  actionPanel = signal<ActionPanel | null>(null);
 
   filteredTypes = computed(() => {
     const term = this.searchTerm().toLowerCase();
@@ -115,18 +121,29 @@ export class NodePaletteComponent {
   onNodeItemClick(nodeType: NodeTypeDescription): void {
     const actions = this.getActionOptions(nodeType);
     if (actions && actions.options.length > 0) {
-      this.actionMenuNode.set(
-        this.actionMenuNode()?.type === nodeType.type ? null : nodeType
-      );
+      this.actionPanel.set({
+        nodeType,
+        paramName: actions.paramName,
+        options: actions.options
+      });
     } else {
-      this.actionMenuNode.set(null);
       this.nodeClicked.emit(nodeType);
     }
   }
 
-  onActionSelected(nodeType: NodeTypeDescription, paramName: string, value: any): void {
-    this.actionMenuNode.set(null);
-    this.nodeClickedWithAction.emit({ nodeType, paramName, paramValue: value });
+  onActionSelected(value: any): void {
+    const panel = this.actionPanel();
+    if (!panel) return;
+    this.actionPanel.set(null);
+    this.nodeClickedWithAction.emit({
+      nodeType: panel.nodeType,
+      paramName: panel.paramName,
+      paramValue: value
+    });
+  }
+
+  closeActionPanel(): void {
+    this.actionPanel.set(null);
   }
 
   onDragStart(event: DragEvent, nodeType: NodeTypeDescription): void {
@@ -142,7 +159,7 @@ export class NodePaletteComponent {
 
   onSearchChange(value: string): void {
     this.searchTerm.set(value);
-    this.actionMenuNode.set(null);
+    this.actionPanel.set(null);
   }
 
   getCategoryEntries(): [string, NodeTypeDescription[]][] {
