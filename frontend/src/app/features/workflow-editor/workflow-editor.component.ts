@@ -391,7 +391,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
               [event.nodeId]: event.data
             });
           } else if (event.event === 'executionFinished') {
-            this.store.setExecutionData(event.data);
+            // Don't overwrite — nodeFinished events already populated clean per-nodeId output data.
+            // event.data is buildResultData() format keyed by node name with metadata wrappers.
             this.store.setIsExecuting(false);
             this.wsService.unsubscribe(topic);
             this.currentExecutionId = null;

@@ -294,9 +294,9 @@
               </div>
             }
 
-            @if (nodeType?.credentials?.length) {
+            @if (activeCredentialTypes.length) {
               <app-credential-param
-                [credentialTypes]="nodeType!.credentials"
+                [credentialTypes]="activeCredentialTypes"
                 [currentCredentials]="node.credentials || {}"
                 [readOnly]="readOnly"
                 (credentialChanged)="credentialChanged.emit($event)" />

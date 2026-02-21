@@ -194,6 +194,31 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     return this.parameters.filter(p => !p.isNodeSetting && this.isVisible(p));
   }
 
+  /** Returns only the credential type(s) currently relevant based on the node's parameter values. */
+  get activeCredentialTypes(): string[] {
+    const allTypes = this.nodeType?.credentials || [];
+    if (allTypes.length <= 1) return allTypes;
+
+    // If node has an 'authentication' parameter, use it to determine the active credential type
+    const authValue = this.node.parameters?.['authentication'];
+    if (authValue === 'none') return [];
+    if (authValue === 'genericCredentialType') {
+      const genericType = this.node.parameters?.['genericAuthType'];
+      return genericType && allTypes.includes(genericType) ? [genericType] : [];
+    }
+    if (authValue === 'predefinedCredentialType') {
+      const predefined = this.node.parameters?.['nodeCredentialType'];
+      return predefined && allTypes.includes(predefined) ? [predefined] : [];
+    }
+
+    // General fallback: check if any parameter value matches a credential type name
+    const paramValues = Object.values(this.node.parameters || {});
+    const match = allTypes.find(t => paramValues.includes(t));
+    if (match) return [match];
+
+    return allTypes;
+  }
+
   get settingsParameters(): NodeParameter[] {
     return this.parameters.filter(p => p.isNodeSetting && this.isVisible(p));
   }
@@ -326,6 +351,17 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
    */
   extractItems(rawData: any): Record<string, any>[] {
     if (!rawData) return [];
+
+    // Handle metadata-wrapped format from buildResultData / execution history:
+    // [{startedAt, finishedAt, status, data: {main: [[{json: ...}]]}}]
+    if (Array.isArray(rawData) && rawData.length > 0 && rawData[0]?.data?.main) {
+      const mainOutputs = rawData[0].data.main;
+      if (Array.isArray(mainOutputs) && mainOutputs.length > 0 && Array.isArray(mainOutputs[0])) {
+        return mainOutputs[0].map((item: any) => item?.json ?? item);
+      }
+      return [];
+    }
+
     let items: any[] = [];
     if (Array.isArray(rawData) && rawData.length > 0 && Array.isArray(rawData[0])) {
       items = rawData[0];
