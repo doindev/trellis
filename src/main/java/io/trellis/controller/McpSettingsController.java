@@ -1,7 +1,6 @@
 package io.trellis.controller;
 
 import io.trellis.dto.McpSettingsDto;
-import io.trellis.entity.WorkflowEntity;
 import io.trellis.service.McpSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

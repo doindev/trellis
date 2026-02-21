@@ -19,6 +19,7 @@ public class WorkflowExecutionState {
     private final Map<String, NodeExecutionMetadata> nodeMetadata = new ConcurrentHashMap<>();
     private final Map<String, Object> workflowStaticData = new ConcurrentHashMap<>();
     private final Map<String, Map<String, Object>> nodeContextData = new ConcurrentHashMap<>();
+    private final Map<String, Object> aiSuppliedData = new ConcurrentHashMap<>();
 
     @Data
     public static class NodeExecutionMetadata {
@@ -57,21 +58,34 @@ public class WorkflowExecutionState {
         return outputs.get(outputIndex);
     }
 
+    public void storeAiData(String nodeId, Object data) {
+        aiSuppliedData.put(nodeId, data);
+    }
+
+    public Object getAiData(String nodeId) {
+        return aiSuppliedData.get(nodeId);
+    }
+
     public List<Map<String, Object>> collectInputForNode(String nodeId) {
         List<WorkflowGraph.Connection> incoming = graph.getIncomingConnections()
                 .getOrDefault(nodeId, List.of());
 
-        if (incoming.isEmpty()) {
+        // Only collect from "main" connections — AI connections carry LangChain4j objects, not data items
+        List<WorkflowGraph.Connection> mainIncoming = incoming.stream()
+                .filter(c -> "main".equals(c.getType()))
+                .toList();
+
+        if (mainIncoming.isEmpty()) {
             return List.of();
         }
 
         // Check if the target node has multiple inputs
-        boolean multiInput = incoming.stream()
+        boolean multiInput = mainIncoming.stream()
                 .map(WorkflowGraph.Connection::getTargetInputIndex)
                 .distinct().count() > 1;
 
         List<Map<String, Object>> combined = new ArrayList<>();
-        for (WorkflowGraph.Connection conn : incoming) {
+        for (WorkflowGraph.Connection conn : mainIncoming) {
             List<Map<String, Object>> sourceOutput = getNodeOutput(
                     conn.getSourceNodeId(), conn.getSourceOutputIndex());
             if (multiInput) {
@@ -95,7 +109,6 @@ public class WorkflowExecutionState {
     /**
      * Serialize the current execution state to a checkpoint map for persistence.
      */
-    @SuppressWarnings("unchecked")
     public Map<String, Object> toCheckpoint() {
         Map<String, Object> checkpoint = new LinkedHashMap<>();
 

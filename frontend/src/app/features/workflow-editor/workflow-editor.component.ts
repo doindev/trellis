@@ -261,26 +261,40 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (!this.pendingConnection) return;
     const { sourceNodeId, sourceHandleId } = this.pendingConnection;
 
-    // Find the output index for the source handle
-    const sourceNode = this.store.nodes().find(n => n.id === sourceNodeId);
-    if (!sourceNode) return;
-
-    const sourceType = this.nodeTypeStore.getByType(sourceNode.type);
-    const outputs = sourceType?.outputs || [{ name: 'main', type: 'main' }];
-    const outputIndex = outputs.findIndex(o => o.name === sourceHandleId);
-    if (outputIndex < 0) return;
+    // Decode handle ID: "type:index" or legacy "name"
+    let connectionType = 'main';
+    let outputIndex = 0;
+    if (sourceHandleId.includes(':')) {
+      const sep = sourceHandleId.lastIndexOf(':');
+      connectionType = sourceHandleId.substring(0, sep);
+      outputIndex = parseInt(sourceHandleId.substring(sep + 1), 10) || 0;
+    } else {
+      // Legacy: find by output name
+      const sourceNode = this.store.nodes().find(n => n.id === sourceNodeId);
+      if (!sourceNode) return;
+      const sourceType = this.nodeTypeStore.getByType(sourceNode.type);
+      const outputs = sourceType?.outputs || [{ name: 'main', type: 'main' }];
+      const idx = outputs.findIndex(o => o.name === sourceHandleId);
+      if (idx >= 0) {
+        connectionType = outputs[idx].type || 'main';
+        outputIndex = idx;
+      }
+    }
 
     const connections = JSON.parse(JSON.stringify(this.store.connections()));
     if (!connections[sourceNodeId]) {
-      connections[sourceNodeId] = { main: [] };
+      connections[sourceNodeId] = {};
     }
-    // Ensure the main array has enough entries for the output index
-    while (connections[sourceNodeId].main.length <= outputIndex) {
-      connections[sourceNodeId].main.push([]);
+    if (!connections[sourceNodeId][connectionType]) {
+      connections[sourceNodeId][connectionType] = [];
     }
-    connections[sourceNodeId].main[outputIndex].push({
+    // Ensure the array has enough entries for the output index
+    while (connections[sourceNodeId][connectionType].length <= outputIndex) {
+      connections[sourceNodeId][connectionType].push([]);
+    }
+    connections[sourceNodeId][connectionType][outputIndex].push({
       node: targetNodeId,
-      type: 'main',
+      type: connectionType,
       index: 0,
     });
 

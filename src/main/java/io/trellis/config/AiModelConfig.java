@@ -16,7 +16,7 @@ public class AiModelConfig {
 
     @Bean
     @ConditionalOnProperty("trellis.ai.openai.api-key")
-    public ChatModel chatLanguageModel(
+    public ChatModel chatModel(
             @Value("${trellis.ai.openai.api-key}") String apiKey,
             @Value("${trellis.ai.openai.model:gpt-4o-mini}") String model) {
         log.info("Configuring OpenAI ChatModel with model: {}", model);

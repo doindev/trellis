@@ -480,7 +480,6 @@ public class FtpNode extends AbstractNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult sftpList(ChannelSftp channel, NodeExecutionContext context,
 			List<Map<String, Object>> inputData) throws Exception {
 		String path = context.getParameter("path", "/");
@@ -493,7 +492,6 @@ public class FtpNode extends AbstractNode {
 		return NodeExecutionResult.success(result);
 	}
 
-	@SuppressWarnings("unchecked")
 	private void listSftpDirectory(ChannelSftp channel, String path, boolean recursive,
 			List<Map<String, Object>> result) throws Exception {
 		Vector<ChannelSftp.LsEntry> entries = channel.ls(path);
@@ -589,7 +587,6 @@ public class FtpNode extends AbstractNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(json)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private void deleteSftpDirectoryRecursive(ChannelSftp channel, String path) throws Exception {
 		Vector<ChannelSftp.LsEntry> entries = channel.ls(path);
 		for (ChannelSftp.LsEntry entry : entries) {

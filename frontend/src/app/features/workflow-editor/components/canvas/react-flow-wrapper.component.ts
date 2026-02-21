@@ -196,25 +196,30 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     const connections = this.workflow.connections;
 
     Object.entries(connections).forEach(([sourceNodeId, conn]: [string, any]) => {
-      if (conn?.main) {
-        conn.main.forEach((outputs: any[], outputIndex: number) => {
-          if (outputs) {
-            outputs.forEach((target: any, targetIdx: number) => {
-              edges.push({
-                id: `e-${sourceNodeId}-${outputIndex}-${target.node}-${targetIdx}`,
-                source: sourceNodeId,
-                target: target.node,
-                sourceHandle: 'main',
-                targetHandle: 'main',
-                type: 'trellisEdge',
-                data: {
-                  animated: this.executionData != null,
-                },
-              });
+      if (!conn) return;
+      // Iterate ALL connection type keys (main, ai_languageModel, ai_tool, etc.)
+      Object.entries(conn).forEach(([connectionType, outputList]: [string, any]) => {
+        if (!Array.isArray(outputList)) return;
+        outputList.forEach((targets: any[], outputIndex: number) => {
+          if (!targets) return;
+          targets.forEach((target: any, targetIdx: number) => {
+            const isAi = connectionType.startsWith('ai_');
+            edges.push({
+              id: `e-${sourceNodeId}-${connectionType}-${outputIndex}-${target.node}-${targetIdx}`,
+              source: sourceNodeId,
+              target: target.node,
+              sourceHandle: `${connectionType}:${outputIndex}`,
+              targetHandle: `${connectionType}:${target.index || 0}`,
+              type: 'trellisEdge',
+              data: {
+                animated: this.executionData != null,
+                connectionType,
+                isAi,
+              },
             });
-          }
+          });
         });
-      }
+      });
     });
 
     return edges;

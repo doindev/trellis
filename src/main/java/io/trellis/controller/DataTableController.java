@@ -50,7 +50,6 @@ public class DataTableController {
     }
 
     @PostMapping("/{id}/rows")
-    @SuppressWarnings("unchecked")
     public Map<String, Object> insertRow(@PathVariable String id, @RequestBody Map<String, Object> body) {
         DataTableRowEntity row = dataTableService.insertRow(id, body);
         return rowToMap(row);

@@ -52,7 +52,6 @@ public final class FormHtmlGenerator {
      * Each field map should contain: fieldLabel, fieldType, and optionally
      * placeholder, defaultValue, required (boolean), selectOptions (comma-separated).
      */
-    @SuppressWarnings("unchecked")
     public static String generateForm(Object formDefinition, String postAction) {
         return generateForm(formDefinition, postAction, "Form", null, "Submit");
     }

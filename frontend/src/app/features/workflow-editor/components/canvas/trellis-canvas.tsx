@@ -205,26 +205,67 @@ function TrellisCanvasInner({
     }
   }, [onViewportHelperReady, screenToFlowPosition]);
 
+  // Decode a handle ID like "main:0" or "ai_languageModel:0" into { type, index }
+  const decodeHandleId = useCallback((handleId: string | null): { type: string; index: number } => {
+    if (!handleId) return { type: 'main', index: 0 };
+    const sep = handleId.lastIndexOf(':');
+    if (sep < 0) return { type: handleId, index: 0 };
+    return { type: handleId.substring(0, sep), index: parseInt(handleId.substring(sep + 1), 10) || 0 };
+  }, []);
+
+  const isValidConnection = useCallback((connection: Edge | Connection): boolean => {
+    const source = decodeHandleId(connection.sourceHandle as string | null);
+    const target = decodeHandleId(connection.targetHandle as string | null);
+    return source.type === target.type;
+  }, [decodeHandleId]);
+
   const onConnect = useCallback(
     (connection: Connection) => {
-      setEdges((eds) => addEdge({ ...connection, type: 'trellisEdge' }, eds));
+      const sourceInfo = decodeHandleId(connection.sourceHandle as string | null);
+      const targetInfo = decodeHandleId(connection.targetHandle as string | null);
+      // Only allow connections where types match
+      if (sourceInfo.type !== targetInfo.type) return;
+
+      const connectionType = sourceInfo.type;
+      const isAi = connectionType.startsWith('ai_');
+
+      setEdges((eds) => addEdge({
+        ...connection,
+        type: 'trellisEdge',
+        data: { connectionType, isAi },
+      }, eds));
+
       if (onConnectionsChange) {
-        const newEdges = [...edges, { ...connection, type: 'trellisEdge', id: `e-${connection.source}-${connection.target}` }];
+        const newEdges = [...edges, {
+          ...connection,
+          type: 'trellisEdge',
+          id: `e-${connection.source}-${connectionType}-${connection.target}`,
+        }];
         const connectionsMap: Record<string, any> = {};
         newEdges.forEach((e: any) => {
+          const src = decodeHandleId(e.sourceHandle);
+          const tgt = decodeHandleId(e.targetHandle);
+          const cType = src.type || 'main';
           if (!connectionsMap[e.source]) {
-            connectionsMap[e.source] = { main: [[]] };
+            connectionsMap[e.source] = {};
           }
-          connectionsMap[e.source].main[0].push({
+          if (!connectionsMap[e.source][cType]) {
+            connectionsMap[e.source][cType] = [[]];
+          }
+          // Ensure enough output indices
+          while (connectionsMap[e.source][cType].length <= src.index) {
+            connectionsMap[e.source][cType].push([]);
+          }
+          connectionsMap[e.source][cType][src.index].push({
             node: e.target,
-            type: 'main',
-            index: 0,
+            type: cType,
+            index: tgt.index,
           });
         });
         onConnectionsChange(connectionsMap);
       }
     },
-    [edges, setEdges, onConnectionsChange]
+    [edges, setEdges, onConnectionsChange, decodeHandleId]
   );
 
   const onNodeClickHandler = useCallback(
@@ -350,6 +391,7 @@ function TrellisCanvasInner({
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
           onConnect={readOnly ? undefined : onConnect}
+          isValidConnection={isValidConnection}
           onNodeClick={onNodeClickHandler}
           onNodeDoubleClick={onNodeDoubleClickHandler}
           onPaneClick={onPaneClickHandler}

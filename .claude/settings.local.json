@@ -84,7 +84,19 @@
       "Bash(done)",
       "WebFetch(domain:rolandsoftwares.com)",
       "Bash(del \"C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\src\\\\main\\\\java\\\\io\\\\trellis\\\\service\\\\WaitResumeService.java\")",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(Select-String \"tool|Tool\")",
+      "Bash(Select-String 'builder|Builder|property|addProp|add')",
+      "Bash(powershell.exe -NoProfile -Command \"javap -p -classpath ''C:\\\\Users\\\\timhj\\\\.m2\\\\repository\\\\dev\\\\langchain4j\\\\langchain4j-core\\\\1.11.0\\\\langchain4j-core-1.11.0.jar'' ''dev.langchain4j.model.chat.request.json.JsonObjectSchema''\")",
+      "Bash(powershell.exe -NoProfile -Command \"javap -p -classpath ''C:\\\\Users\\\\timhj\\\\.m2\\\\repository\\\\dev\\\\langchain4j\\\\langchain4j-core\\\\1.11.0\\\\langchain4j-core-1.11.0.jar'' ''dev.langchain4j.model.chat.request.json.JsonStringSchema''\")",
+      "Bash(powershell.exe -NoProfile -Command \"javap -p -classpath ''C:\\\\Users\\\\timhj\\\\.m2\\\\repository\\\\dev\\\\langchain4j\\\\langchain4j-core\\\\1.11.0\\\\langchain4j-core-1.11.0.jar'' dev.langchain4j.agent.tool.ToolSpecifications\")",
+      "Bash(powershell.exe -NoProfile -Command \"javap -p -classpath ''C:\\\\Users\\\\timhj\\\\.m2\\\\repository\\\\dev\\\\langchain4j\\\\langchain4j\\\\1.11.0\\\\langchain4j-1.11.0.jar'' dev.langchain4j.service.tool.DefaultToolExecutor\")",
+      "Bash(powershell.exe -NoProfile -Command \"javap -p -classpath ''C:\\\\Users\\\\timhj\\\\.m2\\\\repository\\\\dev\\\\langchain4j\\\\langchain4j-core\\\\1.11.0\\\\langchain4j-core-1.11.0.jar'' ''dev.langchain4j.model.chat.request.json.JsonObjectSchema$Builder''\")",
+      "Bash(powershell.exe -NoProfile -Command \"jar tf ''C:\\\\Users\\\\timhj\\\\.m2\\\\repository\\\\dev\\\\langchain4j\\\\langchain4j-core\\\\1.11.0\\\\langchain4j-core-1.11.0.jar'' | Select-String ''JsonObjectSchema''\")",
+      "Bash(cmd /c \"javap -p -classpath C:\\\\Users\\\\timhj\\\\.m2\\\\repository\\\\dev\\\\langchain4j\\\\langchain4j-core\\\\1.11.0\\\\langchain4j-core-1.11.0.jar dev.langchain4j.model.chat.request.json.JsonObjectSchema$Builder\")",
+      "Bash(cmd /c \"javap -p -classpath C:\\\\Users\\\\timhj\\\\.m2\\\\repository\\\\dev\\\\langchain4j\\\\langchain4j-core\\\\1.11.0\\\\langchain4j-core-1.11.0.jar \"\"dev.langchain4j.model.chat.request.json.JsonObjectSchema$Builder\"\" 2>&1\")",
+      "Bash(powershell.exe -NoProfile -Command \"javap -p -classpath ''C:/Users/timhj/.m2/repository/dev/langchain4j/langchain4j-core/1.11.0/langchain4j-core-1.11.0.jar'' ''dev.langchain4j.model.chat.request.json.JsonObjectSchema$Builder''\")",
+      "Bash(powershell.exe -NoProfile -Command 'javap -p -classpath \"\"C:/Users/timhj/.m2/repository/dev/langchain4j/langchain4j-core/1.11.0/langchain4j-core-1.11.0.jar\"\" \"\"dev.langchain4j.model.chat.request.json.JsonObjectSchema`$Builder\"\"')"
     ]
   }
 }

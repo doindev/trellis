@@ -37,6 +37,8 @@ public class WorkflowGraph {
         private int sourceOutputIndex;
         private String targetNodeId;
         private int targetInputIndex;
+        @Builder.Default
+        private String type = "main";
     }
 
     @SuppressWarnings("unchecked")
@@ -102,30 +104,34 @@ public class WorkflowGraph {
                 Map<String, Object> nodeConnections = (Map<String, Object>) entry.getValue();
                 if (nodeConnections == null) continue;
 
-                Object mainObj = nodeConnections.get("main");
-                if (!(mainObj instanceof List)) continue;
+                for (Map.Entry<String, Object> connTypeEntry : nodeConnections.entrySet()) {
+                    String connectionType = connTypeEntry.getKey();
+                    Object typeObj = connTypeEntry.getValue();
+                    if (!(typeObj instanceof List)) continue;
 
-                List<?> mainList = (List<?>) mainObj;
-                for (int sourceOutputIndex = 0; sourceOutputIndex < mainList.size(); sourceOutputIndex++) {
-                    Object outputObj = mainList.get(sourceOutputIndex);
-                    if (!(outputObj instanceof List)) continue;
+                    List<?> outputList = (List<?>) typeObj;
+                    for (int sourceOutputIndex = 0; sourceOutputIndex < outputList.size(); sourceOutputIndex++) {
+                        Object outputObj = outputList.get(sourceOutputIndex);
+                        if (!(outputObj instanceof List)) continue;
 
-                    List<Map<String, Object>> targets = (List<Map<String, Object>>) outputObj;
-                    for (Map<String, Object> target : targets) {
-                        String targetNodeId = (String) target.get("node");
-                        int targetInputIndex = target.containsKey("index") ?
-                                ((Number) target.get("index")).intValue() : 0;
+                        List<Map<String, Object>> targets = (List<Map<String, Object>>) outputObj;
+                        for (Map<String, Object> target : targets) {
+                            String targetNodeId = (String) target.get("node");
+                            int targetInputIndex = target.containsKey("index") ?
+                                    ((Number) target.get("index")).intValue() : 0;
 
-                        Connection conn = Connection.builder()
-                                .sourceNodeId(sourceNodeId)
-                                .sourceOutputIndex(sourceOutputIndex)
-                                .targetNodeId(targetNodeId)
-                                .targetInputIndex(targetInputIndex)
-                                .build();
+                            Connection conn = Connection.builder()
+                                    .sourceNodeId(sourceNodeId)
+                                    .sourceOutputIndex(sourceOutputIndex)
+                                    .targetNodeId(targetNodeId)
+                                    .targetInputIndex(targetInputIndex)
+                                    .type(connectionType)
+                                    .build();
 
-                        graph.connections.add(conn);
-                        graph.outgoingConnections.computeIfAbsent(sourceNodeId, k -> new ArrayList<>()).add(conn);
-                        graph.incomingConnections.computeIfAbsent(targetNodeId, k -> new ArrayList<>()).add(conn);
+                            graph.connections.add(conn);
+                            graph.outgoingConnections.computeIfAbsent(sourceNodeId, k -> new ArrayList<>()).add(conn);
+                            graph.incomingConnections.computeIfAbsent(targetNodeId, k -> new ArrayList<>()).add(conn);
+                        }
                     }
                 }
             }
@@ -226,6 +232,12 @@ public class WorkflowGraph {
         }
 
         return body;
+    }
+
+    public List<Connection> getIncomingConnectionsByType(String nodeId, String type) {
+        return incomingConnections.getOrDefault(nodeId, List.of()).stream()
+                .filter(c -> type.equals(c.getType()))
+                .toList();
     }
 
     public List<Connection> getSuccessors(String nodeId, int outputIndex) {

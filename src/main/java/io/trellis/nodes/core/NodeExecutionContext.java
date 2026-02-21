@@ -1,5 +1,6 @@
 package io.trellis.nodes.core;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,8 @@ public class NodeExecutionContext {
 	private Map<String, Object> workflowStaticData;
 	private Map<String, Object> nodeContextData;
 	
+	private Map<String, List<Object>> aiInputData;
+
 	private ExecutionMode executionMode;
 	private boolean continueOnFail;
 	private boolean pairedItem;
@@ -102,6 +105,28 @@ public class NodeExecutionContext {
 		return currentItem;
 	}
 	
+	@SuppressWarnings("unchecked")
+	public <T> T getAiInput(String connectionType, Class<T> type) {
+		if (aiInputData == null) return null;
+		List<Object> items = aiInputData.get(connectionType);
+		if (items == null || items.isEmpty()) return null;
+		Object first = items.get(0);
+		if (type.isInstance(first)) return (T) first;
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> List<T> getAiInputs(String connectionType, Class<T> type) {
+		if (aiInputData == null) return List.of();
+		List<Object> items = aiInputData.get(connectionType);
+		if (items == null) return List.of();
+		List<T> result = new ArrayList<>();
+		for (Object item : items) {
+			if (type.isInstance(item)) result.add((T) item);
+		}
+		return result;
+	}
+
 	public Boolean getParameterAsBoolean(String key) {
 		if (parameters == null) {
 			return null;

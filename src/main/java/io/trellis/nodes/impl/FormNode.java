@@ -254,7 +254,6 @@ public class FormNode extends AbstractNode {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public NodeExecutionResult execute(NodeExecutionContext context) {
         String operation = context.getParameter("operation", "page");
 

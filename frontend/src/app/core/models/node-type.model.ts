@@ -44,4 +44,5 @@ export interface NodeIO {
   displayName: string;
   type: string;
   required: boolean;
+  maxConnections?: number;
 }

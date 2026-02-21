@@ -227,7 +227,6 @@ public class ExecuteWorkflowTriggerNode extends AbstractTriggerNode {
 	 * Parse field names from the jsonExample JSON parameter.
 	 * Extracts top-level keys from the example JSON object.
 	 */
-	@SuppressWarnings("unchecked")
 	private Set<String> parseJsonExampleFields(NodeExecutionContext context) {
 		Set<String> fields = new LinkedHashSet<>();
 		try {

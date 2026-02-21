@@ -123,7 +123,6 @@ public class WorkflowEngine {
      * Called by ExecuteWorkflowNode to run another workflow inline.
      * Includes recursion depth protection to prevent infinite loops.
      */
-    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> executeSubWorkflow(String workflowId, List<Map<String, Object>> inputItems) {
         int depth = SUB_WORKFLOW_DEPTH.get();
         if (depth >= MAX_SUB_WORKFLOW_DEPTH) {
@@ -359,6 +358,9 @@ public class WorkflowEngine {
         Map<String, Object> credentials = resolveCredentials(
                 graphNode.getCredentials(), nodeInput, state, variables, executionId);
 
+        // Collect AI inputs from sub-node connections
+        Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
+
         NodeExecutionContext context = NodeExecutionContext.builder()
                 .executionId(executionId)
                 .workflowId(workflowId)
@@ -371,6 +373,7 @@ public class WorkflowEngine {
                 .staticData(new HashMap<>())
                 .workflowStaticData(state.getWorkflowStaticData())
                 .nodeContextData(state.getOrCreateNodeContext(nodeId))
+                .aiInputData(aiInputData)
                 .executionMode(NodeExecutionContext.ExecutionMode.MANUAL)
                 .continueOnFail(graphNode.isContinueOnFail())
                 .build();
@@ -383,6 +386,18 @@ public class WorkflowEngine {
         state.getNodeMetadata().put(nodeId, meta);
 
         try {
+            // AI sub-node: call supplyData() and store result, skip normal execute()
+            if (nodeInstance instanceof AiSubNodeInterface aiSubNode) {
+                Object aiData = aiSubNode.supplyData(context);
+                state.storeAiData(nodeId, aiData);
+                state.storeOutput(nodeId, List.of(List.of()));
+                meta.setFinishedAt(Instant.now());
+                meta.setStatus("success");
+                webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                        state.getNodeOutputs().get(nodeId));
+                return true;
+            }
+
             nodeInstance.beforeExecute(context);
             NodeExecutionResult result = nodeInstance.execute(context);
             nodeInstance.afterExecute(context, result);
@@ -607,6 +622,9 @@ public class WorkflowEngine {
         Map<String, Object> credentials = resolveCredentials(
                 graphNode.getCredentials(), nodeInput, state, variables, executionId);
 
+        // Collect AI inputs from sub-node connections
+        Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
+
         NodeExecutionContext context = NodeExecutionContext.builder()
                 .executionId(executionId)
                 .workflowId(workflow.getId())
@@ -619,6 +637,7 @@ public class WorkflowEngine {
                 .staticData(new HashMap<>())
                 .workflowStaticData(state.getWorkflowStaticData())
                 .nodeContextData(state.getOrCreateNodeContext(nodeId))
+                .aiInputData(aiInputData)
                 .executionMode(mode)
                 .continueOnFail(graphNode.isContinueOnFail())
                 .build();
@@ -631,6 +650,18 @@ public class WorkflowEngine {
         state.getNodeMetadata().put(nodeId, meta);
 
         try {
+            // AI sub-node: call supplyData() and store result, skip normal execute()
+            if (nodeInstance instanceof AiSubNodeInterface aiSubNode) {
+                Object aiData = aiSubNode.supplyData(context);
+                state.storeAiData(nodeId, aiData);
+                state.storeOutput(nodeId, List.of(List.of()));
+                meta.setFinishedAt(Instant.now());
+                meta.setStatus("success");
+                webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                        state.getNodeOutputs().get(nodeId));
+                return true;
+            }
+
             nodeInstance.beforeExecute(context);
             NodeExecutionResult result = nodeInstance.execute(context);
             nodeInstance.afterExecute(context, result);
@@ -723,7 +754,6 @@ public class WorkflowEngine {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> executeSingleNode(String nodeType, int typeVersion,
                                                   Map<String, Object> parameters,
                                                   Map<String, Object> credentialRefs,
@@ -823,6 +853,22 @@ public class WorkflowEngine {
         future.complete(Map.of("statusCode", 200,
                 "headers", Map.of("Content-Type", "application/json"),
                 "body", body));
+    }
+
+    private Map<String, List<Object>> collectAllAiInputs(String nodeId, WorkflowGraph graph,
+                                                          WorkflowExecutionState state) {
+        Map<String, List<Object>> aiInputs = new HashMap<>();
+        List<WorkflowGraph.Connection> incoming = graph.getIncomingConnections()
+                .getOrDefault(nodeId, List.of());
+
+        for (WorkflowGraph.Connection conn : incoming) {
+            if ("main".equals(conn.getType())) continue;
+            Object aiData = state.getAiData(conn.getSourceNodeId());
+            if (aiData != null) {
+                aiInputs.computeIfAbsent(conn.getType(), k -> new ArrayList<>()).add(aiData);
+            }
+        }
+        return aiInputs;
     }
 
     @SuppressWarnings("unchecked")

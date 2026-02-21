@@ -406,6 +406,67 @@
   margin: 4px 6px;
 }
 
+/* AI Handle containers — positioned above/below the node body */
+.ai-handles-top {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  position: absolute;
+  top: -28px;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.ai-handles-bottom {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  position: absolute;
+  bottom: -28px;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.ai-handle-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: auto;
+}
+
+.ai-handles-top .ai-handle-wrapper {
+  flex-direction: column-reverse;
+}
+
+.ai-handle-label {
+  font-size: 9px;
+  font-weight: 500;
+  white-space: nowrap;
+  user-select: none;
+  opacity: 0.8;
+}
+
+/* AI handles are rounded squares instead of circles */
+.trellis-handle.ai-handle {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 3px !important;
+  border: 2px solid hsl(0, 0%, 13%) !important;
+
+  &:hover {
+    filter: brightness(1.2);
+  }
+}
+
+/* Give AI-capable nodes extra spacing for handle containers */
+.trellis-node.has-ai-handles {
+  margin-top: 28px;
+  margin-bottom: 28px;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

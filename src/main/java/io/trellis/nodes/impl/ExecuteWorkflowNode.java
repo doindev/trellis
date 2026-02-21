@@ -102,7 +102,6 @@ public class ExecuteWorkflowNode extends AbstractNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String workflowId = context.getParameter("workflowId", "");
 		String mode = context.getParameter("mode", "runOnceWithAllItems");

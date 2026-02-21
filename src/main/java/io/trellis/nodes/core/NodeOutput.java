@@ -1,5 +1,6 @@
 package io.trellis.nodes.core;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,18 +12,29 @@ public class NodeOutput {
 
 	@Builder.Default
 	private OutputType type = OutputType.MAIN;
-	
+
 	public enum OutputType {
-		MAIN,
-		AI_MAIN,
-		AI_TOOL,
-		AI_LANGUAGE_MODEL,
-		AI_MEMORY,
-		AI_OUTPUT_PARSER,
-		AI_EMBEDDING,
-		AI_RETRIEVER,
-		AI_TEXT_SPLITTER,
-		AI_VECTOR_STORE,
-		AI_AGENT
+		MAIN("main"),
+		AI_MAIN("ai_main"),
+		AI_TOOL("ai_tool"),
+		AI_LANGUAGE_MODEL("ai_languageModel"),
+		AI_MEMORY("ai_memory"),
+		AI_OUTPUT_PARSER("ai_outputParser"),
+		AI_EMBEDDING("ai_embedding"),
+		AI_RETRIEVER("ai_retriever"),
+		AI_TEXT_SPLITTER("ai_textSplitter"),
+		AI_VECTOR_STORE("ai_vectorStore"),
+		AI_AGENT("ai_agent");
+
+		private final String jsonValue;
+
+		OutputType(String jsonValue) {
+			this.jsonValue = jsonValue;
+		}
+
+		@JsonValue
+		public String toJson() {
+			return jsonValue;
+		}
 	}
 }

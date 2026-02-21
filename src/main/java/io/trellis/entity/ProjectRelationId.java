@@ -9,6 +9,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProjectRelationId implements Serializable {
-    private String projectId;
+	private static final long serialVersionUID = 1L;
+	private String projectId;
     private String userId;
 }

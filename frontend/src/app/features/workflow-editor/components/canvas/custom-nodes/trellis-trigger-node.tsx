@@ -21,6 +21,10 @@ interface TrellisTriggerNodeData {
 
 const PROXIMITY_PX = 30;
 
+function encodeHandleId(type: string, index: number): string {
+  return `${type}:${index}`;
+}
+
 const TrellisTriggerNode = memo(({ id, data, selected }: NodeProps & { data: TrellisTriggerNodeData }) => {
   const typeDesc = data.typeDescription;
   const displayName = typeDesc?.displayName || data.label || 'Trigger';
@@ -80,12 +84,12 @@ const TrellisTriggerNode = memo(({ id, data, selected }: NodeProps & { data: Tre
           key={`output-${output.name}`}
           type="source"
           position={Position.Right}
-          id={output.name}
+          id={encodeHandleId(output.type, index)}
           style={{ top: `${((index + 1) / (outputs.length + 1)) * 100}%` }}
           className="trellis-handle"
           onClick={(e) => {
             e.stopPropagation();
-            data.onOutputHandleDoubleClick?.(output.name);
+            data.onOutputHandleDoubleClick?.(encodeHandleId(output.type, index));
           }}
         />
       ))}
