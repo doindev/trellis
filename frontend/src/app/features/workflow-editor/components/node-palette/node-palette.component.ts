@@ -51,19 +51,46 @@ export class NodePaletteComponent {
   private _nodeTypes = signal<Map<string, NodeTypeDescription[]>>(new Map());
   searchTerm = signal('');
   triggerOnly = signal(false);
+  /** When set, only show nodes whose outputs include this AI connection type. */
+  aiOutputTypeFilter = signal<string | null>(null);
   actionPanel = signal<ActionPanel | null>(null);
+
+  /** Human-readable labels for AI connection types. */
+  private static readonly AI_TYPE_LABELS: Record<string, string> = {
+    ai_languageModel: 'Chat Models',
+    ai_memory: 'Memory',
+    ai_tool: 'Tools',
+    ai_outputParser: 'Output Parsers',
+    ai_embedding: 'Embeddings',
+    ai_vectorStore: 'Vector Stores',
+    ai_retriever: 'Retrievers',
+    ai_agent: 'Agents',
+    ai_document: 'Documents',
+    ai_textSplitter: 'Text Splitters',
+  };
+
+  get aiFilterLabel(): string {
+    const t = this.aiOutputTypeFilter();
+    return t ? (NodePaletteComponent.AI_TYPE_LABELS[t] || t) : '';
+  }
 
   filteredTypes = computed(() => {
     const term = this.searchTerm().toLowerCase();
     const triggersOnly = this.triggerOnly();
+    const aiFilter = this.aiOutputTypeFilter();
     const types = this._nodeTypes();
-    if (!term && !triggersOnly) return types;
+    if (!term && !triggersOnly && !aiFilter) return types;
 
     const filtered = new Map<string, NodeTypeDescription[]>();
     types.forEach((nodes, category) => {
       let matching = nodes;
       if (triggersOnly) {
         matching = matching.filter(n => n.isTrigger);
+      }
+      if (aiFilter) {
+        matching = matching.filter(n =>
+          n.outputs?.some(o => o.type === aiFilter)
+        );
       }
       if (term) {
         matching = matching.filter(n =>
@@ -102,7 +129,7 @@ export class NodePaletteComponent {
   }
 
   isCategoryExpanded(category: string): boolean {
-    return this.expandedCategories.has(category) || this.searchTerm().length > 0 || this.triggerOnly();
+    return this.expandedCategories.has(category) || this.searchTerm().length > 0 || this.triggerOnly() || !!this.aiOutputTypeFilter();
   }
 
   /** Check if a node has any action-bearing parameters (for showing the chevron). */

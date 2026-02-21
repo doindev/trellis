@@ -173,6 +173,10 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
                   id={encodeHandleId(input.type, index)}
                   className="trellis-handle ai-handle"
                   style={{ background: style.color, position: 'relative', transform: 'none', left: 'auto', top: 'auto' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    data.onOutputHandleDoubleClick?.(encodeHandleId(input.type, index));
+                  }}
                 />
                 <span className="ai-handle-label" style={{ color: style.color }}>{style.label}</span>
               </div>

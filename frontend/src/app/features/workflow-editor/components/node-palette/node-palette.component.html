@@ -42,6 +42,21 @@
     </div>
   }
 
+  @if (aiOutputTypeFilter()) {
+    <div class="palette-filter-badge ai-filter">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+        <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+      </svg>
+      <span>Compatible {{ aiFilterLabel }}</span>
+      <button class="badge-clear" (click)="aiOutputTypeFilter.set(null)">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  }
+
   <div class="palette-content" [class.panel-open]="actionPanel()">
     <!-- Main node list -->
     <div class="palette-body">

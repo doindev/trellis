@@ -59,7 +59,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   drawerExpandedEditor = false;
   drawerExpandedExecutions = false;
   activeTab: 'editor' | 'executions' = 'editor';
-  pendingConnection: { sourceNodeId: string; sourceHandleId: string } | null = null;
+  pendingConnection: { sourceNodeId: string; sourceHandleId: string; isTargetHandle?: boolean } | null = null;
   selectedExecutionId: string | null = null;
   showExecFilterModal = false;
   execSidebarFilters: ExecutionFilters = defaultExecutionFilters();
@@ -146,6 +146,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       setTimeout(() => {
         if (this.nodePalette) {
           this.nodePalette.triggerOnly.set(false);
+          this.nodePalette.aiOutputTypeFilter.set(null);
           this.nodePalette.focusSearch();
         }
       }, 260);
@@ -231,7 +232,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (nodeType.isTrigger && this.nodePalette?.triggerOnly()) {
       this.nodePalette.triggerOnly.set(false);
     }
-    this.showPalette = false;
+    this.closePalette();
   }
 
   onPaletteNodeClickedWithAction(event: NodeClickedWithAction): void {
@@ -246,20 +247,56 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (nodeType.isTrigger && this.nodePalette?.triggerOnly()) {
       this.nodePalette.triggerOnly.set(false);
     }
+    this.closePalette();
+  }
+
+  private closePalette(): void {
     this.showPalette = false;
+    this.nodePalette?.aiOutputTypeFilter.set(null);
   }
 
   onOutputHandleDoubleClicked(event: { nodeId: string; handleId: string }): void {
     this.pendingConnection = { sourceNodeId: event.nodeId, sourceHandleId: event.handleId };
-    if (!this.showPalette) {
-      this.showPalette = true;
-      setTimeout(() => this.nodePalette?.focusSearch(), 260);
+
+    // Decode handle type from "ai_languageModel:0" → "ai_languageModel"
+    let connectionType = 'main';
+    if (event.handleId.includes(':')) {
+      connectionType = event.handleId.substring(0, event.handleId.lastIndexOf(':'));
     }
+
+    // Determine if the clicked handle is an AI type
+    const isAiHandle = connectionType.startsWith('ai_');
+
+    // Check if the clicked handle is an INPUT (target) on the source node
+    // In that case we need to show nodes with matching OUTPUT and swap the connection direction
+    if (isAiHandle) {
+      const sourceNode = this.store.nodes().find(n => n.id === event.nodeId);
+      const sourceType = sourceNode ? this.nodeTypeStore.getByType(sourceNode.type) : null;
+      const isInputHandle = sourceType?.inputs?.some(i => i.type === connectionType) ?? false;
+      if (isInputHandle) {
+        // Store a flag so addConnectionFromPending knows to swap direction
+        this.pendingConnection = {
+          sourceNodeId: event.nodeId,
+          sourceHandleId: event.handleId,
+          isTargetHandle: true,
+        };
+      }
+    }
+
+    this.showPalette = true;
+    setTimeout(() => {
+      if (this.nodePalette) {
+        this.nodePalette.triggerOnly.set(false);
+        this.nodePalette.searchTerm.set('');
+        this.nodePalette.aiOutputTypeFilter.set(isAiHandle ? connectionType : null);
+        this.nodePalette.focusSearch();
+      }
+    }, 260);
   }
 
-  private addConnectionFromPending(targetNodeId: string): void {
+  private addConnectionFromPending(newNodeId: string): void {
     if (!this.pendingConnection) return;
-    const { sourceNodeId, sourceHandleId } = this.pendingConnection;
+    const { sourceNodeId, sourceHandleId, isTargetHandle } = this.pendingConnection;
 
     // Decode handle ID: "type:index" or legacy "name"
     let connectionType = 'main';
@@ -281,21 +318,28 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       }
     }
 
+    // When the clicked handle was a target/input (e.g. AI Agent's bottom "Model" handle),
+    // the new sub-node is the source and the clicked node is the target.
+    // Connection direction: newNode (sub-node) → sourceNode (parent).
+    const fromNodeId = isTargetHandle ? newNodeId : sourceNodeId;
+    const toNodeId = isTargetHandle ? sourceNodeId : newNodeId;
+    const fromIndex = isTargetHandle ? 0 : outputIndex;
+
     const connections = JSON.parse(JSON.stringify(this.store.connections()));
-    if (!connections[sourceNodeId]) {
-      connections[sourceNodeId] = {};
+    if (!connections[fromNodeId]) {
+      connections[fromNodeId] = {};
     }
-    if (!connections[sourceNodeId][connectionType]) {
-      connections[sourceNodeId][connectionType] = [];
+    if (!connections[fromNodeId][connectionType]) {
+      connections[fromNodeId][connectionType] = [];
     }
     // Ensure the array has enough entries for the output index
-    while (connections[sourceNodeId][connectionType].length <= outputIndex) {
-      connections[sourceNodeId][connectionType].push([]);
+    while (connections[fromNodeId][connectionType].length <= fromIndex) {
+      connections[fromNodeId][connectionType].push([]);
     }
-    connections[sourceNodeId][connectionType][outputIndex].push({
-      node: targetNodeId,
+    connections[fromNodeId][connectionType][fromIndex].push({
+      node: toNodeId,
       type: connectionType,
-      index: 0,
+      index: isTargetHandle ? outputIndex : 0,
     });
 
     this.store.updateConnections(connections);

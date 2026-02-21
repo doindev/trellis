@@ -122,6 +122,11 @@
       opacity: 1;
     }
   }
+
+  &.ai-filter {
+    background: hsla(200, 80%, 55%, 0.12);
+    color: hsl(200, 80%, 55%);
+  }
 }
 
 /* Scrollable area that holds main list + sliding action panel */
