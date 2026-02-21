@@ -14,6 +14,7 @@ import { CollectionParamComponent } from './parameter-renderers/collection-param
 import { FixedCollectionParamComponent } from './parameter-renderers/fixed-collection-param.component';
 import { NoticeParamComponent } from './parameter-renderers/notice-param.component';
 import { CredentialParamComponent } from './parameter-renderers/credential-param.component';
+import { ModelParamComponent } from './parameter-renderers/model-param.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
   CheckCircle, Copy, Square, Search, ChevronRight,
@@ -62,6 +63,7 @@ export class HighlightPipe implements PipeTransform {
     FixedCollectionParamComponent,
     NoticeParamComponent,
     CredentialParamComponent,
+    ModelParamComponent,
   ],
   providers: [{
     provide: LUCIDE_ICONS,
@@ -305,6 +307,10 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
 
   getParameterValue(name: string, defaultValue: any): any {
     return this.node.parameters[name] ?? defaultValue;
+  }
+
+  getNodeCredentialId(credType: string): string | null {
+    return this.node.credentials?.[credType]?.id || null;
   }
 
   getSettingValue(name: string, defaultValue: any): any {

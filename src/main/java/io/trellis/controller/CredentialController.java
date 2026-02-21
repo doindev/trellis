@@ -5,13 +5,16 @@ import io.trellis.credentials.CredentialTypeRegistry;
 import io.trellis.dto.CredentialCreateRequest;
 import io.trellis.dto.CredentialResponse;
 import io.trellis.dto.CredentialUpdateRequest;
+import io.trellis.dto.ModelInfo;
 import io.trellis.exception.NotFoundException;
 import io.trellis.service.CredentialService;
+import io.trellis.service.ModelListService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/credentials")
@@ -20,6 +23,7 @@ public class CredentialController {
 
     private final CredentialService credentialService;
     private final CredentialTypeRegistry credentialTypeRegistry;
+    private final ModelListService modelListService;
 
     @GetMapping
     public List<CredentialResponse> list(@RequestParam(required = false) String projectId) {
@@ -49,6 +53,14 @@ public class CredentialController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String id) {
         credentialService.deleteCredential(id);
+    }
+
+    @GetMapping("/{id}/models")
+    public List<ModelInfo> listModels(@PathVariable String id,
+                                      @RequestParam(required = false) String modelType) {
+        CredentialResponse cred = credentialService.getCredential(id);
+        Map<String, Object> data = credentialService.getDecryptedData(id);
+        return modelListService.listModels(cred.getType(), data, modelType);
     }
 
     @GetMapping("/types")

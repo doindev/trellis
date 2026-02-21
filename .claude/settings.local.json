@@ -99,7 +99,8 @@
       "Bash(powershell.exe -NoProfile -Command 'javap -p -classpath \"\"C:/Users/timhj/.m2/repository/dev/langchain4j/langchain4j-core/1.11.0/langchain4j-core-1.11.0.jar\"\" \"\"dev.langchain4j.model.chat.request.json.JsonObjectSchema`$Builder\"\"')",
       "Bash(powershell.exe -NoProfile -Command \"Get-Content ''C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\trellis\\\\frontend\\\\node_modules\\\\lucide-angular\\\\src\\\\icons\\\\index.d.ts'' -Head 20\")",
       "WebFetch(domain:repo1.maven.org)",
-      "Bash(mvn dependency:tree:*)"
+      "Bash(mvn dependency:tree:*)",
+      "WebFetch(domain:javadoc.io)"
     ]
   }
 }

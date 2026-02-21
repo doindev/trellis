@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Credential, CredentialSchema } from '../models';
+import { Credential, CredentialSchema, ModelInfo } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class CredentialService {
@@ -39,5 +39,11 @@ export class CredentialService {
 
   listTypes(): Observable<CredentialSchema[]> {
     return this.api.get<CredentialSchema[]>(`${this.path}/types`);
+  }
+
+  listModels(credentialId: string, modelType?: string): Observable<ModelInfo[]> {
+    const params: Record<string, string> = {};
+    if (modelType) params['modelType'] = modelType;
+    return this.api.get<ModelInfo[]>(`${this.path}/${credentialId}/models`, params);
   }
 }

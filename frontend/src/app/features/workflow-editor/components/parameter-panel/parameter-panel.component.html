@@ -309,12 +309,23 @@
               <div class="param-group">
                 @switch (param.type) {
                   @case ('string') {
-                    <app-string-param
-                      [param]="param"
-                      [value]="getParameterValue(param.name, param.defaultValue)"
-                      [readOnly]="readOnly"
-                      (valueChange)="onParameterChange(param.name, $event)"
-                      (blurred)="onParamBlur(param.name)" />
+                    @if (param.name === 'model' && nodeType?.credentials?.length) {
+                      <app-model-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        [credentialId]="getNodeCredentialId(nodeType!.credentials[0])"
+                        [credentialType]="nodeType!.credentials[0]"
+                        [modelType]="nodeType?.category?.includes('Embedding') ? 'embedding' : 'chat'"
+                        (valueChange)="onParameterChange(param.name, $event)" />
+                    } @else {
+                      <app-string-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        (valueChange)="onParameterChange(param.name, $event)"
+                        (blurred)="onParamBlur(param.name)" />
+                    }
                   }
                   @case ('number') {
                     <app-number-param
@@ -331,11 +342,22 @@
                       (valueChange)="onParameterChange(param.name, $event)" />
                   }
                   @case ('options') {
-                    <app-options-param
-                      [param]="param"
-                      [value]="getParameterValue(param.name, param.defaultValue)"
-                      [readOnly]="readOnly"
-                      (valueChange)="onParameterChange(param.name, $event)" />
+                    @if (param.name === 'model' && nodeType?.credentials?.length) {
+                      <app-model-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        [credentialId]="getNodeCredentialId(nodeType!.credentials[0])"
+                        [credentialType]="nodeType!.credentials[0]"
+                        [modelType]="nodeType?.category?.includes('Embedding') ? 'embedding' : 'chat'"
+                        (valueChange)="onParameterChange(param.name, $event)" />
+                    } @else {
+                      <app-options-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        (valueChange)="onParameterChange(param.name, $event)" />
+                    }
                   }
                   @case ('multiOptions') {
                     <app-multi-options-param

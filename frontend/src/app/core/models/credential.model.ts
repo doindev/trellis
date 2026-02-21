@@ -18,6 +18,11 @@ export interface CredentialSchema {
   properties: CredentialProperty[];
 }
 
+export interface ModelInfo {
+  id: string;
+  name: string;
+}
+
 export interface CredentialProperty {
   name: string;
   displayName: string;
