@@ -201,14 +201,14 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
 
     // If node has an 'authentication' parameter, use it to determine the active credential type
     const authValue = this.node.parameters?.['authentication'];
-    if (authValue === 'none') return [];
+    if (authValue === 'none' || !authValue) return [];
     if (authValue === 'genericCredentialType') {
       const genericType = this.node.parameters?.['genericAuthType'];
-      return genericType && allTypes.includes(genericType) ? [genericType] : [];
+      return genericType ? [genericType] : [];
     }
     if (authValue === 'predefinedCredentialType') {
       const predefined = this.node.parameters?.['nodeCredentialType'];
-      return predefined && allTypes.includes(predefined) ? [predefined] : [];
+      return predefined ? [predefined] : [];
     }
 
     // General fallback: check if any parameter value matches a credential type name
@@ -217,6 +217,14 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     if (match) return [match];
 
     return allTypes;
+  }
+
+  /** Returns the parameter name after which the credential dropdown should appear, or null for top position. */
+  get credentialInsertAfterParam(): string | null {
+    const authValue = this.node.parameters?.['authentication'];
+    if (authValue === 'predefinedCredentialType') return 'nodeCredentialType';
+    if (authValue === 'genericCredentialType') return 'genericAuthType';
+    return null;
   }
 
   get settingsParameters(): NodeParameter[] {

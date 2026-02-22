@@ -294,7 +294,7 @@
               </div>
             }
 
-            @if (activeCredentialTypes.length) {
+            @if (activeCredentialTypes.length && !credentialInsertAfterParam) {
               <app-credential-param
                 [credentialTypes]="activeCredentialTypes"
                 [currentCredentials]="node.credentials || {}"
@@ -401,6 +401,13 @@
                   }
                 }
               </div>
+              @if (activeCredentialTypes.length && credentialInsertAfterParam === param.name) {
+                <app-credential-param
+                  [credentialTypes]="activeCredentialTypes"
+                  [currentCredentials]="node.credentials || {}"
+                  [readOnly]="readOnly"
+                  (credentialChanged)="credentialChanged.emit($event)" />
+              }
             }
           } @else {
             <div class="settings-section">

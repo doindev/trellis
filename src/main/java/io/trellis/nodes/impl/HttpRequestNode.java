@@ -5,6 +5,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Makes an HTTP request and returns the response data.",
 	category = "Core",
 	icon = "globe",
-	credentials = {"httpHeaderAuth", "httpBasicAuth", "httpQueryAuth", "oAuth2Api"}
+	credentials = {"httpBasicAuth", "httpBearerAuth", "httpCustomAuth", "httpDigestAuth",
+				"httpHeaderAuth", "httpQueryAuth", "oAuth1Api", "oAuth2Api"}
 )
 public class HttpRequestNode extends AbstractApiNode {
 
@@ -63,6 +65,7 @@ public class HttpRequestNode extends AbstractApiNode {
 				.description(ct.getDescription())
 				.build());
 		}
+		options.sort(Comparator.comparing(ParameterOption::getName, String.CASE_INSENSITIVE_ORDER));
 		return options;
 	}
 
@@ -148,8 +151,13 @@ public class HttpRequestNode extends AbstractApiNode {
 			.defaultValue("httpHeaderAuth")
 			.options(List.of(
 				ParameterOption.builder().name("HTTP Basic Auth").value("httpBasicAuth").build(),
+				ParameterOption.builder().name("HTTP Bearer Auth").value("httpBearerAuth").build(),
+				ParameterOption.builder().name("HTTP Custom Auth").value("httpCustomAuth").build(),
+				ParameterOption.builder().name("HTTP Digest Auth").value("httpDigestAuth").build(),
 				ParameterOption.builder().name("HTTP Header Auth").value("httpHeaderAuth").build(),
-				ParameterOption.builder().name("HTTP Query Auth").value("httpQueryAuth").build()
+				ParameterOption.builder().name("HTTP Query Auth").value("httpQueryAuth").build(),
+				ParameterOption.builder().name("OAuth1 API").value("oAuth1Api").build(),
+				ParameterOption.builder().name("OAuth2 API").value("oAuth2Api").build()
 			))
 			.displayOptions(Map.of("show", Map.of("authentication", List.of("genericCredentialType"))))
 			.build());
