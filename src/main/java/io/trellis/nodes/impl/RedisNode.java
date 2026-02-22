@@ -210,16 +210,44 @@ public class RedisNode extends AbstractNode {
 	private NodeExecutionResult doInfo(Jedis jedis, NodeExecutionContext context) {
 		String info = jedis.info();
 		Map<String, Object> parsed = new LinkedHashMap<>();
-		String currentSection = "server";
 		for (String line : info.split("\n")) {
 			line = line.trim();
-			if (line.startsWith("#")) {
-				currentSection = line.substring(2).trim().toLowerCase();
-			} else if (line.contains(":")) {
+			if (line.isEmpty() || line.startsWith("#")) {
+				continue;
+			}
+			if (line.contains(":")) {
 				String[] parts = line.split(":", 2);
-				parsed.put(parts[0], parts[1]);
+				String key = parts[0];
+				String value = parts[1];
+				if (value.contains("=")) {
+					// Sub-values like "keys=10,expires=5" → nested object
+					Map<String, Object> subMap = new LinkedHashMap<>();
+					for (String pair : value.split(",")) {
+						String[] kv = pair.split("=", 2);
+						if (kv.length == 2) {
+							subMap.put(kv[0], parseNumeric(kv[1]));
+						}
+					}
+					parsed.put(key, subMap);
+				} else {
+					parsed.put(key, parseNumeric(value));
+				}
 			}
 		}
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
+	}
+
+	private Object parseNumeric(String value) {
+		if (value != null && value.matches("^[\\d.]+$") && !value.isEmpty()) {
+			try {
+				if (value.contains(".")) {
+					return Double.parseDouble(value);
+				}
+				return Long.parseLong(value);
+			} catch (NumberFormatException e) {
+				// fall through
+			}
+		}
+		return value;
 	}
 }

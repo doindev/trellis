@@ -904,7 +904,6 @@ public class DatadogNode extends AbstractApiNode {
 
 	// ========================= Incident Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeIncident(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "create");
 		String baseUrl = getBaseApiUrl(credentials);
@@ -1159,7 +1158,6 @@ public class DatadogNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toListResult(HttpResponse<String> response, String dataKey) throws Exception {
 		if (response.statusCode() >= 400) {
 			return datadogError(response);

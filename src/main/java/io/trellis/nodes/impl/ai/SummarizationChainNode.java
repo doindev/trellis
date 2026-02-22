@@ -1,20 +1,22 @@
 package io.trellis.nodes.impl.ai;
 
-import dev.langchain4j.data.message.ChatMessage;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractNode;
-import io.trellis.nodes.core.*;
+import io.trellis.nodes.core.NodeExecutionContext;
+import io.trellis.nodes.core.NodeExecutionResult;
+import io.trellis.nodes.core.NodeInput;
+import io.trellis.nodes.core.NodeParameter;
 import io.trellis.nodes.core.NodeParameter.ParameterOption;
 import io.trellis.nodes.core.NodeParameter.ParameterType;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Node(

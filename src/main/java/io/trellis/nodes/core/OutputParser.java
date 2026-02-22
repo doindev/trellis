@@ -26,6 +26,7 @@ public interface OutputParser {
 	 * Exception thrown when output parsing fails.
 	 */
 	class OutputParserException extends Exception {
+		private static final long serialVersionUID = 1L;
 		private final String completion;
 
 		public OutputParserException(String message) {

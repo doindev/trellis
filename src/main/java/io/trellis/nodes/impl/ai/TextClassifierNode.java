@@ -124,26 +124,22 @@ public class TextClassifierNode extends AbstractNode {
 					Map<String, Object> outputData = new LinkedHashMap<>(json);
 					outputData.put("classification", parsed);
 
-					boolean routed = false;
 					for (int i = 0; i < categoryNames.size(); i++) {
 						String catName = categoryNames.get(i);
 						Object val = parsed.get(catName);
 						if (toBoolean(val, false)) {
 							outputs.get(i).add(wrapInJson(outputData));
-							routed = true;
 						}
 					}
 
-					// Handle fallback
+					// Handle fallback — if no categories matched and fallback is "discard",
+					// the item is simply not added to any output (silently dropped)
 					if ("other".equals(fallback)) {
 						Object fallbackVal = parsed.get("fallback");
 						if (toBoolean(fallbackVal, false)) {
 							outputs.get(outputs.size() - 1).add(wrapInJson(outputData));
-							routed = true;
 						}
 					}
-
-					// If nothing matched and not routed, item is discarded (fallback=discard)
 				} else {
 					if (context.isContinueOnFail()) {
 						outputs.get(0).add(wrapInJson(Map.of("error", "Failed to parse classification response")));

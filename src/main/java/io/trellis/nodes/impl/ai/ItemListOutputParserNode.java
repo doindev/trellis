@@ -4,7 +4,6 @@ import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractAiSubNode;
 import io.trellis.nodes.core.*;
 import io.trellis.nodes.core.NodeParameter.ParameterType;
-import io.trellis.nodes.core.OutputParser.OutputParserException;
 
 import java.util.ArrayList;
 import java.util.Arrays;

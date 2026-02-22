@@ -1,23 +1,26 @@
 package io.trellis.nodes.impl.ai;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractAiSubNode;
-import io.trellis.nodes.core.*;
+import io.trellis.nodes.core.NodeExecutionContext;
+import io.trellis.nodes.core.NodeInput;
+import io.trellis.nodes.core.NodeOutput;
+import io.trellis.nodes.core.NodeParameter;
 import io.trellis.nodes.core.NodeParameter.ParameterOption;
 import io.trellis.nodes.core.NodeParameter.ParameterType;
-import io.trellis.nodes.core.OutputParser.OutputParserException;
+import io.trellis.nodes.core.OutputParser;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Node(
@@ -72,7 +75,6 @@ public class StructuredOutputParserNode extends AbstractAiSubNode {
 		return new StructuredOutputParser(jsonSchema, fixModel, retryPrompt);
 	}
 
-	@SuppressWarnings("unchecked")
 	private String generateSchemaFromExample(String jsonExample) throws Exception {
 		Object example = MAPPER.readValue(jsonExample, Object.class);
 		Map<String, Object> schema = buildSchemaForValue(example);

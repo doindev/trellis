@@ -162,7 +162,6 @@ public class MongoDbNode extends AbstractNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(result)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult doUpdate(MongoCollection<Document> collection, NodeExecutionContext context) {
 		Document filter = parseDocument(context.getParameter("filter", "{}"));
 		Document update = parseDocument(context.getParameter("document", "{}"));
@@ -194,7 +193,6 @@ public class MongoDbNode extends AbstractNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(Map.of("deletedCount", result.getDeletedCount()))));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult doAggregate(MongoCollection<Document> collection, NodeExecutionContext context) {
 		String pipelineJson = context.getParameter("pipeline", "[]");
 		List<Document> pipeline = Document.parse("{\"p\":" + pipelineJson + "}").getList("p", Document.class);
@@ -217,7 +215,6 @@ public class MongoDbNode extends AbstractNode {
 		return Document.parse(json);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> documentToMap(Document doc) {
 		Map<String, Object> map = new LinkedHashMap<>();
 		for (Map.Entry<String, Object> entry : doc.entrySet()) {

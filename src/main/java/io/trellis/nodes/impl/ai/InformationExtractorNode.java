@@ -243,7 +243,6 @@ public class InformationExtractorNode extends AbstractNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> retryWithFix(ChatModel model, String systemPrompt, String originalText, String brokenOutput) {
 		try {
 			String fixPrompt = "The previous extraction attempt produced invalid JSON output. " +

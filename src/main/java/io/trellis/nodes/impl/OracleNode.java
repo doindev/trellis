@@ -131,7 +131,6 @@ public class OracleNode extends AbstractDatabaseNode {
 		return results.isEmpty() ? NodeExecutionResult.empty() : NodeExecutionResult.success(results);
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeInsert(Connection conn, NodeExecutionContext context) throws Exception {
 		String table = context.getParameter("table", "");
 		List<Map<String, Object>> columnDefs = context.getParameter("columns", List.of());
@@ -148,7 +147,6 @@ public class OracleNode extends AbstractDatabaseNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(Map.of("affectedRows", affected))));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeUpdateOp(Connection conn, NodeExecutionContext context) throws Exception {
 		String table = context.getParameter("table", "");
 		String where = context.getParameter("where", "");

@@ -91,7 +91,6 @@ public class DatadogTriggerNode extends AbstractApiNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		Map<String, Object> credentials = context.getCredentials();
 		Map<String, Object> staticData = context.getStaticData();
