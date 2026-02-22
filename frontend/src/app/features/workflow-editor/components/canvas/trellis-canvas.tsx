@@ -22,6 +22,7 @@ import {
 import TrellisNode from './custom-nodes/trellis-node';
 import TrellisTriggerNode from './custom-nodes/trellis-trigger-node';
 import TrellisEdge from './custom-edges/trellis-edge';
+import { calculateLayout } from './canvas-layout';
 
 export interface CanvasActions {
   singleSelectedId: string | null;
@@ -334,6 +335,26 @@ function TrellisCanvasInner({
     [onNodeAdd, screenToFlowPosition]
   );
 
+  const onCleanUp = useCallback(() => {
+    const positions = calculateLayout(nodes, edges);
+    if (Object.keys(positions).length === 0) return;
+
+    // Apply new positions to React Flow state
+    setNodes((nds) =>
+      nds.map((n) =>
+        positions[n.id]
+          ? { ...n, position: { x: positions[n.id][0], y: positions[n.id][1] } }
+          : n
+      )
+    );
+
+    // Notify Angular of the position changes
+    onNodesPositionChange?.(positions);
+
+    // Fit viewport after layout settles
+    setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
+  }, [nodes, edges, setNodes, onNodesPositionChange, fitView]);
+
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
@@ -443,11 +464,13 @@ function TrellisCanvasInner({
                 <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
               </svg>
             </button>
-            <button className="ctrl-btn" title="Clean up">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m16 22-1-4" /><path d="M19 13.99a1 1 0 0 0 1-1V12a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v.99a1 1 0 0 0 1 1" /><path d="M5 14h14l1.973 6.767A1 1 0 0 1 20 22H4a1 1 0 0 1-.973-1.233z" /><path d="m8 22 1-4" />
-              </svg>
-            </button>
+            {!readOnly && (
+              <button className="ctrl-btn" onClick={onCleanUp} title="Clean up">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m16 22-1-4" /><path d="M19 13.99a1 1 0 0 0 1-1V12a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v.99a1 1 0 0 0 1 1" /><path d="M5 14h14l1.973 6.767A1 1 0 0 1 20 22H4a1 1 0 0 1-.973-1.233z" /><path d="m8 22 1-4" />
+                </svg>
+              </button>
+            )}
           </Panel>
 
           {nodes.length > 0 && !readOnly && (
