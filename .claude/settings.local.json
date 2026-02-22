@@ -106,7 +106,9 @@
       "WebFetch(domain:www.hostinger.com)",
       "WebFetch(domain:blog.marcnuri.com)",
       "WebFetch(domain:glaforge.dev)",
-      "Bash(timeout 5 cat:*)"
+      "Bash(timeout 5 cat:*)",
+      "WebFetch(domain:langchain-doc.readthedocs.io)",
+      "WebFetch(domain:kioku-space.com)"
     ]
   }
 }

@@ -5,7 +5,7 @@ import {
   Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
   Table2, Timer, ClipboardList, FileInput,
   Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
-  Database, HardDriveUpload,
+  Database, HardDriveUpload, ShieldCheck, Tag,
   LucideIconData,
 } from 'lucide-angular';
 
@@ -49,6 +49,14 @@ const Tavily: LucideIconData = [
   ['path', { d: 'M8 11h6' }],
 ];
 
+const BalanceScale: LucideIconData = [
+  ['path', { d: 'M12 3v19' }],
+  ['path', { d: 'M5 8h14' }],
+  ['path', { d: 'M3 16l2-8 2 8a4.5 4.5 0 0 1-4 0z' }],
+  ['path', { d: 'M17 16l2-8 2 8a4.5 4.5 0 0 1-4 0z' }],
+  ['circle', { cx: '12', cy: '3', r: '1' }],
+];
+
 const Mcp: LucideIconData = [
   ['path', { d: 'M4 6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z' }],
   ['path', { d: 'M13 15a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z' }],
@@ -69,6 +77,6 @@ export const NODE_ICON_SET = {
   Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
   Table2, Timer, ClipboardList, FileInput,
   Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
-  Database, HardDriveUpload,
-  Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily, Mcp,
+  Database, HardDriveUpload, ShieldCheck,
+  Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily, Mcp, BalanceScale, Tag,
 };
