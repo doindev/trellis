@@ -18,23 +18,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import io.trellis.service.DatabaseConnectionPoolService;
+
 public abstract class AbstractDatabaseNode extends AbstractNode {
-	
-	// create a datbase connection from credentials
+
+	@Autowired(required = false)
+	private DatabaseConnectionPoolService poolService;
+
+	// gets a pooled connection if pool service is available, otherwise creates a direct one
+	protected Connection getPooledConnection(Map<String, Object> credentials, String dbType) throws SQLException {
+		if (poolService != null) {
+			DataSource ds = poolService.getJdbcPool(credentials, dbType);
+			return ds.getConnection();
+		}
+		return createConnection(credentials);
+	}
+
+	// create a database connection from credentials
 	protected Connection createConnection(Map<String, Object> credentials) throws SQLException {
 		String host = (String) credentials.getOrDefault("host",  "localhost");
 		int port = toInt(credentials.get("port"), getDefaultPort());
 		String database = (String) credentials.get("database");
-		String user = (String) credentials.get("user");
+		String user = (String) credentials.getOrDefault("username", credentials.get("user"));
 		String password = (String) credentials.get("password");
 		String jdbcUrl = buildJdbcUrl(host, port, database, credentials);
-		
+
 		Properties props = new Properties();
 		if (user != null) props.setProperty("user",  user);
 		if (password != null) props.setProperty("password",  password);
-		
+
 		addConnectionProperties(props, credentials);
-		
+
 		return DriverManager.getConnection(jdbcUrl, props);
 	}
 	

@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Node(
 	type = "scheduleTrigger",
-	displayName = "Schedule Trigger",
+	displayName = "On a schedule",
 	description = "Triggers the workflow on a time-based schedule using either a fixed interval or a cron expression.",
 	category = "Core Triggers",
 	icon = "clock",

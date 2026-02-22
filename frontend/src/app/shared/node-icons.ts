@@ -57,11 +57,57 @@ const BalanceScale: LucideIconData = [
   ['circle', { cx: '12', cy: '3', r: '1' }],
 ];
 
+const Postgres: LucideIconData = [
+  ['ellipse', { cx: '12', cy: '5', rx: '9', ry: '3' }],
+  ['path', { d: 'M3 5v6c0 1.66 4.03 3 9 3s9-1.34 9-3V5' }],
+  ['path', { d: 'M3 11v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6' }],
+];
+
+const Mysql: LucideIconData = [
+  ['ellipse', { cx: '12', cy: '5', rx: '9', ry: '3' }],
+  ['path', { d: 'M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5' }],
+  ['path', { d: 'M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3' }],
+];
+
+const Oracle: LucideIconData = [
+  ['ellipse', { cx: '12', cy: '12', rx: '10', ry: '8' }],
+  ['ellipse', { cx: '12', cy: '12', rx: '6', ry: '4' }],
+];
+
+const Mongo: LucideIconData = [
+  ['path', { d: 'M12 2C10 4 7 7 7 12c0 3.5 2.5 6 5 8' }],
+  ['path', { d: 'M12 2c2 2 5 5 5 10 0 3.5-2.5 6-5 8' }],
+  ['path', { d: 'M12 22v-2' }],
+  ['line', { x1: '12', y1: '10', x2: '12', y2: '14' }],
+];
+
+const Redis: LucideIconData = [
+  ['path', { d: 'M12 2L2 7l10 5 10-5-10-5z' }],
+  ['path', { d: 'M2 17l10 5 10-5' }],
+  ['path', { d: 'M2 12l10 5 10-5' }],
+];
+
+const Neo4j: LucideIconData = [
+  ['circle', { cx: '12', cy: '6', r: '3' }],
+  ['circle', { cx: '6', cy: '18', r: '3' }],
+  ['circle', { cx: '18', cy: '18', r: '3' }],
+  ['line', { x1: '12', y1: '9', x2: '6', y2: '15' }],
+  ['line', { x1: '12', y1: '9', x2: '18', y2: '15' }],
+  ['line', { x1: '6', y1: '18', x2: '18', y2: '18' }],
+];
+
 const Mcp: LucideIconData = [
   ['path', { d: 'M4 6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z' }],
   ['path', { d: 'M13 15a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z' }],
   ['path', { d: 'M9 8h3a3 3 0 0 1 3 3v3' }],
   ['path', { d: 'M15 11v3' }],
+];
+
+const Datadog: LucideIconData = [
+  ['circle', { cx: '12', cy: '12', r: '10' }],
+  ['circle', { cx: '9', cy: '10', r: '1.5' }],
+  ['circle', { cx: '15', cy: '10', r: '1.5' }],
+  ['path', { d: 'M8 15c1.5 2 6.5 2 8 0' }],
 ];
 
 /**
@@ -78,5 +124,6 @@ export const NODE_ICON_SET = {
   Table2, Timer, ClipboardList, FileInput,
   Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
   Database, HardDriveUpload, ShieldCheck,
-  Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily, Mcp, BalanceScale, Tag,
+  Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily, Mcp, BalanceScale, Tag, Datadog,
+  Postgres, Mysql, Oracle, Mongo, Redis, Neo4j,
 };

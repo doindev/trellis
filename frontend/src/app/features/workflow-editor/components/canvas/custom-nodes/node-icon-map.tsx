@@ -63,6 +63,17 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   'shieldCheck': <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></>,
   'balance-scale': <><path d="M12 3v19" /><path d="M5 8h14" /><path d="M3 16l2-8 2 8a4.5 4.5 0 0 1-4 0z" /><path d="M17 16l2-8 2 8a4.5 4.5 0 0 1-4 0z" /><circle cx="12" cy="3" r="1" /></>,
   'tag': <><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" /><circle cx="7.5" cy="7.5" r=".5" fill="currentColor" /></>,
+
+  // Database nodes
+  'postgres': <><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v6c0 1.66 4.03 3 9 3s9-1.34 9-3V5" /><path d="M3 11v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6" /></>,
+  'mysql': <><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" /><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3" /></>,
+  'oracle': <><ellipse cx="12" cy="12" rx="10" ry="8" /><ellipse cx="12" cy="12" rx="6" ry="4" /></>,
+  'mongo': <><path d="M12 2C10 4 7 7 7 12c0 3.5 2.5 6 5 8" /><path d="M12 2c2 2 5 5 5 10 0 3.5-2.5 6-5 8" /><path d="M12 22v-2" /><line x1="12" y1="10" x2="12" y2="14" /></>,
+  'redis': <><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></>,
+  'neo4j': <><circle cx="12" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="18" r="3" /><line x1="12" y1="9" x2="6" y2="15" /><line x1="12" y1="9" x2="18" y2="15" /><line x1="6" y1="18" x2="18" y2="18" /></>,
+
+  // Analytics
+  'datadog': <><circle cx="12" cy="12" r="10" /><circle cx="9" cy="10" r="1.5" /><circle cx="15" cy="10" r="1.5" /><path d="M8 15c1.5 2 6.5 2 8 0" /></>,
 };
 
 export function NodeIcon({ name, size = 16 }: { name: string; size?: number }) {

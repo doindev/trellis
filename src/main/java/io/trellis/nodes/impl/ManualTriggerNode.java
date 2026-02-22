@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Node(
 	type = "manualTrigger",
-	displayName = "Manual Trigger",
+	displayName = "Trigger Manually",
 	description = "Starts the workflow on manual trigger. Use this as the entry point for workflows that are executed manually.",
 	category = "Core Triggers",
 	icon = "play",
