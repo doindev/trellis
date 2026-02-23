@@ -142,6 +142,24 @@ function TrellisCanvasInner({
   const [singleSelectedId, setSingleSelectedId] = useState<string | null>(null);
   const initialFitDone = useRef(false);
 
+  // Minimap: hidden by default, shown while panning or hovering the minimap
+  const [isMinimapVisible, setIsMinimapVisible] = useState(false);
+  const minimapHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showMinimap = useCallback(() => {
+    if (minimapHideTimeout.current) {
+      clearTimeout(minimapHideTimeout.current);
+      minimapHideTimeout.current = null;
+    }
+    setIsMinimapVisible(true);
+  }, []);
+
+  const hideMinimap = useCallback(() => {
+    minimapHideTimeout.current = setTimeout(() => {
+      setIsMinimapVisible(false);
+    }, 1000);
+  }, []);
+
   // Track single node selection
   const onSelectionChange = useCallback(({ nodes: selectedNodes }: { nodes: Node[] }) => {
     setSingleSelectedId(selectedNodes.length === 1 ? selectedNodes[0].id : null);
@@ -459,6 +477,8 @@ function TrellisCanvasInner({
           defaultViewport={{ x: 0, y: 0, zoom: 1.2 }}
           minZoom={MIN_ZOOM}
           maxZoom={MAX_ZOOM}
+          onMoveStart={showMinimap}
+          onMoveEnd={hideMinimap}
           panOnScroll
           deleteKeyCode={null}
           proOptions={proOptions}
@@ -476,6 +496,9 @@ function TrellisCanvasInner({
             maskColor="rgba(0,0,0,0.5)"
             style={{ background: 'hsl(0, 0%, 13%)' }}
             position="bottom-left"
+            className={isMinimapVisible ? 'minimap-visible' : 'minimap-hidden'}
+            onMouseEnter={showMinimap}
+            onMouseLeave={hideMinimap}
           />
           <Panel position="bottom-left" className="canvas-controls-panel">
             <button className="ctrl-btn" onClick={() => zoomOut()} title="Zoom out">

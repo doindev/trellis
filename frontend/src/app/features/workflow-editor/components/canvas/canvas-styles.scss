@@ -243,6 +243,17 @@
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 60px !important;
+  transition: opacity 0.3s ease;
+
+  &.minimap-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &.minimap-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* Custom controls panel — horizontal, below minimap */
