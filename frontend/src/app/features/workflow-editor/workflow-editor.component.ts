@@ -471,7 +471,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
             });
           } else if (event.event === 'executionFinished') {
             // Don't overwrite — nodeFinished events already populated clean per-nodeId output data.
-            // event.data is buildResultData() format keyed by node name with metadata wrappers.
+            // event.data is buildResultData() format keyed by node ID with metadata wrappers.
             this.store.setIsExecuting(false);
             this.wsService.unsubscribe(topic);
             this.currentExecutionId = null;
@@ -530,20 +530,28 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
             connections: wd.connections || {},
           };
 
-          // Remap resultData.runData from node-name keys to node-ID keys
+          // runData is keyed by node ID. For backward compatibility with older
+          // executions that used node names as keys, fall back to name-to-ID remapping.
           const runData = exec.resultData?.runData || {};
-          const nameToId = new Map<string, string>();
-          for (const node of (wd.nodes || [])) {
-            nameToId.set(node.name, node.id);
-          }
-          const dataById: Record<string, any> = {};
-          for (const [nodeName, data] of Object.entries(runData)) {
-            const nodeId = nameToId.get(nodeName);
-            if (nodeId) {
-              dataById[nodeId] = data;
+          const nodeIds = new Set((wd.nodes || []).map((n: any) => n.id));
+          const allKeysAreIds = Object.keys(runData).every(k => nodeIds.has(k));
+
+          if (allKeysAreIds) {
+            this.executionDataById = { ...runData };
+          } else {
+            const nameToId = new Map<string, string>();
+            for (const node of (wd.nodes || [])) {
+              nameToId.set(node.name, node.id);
             }
+            const dataById: Record<string, any> = {};
+            for (const [key, data] of Object.entries(runData)) {
+              const nodeId = nameToId.get(key) || (nodeIds.has(key) ? key : undefined);
+              if (nodeId) {
+                dataById[nodeId] = data;
+              }
+            }
+            this.executionDataById = dataById;
           }
-          this.executionDataById = dataById;
         }
       }
     });

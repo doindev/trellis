@@ -503,6 +503,15 @@ public class WorkflowEngine {
             List<String> order = graph.getTopologicalOrder();
             Map<String, String> variables = variableService.getAllVariablesAsMap();
 
+            // When a specific trigger node started this execution (e.g. webhook),
+            // only execute nodes reachable from that trigger — skip other triggers
+            // and their exclusive downstream branches.
+            String triggerNodeId = inputData != null ? (String) inputData.get("triggerNodeId") : null;
+            if (triggerNodeId != null) {
+                Set<String> reachable = graph.getReachableNodes(triggerNodeId);
+                order = order.stream().filter(reachable::contains).toList();
+            }
+
             for (String nodeId : order) {
                 if (state.isCancelled()) {
                     executionService.finish(executionId, ExecutionStatus.CANCELED,
@@ -600,17 +609,26 @@ public class WorkflowEngine {
 
         List<Map<String, Object>> nodeInput = state.collectInputForNode(nodeId);
 
-        if (nodeInput.isEmpty() && inputData != null && graph.getStartNode() != null
-                && graph.getStartNode().getId().equals(nodeId)) {
-            if (inputData.containsKey("_subWorkflowItems")) {
-                // Sub-workflow execution: items are already in the correct format
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> subItems = (List<Map<String, Object>>) inputData.get("_subWorkflowItems");
-                nodeInput = subItems;
-            } else if (inputData.containsKey("webhookData")) {
-                nodeInput = List.of(Map.of("json", inputData.get("webhookData")));
-            } else {
-                nodeInput = List.of(Map.of("json", inputData));
+        if (nodeInput.isEmpty() && inputData != null) {
+            // Determine if this node should receive the initial input data.
+            // For webhook executions, inject data into the specific trigger node.
+            // For other modes, inject into the first node with no incoming connections.
+            String triggerNodeId = (String) inputData.get("triggerNodeId");
+            boolean isInputTarget = triggerNodeId != null
+                    ? nodeId.equals(triggerNodeId)
+                    : (graph.getStartNode() != null && graph.getStartNode().getId().equals(nodeId));
+
+            if (isInputTarget) {
+                if (inputData.containsKey("_subWorkflowItems")) {
+                    // Sub-workflow execution: items are already in the correct format
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> subItems = (List<Map<String, Object>>) inputData.get("_subWorkflowItems");
+                    nodeInput = subItems;
+                } else if (inputData.containsKey("webhookData")) {
+                    nodeInput = List.of(Map.of("json", inputData.get("webhookData")));
+                } else {
+                    nodeInput = List.of(Map.of("json", inputData));
+                }
             }
         }
 

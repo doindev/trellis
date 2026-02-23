@@ -171,7 +171,6 @@ public class SwitchNode extends AbstractNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String mode = context.getParameter("mode", "rules");
 		List<Map<String, Object>> inputData = context.getInputData();

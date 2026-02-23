@@ -227,7 +227,7 @@ public class WorkflowExecutionState {
                 nodeResult.put("data", Map.of("main", outputs));
             }
 
-            runData.put(meta.getNodeName() != null ? meta.getNodeName() : nodeId, List.of(nodeResult));
+            runData.put(nodeId, List.of(nodeResult));
         }
 
         resultData.put("runData", runData);

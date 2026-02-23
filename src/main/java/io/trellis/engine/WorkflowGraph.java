@@ -254,4 +254,26 @@ public class WorkflowGraph {
         }
         return nodes.values().isEmpty() ? null : nodes.values().iterator().next();
     }
+
+    /**
+     * BFS from startNodeId through outgoing connections to find all reachable node IDs
+     * (including the start node itself).
+     */
+    public Set<String> getReachableNodes(String startNodeId) {
+        Set<String> reachable = new LinkedHashSet<>();
+        Queue<String> queue = new LinkedList<>();
+        queue.add(startNodeId);
+        reachable.add(startNodeId);
+
+        while (!queue.isEmpty()) {
+            String nodeId = queue.poll();
+            for (Connection conn : outgoingConnections.getOrDefault(nodeId, List.of())) {
+                String target = conn.getTargetNodeId();
+                if (reachable.add(target)) {
+                    queue.add(target);
+                }
+            }
+        }
+        return reachable;
+    }
 }

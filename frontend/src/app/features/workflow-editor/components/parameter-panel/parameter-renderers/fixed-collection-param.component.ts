@@ -113,7 +113,14 @@ export class FixedCollectionParamComponent {
   @Input() param!: NodeParameter;
   @Input() readOnly = false;
   @Input() set value(val: any) {
-    this.items = Array.isArray(val) ? [...val] : [];
+    const incoming = Array.isArray(val) ? val : [];
+    // Only replace items if the incoming data is structurally different.
+    // This prevents the value setter (which fires on every change-detection cycle
+    // via the store round-trip) from replacing the items array while the user is
+    // actively editing text inputs, which would disrupt ngModel.
+    if (!this.itemsMatch(incoming)) {
+      this.items = incoming.map((item: any) => ({ ...item }));
+    }
   }
   @Output() valueChange = new EventEmitter<any>();
 
@@ -145,5 +152,20 @@ export class FixedCollectionParamComponent {
       i === index ? { ...item, [name]: val } : item
     );
     this.valueChange.emit(this.items);
+  }
+
+  /** Shallow-compare each item's properties to detect actual data changes. */
+  private itemsMatch(incoming: any[]): boolean {
+    if (this.items.length !== incoming.length) return false;
+    for (let i = 0; i < incoming.length; i++) {
+      const a = this.items[i];
+      const b = incoming[i];
+      if (!a || !b) return false;
+      const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+      for (const key of keys) {
+        if (a[key] !== b[key]) return false;
+      }
+    }
+    return true;
   }
 }
