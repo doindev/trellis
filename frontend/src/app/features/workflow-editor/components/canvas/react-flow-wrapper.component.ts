@@ -177,7 +177,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
             icon: typeDesc.icon,
             subtitle: typeDesc.subtitle,
             inputs: typeDesc.inputs,
-            outputs: typeDesc.outputs,
+            outputs: this.computeNodeOutputs(node, typeDesc),
             isTrigger: typeDesc.isTrigger,
           } : undefined,
           executionStatus: execEntry?.status,
@@ -223,6 +223,42 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     });
 
     return edges;
+  }
+
+  /**
+   * Compute the actual outputs for a node instance. Most nodes use the static type description,
+   * but nodes like Switch have dynamic outputs based on their parameters.
+   */
+  private computeNodeOutputs(node: WorkflowNode, typeDesc: NodeTypeDescription): any[] {
+    if (node.type === 'switch') {
+      const mode = node.parameters?.['mode'] || 'rules';
+      if (mode === 'rules') {
+        const rules = (node.parameters?.['rules'] as any[]) || [];
+        const outputs = rules.map((rule: any, i: number) => ({
+          name: `output${i}`,
+          displayName: rule?.outputLabel || `Output ${i}`,
+          type: 'main',
+        }));
+        // Always show at least 1 output
+        if (outputs.length === 0) {
+          outputs.push({ name: 'output0', displayName: 'Output 0', type: 'main' });
+        }
+        // Add fallback output if configured
+        if (node.parameters?.['fallbackOutput'] === 'extra') {
+          outputs.push({ name: 'fallback', displayName: 'Fallback', type: 'main' });
+        }
+        return outputs;
+      } else {
+        // Expression mode: fixed number of outputs
+        const numOutputs = Math.max(2, Math.min(10, (node.parameters?.['numberOutputs'] as number) || 4));
+        return Array.from({ length: numOutputs }, (_, i) => ({
+          name: `output${i}`,
+          displayName: `Output ${i}`,
+          type: 'main',
+        }));
+      }
+    }
+    return typeDesc.outputs;
   }
 
   /** Add a node at the center of the visible viewport, offset to avoid overlap. Returns the new node ID. */

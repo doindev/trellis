@@ -47,7 +47,7 @@ function encodeHandleId(type: string, index: number): string {
 
 const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNodeData }) => {
   const typeDesc = data.typeDescription;
-  const displayName = typeDesc?.displayName || data.label || 'Unknown Node';
+  const displayName = data.label || typeDesc?.displayName || 'Unknown Node';
   const subtitle = typeDesc?.subtitle || '';
   const icon = typeDesc?.icon || '';
   const allInputs = typeDesc?.inputs || [{ name: 'main', type: 'main' }];
@@ -69,9 +69,10 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
   const selectedClass = selected ? ' selected' : '';
   const disabledClass = data.disabled ? ' disabled' : '';
   const hasAiHandles = aiInputs.length > 0 || aiOutputs.length > 0;
+  const isIconOnly = aiInputs.length === 0;
 
   const nodeContent = (
-    <div className={`trellis-node action-node${statusClass}${selectedClass}${disabledClass}${hasAiHandles ? ' has-ai-handles' : ''}`}>
+    <div className={`trellis-node action-node${statusClass}${selectedClass}${disabledClass}${hasAiHandles ? ' has-ai-handles' : ''}${isIconOnly ? ' icon-only' : ''}`}>
       {/* Main input handles (left) */}
       {mainInputs.map((input, index) => (
         <Handle
@@ -111,16 +112,18 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
 
       <div className="node-header">
         <div className="node-icon">
-          {icon ? <NodeIcon name={icon} /> : (
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+          {icon ? <NodeIcon name={icon} size={isIconOnly ? 32 : 16} /> : (
+            <svg viewBox="0 0 24 24" width={isIconOnly ? 32 : 16} height={isIconOnly ? 32 : 16} fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="3" />
             </svg>
           )}
         </div>
-        <div className="node-title">
-          <div className="node-name">{displayName}</div>
-          {subtitle && <div className="node-subtitle">{subtitle}</div>}
-        </div>
+        {!isIconOnly && (
+          <div className="node-title">
+            <div className="node-name">{displayName}</div>
+            {subtitle && <div className="node-subtitle">{subtitle}</div>}
+          </div>
+        )}
       </div>
 
       {status && (
@@ -187,8 +190,15 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
     </div>
   );
 
+  const wrappedContent = isIconOnly ? (
+    <div className="node-with-label">
+      {nodeContent}
+      <div className="node-label-below">{displayName}</div>
+    </div>
+  ) : nodeContent;
+
   if (data.readOnly) {
-    return nodeContent;
+    return wrappedContent;
   }
 
   return (
@@ -199,7 +209,7 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
       onMouseLeave={onProximityLeave}
     >
       <NodeActionToolbar nodeId={id} selected={!!selected} nearby={nearby} disabled={data.disabled} isSubNode={mainInputs.length === 0 && mainOutputs.length === 0} />
-      {nodeContent}
+      {wrappedContent}
     </div>
   );
 });

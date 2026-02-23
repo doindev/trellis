@@ -11,6 +11,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   'reply': <><polyline points="9 17 4 12 9 7" /><path d="M20 18v-2a4 4 0 0 0-4-4H4" /></>,
   'unfold-vertical': <><path d="M12 22v-6" /><path d="M12 8V2" /><path d="M4 12H2" /><path d="M10 12H8" /><path d="M16 12h-2" /><path d="M22 12h-2" /><path d="m15 19-3 3-3-3" /><path d="m15 5-3-3-3 3" /></>,
   'route': <><circle cx="6" cy="19" r="3" /><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" /><circle cx="18" cy="5" r="3" /></>,
+  'signpost': <><path d="M12 3v18" /><path d="M12 5h7l2 2-2 2h-7z" /><path d="M12 12H5l-2 2 2 2h7z" /></>,
   'pen': <><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /></>,
   'code': <><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></>,
 

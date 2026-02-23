@@ -15,7 +15,13 @@
           </div>
         }
         <div class="header-info">
-          <h3 class="header-title">{{ node.name }}</h3>
+          @if (!editingName) {
+            <h3 class="header-title" [class.editable]="!readOnly" (click)="!readOnly && startEditingName()">{{ node.name }}</h3>
+          } @else {
+            <input class="header-title-input" [(ngModel)]="editNameValue"
+                   (blur)="finishEditingName()" (keydown.enter)="finishEditingName()"
+                   (keydown.escape)="cancelEditingName()" #nameInput />
+          }
           @if (nodeType) {
             <p class="header-description">{{ nodeType.description }}</p>
           }

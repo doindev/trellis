@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 	displayName = "Respond to Webhook",
 	description = "Returns data for the webhook. Use with Webhook node when 'Respond' is set to 'Using Respond to Webhook Node'.",
 	category = "Core",
-	icon = "reply"
+	icon = "webhook"
 )
 public class RespondToWebhookNode extends AbstractNode {
 

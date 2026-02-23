@@ -155,6 +155,7 @@
   padding: 10px 16px;
   cursor: pointer;
   user-select: none;
+  color: #fff;
 
   &:hover {
     background: hsl(0, 0%, 17%);
@@ -174,7 +175,7 @@
 .category-name {
   font-size: 0.6875rem;
   font-weight: 700;
-  color: hsl(0, 0%, 46%);
+  color: #fff;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   flex: 1;
@@ -247,7 +248,7 @@
 
 .node-desc {
   font-size: 0.6875rem;
-  color: hsl(0, 0%, 46%);
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

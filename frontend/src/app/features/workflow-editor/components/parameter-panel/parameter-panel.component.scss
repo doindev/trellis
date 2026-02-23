@@ -67,6 +67,30 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  &.editable {
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+      text-decoration-color: hsl(0, 0%, 40%);
+      text-underline-offset: 3px;
+    }
+  }
+}
+
+.header-title-input {
+  font-size: 1rem;
+  font-weight: 700;
+  color: hsl(0, 0%, 96%);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid hsl(7, 100%, 68%);
+  outline: none;
+  padding: 0 0 2px;
+  margin: 0;
+  width: 100%;
+  max-width: 300px;
 }
 
 .header-description {

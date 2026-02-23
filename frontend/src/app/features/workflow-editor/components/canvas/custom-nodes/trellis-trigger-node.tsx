@@ -27,7 +27,7 @@ function encodeHandleId(type: string, index: number): string {
 
 const TrellisTriggerNode = memo(({ id, data, selected }: NodeProps & { data: TrellisTriggerNodeData }) => {
   const typeDesc = data.typeDescription;
-  const displayName = typeDesc?.displayName || data.label || 'Trigger';
+  const displayName = data.label || typeDesc?.displayName || 'Trigger';
   const subtitle = typeDesc?.subtitle || '';
   const icon = typeDesc?.icon || '';
   const outputs = typeDesc?.outputs || [{ name: 'main', type: 'main' }];
@@ -43,18 +43,14 @@ const TrellisTriggerNode = memo(({ id, data, selected }: NodeProps & { data: Tre
   const disabledClass = data.disabled ? ' disabled' : '';
 
   const nodeContent = (
-    <div className={`trellis-node trigger-node${statusClass}${selectedClass}${disabledClass}`}>
+    <div className={`trellis-node trigger-node icon-only${statusClass}${selectedClass}${disabledClass}`}>
       <div className="node-header">
         <div className="node-icon trigger">
-          {icon ? <NodeIcon name={icon} /> : (
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+          {icon ? <NodeIcon name={icon} size={32} /> : (
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
             </svg>
           )}
-        </div>
-        <div className="node-title">
-          <div className="node-name">{displayName}</div>
-          {subtitle && <div className="node-subtitle">{subtitle}</div>}
         </div>
       </div>
 
@@ -96,8 +92,15 @@ const TrellisTriggerNode = memo(({ id, data, selected }: NodeProps & { data: Tre
     </div>
   );
 
+  const wrappedContent = (
+    <div className="node-with-label">
+      {nodeContent}
+      <div className="node-label-below">{displayName}</div>
+    </div>
+  );
+
   if (data.readOnly) {
-    return nodeContent;
+    return wrappedContent;
   }
 
   return (
@@ -108,7 +111,7 @@ const TrellisTriggerNode = memo(({ id, data, selected }: NodeProps & { data: Tre
       onMouseLeave={onProximityLeave}
     >
       <NodeActionToolbar nodeId={id} selected={!!selected} nearby={nearby} disabled={data.disabled} />
-      {nodeContent}
+      {wrappedContent}
     </div>
   );
 });

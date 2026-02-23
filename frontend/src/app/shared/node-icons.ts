@@ -110,6 +110,12 @@ const Datadog: LucideIconData = [
   ['path', { d: 'M8 15c1.5 2 6.5 2 8 0' }],
 ];
 
+const Signpost: LucideIconData = [
+  ['path', { d: 'M12 3v18' }],
+  ['path', { d: 'M12 5h7l2 2-2 2h-7z' }],
+  ['path', { d: 'M12 12H5l-2 2 2 2h7z' }],
+];
+
 /**
  * All icons used as node icons across the application.
  * Includes standard Lucide icons and custom brand icons.
@@ -124,6 +130,6 @@ export const NODE_ICON_SET = {
   Table2, Timer, ClipboardList, FileInput,
   Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
   Database, HardDriveUpload, ShieldCheck,
-  Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily, Mcp, BalanceScale, Tag, Datadog,
+  Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily, Mcp, BalanceScale, Tag, Datadog, Signpost,
   Postgres, Mysql, Oracle, Mongo, Redis, Neo4j,
 };

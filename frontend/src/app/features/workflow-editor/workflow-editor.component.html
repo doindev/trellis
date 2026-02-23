@@ -95,7 +95,8 @@
             (nodeExecuted)="onNodeExecuted($event)"
             (close)="store.selectNode(null)"
             (deleteNode)="store.removeNode(store.selectedNodeId()!)"
-            (navigateToNode)="store.selectNode($event)" />
+            (navigateToNode)="store.selectNode($event)"
+            (nameChanged)="store.updateNode(store.selectedNodeId()!, { name: $event })" />
         }
       </div>
 

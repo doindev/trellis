@@ -92,11 +92,17 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   @Output() deleteNode = new EventEmitter<void>();
   @Output() navigateToNode = new EventEmitter<string>();
   @Output() nodeExecuted = new EventEmitter<{ nodeId: string; data: any }>();
+  @Output() nameChanged = new EventEmitter<string>();
 
   @ViewChild('inputSearchEl') inputSearchEl?: ElementRef<HTMLInputElement>;
   @ViewChild('outputSearchEl') outputSearchEl?: ElementRef<HTMLInputElement>;
+  @ViewChild('nameInput') nameInputEl?: ElementRef<HTMLInputElement>;
 
   activeTab: 'parameters' | 'settings' = 'parameters';
+
+  // Name editing state
+  editingName = false;
+  editNameValue = '';
 
   // Webhook URL state
   webhookUrlProduction = 'http://localhost:5678/webhook/';
@@ -808,5 +814,27 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
       this.close.emit();
     }
+  }
+
+  // --- Name editing ---
+
+  startEditingName(): void {
+    if (this.readOnly) return;
+    this.editingName = true;
+    this.editNameValue = this.node.name;
+    setTimeout(() => this.nameInputEl?.nativeElement.focus());
+  }
+
+  finishEditingName(): void {
+    if (!this.editingName) return;
+    this.editingName = false;
+    const trimmed = this.editNameValue.trim();
+    if (trimmed && trimmed !== this.node.name) {
+      this.nameChanged.emit(trimmed);
+    }
+  }
+
+  cancelEditingName(): void {
+    this.editingName = false;
   }
 }
