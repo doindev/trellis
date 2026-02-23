@@ -5,6 +5,7 @@ import NodeActionToolbar from './node-action-toolbar';
 
 interface TrellisNodeData {
   label: string;
+  nodeType?: string;
   typeDescription?: {
     displayName: string;
     icon: string;
@@ -71,8 +72,16 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
   const hasAiHandles = aiInputs.length > 0 || aiOutputs.length > 0;
   const isIconOnly = aiInputs.length === 0;
 
+  // Grow node height when there are many output handles so they don't overlap
+  const MIN_HANDLE_SPACING = 26;
+  const handleCount = Math.max(mainOutputs.length, mainInputs.length);
+  const baseHeight = isIconOnly ? 68 : 52;
+  const dynamicHeight = handleCount > 2 ? MIN_HANDLE_SPACING * (handleCount + 1) : undefined;
+  const nodeStyle = dynamicHeight && dynamicHeight > baseHeight
+    ? { height: dynamicHeight, minHeight: dynamicHeight } : undefined;
+
   const nodeContent = (
-    <div className={`trellis-node action-node${statusClass}${selectedClass}${disabledClass}${hasAiHandles ? ' has-ai-handles' : ''}${isIconOnly ? ' icon-only' : ''}`}>
+    <div className={`trellis-node action-node${statusClass}${selectedClass}${disabledClass}${hasAiHandles ? ' has-ai-handles' : ''}${isIconOnly ? ' icon-only' : ''}`} style={nodeStyle}>
       {/* Main input handles (left) */}
       {mainInputs.map((input, index) => (
         <Handle
@@ -149,18 +158,27 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
 
       {/* Main output handles (right) */}
       {mainOutputs.map((output, index) => (
-        <Handle
-          key={`output-${output.name}`}
-          type="source"
-          position={Position.Right}
-          id={encodeHandleId(output.type, index)}
-          style={{ top: `${((index + 1) / (mainOutputs.length + 1)) * 100}%` }}
-          className="trellis-handle"
-          onClick={(e) => {
-            e.stopPropagation();
-            data.onOutputHandleDoubleClick?.(encodeHandleId(output.type, index));
-          }}
-        />
+        <React.Fragment key={`output-${output.name}`}>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={encodeHandleId(output.type, index)}
+            style={{ top: `${((index + 1) / (mainOutputs.length + 1)) * 100}%` }}
+            className="trellis-handle"
+            onClick={(e) => {
+              e.stopPropagation();
+              data.onOutputHandleDoubleClick?.(encodeHandleId(output.type, index));
+            }}
+          />
+          {(data.nodeType === 'if' && mainOutputs.length >= 2 || data.nodeType === 'switch') && (
+            <span
+              className="output-handle-label"
+              style={{ top: `${((index + 1) / (mainOutputs.length + 1)) * 100}%` }}
+            >
+              {output.displayName || output.name}
+            </span>
+          )}
+        </React.Fragment>
       ))}
 
       {/* AI input handles (bottom) — for parent nodes like Agent */}

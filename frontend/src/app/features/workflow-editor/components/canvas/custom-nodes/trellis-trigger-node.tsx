@@ -5,6 +5,8 @@ import NodeActionToolbar from './node-action-toolbar';
 
 interface TrellisTriggerNodeData {
   label: string;
+  nodeType?: string;
+  nodeParameters?: Record<string, any>;
   typeDescription?: {
     displayName: string;
     icon: string;
@@ -76,18 +78,27 @@ const TrellisTriggerNode = memo(({ id, data, selected }: NodeProps & { data: Tre
       )}
 
       {outputs.map((output, index) => (
-        <Handle
-          key={`output-${output.name}`}
-          type="source"
-          position={Position.Right}
-          id={encodeHandleId(output.type, index)}
-          style={{ top: `${((index + 1) / (outputs.length + 1)) * 100}%` }}
-          className="trellis-handle"
-          onClick={(e) => {
-            e.stopPropagation();
-            data.onOutputHandleDoubleClick?.(encodeHandleId(output.type, index));
-          }}
-        />
+        <React.Fragment key={`output-${output.name}`}>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={encodeHandleId(output.type, index)}
+            style={{ top: `${((index + 1) / (outputs.length + 1)) * 100}%` }}
+            className="trellis-handle"
+            onClick={(e) => {
+              e.stopPropagation();
+              data.onOutputHandleDoubleClick?.(encodeHandleId(output.type, index));
+            }}
+          />
+          {data.nodeType === 'webhook' && data.nodeParameters?.['httpMethod'] && (
+            <span
+              className="output-handle-label"
+              style={{ top: `${((index + 1) / (outputs.length + 1)) * 100}%` }}
+            >
+              {data.nodeParameters['httpMethod']}
+            </span>
+          )}
+        </React.Fragment>
       ))}
     </div>
   );

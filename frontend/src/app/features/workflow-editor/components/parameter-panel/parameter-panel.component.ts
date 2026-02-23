@@ -317,7 +317,12 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     if (!show) return true;
 
     return Object.entries(show).every(([key, values]: [string, any]) => {
-      const currentVal = this.node.parameters[key];
+      let currentVal = this.node.parameters[key];
+      // Fall back to the parameter's default value when not yet explicitly set
+      if (currentVal === undefined) {
+        const paramDef = this.parameters.find(p => p.name === key);
+        if (paramDef) currentVal = paramDef.defaultValue;
+      }
       if (Array.isArray(values)) {
         return values.includes(currentVal);
       }

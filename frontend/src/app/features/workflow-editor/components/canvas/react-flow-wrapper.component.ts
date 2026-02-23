@@ -176,6 +176,8 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
         selected: node.id === this.selectedNodeId,
         data: {
           label: node.name,
+          nodeType: node.type,
+          nodeParameters: node.parameters,
           typeDescription: typeDesc ? {
             displayName: typeDesc.displayName,
             icon: typeDesc.icon,
