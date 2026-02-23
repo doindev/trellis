@@ -36,6 +36,8 @@ export interface CanvasActions {
   selectNode: (nodeId: string) => void;
   selectAll: () => void;
   deselectAll: () => void;
+  deleteEdge?: (edgeId: string) => void;
+  insertNodeOnEdge?: (edgeId: string, source: string, target: string, sourceHandle: string, targetHandle: string) => void;
 }
 
 export const CanvasActionsContext = createContext<CanvasActions>({
@@ -72,6 +74,7 @@ export interface TrellisCanvasProps {
   onDuplicateNode?: (nodeId: string) => void;
   onExecuteFromNode?: (nodeId: string) => void;
   onCopyNode?: (nodeId: string) => void;
+  onInsertNodeOnEdge?: (edgeInfo: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }) => void;
 }
 
 const GRID_SIZE = 16;
@@ -108,6 +111,7 @@ function TrellisCanvasInner({
   onDuplicateNode,
   onExecuteFromNode,
   onCopyNode,
+  onInsertNodeOnEdge,
 }: TrellisCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
@@ -127,6 +131,10 @@ function TrellisCanvasInner({
   onExecuteFromNodeRef.current = onExecuteFromNode;
   const onCopyNodeRef = useRef(onCopyNode);
   onCopyNodeRef.current = onCopyNode;
+  const onInsertNodeOnEdgeRef = useRef(onInsertNodeOnEdge);
+  onInsertNodeOnEdgeRef.current = onInsertNodeOnEdge;
+  const onConnectionsChangeRef = useRef(onConnectionsChange);
+  onConnectionsChangeRef.current = onConnectionsChange;
 
   const [nodes, setNodes, handleNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, handleEdgesChange] = useEdgesState(initialEdges);
@@ -138,28 +146,6 @@ function TrellisCanvasInner({
   const onSelectionChange = useCallback(({ nodes: selectedNodes }: { nodes: Node[] }) => {
     setSingleSelectedId(selectedNodes.length === 1 ? selectedNodes[0].id : null);
   }, []);
-
-  // Context value for node action toolbar
-  const canvasActionsValue = useMemo<CanvasActions>(() => ({
-    singleSelectedId,
-    executeFromNode: (nodeId) => onExecuteFromNodeRef.current?.(nodeId),
-    toggleDisabled: (nodeId) => onToggleNodeDisabledRef.current?.(nodeId),
-    deleteNode: (nodeId) => {
-      if (window.confirm('Are you sure you want to delete this node?')) {
-        onNodeDeleteRef.current?.(nodeId);
-      }
-    },
-    openNode: (nodeId) => onNodeDoubleClickRef.current?.(nodeId),
-    duplicateNode: (nodeId) => onDuplicateNodeRef.current?.(nodeId),
-    copyNode: (nodeId) => onCopyNodeRef.current?.(nodeId),
-    renameNode: (nodeId) => onNodeDoubleClickRef.current?.(nodeId),
-    selectNode: (nodeId) => {
-      setNodes(nds => nds.map(n => ({ ...n, selected: n.id === nodeId })));
-      onNodeClick?.(nodeId);
-    },
-    selectAll: () => setNodes(nds => nds.map(n => ({ ...n, selected: true }))),
-    deselectAll: () => setNodes(nds => nds.map(n => ({ ...n, selected: false }))),
-  }), [singleSelectedId, setNodes, onNodeClick]);
 
   // Sync nodes from Angular without resetting viewport
   useEffect(() => {
@@ -175,8 +161,11 @@ function TrellisCanvasInner({
   }, [initialNodes, setNodes]);
 
   useEffect(() => {
-    setEdges(initialEdges);
-  }, [initialEdges, setEdges]);
+    setEdges(initialEdges.map(e => ({
+      ...e,
+      data: { ...e.data, readOnly },
+    })));
+  }, [initialEdges, setEdges, readOnly]);
 
   // Mark ready once on initial load so the canvas fades in
   useEffect(() => {
@@ -214,6 +203,68 @@ function TrellisCanvasInner({
     return { type: handleId.substring(0, sep), index: parseInt(handleId.substring(sep + 1), 10) || 0 };
   }, []);
 
+  // Build connections map from edges (shared helper)
+  const buildConnectionsMap = useCallback((edgeList: Edge[]) => {
+    const connectionsMap: Record<string, any> = {};
+    edgeList.forEach((e: any) => {
+      const src = decodeHandleId(e.sourceHandle);
+      const tgt = decodeHandleId(e.targetHandle);
+      const cType = src.type || 'main';
+      if (!connectionsMap[e.source]) {
+        connectionsMap[e.source] = {};
+      }
+      if (!connectionsMap[e.source][cType]) {
+        connectionsMap[e.source][cType] = [[]];
+      }
+      while (connectionsMap[e.source][cType].length <= src.index) {
+        connectionsMap[e.source][cType].push([]);
+      }
+      connectionsMap[e.source][cType][src.index].push({
+        node: e.target,
+        type: cType,
+        index: tgt.index,
+      });
+    });
+    return connectionsMap;
+  }, [decodeHandleId]);
+
+  // Context value for node action toolbar
+  const canvasActionsValue = useMemo<CanvasActions>(() => ({
+    singleSelectedId,
+    executeFromNode: (nodeId) => onExecuteFromNodeRef.current?.(nodeId),
+    toggleDisabled: (nodeId) => onToggleNodeDisabledRef.current?.(nodeId),
+    deleteNode: (nodeId) => {
+      if (window.confirm('Are you sure you want to delete this node?')) {
+        onNodeDeleteRef.current?.(nodeId);
+      }
+    },
+    openNode: (nodeId) => onNodeDoubleClickRef.current?.(nodeId),
+    duplicateNode: (nodeId) => onDuplicateNodeRef.current?.(nodeId),
+    copyNode: (nodeId) => onCopyNodeRef.current?.(nodeId),
+    renameNode: (nodeId) => onNodeDoubleClickRef.current?.(nodeId),
+    selectNode: (nodeId) => {
+      setNodes(nds => nds.map(n => ({ ...n, selected: n.id === nodeId })));
+      onNodeClick?.(nodeId);
+    },
+    selectAll: () => setNodes(nds => nds.map(n => ({ ...n, selected: true }))),
+    deselectAll: () => setNodes(nds => nds.map(n => ({ ...n, selected: false }))),
+    deleteEdge: (edgeId) => {
+      setEdges(eds => {
+        const remaining = eds.filter(e => e.id !== edgeId);
+        onConnectionsChangeRef.current?.(buildConnectionsMap(remaining));
+        return remaining;
+      });
+    },
+    insertNodeOnEdge: (edgeId, source, target, sourceHandle, targetHandle) => {
+      onInsertNodeOnEdgeRef.current?.({
+        sourceNodeId: source,
+        targetNodeId: target,
+        sourceHandle: sourceHandle,
+        targetHandle: targetHandle,
+      });
+    },
+  }), [singleSelectedId, setNodes, setEdges, buildConnectionsMap, onNodeClick]);
+
   const isValidConnection = useCallback((connection: Edge | Connection): boolean => {
     const source = decodeHandleId(connection.sourceHandle as string | null);
     const target = decodeHandleId(connection.targetHandle as string | null);
@@ -242,31 +293,10 @@ function TrellisCanvasInner({
           type: 'trellisEdge',
           id: `e-${connection.source}-${connectionType}-${connection.target}`,
         }];
-        const connectionsMap: Record<string, any> = {};
-        newEdges.forEach((e: any) => {
-          const src = decodeHandleId(e.sourceHandle);
-          const tgt = decodeHandleId(e.targetHandle);
-          const cType = src.type || 'main';
-          if (!connectionsMap[e.source]) {
-            connectionsMap[e.source] = {};
-          }
-          if (!connectionsMap[e.source][cType]) {
-            connectionsMap[e.source][cType] = [[]];
-          }
-          // Ensure enough output indices
-          while (connectionsMap[e.source][cType].length <= src.index) {
-            connectionsMap[e.source][cType].push([]);
-          }
-          connectionsMap[e.source][cType][src.index].push({
-            node: e.target,
-            type: cType,
-            index: tgt.index,
-          });
-        });
-        onConnectionsChange(connectionsMap);
+        onConnectionsChange(buildConnectionsMap(newEdges));
       }
     },
-    [edges, setEdges, onConnectionsChange, decodeHandleId]
+    [edges, setEdges, onConnectionsChange, decodeHandleId, buildConnectionsMap]
   );
 
   const onNodeClickHandler = useCallback(

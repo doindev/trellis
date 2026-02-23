@@ -60,6 +60,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   drawerExpandedExecutions = false;
   activeTab: 'editor' | 'executions' = 'editor';
   pendingConnection: { sourceNodeId: string; sourceHandleId: string; isTargetHandle?: boolean } | null = null;
+  pendingEdgeInsertion: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string } | null = null;
   selectedExecutionId: string | null = null;
   showExecFilterModal = false;
   execSidebarFilters: ExecutionFilters = defaultExecutionFilters();
@@ -155,6 +156,19 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
   }
 
+  onInsertNodeOnEdge(edgeInfo: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }): void {
+    this.pendingEdgeInsertion = edgeInfo;
+    this.showPalette = true;
+    setTimeout(() => {
+      if (this.nodePalette) {
+        this.nodePalette.triggerOnly.set(false);
+        this.nodePalette.aiOutputTypeFilter.set(null);
+        this.nodePalette.searchTerm.set('');
+        this.nodePalette.focusSearch();
+      }
+    }, 260);
+  }
+
   openPaletteWithTrigger(): void {
     this.showPalette = true;
     setTimeout(() => {
@@ -224,7 +238,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   onPaletteNodeClicked(nodeType: NodeTypeDescription): void {
     const newNodeId = this.canvasWrapper.addNodeAtViewportCenter(nodeType.type, nodeType.displayName, nodeType.version);
-    if (this.pendingConnection) {
+    if (this.pendingEdgeInsertion) {
+      this.insertNodeBetween(newNodeId, this.pendingEdgeInsertion);
+      this.pendingEdgeInsertion = null;
+    } else if (this.pendingConnection) {
       this.addConnectionFromPending(newNodeId);
       this.pendingConnection = null;
     }
@@ -240,7 +257,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const newNodeId = this.canvasWrapper.addNodeAtViewportCenter(
       nodeType.type, nodeType.displayName, nodeType.version, initialParams
     );
-    if (this.pendingConnection) {
+    if (this.pendingEdgeInsertion) {
+      this.insertNodeBetween(newNodeId, this.pendingEdgeInsertion);
+      this.pendingEdgeInsertion = null;
+    } else if (this.pendingConnection) {
       this.addConnectionFromPending(newNodeId);
       this.pendingConnection = null;
     }
@@ -252,6 +272,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   private closePalette(): void {
     this.showPalette = false;
+    this.pendingEdgeInsertion = null;
     this.nodePalette?.aiOutputTypeFilter.set(null);
   }
 
@@ -340,6 +361,64 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       node: toNodeId,
       type: connectionType,
       index: isTargetHandle ? outputIndex : 0,
+    });
+
+    this.store.updateConnections(connections);
+  }
+
+  private insertNodeBetween(
+    newNodeId: string,
+    edgeInfo: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }
+  ): void {
+    const { sourceNodeId, targetNodeId, sourceHandle, targetHandle } = edgeInfo;
+
+    // Decode source handle: "main:0" → { type: "main", index: 0 }
+    let connectionType = 'main';
+    let outputIndex = 0;
+    if (sourceHandle.includes(':')) {
+      const sep = sourceHandle.lastIndexOf(':');
+      connectionType = sourceHandle.substring(0, sep);
+      outputIndex = parseInt(sourceHandle.substring(sep + 1), 10) || 0;
+    }
+
+    // Decode target handle
+    let targetInputIndex = 0;
+    if (targetHandle.includes(':')) {
+      const sep = targetHandle.lastIndexOf(':');
+      targetInputIndex = parseInt(targetHandle.substring(sep + 1), 10) || 0;
+    }
+
+    const connections = JSON.parse(JSON.stringify(this.store.connections()));
+
+    // Remove the old connection: source → target
+    if (connections[sourceNodeId]?.[connectionType]) {
+      const outputs = connections[sourceNodeId][connectionType];
+      if (outputs[outputIndex]) {
+        outputs[outputIndex] = outputs[outputIndex].filter(
+          (c: any) => !(c.node === targetNodeId && c.index === targetInputIndex)
+        );
+      }
+    }
+
+    // Add connection: source → new node (input 0)
+    if (!connections[sourceNodeId]) connections[sourceNodeId] = {};
+    if (!connections[sourceNodeId][connectionType]) connections[sourceNodeId][connectionType] = [];
+    while (connections[sourceNodeId][connectionType].length <= outputIndex) {
+      connections[sourceNodeId][connectionType].push([]);
+    }
+    connections[sourceNodeId][connectionType][outputIndex].push({
+      node: newNodeId,
+      type: connectionType,
+      index: 0,
+    });
+
+    // Add connection: new node (output 0) → target (original input index)
+    if (!connections[newNodeId]) connections[newNodeId] = {};
+    if (!connections[newNodeId][connectionType]) connections[newNodeId][connectionType] = [[]];
+    connections[newNodeId][connectionType][0].push({
+      node: targetNodeId,
+      type: connectionType,
+      index: targetInputIndex,
     });
 
     this.store.updateConnections(connections);

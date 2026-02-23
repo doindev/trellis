@@ -58,6 +58,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   @Output() duplicateNode = new EventEmitter<string>();
   @Output() executeFromNode = new EventEmitter<string>();
   @Output() copyNode = new EventEmitter<string>();
+  @Output() insertNodeOnEdge = new EventEmitter<{ sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }>();
 
   private root: Root | null = null;
   private nodeIdCounter = 0;
@@ -149,6 +150,9 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       },
       onCopyNode: (nodeId: string) => {
         this.ngZone.run(() => this.copyNode.emit(nodeId));
+      },
+      onInsertNodeOnEdge: (info: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }) => {
+        this.ngZone.run(() => this.insertNodeOnEdge.emit(info));
       },
     };
 

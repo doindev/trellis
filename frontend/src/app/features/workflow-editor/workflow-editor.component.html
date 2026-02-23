@@ -65,7 +65,8 @@
             (toggleNodeDisabled)="store.toggleNodeDisabled($event)"
             (duplicateNode)="store.duplicateNode($event)"
             (executeFromNode)="onExecuteFromNode($event)"
-            (copyNode)="store.copyNode($event)" />
+            (copyNode)="store.copyNode($event)"
+            (insertNodeOnEdge)="onInsertNodeOnEdge($event)" />
         </div>
 
         @if (activeTab === 'editor') {
