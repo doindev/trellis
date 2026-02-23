@@ -22,6 +22,17 @@ import {
 } from 'lucide-angular';
 import { NODE_ICON_SET } from '../../../../shared/node-icons';
 
+/** A single line in the JSON tree view */
+export interface JsonTreeLine {
+  indent: number;
+  type: 'bracket' | 'keyValue' | 'keyOpen' | 'value';
+  key?: string;        // key name (for keyValue and keyOpen)
+  path?: string;       // full dot-notation path for drag (e.g. 'headers.host')
+  bracket?: string;    // bracket character(s) like '{', '},' '[', '],'
+  displayValue?: string; // formatted value (for keyValue and value lines)
+  valueType?: string;  // 'string' | 'number' | 'boolean' | 'null' | 'object' | 'array'
+}
+
 /** Schema node for the Schema tree view */
 export interface SchemaNode {
   key: string;
@@ -428,6 +439,41 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     return String(value);
   }
 
+  // --- Table cell expansion helpers ---
+
+  /** Returns true if a cell value is a non-empty object that should be expanded into key-value rows */
+  isExpandableCell(value: any): boolean {
+    return value !== null && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
+  }
+
+  /** Returns a label for empty/null cell values */
+  getEmptyCellLabel(value: any): string {
+    if (value === null || value === undefined) return '';
+    if (Array.isArray(value) && value.length === 0) return '{empty array}';
+    if (typeof value === 'object' && Object.keys(value).length === 0) return '{empty object}';
+    return '';
+  }
+
+  /** Builds flat key-value entries for an expandable object cell */
+  getCellEntries(value: any, columnName: string): { key: string; path: string; displayValue: string; isEmpty: boolean }[] {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+    const entries: { key: string; path: string; displayValue: string; isEmpty: boolean }[] = [];
+    for (const [key, val] of Object.entries(value)) {
+      const path = columnName + '.' + key;
+      if (val === null || val === undefined) {
+        entries.push({ key, path, displayValue: String(val), isEmpty: false });
+      } else if (Array.isArray(val)) {
+        entries.push({ key, path, displayValue: val.length === 0 ? '{empty array}' : JSON.stringify(val), isEmpty: val.length === 0 });
+      } else if (typeof val === 'object') {
+        const keys = Object.keys(val);
+        entries.push({ key, path, displayValue: keys.length === 0 ? '{empty object}' : JSON.stringify(val), isEmpty: keys.length === 0 });
+      } else {
+        entries.push({ key, path, displayValue: String(val), isEmpty: false });
+      }
+    }
+    return entries;
+  }
+
   // --- Schema helpers ---
 
   /** Determine JS type as a display string */
@@ -575,6 +621,133 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     return filtered.length > 0 ? JSON.stringify(filtered, null, 2) : '';
   }
 
+  /** Get parsed input items for a node (for structured JSON rendering) */
+  getInputItems(nodeId: string): Record<string, any>[] {
+    const data = this.executionData?.[nodeId] ?? this.webhookTestData?.[nodeId];
+    if (!data) return [];
+    const items = this.extractItems(data);
+    if (!this.inputSearch) return items;
+    return this.filterRows(items, this.inputSearch);
+  }
+
+  /** Return all entries of an object as [key, formattedValue] pairs */
+  objectEntries(obj: Record<string, any>): [string, string][] {
+    if (!obj || typeof obj !== 'object') return [];
+    return Object.entries(obj).map(([k, v]) => [k, this.formatCell(v)]);
+  }
+
+  /**
+   * Build a flat list of "JSON tree lines" for rendering a JSON-like view
+   * where every key at every depth is draggable with its full $json path.
+   */
+  buildJsonTreeLines(items: Record<string, any>[]): JsonTreeLine[] {
+    const lines: JsonTreeLine[] = [];
+    const isMulti = items.length > 1;
+    if (isMulti) {
+      lines.push({ indent: 0, type: 'bracket', bracket: '[' });
+    }
+    items.forEach((item, idx) => {
+      const baseIndent = isMulti ? 1 : 0;
+      if (isMulti) {
+        lines.push({ indent: baseIndent, type: 'bracket', bracket: '{' });
+      } else {
+        lines.push({ indent: 0, type: 'bracket', bracket: '{' });
+      }
+      this.appendObjectLines(lines, item, '', baseIndent + 1, Object.keys(item).length);
+      const closeBracket = isMulti
+        ? (idx < items.length - 1 ? '},' : '}')
+        : '}';
+      lines.push({ indent: baseIndent, type: 'bracket', bracket: closeBracket });
+    });
+    if (isMulti) {
+      lines.push({ indent: 0, type: 'bracket', bracket: ']' });
+    }
+    return lines;
+  }
+
+  private appendObjectLines(
+    lines: JsonTreeLine[], obj: Record<string, any>,
+    parentPath: string, indent: number, totalKeys: number
+  ): void {
+    const keys = Object.keys(obj);
+    keys.forEach((key, i) => {
+      const path = parentPath ? `${parentPath}.${key}` : key;
+      const value = obj[key];
+      const isLast = i === totalKeys - 1;
+      const comma = isLast ? '' : ',';
+
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        const childKeys = Object.keys(value);
+        if (childKeys.length === 0) {
+          lines.push({ indent, type: 'keyValue', key, path, displayValue: '{}' + comma, valueType: 'object' });
+        } else {
+          lines.push({ indent, type: 'keyOpen', key, path, bracket: '{' });
+          this.appendObjectLines(lines, value, path, indent + 1, childKeys.length);
+          lines.push({ indent, type: 'bracket', bracket: '}' + comma });
+        }
+      } else if (Array.isArray(value)) {
+        if (value.length === 0) {
+          lines.push({ indent, type: 'keyValue', key, path, displayValue: '[]' + comma, valueType: 'array' });
+        } else {
+          lines.push({ indent, type: 'keyOpen', key, path, bracket: '[' });
+          this.appendArrayLines(lines, value, path, indent + 1);
+          lines.push({ indent, type: 'bracket', bracket: ']' + comma });
+        }
+      } else {
+        const formatted = this.formatJsonValue(value);
+        lines.push({ indent, type: 'keyValue', key, path, displayValue: formatted + comma, valueType: this.typeOf(value) });
+      }
+    });
+  }
+
+  private appendArrayLines(
+    lines: JsonTreeLine[], arr: any[],
+    parentPath: string, indent: number
+  ): void {
+    arr.forEach((item, idx) => {
+      const isLast = idx === arr.length - 1;
+      const comma = isLast ? '' : ',';
+      const itemPath = `${parentPath}[${idx}]`;
+
+      if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+        const childKeys = Object.keys(item);
+        if (childKeys.length === 0) {
+          lines.push({ indent, type: 'bracket', bracket: '{}' + comma });
+        } else {
+          lines.push({ indent, type: 'bracket', bracket: '{' });
+          this.appendObjectLines(lines, item, itemPath, indent + 1, childKeys.length);
+          lines.push({ indent, type: 'bracket', bracket: '}' + comma });
+        }
+      } else if (Array.isArray(item)) {
+        lines.push({ indent, type: 'bracket', bracket: '[' });
+        this.appendArrayLines(lines, item, itemPath, indent + 1);
+        lines.push({ indent, type: 'bracket', bracket: ']' + comma });
+      } else {
+        const formatted = this.formatJsonValue(item);
+        lines.push({ indent, type: 'value', displayValue: formatted + comma, valueType: this.typeOf(item) });
+      }
+    });
+  }
+
+  private formatJsonValue(value: any): string {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    if (typeof value === 'string') return '"' + value + '"';
+    return String(value);
+  }
+
+  /** Cache for JSON tree lines per node to avoid recalculating on every render */
+  private jsonTreeCache = new Map<string, { items: Record<string, any>[]; lines: JsonTreeLine[] }>();
+
+  getJsonTreeLines(nodeId: string): JsonTreeLine[] {
+    const items = this.getInputItems(nodeId);
+    const cached = this.jsonTreeCache.get(nodeId);
+    if (cached && cached.items === items) return cached.lines;
+    const lines = this.buildJsonTreeLines(items);
+    this.jsonTreeCache.set(nodeId, { items, lines });
+    return lines;
+  }
+
   get filteredOutputJson(): string {
     const data = this.effectiveOutputData;
     if (!data) return '';
@@ -705,13 +878,48 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     const items: any[] = [];
     for (const prev of this.previousNodes) {
       const data = this.executionData?.[prev.node.id] ?? this.webhookTestData?.[prev.node.id];
-      if (data && Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
-        items.push(...data[0]);
-      } else if (data && Array.isArray(data)) {
-        items.push(...data);
-      }
+      items.push(...this.extractRawItems(data));
     }
     return items;
+  }
+
+  /**
+   * Extract raw items in {json: ...} format from any execution data shape.
+   * Unlike extractItems() which unwraps json, this keeps the {json: ...} wrapper
+   * because the backend expression evaluator expects that format.
+   */
+  private extractRawItems(rawData: any): any[] {
+    if (!rawData) return [];
+
+    // Metadata-wrapped format: [{startedAt, finishedAt, status, data: {main: [[{json: ...}]]}}]
+    if (Array.isArray(rawData) && rawData.length > 0 && rawData[0]?.data?.main) {
+      const mainOutputs = rawData[0].data.main;
+      if (Array.isArray(mainOutputs) && mainOutputs.length > 0 && Array.isArray(mainOutputs[0])) {
+        return mainOutputs[0];
+      }
+      return [];
+    }
+
+    // Direct format: [[{json: ...}]]
+    if (Array.isArray(rawData) && rawData.length > 0 && Array.isArray(rawData[0])) {
+      return rawData[0];
+    }
+
+    // Flat array: [{json: ...}] or [{key: val}]
+    if (Array.isArray(rawData)) {
+      // Ensure items have {json: ...} wrapper
+      return rawData.map(item => {
+        if (item && typeof item === 'object' && 'json' in item) return item;
+        return { json: item };
+      });
+    }
+
+    // Single object
+    if (typeof rawData === 'object') {
+      return [{ json: rawData }];
+    }
+
+    return [];
   }
 
   executeNode(): void {
@@ -937,18 +1145,14 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   expressionEditorInputItems: any[] = [];
 
   openExpressionEditor(paramName: string, currentValue: any): void {
-    const strVal = String(currentValue || '={{ }}');
-    // Strip ={{ and }} wrapper to get body
-    const body = strVal.replace(/^=\{\{\s*/, '').replace(/\s*\}\}$/, '');
     this.expressionEditorParam = paramName;
-    this.expressionEditorValue = body;
+    this.expressionEditorValue = String(currentValue ?? '');
     this.expressionEditorInputItems = this.collectInputForExecution();
     this.expressionEditorOpen = true;
   }
 
   onExpressionEditorSave(expression: string): void {
-    const wrapped = '={{ ' + expression + ' }}';
-    this.onParameterChange(this.expressionEditorParam, wrapped);
+    this.onParameterChange(this.expressionEditorParam, expression);
     this.expressionEditorOpen = false;
   }
 
@@ -958,7 +1162,20 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
 
   onSchemaDragStart(event: DragEvent, node: SchemaNode): void {
     if (node.children && node.children.length > 0) return;
-    event.dataTransfer?.setData('text/plain', '$json.' + node.path);
+    event.dataTransfer?.setData('text/plain', '{{$json.' + node.path + '}}');
     event.dataTransfer!.effectAllowed = 'copy';
+  }
+
+  onFieldDragStart(event: DragEvent, fieldName: string): void {
+    event.dataTransfer?.setData('text/plain', '{{$json.' + fieldName + '}}');
+    event.dataTransfer!.effectAllowed = 'copy';
+  }
+
+  /** Get all unique top-level field names from input items for a given node */
+  getInputFieldNames(nodeId: string): string[] {
+    const data = this.executionData?.[nodeId] ?? this.webhookTestData?.[nodeId];
+    if (!data) return [];
+    const items = this.extractItems(data);
+    return this.extractHeaders(items);
   }
 }

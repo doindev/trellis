@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class ExpressionEvaluator {
 
-    private static final Pattern EXPRESSION_PATTERN = Pattern.compile("=\\{\\{(.+?)\\}\\}", Pattern.DOTALL);
+    private static final Pattern EXPRESSION_PATTERN = Pattern.compile("=?\\{\\{(.+?)\\}\\}", Pattern.DOTALL);
     private final ObjectMapper objectMapper;
 
     @SuppressWarnings("unchecked")
@@ -100,7 +100,7 @@ public class ExpressionEvaluator {
             return convertValue(result);
         } catch (Exception e) {
             log.warn("Expression evaluation failed for '{}': {}", expression, e.getMessage());
-            return "={{" + expression + "}}";
+            return "{{" + expression + "}}";
         }
     }
 

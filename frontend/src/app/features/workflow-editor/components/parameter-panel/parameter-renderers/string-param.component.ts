@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NodeParameter } from '../../../../../core/models';
@@ -29,12 +29,12 @@ import { NodeParameter } from '../../../../../core/models';
     }
     @if (isExpression) {
       <div class="expr-input-row">
-        <input #exprInput type="text"
+        <input type="text"
                class="form-control param-input expr-input"
                [ngModel]="value"
                (ngModelChange)="valueChange.emit($event)"
                (blur)="blurred.emit()"
-               [placeholder]="'={{ }}'"
+               [placeholder]="'e.g. Hello {{$json.name}}'"
                [disabled]="readOnly"
                (dragover)="onDragOver($event)"
                (drop)="onDrop($event)">
@@ -145,10 +145,12 @@ export class StringParamComponent {
   @Output() blurred = new EventEmitter<void>();
   @Output() openExpressionEditor = new EventEmitter<void>();
 
-  @ViewChild('exprInput') exprInput?: ElementRef<HTMLInputElement>;
+  /** Manual toggle — set when user clicks "Expression" on a field that has no {{ }} yet */
+  expressionMode = false;
 
   get isExpression(): boolean {
-    return typeof this.value === 'string' && this.value.startsWith('={{');
+    const str = String(this.value ?? '');
+    return str.includes('{{') || this.expressionMode;
   }
 
   get isMultiline(): boolean {
@@ -156,15 +158,11 @@ export class StringParamComponent {
   }
 
   setFixed(): void {
-    if (this.isExpression) {
-      this.valueChange.emit('');
-    }
+    this.expressionMode = false;
   }
 
   setExpression(): void {
-    if (!this.isExpression) {
-      this.valueChange.emit('={{ }}');
-    }
+    this.expressionMode = true;
   }
 
   onDragOver(event: DragEvent): void {
@@ -176,21 +174,14 @@ export class StringParamComponent {
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
-    const path = event.dataTransfer?.getData('text/plain');
-    if (!path || !path.startsWith('$json.')) return;
+    const data = event.dataTransfer?.getData('text/plain');
+    if (!data || !data.includes('$json.')) return;
 
-    if (this.isExpression) {
-      // Insert into existing expression
-      const currentVal = String(this.value || '={{ }}');
-      const body = currentVal.replace(/^=\{\{\s*/, '').replace(/\s*\}\}$/, '');
-      if (body.trim()) {
-        this.valueChange.emit('={{ ' + body + ' ' + path + ' }}');
-      } else {
-        this.valueChange.emit('={{ ' + path + ' }}');
-      }
-    } else {
-      // Switch to expression mode with dropped path
-      this.valueChange.emit('={{ ' + path + ' }}');
-    }
+    const input = event.target as HTMLInputElement | HTMLTextAreaElement;
+    const currentVal = String(this.value ?? '');
+    const pos = input?.selectionStart ?? currentVal.length;
+    const before = currentVal.substring(0, pos);
+    const after = currentVal.substring(pos);
+    this.valueChange.emit(before + data + after);
   }
 }

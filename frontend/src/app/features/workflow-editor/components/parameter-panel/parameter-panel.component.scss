@@ -283,10 +283,7 @@
     padding: 6px 12px;
     text-align: left;
     border-bottom: 1px solid hsl(0, 0%, 20%);
-    max-width: 280px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    vertical-align: top;
   }
 
   th {
@@ -300,16 +297,86 @@
     text-transform: uppercase;
     letter-spacing: 0.3px;
     border-bottom: 2px solid hsl(0, 0%, 24%);
+    white-space: nowrap;
   }
 
   td {
     color: hsl(0, 0%, 80%);
+    max-width: 320px;
+  }
+
+  // Simple (non-expanded) cell text: truncate
+  td > span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   tbody tr {
     &:hover {
       background: hsl(0, 0%, 17%);
     }
+  }
+}
+
+// ── Expanded table cells ──
+
+.cell-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cell-entry {
+  display: flex;
+  align-items: baseline;
+  line-height: 1.5;
+}
+
+.cell-key {
+  color: hsl(210, 70%, 65%);
+  font-weight: 600;
+  cursor: grab;
+  border-radius: 3px;
+  padding: 0 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s;
+
+  &:hover {
+    background: hsla(210, 60%, 50%, 0.15);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.cell-key-label {
+  color: hsl(210, 70%, 65%);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+
+.cell-sep {
+  color: hsl(0, 0%, 46%);
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.cell-val {
+  color: hsl(0, 0%, 72%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+
+  &.cell-empty {
+    color: hsl(0, 0%, 42%);
+    font-style: italic;
   }
 }
 
@@ -338,6 +405,77 @@
       cursor: grabbing;
     }
   }
+}
+
+// ── Draggable table headers ──
+
+.draggable-header {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drag-grip-icon {
+  flex-shrink: 0;
+  opacity: 0.35;
+  transition: opacity 0.15s;
+
+  .draggable-header:hover & {
+    opacity: 0.7;
+  }
+}
+
+// ── JSON tree view (draggable keys at all depths) ──
+
+.json-tree {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
+
+.json-tree-line {
+  white-space: nowrap;
+}
+
+.json-bracket {
+  color: hsl(0, 0%, 50%);
+}
+
+.json-key {
+  color: hsl(210, 70%, 65%);
+  cursor: grab;
+  border-radius: 3px;
+  padding: 1px 2px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: hsla(210, 60%, 50%, 0.15);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.json-colon {
+  color: hsl(0, 0%, 50%);
+}
+
+.json-val {
+  color: hsl(0, 0%, 72%);
+
+  &[data-type="string"] { color: hsl(30, 65%, 60%); }
+  &[data-type="number"] { color: hsl(170, 60%, 55%); }
+  &[data-type="boolean"] { color: hsl(270, 60%, 70%); }
+  &[data-type="null"] { color: hsl(0, 0%, 46%); font-style: italic; }
 }
 
 .schema-expand {

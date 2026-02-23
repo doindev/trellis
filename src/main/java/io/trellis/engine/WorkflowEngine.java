@@ -933,8 +933,7 @@ public class WorkflowEngine {
                     .runIndex(0)
                     .build();
 
-            String wrapped = "={{ " + expression + " }}";
-            Object evaluated = expressionEvaluator.resolveExpressions(wrapped, ctx);
+            Object evaluated = expressionEvaluator.resolveExpressions(expression, ctx);
             result.put("result", evaluated);
             result.put("error", "");
         } catch (Exception e) {

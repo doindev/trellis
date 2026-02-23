@@ -69,18 +69,17 @@ import { SchemaNode } from './parameter-panel.component';
           <!-- Center: Expression textarea -->
           <div class="expr-col expr-col-editor">
             <div class="expr-col-header">
-              <span class="expr-col-label">Expression</span>
+              <span class="expr-col-label">Value</span>
+              <span class="expr-col-hint">{{ hintText }}</span>
             </div>
             <div class="expr-col-body expr-editor-body">
-              <div class="expr-prefix">=&#123;&#123;</div>
               <textarea #exprTextarea
                         class="expr-textarea"
                         [(ngModel)]="currentExpression"
                         (ngModelChange)="onExpressionChange($event)"
                         (keydown)="onKeydown($event)"
-                        placeholder="Type an expression... e.g. $json.fieldName"
+                        [placeholder]="placeholderText"
                         spellcheck="false"></textarea>
-              <div class="expr-suffix">&#125;&#125;</div>
             </div>
           </div>
 
@@ -299,21 +298,18 @@ import { SchemaNode } from './parameter-panel.component';
       min-width: 0;
     }
 
+    .expr-col-hint {
+      font-size: 0.625rem;
+      color: hsl(30, 70%, 55%);
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+
     /* Expression editor */
     .expr-editor-body {
       display: flex;
       flex-direction: column;
       padding: 0 !important;
     }
-    .expr-prefix, .expr-suffix {
-      font-family: 'Consolas', 'Monaco', monospace;
-      font-size: 0.75rem;
-      color: hsl(30, 80%, 55%);
-      padding: 4px 12px 0;
-      flex-shrink: 0;
-      user-select: none;
-    }
-    .expr-suffix { padding: 0 12px 4px; }
     .expr-textarea {
       flex: 1;
       width: 100%;
@@ -403,6 +399,8 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
   schemaSearch = '';
   schemaCollapsed = new Set<string>();
   displayMode: 'text' | 'html' = 'text';
+  hintText = 'Use {{ }} for expressions';
+  placeholderText = 'e.g. Hello {{$json.name}}';
 
   private evaluateSubject = new Subject<string>();
   private subscription?: Subscription;
@@ -504,12 +502,12 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
 
   onSchemaClick(node: SchemaNode): void {
     if (node.children && node.children.length > 0) return;
-    this.insertAtCursor('$json.' + node.path);
+    this.insertAtCursor('{{$json.' + node.path + '}}');
   }
 
   onSchemaDragStart(event: DragEvent, node: SchemaNode): void {
     if (node.children && node.children.length > 0) return;
-    event.dataTransfer?.setData('text/plain', '$json.' + node.path);
+    event.dataTransfer?.setData('text/plain', '{{$json.' + node.path + '}}');
     event.dataTransfer!.effectAllowed = 'copy';
   }
 

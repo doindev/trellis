@@ -33,7 +33,7 @@ import { NodeParameter } from '../../../../../core/models';
                class="form-control param-input expr-input"
                [ngModel]="value"
                (ngModelChange)="valueChange.emit($event)"
-               [placeholder]="'={{ }}'"
+               [placeholder]="'e.g. {{$json.count}}'"
                [disabled]="readOnly"
                (dragover)="onDragOver($event)"
                (drop)="onDrop($event)">
@@ -131,20 +131,20 @@ export class NumberParamComponent {
   @Output() valueChange = new EventEmitter<any>();
   @Output() openExpressionEditor = new EventEmitter<void>();
 
+  /** Manual toggle — set when user clicks "Expression" on a field that has no {{ }} yet */
+  expressionMode = false;
+
   get isExpression(): boolean {
-    return typeof this.value === 'string' && this.value.startsWith('={{');
+    const str = String(this.value ?? '');
+    return str.includes('{{') || this.expressionMode;
   }
 
   setFixed(): void {
-    if (this.isExpression) {
-      this.valueChange.emit(this.param.defaultValue ?? 0);
-    }
+    this.expressionMode = false;
   }
 
   setExpression(): void {
-    if (!this.isExpression) {
-      this.valueChange.emit('={{ }}');
-    }
+    this.expressionMode = true;
   }
 
   onDragOver(event: DragEvent): void {
@@ -156,19 +156,14 @@ export class NumberParamComponent {
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
-    const path = event.dataTransfer?.getData('text/plain');
-    if (!path || !path.startsWith('$json.')) return;
+    const data = event.dataTransfer?.getData('text/plain');
+    if (!data || !data.includes('$json.')) return;
 
-    if (this.isExpression) {
-      const currentVal = String(this.value || '={{ }}');
-      const body = currentVal.replace(/^=\{\{\s*/, '').replace(/\s*\}\}$/, '');
-      if (body.trim()) {
-        this.valueChange.emit('={{ ' + body + ' ' + path + ' }}');
-      } else {
-        this.valueChange.emit('={{ ' + path + ' }}');
-      }
-    } else {
-      this.valueChange.emit('={{ ' + path + ' }}');
-    }
+    const input = event.target as HTMLInputElement;
+    const currentVal = String(this.value ?? '');
+    const pos = input?.selectionStart ?? currentVal.length;
+    const before = currentVal.substring(0, pos);
+    const after = currentVal.substring(pos);
+    this.valueChange.emit(before + data + after);
   }
 }

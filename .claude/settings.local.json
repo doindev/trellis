@@ -109,7 +109,9 @@
       "Bash(timeout 5 cat:*)",
       "WebFetch(domain:langchain-doc.readthedocs.io)",
       "WebFetch(domain:kioku-space.com)",
-      "WebFetch(domain:neo4j.com)"
+      "WebFetch(domain:neo4j.com)",
+      "Bash(mvn compiler:compile:*)",
+      "Bash(pushd:*)"
     ]
   }
 }
