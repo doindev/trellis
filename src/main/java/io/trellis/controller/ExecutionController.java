@@ -61,6 +61,14 @@ public class ExecutionController {
     }
 
     @SuppressWarnings("unchecked")
+    @PostMapping("/api/expressions/evaluate")
+    public Map<String, Object> evaluateExpression(@RequestBody Map<String, Object> request) {
+        String expression = (String) request.get("expression");
+        List<Map<String, Object>> inputData = (List<Map<String, Object>>) request.get("inputData");
+        return workflowEngine.evaluateExpressionPreview(expression, inputData);
+    }
+
+    @SuppressWarnings("unchecked")
     @PostMapping("/api/nodes/execute")
     public Map<String, Object> executeNode(@RequestBody Map<String, Object> request) {
         String nodeType = (String) request.get("nodeType");

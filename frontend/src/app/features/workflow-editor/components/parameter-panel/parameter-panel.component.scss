@@ -330,6 +330,14 @@
   &:hover {
     background: hsl(0, 0%, 17%);
   }
+
+  &.draggable-schema {
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
 }
 
 .schema-expand {

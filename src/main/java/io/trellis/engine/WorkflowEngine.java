@@ -906,6 +906,44 @@ public class WorkflowEngine {
         return aiInputs;
     }
 
+    /**
+     * Evaluate a single expression for preview in the expression editor.
+     * Returns { "result": <value>, "error": "" } or { "result": null, "error": "<message>" }.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> evaluateExpressionPreview(String expression, List<Map<String, Object>> inputItems) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        try {
+            Map<String, Object> currentItemData = Map.of();
+            if (inputItems != null && !inputItems.isEmpty()) {
+                Map<String, Object> first = inputItems.get(0);
+                Object json = first.get("json");
+                if (json instanceof Map) {
+                    currentItemData = (Map<String, Object>) json;
+                }
+            }
+
+            Map<String, String> variables = variableService.getAllVariablesAsMap();
+
+            ExpressionEvaluator.ExpressionContext ctx = ExpressionEvaluator.ExpressionContext.builder()
+                    .currentItemData(currentItemData)
+                    .inputItems(inputItems)
+                    .variables(variables)
+                    .executionId("preview")
+                    .runIndex(0)
+                    .build();
+
+            String wrapped = "={{ " + expression + " }}";
+            Object evaluated = expressionEvaluator.resolveExpressions(wrapped, ctx);
+            result.put("result", evaluated);
+            result.put("error", "");
+        } catch (Exception e) {
+            result.put("result", null);
+            result.put("error", e.getMessage());
+        }
+        return result;
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> resolveParameters(Map<String, Object> parameters,
                                                     List<Map<String, Object>> inputItems,

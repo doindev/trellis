@@ -65,6 +65,10 @@ export class WorkflowService {
     return this.api.post('/nodes/execute', request);
   }
 
+  evaluateExpression(expression: string, inputData: any[]): Observable<{ result: any; error: string }> {
+    return this.api.post<{ result: any; error: string }>('/expressions/evaluate', { expression, inputData });
+  }
+
   stopExecution(executionId: string): Observable<any> {
     return this.api.post<any>(`/executions/${executionId}/stop`, {});
   }

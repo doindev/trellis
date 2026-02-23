@@ -173,7 +173,11 @@
               } @else {
                 <div class="schema-tree">
                   @for (node of inputSchemaNodes; track node.path) {
-                    <div class="schema-row" [style.padding-left.px]="node.level * 16 + 8">
+                    <div class="schema-row"
+                         [class.draggable-schema]="!node.children || node.children.length === 0"
+                         [style.padding-left.px]="node.level * 16 + 8"
+                         [attr.draggable]="(!node.children || node.children.length === 0) ? 'true' : null"
+                         (dragstart)="onSchemaDragStart($event, node)">
                       @if (node.children && node.children.length > 0) {
                         <button class="schema-expand" (click)="toggleSchemaNode(node.path, 'input')"
                                 [class.collapsed]="isSchemaCollapsed(node.path, 'input')">
@@ -330,7 +334,8 @@
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
                         (valueChange)="onParameterChange(param.name, $event)"
-                        (blurred)="onParamBlur(param.name)" />
+                        (blurred)="onParamBlur(param.name)"
+                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                   }
                   @case ('number') {
@@ -338,7 +343,8 @@
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
-                      (valueChange)="onParameterChange(param.name, $event)" />
+                      (valueChange)="onParameterChange(param.name, $event)"
+                      (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
                   @case ('boolean') {
                     <app-boolean-param
@@ -403,7 +409,8 @@
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
                       (valueChange)="onParameterChange(param.name, $event)"
-                      (blurred)="onParamBlur(param.name)" />
+                      (blurred)="onParamBlur(param.name)"
+                      (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
                 }
               </div>
@@ -723,3 +730,11 @@
     </div>
   </div>
 </div>
+
+@if (expressionEditorOpen) {
+  <app-expression-editor-modal
+    [expression]="expressionEditorValue"
+    [inputItems]="expressionEditorInputItems"
+    (expressionSaved)="onExpressionEditorSave($event)"
+    (closed)="onExpressionEditorClose()" />
+}

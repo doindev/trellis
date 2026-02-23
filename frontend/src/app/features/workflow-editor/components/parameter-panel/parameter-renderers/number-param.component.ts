@@ -28,19 +28,30 @@ import { NodeParameter } from '../../../../../core/models';
       <p class="param-description">{{ param.description }}</p>
     }
     @if (isExpression) {
-      <input type="text"
-             class="form-control param-input expr-input"
-             [ngModel]="value"
-             (ngModelChange)="valueChange.emit($event)"
-             [placeholder]="'={{ }}'"
-             [disabled]="readOnly">
+      <div class="expr-input-row">
+        <input type="text"
+               class="form-control param-input expr-input"
+               [ngModel]="value"
+               (ngModelChange)="valueChange.emit($event)"
+               [placeholder]="'={{ }}'"
+               [disabled]="readOnly"
+               (dragover)="onDragOver($event)"
+               (drop)="onDrop($event)">
+        <button class="expr-editor-btn" (click)="openExpressionEditor.emit()" title="Open expression editor">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/>
+          </svg>
+        </button>
+      </div>
     } @else {
       <input type="number"
              class="form-control param-input"
              [ngModel]="value"
              (ngModelChange)="valueChange.emit($event)"
              [placeholder]="param.placeHolder || ''"
-             [disabled]="readOnly">
+             [disabled]="readOnly"
+             (dragover)="onDragOver($event)"
+             (drop)="onDrop($event)">
     }
   `,
   styles: [`
@@ -85,6 +96,32 @@ import { NodeParameter } from '../../../../../core/models';
     .expr-radio:hover .expr-radio-btn {
       color: hsl(0,0%,80%);
     }
+    .expr-input-row {
+      display: flex;
+      gap: 4px;
+      align-items: stretch;
+    }
+    .expr-input-row .param-input {
+      flex: 1;
+      min-width: 0;
+    }
+    .expr-editor-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      flex-shrink: 0;
+      background: hsl(0,0%,13%);
+      border: 1px solid hsl(30,80%,50%);
+      border-radius: 6px;
+      color: hsl(30,80%,55%);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .expr-editor-btn:hover {
+      background: hsl(30,80%,50%);
+      color: hsl(0,0%,100%);
+    }
   `]
 })
 export class NumberParamComponent {
@@ -92,6 +129,7 @@ export class NumberParamComponent {
   @Input() value: any = 0;
   @Input() readOnly = false;
   @Output() valueChange = new EventEmitter<any>();
+  @Output() openExpressionEditor = new EventEmitter<void>();
 
   get isExpression(): boolean {
     return typeof this.value === 'string' && this.value.startsWith('={{');
@@ -106,6 +144,31 @@ export class NumberParamComponent {
   setExpression(): void {
     if (!this.isExpression) {
       this.valueChange.emit('={{ }}');
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    const path = event.dataTransfer?.getData('text/plain');
+    if (!path || !path.startsWith('$json.')) return;
+
+    if (this.isExpression) {
+      const currentVal = String(this.value || '={{ }}');
+      const body = currentVal.replace(/^=\{\{\s*/, '').replace(/\s*\}\}$/, '');
+      if (body.trim()) {
+        this.valueChange.emit('={{ ' + body + ' ' + path + ' }}');
+      } else {
+        this.valueChange.emit('={{ ' + path + ' }}');
+      }
+    } else {
+      this.valueChange.emit('={{ ' + path + ' }}');
     }
   }
 }

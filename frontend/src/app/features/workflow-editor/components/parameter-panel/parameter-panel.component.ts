@@ -15,6 +15,7 @@ import { FixedCollectionParamComponent } from './parameter-renderers/fixed-colle
 import { NoticeParamComponent } from './parameter-renderers/notice-param.component';
 import { CredentialParamComponent } from './parameter-renderers/credential-param.component';
 import { ModelParamComponent } from './parameter-renderers/model-param.component';
+import { ExpressionEditorModalComponent } from './expression-editor-modal.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
   CheckCircle, Copy, Square, Search, ChevronRight, Pin, PinOff, Pencil,
@@ -64,6 +65,7 @@ export class HighlightPipe implements PipeTransform {
     NoticeParamComponent,
     CredentialParamComponent,
     ModelParamComponent,
+    ExpressionEditorModalComponent,
   ],
   providers: [{
     provide: LUCIDE_ICONS,
@@ -892,6 +894,10 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.expressionEditorOpen) {
+      this.expressionEditorOpen = false;
+      return;
+    }
     this.close.emit();
   }
 
@@ -921,5 +927,38 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
 
   cancelEditingName(): void {
     this.editingName = false;
+  }
+
+  // --- Expression editor modal ---
+
+  expressionEditorOpen = false;
+  expressionEditorParam = '';
+  expressionEditorValue = '';
+  expressionEditorInputItems: any[] = [];
+
+  openExpressionEditor(paramName: string, currentValue: any): void {
+    const strVal = String(currentValue || '={{ }}');
+    // Strip ={{ and }} wrapper to get body
+    const body = strVal.replace(/^=\{\{\s*/, '').replace(/\s*\}\}$/, '');
+    this.expressionEditorParam = paramName;
+    this.expressionEditorValue = body;
+    this.expressionEditorInputItems = this.collectInputForExecution();
+    this.expressionEditorOpen = true;
+  }
+
+  onExpressionEditorSave(expression: string): void {
+    const wrapped = '={{ ' + expression + ' }}';
+    this.onParameterChange(this.expressionEditorParam, wrapped);
+    this.expressionEditorOpen = false;
+  }
+
+  onExpressionEditorClose(): void {
+    this.expressionEditorOpen = false;
+  }
+
+  onSchemaDragStart(event: DragEvent, node: SchemaNode): void {
+    if (node.children && node.children.length > 0) return;
+    event.dataTransfer?.setData('text/plain', '$json.' + node.path);
+    event.dataTransfer!.effectAllowed = 'copy';
   }
 }

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NodeParameter } from '../../../../../core/models';
@@ -28,13 +28,22 @@ import { NodeParameter } from '../../../../../core/models';
       <p class="param-description">{{ param.description }}</p>
     }
     @if (isExpression) {
-      <input type="text"
-             class="form-control param-input expr-input"
-             [ngModel]="value"
-             (ngModelChange)="valueChange.emit($event)"
-             (blur)="blurred.emit()"
-             [placeholder]="'={{ }}'"
-             [disabled]="readOnly">
+      <div class="expr-input-row">
+        <input #exprInput type="text"
+               class="form-control param-input expr-input"
+               [ngModel]="value"
+               (ngModelChange)="valueChange.emit($event)"
+               (blur)="blurred.emit()"
+               [placeholder]="'={{ }}'"
+               [disabled]="readOnly"
+               (dragover)="onDragOver($event)"
+               (drop)="onDrop($event)">
+        <button class="expr-editor-btn" (click)="openExpressionEditor.emit()" title="Open expression editor">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/>
+          </svg>
+        </button>
+      </div>
     } @else if (isMultiline) {
       <textarea class="form-control param-input"
                 [ngModel]="value"
@@ -42,7 +51,9 @@ import { NodeParameter } from '../../../../../core/models';
                 (blur)="blurred.emit()"
                 [placeholder]="param.placeHolder || ''"
                 [disabled]="readOnly"
-                rows="4"></textarea>
+                rows="4"
+                (dragover)="onDragOver($event)"
+                (drop)="onDrop($event)"></textarea>
     } @else {
       <input type="text"
              class="form-control param-input"
@@ -50,7 +61,9 @@ import { NodeParameter } from '../../../../../core/models';
              (ngModelChange)="valueChange.emit($event)"
              (blur)="blurred.emit()"
              [placeholder]="param.placeHolder || ''"
-             [disabled]="readOnly">
+             [disabled]="readOnly"
+             (dragover)="onDragOver($event)"
+             (drop)="onDrop($event)">
     }
   `,
   styles: [`
@@ -96,6 +109,32 @@ import { NodeParameter } from '../../../../../core/models';
     .expr-radio:hover .expr-radio-btn {
       color: hsl(0,0%,80%);
     }
+    .expr-input-row {
+      display: flex;
+      gap: 4px;
+      align-items: stretch;
+    }
+    .expr-input-row .param-input {
+      flex: 1;
+      min-width: 0;
+    }
+    .expr-editor-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      flex-shrink: 0;
+      background: hsl(0,0%,13%);
+      border: 1px solid hsl(30,80%,50%);
+      border-radius: 6px;
+      color: hsl(30,80%,55%);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .expr-editor-btn:hover {
+      background: hsl(30,80%,50%);
+      color: hsl(0,0%,100%);
+    }
   `]
 })
 export class StringParamComponent {
@@ -104,6 +143,9 @@ export class StringParamComponent {
   @Input() readOnly = false;
   @Output() valueChange = new EventEmitter<any>();
   @Output() blurred = new EventEmitter<void>();
+  @Output() openExpressionEditor = new EventEmitter<void>();
+
+  @ViewChild('exprInput') exprInput?: ElementRef<HTMLInputElement>;
 
   get isExpression(): boolean {
     return typeof this.value === 'string' && this.value.startsWith('={{');
@@ -122,6 +164,33 @@ export class StringParamComponent {
   setExpression(): void {
     if (!this.isExpression) {
       this.valueChange.emit('={{ }}');
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    const path = event.dataTransfer?.getData('text/plain');
+    if (!path || !path.startsWith('$json.')) return;
+
+    if (this.isExpression) {
+      // Insert into existing expression
+      const currentVal = String(this.value || '={{ }}');
+      const body = currentVal.replace(/^=\{\{\s*/, '').replace(/\s*\}\}$/, '');
+      if (body.trim()) {
+        this.valueChange.emit('={{ ' + body + ' ' + path + ' }}');
+      } else {
+        this.valueChange.emit('={{ ' + path + ' }}');
+      }
+    } else {
+      // Switch to expression mode with dropped path
+      this.valueChange.emit('={{ ' + path + ' }}');
     }
   }
 }
