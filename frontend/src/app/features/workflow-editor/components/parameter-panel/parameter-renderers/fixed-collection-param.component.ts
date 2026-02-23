@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NodeParameter } from '../../../../../core/models';
@@ -23,7 +23,7 @@ import { NodeParameter } from '../../../../../core/models';
                 @if (nested.type === 'options' && nested.options) {
                   <select class="form-select param-input"
                           [ngModel]="item[nested.name]"
-                          (ngModelChange)="onItemChange($index, nested.name, $event)"
+                          (ngModelChange)="onSelectChange($index, nested.name, $event)"
                           [disabled]="readOnly">
                     @for (opt of nested.options; track opt.value) {
                       <option [ngValue]="opt.value">{{ opt.name }}</option>
@@ -31,8 +31,9 @@ import { NodeParameter } from '../../../../../core/models';
                   </select>
                 } @else {
                   <input type="text" class="form-control param-input"
-                         [ngModel]="item[nested.name]"
-                         (ngModelChange)="onItemChange($index, nested.name, $event)"
+                         [value]="item[nested.name] ?? ''"
+                         (input)="onTextInput($index, nested.name, $event)"
+                         (blur)="emitItems()"
                          [placeholder]="nested.placeHolder || ''"
                          [disabled]="readOnly">
                 }
@@ -109,15 +110,15 @@ import { NodeParameter } from '../../../../../core/models';
     .btn-add:hover { background: hsla(7,100%,68%,0.1); border-color: hsl(7,100%,68%); }
   `]
 })
-export class FixedCollectionParamComponent {
+export class FixedCollectionParamComponent implements OnDestroy {
   @Input() param!: NodeParameter;
   @Input() readOnly = false;
   @Input() set value(val: any) {
     const incoming = Array.isArray(val) ? val : [];
-    // Only replace items if the incoming data is structurally different.
-    // This prevents the value setter (which fires on every change-detection cycle
-    // via the store round-trip) from replacing the items array while the user is
-    // actively editing text inputs, which would disrupt ngModel.
+    // Don't replace items while the user has un-emitted text edits.
+    // Auto-save replaces the workflow signal with the backend response, which
+    // triggers this setter with stale data that doesn't include the pending edit.
+    if (this._dirty) return;
     if (!this.itemsMatch(incoming)) {
       this.items = incoming.map((item: any) => ({ ...item }));
     }
@@ -125,6 +126,16 @@ export class FixedCollectionParamComponent {
   @Output() valueChange = new EventEmitter<any>();
 
   items: any[] = [];
+  private _dirty = false;
+
+  ngOnDestroy(): void {
+    // Flush any pending text edits before the component is destroyed
+    // (e.g. user deselects the node without blurring the input).
+    if (this._dirty) {
+      this._dirty = false;
+      this.valueChange.emit(this.cloneItems());
+    }
+  }
 
   get addButtonLabel(): string {
     const name = this.param.displayName || 'Item';
@@ -139,19 +150,41 @@ export class FixedCollectionParamComponent {
       });
     }
     this.items = [...this.items, newItem];
-    this.valueChange.emit(this.items);
+    this.valueChange.emit(this.cloneItems());
   }
 
   removeItem(index: number): void {
     this.items = this.items.filter((_, i) => i !== index);
-    this.valueChange.emit(this.items);
+    this.valueChange.emit(this.cloneItems());
   }
 
-  onItemChange(index: number, name: string, val: any): void {
-    this.items = this.items.map((item, i) =>
-      i === index ? { ...item, [name]: val } : item
-    );
-    this.valueChange.emit(this.items);
+  /** Handle text input — mutate in place, defer emit to blur. */
+  onTextInput(index: number, name: string, event: Event): void {
+    if (!this.items[index]) return;
+    const val = (event.target as HTMLInputElement).value;
+    this.items[index][name] = val;
+    this._dirty = true;
+  }
+
+  /** Handle select change — mutate in place and emit immediately. */
+  onSelectChange(index: number, name: string, val: any): void {
+    if (!this.items[index]) return;
+    this.items[index] = { ...this.items[index], [name]: val };
+    this._dirty = false;
+    this.valueChange.emit(this.cloneItems());
+  }
+
+  /** Emit the current items when a text input loses focus. */
+  emitItems(): void {
+    if (this._dirty) {
+      this._dirty = false;
+      this.valueChange.emit(this.cloneItems());
+    }
+  }
+
+  /** Deep-copy items so the store gets its own objects. */
+  private cloneItems(): any[] {
+    return this.items.map(item => ({ ...item }));
   }
 
   /** Shallow-compare each item's properties to detect actual data changes. */

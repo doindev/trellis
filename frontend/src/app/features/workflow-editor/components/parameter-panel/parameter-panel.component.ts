@@ -17,7 +17,7 @@ import { CredentialParamComponent } from './parameter-renderers/credential-param
 import { ModelParamComponent } from './parameter-renderers/model-param.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
-  CheckCircle, Copy, Square, Search, ChevronRight,
+  CheckCircle, Copy, Square, Search, ChevronRight, Pin, PinOff, Pencil,
 } from 'lucide-angular';
 import { NODE_ICON_SET } from '../../../../shared/node-icons';
 
@@ -69,7 +69,7 @@ export class HighlightPipe implements PipeTransform {
     provide: LUCIDE_ICONS,
     multi: true,
     useValue: new LucideIconProvider({
-      ...NODE_ICON_SET, CheckCircle, Copy, Square, Search, ChevronRight
+      ...NODE_ICON_SET, CheckCircle, Copy, Square, Search, ChevronRight, Pin, PinOff, Pencil
     })
   }],
   templateUrl: './parameter-panel.component.html',
@@ -85,7 +85,9 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   @Input() nodeTypeMap: Map<string, NodeTypeDescription> = new Map();
   @Input() readOnly = false;
   @Input() webhookTestData: Record<string, any> = {};
+  @Input() pinData: Record<string, any> = {};
   @Output() parameterChanged = new EventEmitter<Record<string, any>>();
+  @Output() pinDataChanged = new EventEmitter<{ nodeId: string; items: any[] | null }>();
   @Output() credentialChanged = new EventEmitter<Record<string, any>>();
   @Output() webhookTestDataReceived = new EventEmitter<{ nodeId: string; data: any }>();
   @Output() close = new EventEmitter<void>();
@@ -121,6 +123,11 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   outputSearchExpanded = false;
   inputSchemaCollapsed = new Set<string>();
   outputSchemaCollapsed = new Set<string>();
+
+  // Pin / edit output state
+  isEditingOutput = false;
+  editOutputJson = '';
+  editOutputError = '';
 
   // Node execution state
   isNodeExecuting = false;
@@ -285,7 +292,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   }
 
   get outputJson(): string {
-    const data = this.nodeExecutionData;
+    const data = this.effectiveOutputData;
     if (!data) return '';
     return JSON.stringify(this.extractItems(data), null, 2);
   }
@@ -306,7 +313,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   }
 
   get outputItemCount(): number {
-    const data = this.nodeExecutionData;
+    const data = this.effectiveOutputData;
     if (!data) return 0;
     return this.extractItems(data).length;
   }
@@ -522,7 +529,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   }
 
   get outputSchemaNodes(): SchemaNode[] {
-    const data = this.receivedTestData ?? this.nodeExecutionData;
+    const data = this.effectiveOutputData;
     if (!data) return [];
     const items = this.extractItems(data);
     if (items.length === 0) return [];
@@ -546,7 +553,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   }
 
   get outputTableRows(): Record<string, any>[] {
-    const data = this.receivedTestData ?? this.nodeExecutionData;
+    const data = this.effectiveOutputData;
     if (!data) return [];
     return this.filterRows(this.extractItems(data), this.outputSearch);
   }
@@ -567,7 +574,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   }
 
   get filteredOutputJson(): string {
-    const data = this.receivedTestData ?? this.nodeExecutionData;
+    const data = this.effectiveOutputData;
     if (!data) return '';
     const items = this.extractItems(data);
     if (!this.outputSearch) return JSON.stringify(items, null, 2);
@@ -584,7 +591,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   }
 
   get hasOutputData(): boolean {
-    return !!(this.receivedTestData || this.nodeExecutionData);
+    return !!(this.isPinned || this.receivedTestData || this.nodeExecutionData);
   }
 
   onSearchBlur(panel: 'input' | 'output'): void {
@@ -735,6 +742,79 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
         this.nodeExecutionError = err.message || 'Execution failed';
       }
     });
+  }
+
+  // --- Pin / Edit output ---
+
+  get isPinned(): boolean {
+    return !!(this.pinData && this.node?.id && this.pinData[this.node.id]);
+  }
+
+  get pinnedItems(): any[] {
+    if (!this.isPinned) return [];
+    return this.pinData[this.node.id] || [];
+  }
+
+  /** Returns pinned data in the raw format expected by extractItems */
+  private get pinnedRawData(): any {
+    if (!this.isPinned) return null;
+    return this.pinnedItems;
+  }
+
+  /** Effective output: pinned data takes priority over execution data */
+  private get effectiveOutputData(): any {
+    return this.pinnedRawData ?? this.receivedTestData ?? this.nodeExecutionData;
+  }
+
+  onPinOutput(): void {
+    if (!this.node?.id) return;
+    const data = this.receivedTestData ?? this.nodeExecutionData;
+    if (!data) return;
+    // Convert to [{json: ...}] format for storage
+    const items = this.extractItems(data);
+    const pinItems = items.map(item => ({ json: item }));
+    this.pinDataChanged.emit({ nodeId: this.node.id, items: pinItems });
+  }
+
+  onUnpinOutput(): void {
+    if (!this.node?.id) return;
+    this.isEditingOutput = false;
+    this.pinDataChanged.emit({ nodeId: this.node.id, items: null });
+  }
+
+  onStartEdit(): void {
+    const data = this.effectiveOutputData;
+    const items = data ? this.extractItems(data) : [];
+    const pinFormatted = items.map(item => ({ json: item }));
+    this.editOutputJson = JSON.stringify(pinFormatted, null, 2);
+    this.editOutputError = '';
+    this.isEditingOutput = true;
+  }
+
+  onSaveEdit(): void {
+    if (!this.node?.id) return;
+    try {
+      const parsed = JSON.parse(this.editOutputJson);
+      if (!Array.isArray(parsed)) {
+        this.editOutputError = 'Data must be a JSON array';
+        return;
+      }
+      // Ensure each item has {json: ...} wrapper
+      const items = parsed.map((item: any) => {
+        if (item && typeof item === 'object' && 'json' in item) return item;
+        return { json: item };
+      });
+      this.pinDataChanged.emit({ nodeId: this.node.id, items });
+      this.isEditingOutput = false;
+      this.editOutputError = '';
+    } catch (e: any) {
+      this.editOutputError = 'Invalid JSON: ' + (e.message || 'parse error');
+    }
+  }
+
+  onCancelEdit(): void {
+    this.isEditingOutput = false;
+    this.editOutputError = '';
   }
 
   // --- Resize handlers ---

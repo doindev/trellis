@@ -1038,3 +1038,98 @@
   padding: 6px 10px;
   margin-bottom: 8px;
 }
+
+// ── Pin / Edit output ──
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 46%);
+  cursor: pointer;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+    background: hsl(0, 0%, 17%);
+  }
+
+  &.active {
+    color: hsl(210, 80%, 65%);
+    background: hsla(210, 80%, 55%, 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.pinned-badge {
+  font-size: 0.6875rem;
+  background: hsla(210, 80%, 55%, 0.15);
+  color: hsl(210, 80%, 65%);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.pinned-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-size: 0.75rem;
+  color: hsl(210, 80%, 65%);
+  background: hsla(210, 80%, 55%, 0.08);
+  border-bottom: 1px solid hsla(210, 80%, 55%, 0.15);
+  flex-shrink: 0;
+}
+
+.edit-output-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.edit-output-textarea {
+  flex: 1;
+  width: 100%;
+  background: hsl(0, 0%, 9%);
+  border: none;
+  color: hsl(0, 0%, 90%);
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  padding: 12px;
+  resize: none;
+  outline: none;
+
+  &::placeholder {
+    color: hsl(0, 0%, 30%);
+  }
+}
+
+.edit-output-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid hsl(0, 0%, 24%);
+  flex-shrink: 0;
+}
+
+.edit-error-banner {
+  font-size: 0.75rem;
+  color: hsl(0, 72%, 68%);
+  background: hsla(0, 72%, 50%, 0.1);
+  border-bottom: 1px solid hsla(0, 72%, 50%, 0.2);
+  padding: 6px 12px;
+  flex-shrink: 0;
+}

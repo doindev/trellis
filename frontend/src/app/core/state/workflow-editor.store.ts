@@ -320,4 +320,19 @@ export class WorkflowEditorStore {
       nodes: wf.nodes.map(n => positions[n.id] ? { ...n, position: positions[n.id] } : n)
     }, 'positions');
   }
+
+  pinNodeData(nodeId: string, items: any[]): void {
+    const wf = this.workflow();
+    if (!wf) return;
+    const pinData = { ...(wf.pinData || {}), [nodeId]: items };
+    this.commitChange({ ...wf, pinData }, 'pinData');
+  }
+
+  unpinNodeData(nodeId: string): void {
+    const wf = this.workflow();
+    if (!wf) return;
+    const pinData = { ...(wf.pinData || {}) };
+    delete pinData[nodeId];
+    this.commitChange({ ...wf, pinData }, 'pinData');
+  }
 }

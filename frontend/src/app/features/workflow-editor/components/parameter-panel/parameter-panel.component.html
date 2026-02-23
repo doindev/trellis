@@ -569,10 +569,13 @@
       <div class="column column-output" [style.width.%]="rightWidthPercent">
         <div class="column-header">
           <span class="column-label">Output</span>
-          @if (executionData && outputItemCount > 0) {
+          @if (outputItemCount > 0) {
             <span class="item-count-badge">{{ outputItemCount }} items</span>
           }
-          @if (hasOutputData) {
+          @if (isPinned) {
+            <span class="pinned-badge">Pinned</span>
+          }
+          @if (hasOutputData || isPinned) {
             <div class="column-header-controls">
               <div class="header-search" [class.expanded]="outputSearchExpanded">
                 <button class="search-toggle" (click)="toggleSearch('output')" title="Search">
@@ -592,11 +595,46 @@
                 <button class="mode-btn" [class.active]="outputDisplayMode === 'json'"
                         (click)="outputDisplayMode = 'json'">JSON</button>
               </div>
+              @if (!readOnly) {
+                <button class="action-btn" [class.active]="isEditingOutput"
+                        (click)="isEditingOutput ? onCancelEdit() : onStartEdit()"
+                        title="Edit output">
+                  <lucide-icon name="pencil" [size]="14"></lucide-icon>
+                </button>
+                @if (isPinned) {
+                  <button class="action-btn active" (click)="onUnpinOutput()" title="Unpin data">
+                    <lucide-icon name="pin-off" [size]="14"></lucide-icon>
+                  </button>
+                } @else {
+                  <button class="action-btn" (click)="onPinOutput()" title="Pin data"
+                          [disabled]="!hasOutputData">
+                    <lucide-icon name="pin" [size]="14"></lucide-icon>
+                  </button>
+                }
+              }
             </div>
           }
         </div>
+        @if (isPinned && !isEditingOutput) {
+          <div class="pinned-banner">
+            <lucide-icon name="pin" [size]="13"></lucide-icon>
+            <span>Output data is pinned. This node will be skipped during execution.</span>
+          </div>
+        }
         <div class="column-body">
-          @if (isNodeExecuting) {
+          @if (isEditingOutput) {
+            <div class="edit-output-container">
+              @if (editOutputError) {
+                <div class="edit-error-banner">{{ editOutputError }}</div>
+              }
+              <textarea class="edit-output-textarea" [(ngModel)]="editOutputJson"
+                        placeholder='[{"json": {"key": "value"}}]'></textarea>
+              <div class="edit-output-actions">
+                <button class="btn btn-sm btn-primary" (click)="onSaveEdit()">Save</button>
+                <button class="btn btn-sm btn-ghost" (click)="onCancelEdit()">Cancel</button>
+              </div>
+            </div>
+          } @else if (isNodeExecuting) {
             <div class="executing-state">
               <div class="executing-spinner">
                 <div class="spinner-ring"></div>

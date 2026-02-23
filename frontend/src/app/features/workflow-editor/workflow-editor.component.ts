@@ -71,7 +71,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   private executionSub?: Subscription;
   private currentExecutionId: string | null = null;
   private autoSaveInterval: ReturnType<typeof setInterval> | null = null;
-  private readonly AUTO_SAVE_INTERVAL = 3_000;
+  private readonly AUTO_SAVE_INTERVAL = 2_000;
 
   constructor(
     private route: ActivatedRoute,
@@ -576,6 +576,14 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   onWebhookTestData(event: { nodeId: string; data: any }): void {
     this.webhookTestData = { ...this.webhookTestData, [event.nodeId]: event.data };
+  }
+
+  onPinDataChanged(event: { nodeId: string; items: any[] | null }): void {
+    if (event.items) {
+      this.store.pinNodeData(event.nodeId, event.items);
+    } else {
+      this.store.unpinNodeData(event.nodeId);
+    }
   }
 
   onNodeExecuted(event: { nodeId: string; data: any }): void {

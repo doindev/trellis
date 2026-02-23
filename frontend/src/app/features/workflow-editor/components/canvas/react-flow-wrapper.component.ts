@@ -189,6 +189,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
           executionStatus: execEntry?.status,
           itemCount: execEntry?.itemCount,
           disabled: node.disabled,
+          isPinned: !!(this.workflow?.pinData?.[node.id]),
           readOnly: this.readOnly,
         },
       };

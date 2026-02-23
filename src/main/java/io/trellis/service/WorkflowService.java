@@ -107,6 +107,7 @@ public class WorkflowService {
         entity.setCurrentVersion(newVersion);
         entity.setPublished(true);
         entity.setVersionIsDirty(false);
+        entity.setPinData(null);
         entity = workflowRepository.save(entity);
 
         webhookService.registerWorkflowWebhooks(entity);

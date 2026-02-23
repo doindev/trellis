@@ -602,3 +602,20 @@
   0%, 100% { box-shadow: 0 0 0 0 hsla(7, 100%, 68%, 0.2); }
   50% { box-shadow: 0 0 8px 2px hsla(7, 100%, 68%, 0.3); }
 }
+
+/* Pin badge — top-left of node */
+.node-pin-badge {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(210, 80%, 50%);
+  color: #fff;
+  border: 2px solid hsl(0, 0%, 13%);
+  z-index: 1;
+}

@@ -594,6 +594,23 @@ public class WorkflowEngine {
         WorkflowGraph.WorkflowNode graphNode = graph.getNodes().get(nodeId);
         if (graphNode == null || graphNode.isDisabled()) return true;
 
+        // Pin data bypass: use pinned output instead of executing the node
+        Object pinDataObj = workflow.getPinData();
+        if (pinDataObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> pinMap = (Map<String, Object>) pinDataObj;
+            if (pinMap.containsKey(nodeId)) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> pinnedItems = (List<Map<String, Object>>) pinMap.get(nodeId);
+                List<List<Map<String, Object>>> output = List.of(pinnedItems);
+                state.storeOutput(nodeId, output);
+                webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                        state.getNodeOutputs().get(nodeId));
+                log.debug("Node {} skipped (pinned data: {} items)", nodeId, pinnedItems.size());
+                return true;
+            }
+        }
+
         Optional<NodeRegistry.NodeRegistration> regOpt = nodeRegistry.getNode(
                 graphNode.getType(), graphNode.getTypeVersion());
         if (regOpt.isEmpty()) {
