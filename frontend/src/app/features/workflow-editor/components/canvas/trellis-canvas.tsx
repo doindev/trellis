@@ -146,6 +146,7 @@ function TrellisCanvasInner({
   const [selectedTriggerId, setSelectedTriggerId] = useState<string | null>(null);
   const [executeDropdownOpen, setExecuteDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Minimap: hidden by default, shown while panning or hovering the minimap
   const [isMinimapVisible, setIsMinimapVisible] = useState(false);
@@ -187,7 +188,7 @@ function TrellisCanvasInner({
     [triggerNodes, activeTriggerId]
   );
 
-  // Close execute dropdown on outside click
+  // Close execute dropdown on outside click or after mouse leaves
   useEffect(() => {
     if (!executeDropdownOpen) return;
     const handler = (e: MouseEvent) => {
@@ -196,8 +197,27 @@ function TrellisCanvasInner({
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      if (dropdownHideTimeout.current) {
+        clearTimeout(dropdownHideTimeout.current);
+        dropdownHideTimeout.current = null;
+      }
+    };
   }, [executeDropdownOpen]);
+
+  const onDropdownMouseEnter = useCallback(() => {
+    if (dropdownHideTimeout.current) {
+      clearTimeout(dropdownHideTimeout.current);
+      dropdownHideTimeout.current = null;
+    }
+  }, []);
+
+  const onDropdownMouseLeave = useCallback(() => {
+    dropdownHideTimeout.current = setTimeout(() => {
+      setExecuteDropdownOpen(false);
+    }, 600);
+  }, []);
 
   // Track single node selection
   const onSelectionChange = useCallback(({ nodes: selectedNodes }: { nodes: Node[] }) => {
@@ -579,7 +599,12 @@ function TrellisCanvasInner({
                   Execute
                 </button>
               ) : (
-                <div className="canvas-execute-split" ref={dropdownRef}>
+                <div
+                  className="canvas-execute-split"
+                  ref={dropdownRef}
+                  onMouseEnter={onDropdownMouseEnter}
+                  onMouseLeave={onDropdownMouseLeave}
+                >
                   <button
                     className="canvas-execute-btn canvas-execute-main"
                     onClick={() => activeTriggerId && onExecuteFromNode?.(activeTriggerId)}

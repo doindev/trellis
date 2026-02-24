@@ -1,0 +1,82 @@
+{
+  "name": "WF_TEST1 - Monthly Tables with Daily Timestamps",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Manual Trigger",
+      "type": "manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 300],
+      "parameters": {}
+    },
+    {
+      "id": "generateSql",
+      "name": "Generate All SQL",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [350, 300],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "var months = [\n  { name: 'JANUARY',   days: 31 },\n  { name: 'FEBRUARY',  days: 28 },\n  { name: 'MARCH',     days: 31 },\n  { name: 'APRIL',     days: 30 },\n  { name: 'MAY',       days: 31 },\n  { name: 'JUNE',      days: 30 },\n  { name: 'JULY',      days: 31 },\n  { name: 'AUGUST',    days: 31 },\n  { name: 'SEPTEMBER', days: 30 },\n  { name: 'OCTOBER',   days: 31 },\n  { name: 'NOVEMBER',  days: 30 },\n  { name: 'DECEMBER',  days: 31 }\n];\n\nvar year = 2026;\nif ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) {\n  months[1].days = 29;\n}\n\nvar items = [];\n\nfor (var i = 0; i < months.length; i++) {\n  var tbl = 'TBL_' + months[i].name;\n  items.push({ json: { sql: 'CREATE TABLE IF NOT EXISTS ' + tbl + ' (date_ts TIMESTAMP)', phase: 'create', table: tbl } });\n  items.push({ json: { sql: 'TRUNCATE TABLE ' + tbl, phase: 'truncate', table: tbl } });\n}\n\nfor (var i = 0; i < months.length; i++) {\n  var tbl = 'TBL_' + months[i].name;\n  var monthNum = i + 1;\n  var mm = monthNum < 10 ? '0' + monthNum : '' + monthNum;\n  for (var d = 1; d <= months[i].days; d++) {\n    var dd = d < 10 ? '0' + d : '' + d;\n    var ts = year + '-' + mm + '-' + dd + ' 00:00:00';\n    items.push({ json: { sql: \"INSERT INTO \" + tbl + \" (date_ts) VALUES (TIMESTAMP '\" + ts + \"')\", phase: 'insert', table: tbl, date: ts } });\n  }\n}\n\nreturn items;"
+      }
+    },
+    {
+      "id": "loop",
+      "name": "Loop Over SQL Statements",
+      "type": "loopOverItems",
+      "typeVersion": 1,
+      "position": [600, 300],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "executeSql",
+      "name": "Execute SQL",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [850, 400],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "={{ $json.sql }}"
+      },
+      "credentials": {
+        "postgresApi": {}
+      }
+    },
+    {
+      "id": "countDecember",
+      "name": "Count December Days",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [850, 200],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS december_day_count FROM TBL_DECEMBER"
+      },
+      "credentials": {
+        "postgresApi": {}
+      }
+    }
+  ],
+  "connections": {
+    "trigger": {
+      "main": [[{ "node": "generateSql", "type": "main", "index": 0 }]]
+    },
+    "generateSql": {
+      "main": [[{ "node": "loop", "type": "main", "index": 0 }]]
+    },
+    "loop": {
+      "main": [
+        [{ "node": "countDecember", "type": "main", "index": 0 }],
+        [{ "node": "executeSql", "type": "main", "index": 0 }]
+      ]
+    },
+    "executeSql": {
+      "main": [[{ "node": "loop", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {}
+}

@@ -64,6 +64,38 @@ public class WorkflowEngine {
         return execution.getId();
     }
 
+    /**
+     * Creates an execution record without starting it. The caller must
+     * subsequently call {@link #triggerExecution(String)} to begin execution.
+     */
+    public String prepareExecution(String workflowId) {
+        WorkflowEntity workflow = workflowService.findById(workflowId);
+
+        Map<String, Object> workflowSnapshot = new LinkedHashMap<>();
+        workflowSnapshot.put("id", workflow.getId());
+        workflowSnapshot.put("name", workflow.getName());
+        workflowSnapshot.put("nodes", workflow.getNodes());
+        workflowSnapshot.put("connections", workflow.getConnections());
+
+        var execution = executionService.createExecution(
+                workflowId, workflowSnapshot, ExecutionMode.MANUAL);
+        return execution.getId();
+    }
+
+    /**
+     * Triggers async execution for a previously prepared execution.
+     * @param triggerNodeId optional trigger node to start from (limits execution to reachable nodes)
+     */
+    public void triggerExecution(String executionId, String triggerNodeId) {
+        var execution = executionService.getExecution(executionId);
+        WorkflowEntity workflow = workflowService.findById(execution.getWorkflowId());
+        Map<String, Object> inputData = null;
+        if (triggerNodeId != null && !triggerNodeId.isBlank()) {
+            inputData = Map.of("triggerNodeId", triggerNodeId);
+        }
+        executeAsync(executionId, workflow, inputData, NodeExecutionContext.ExecutionMode.MANUAL);
+    }
+
     public String startWebhookExecution(String workflowId, String triggerNodeId, Map<String, Object> webhookData) {
         WorkflowEntity workflow = workflowService.findById(workflowId);
 
@@ -267,7 +299,7 @@ public class WorkflowEngine {
             }
             webSocketService.sendNodeFinished(executionId, waitNodeId,
                     waitMeta != null ? waitMeta.getNodeName() : waitNodeId,
-                    state.getNodeOutputs().get(waitNodeId));
+                    "success", state.getNodeOutputs().get(waitNodeId));
 
             // Continue execution from the node AFTER the wait node
             List<String> order = graph.getTopologicalOrder();
@@ -388,6 +420,7 @@ public class WorkflowEngine {
         meta.setStatus("running");
         meta.setExecutionOrder(state.nextExecutionOrder());
         state.getNodeMetadata().put(nodeId, meta);
+        webSocketService.sendNodeStarted(executionId, nodeId, graphNode.getName());
 
         try {
             // AI sub-node: call supplyData() and store result, skip normal execute()
@@ -398,7 +431,7 @@ public class WorkflowEngine {
                 meta.setFinishedAt(Instant.now());
                 meta.setStatus("success");
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
-                        state.getNodeOutputs().get(nodeId));
+                        meta.getStatus(), state.getNodeOutputs().get(nodeId));
                 return true;
             }
 
@@ -441,6 +474,8 @@ public class WorkflowEngine {
                 if (!graphNode.isContinueOnFail()) {
                     state.storeOutput(nodeId, result.getOutput() != null ?
                             result.getOutput() : List.of(List.of()));
+                    webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                            meta.getStatus(), state.getNodeOutputs().get(nodeId));
                     executionService.finish(executionId, ExecutionStatus.ERROR,
                             state.buildResultData(), result.getError().getMessage());
                     webSocketService.sendExecutionFinished(executionId, "ERROR", state.buildResultData());
@@ -463,7 +498,7 @@ public class WorkflowEngine {
             }
 
             webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
-                    state.getNodeOutputs().get(nodeId));
+                    meta.getStatus(), state.getNodeOutputs().get(nodeId));
 
         } catch (Exception e) {
             meta.setFinishedAt(Instant.now());
@@ -477,8 +512,10 @@ public class WorkflowEngine {
                         Map.of("json", Map.of("error", e.getMessage())));
                 state.storeOutput(nodeId, List.of(errorItems));
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
-                        state.getNodeOutputs().get(nodeId));
+                        meta.getStatus(), state.getNodeOutputs().get(nodeId));
             } else {
+                webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                        meta.getStatus(), List.of(List.of()));
                 executionService.finish(executionId, ExecutionStatus.ERROR,
                         state.buildResultData(), e.getMessage());
                 webSocketService.sendExecutionFinished(executionId, "ERROR", state.buildResultData());
@@ -626,8 +663,9 @@ public class WorkflowEngine {
                 List<Map<String, Object>> pinnedItems = (List<Map<String, Object>>) pinMap.get(nodeId);
                 List<List<Map<String, Object>>> output = List.of(pinnedItems);
                 state.storeOutput(nodeId, output);
+                webSocketService.sendNodeStarted(executionId, nodeId, graphNode.getName());
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
-                        state.getNodeOutputs().get(nodeId));
+                        "success", state.getNodeOutputs().get(nodeId));
                 log.debug("Node {} skipped (pinned data: {} items)", nodeId, pinnedItems.size());
                 return true;
             }
@@ -720,6 +758,7 @@ public class WorkflowEngine {
         meta.setStatus("running");
         meta.setExecutionOrder(state.nextExecutionOrder());
         state.getNodeMetadata().put(nodeId, meta);
+        webSocketService.sendNodeStarted(executionId, nodeId, graphNode.getName());
 
         try {
             // AI sub-node: call supplyData() and store result, skip normal execute()
@@ -730,7 +769,7 @@ public class WorkflowEngine {
                 meta.setFinishedAt(Instant.now());
                 meta.setStatus("success");
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
-                        state.getNodeOutputs().get(nodeId));
+                        meta.getStatus(), state.getNodeOutputs().get(nodeId));
                 return true;
             }
 
@@ -776,6 +815,8 @@ public class WorkflowEngine {
                 if (!graphNode.isContinueOnFail()) {
                     state.storeOutput(nodeId, result.getOutput() != null ?
                             result.getOutput() : List.of(List.of()));
+                    webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                            meta.getStatus(), state.getNodeOutputs().get(nodeId));
                     executionService.finish(executionId, ExecutionStatus.ERROR,
                             state.buildResultData(), result.getError().getMessage());
                     webSocketService.sendExecutionFinished(
@@ -799,7 +840,7 @@ public class WorkflowEngine {
             }
 
             webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
-                    state.getNodeOutputs().get(nodeId));
+                    meta.getStatus(), state.getNodeOutputs().get(nodeId));
 
         } catch (Exception e) {
             meta.setFinishedAt(Instant.now());
@@ -813,8 +854,10 @@ public class WorkflowEngine {
                         Map.of("json", Map.of("error", e.getMessage())));
                 state.storeOutput(nodeId, List.of(errorItems));
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
-                        state.getNodeOutputs().get(nodeId));
+                        meta.getStatus(), state.getNodeOutputs().get(nodeId));
             } else {
+                webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
+                        meta.getStatus(), List.of(List.of()));
                 executionService.finish(executionId, ExecutionStatus.ERROR,
                         state.buildResultData(), e.getMessage());
                 webSocketService.sendExecutionFinished(

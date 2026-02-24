@@ -97,7 +97,7 @@ export default function TrellisEdge({
             transition: 'stroke 0.15s ease',
             ...style,
             ...(isAi && !isAnimated ? { strokeDasharray: '6 3' } : {}),
-            ...(isAnimated ? { stroke: isAi ? strokeColor : 'hsl(0, 0%, 46%)', strokeDasharray: '5 5', animation: 'dashdraw 0.5s linear infinite' } : {}),
+            ...(isAnimated ? { stroke: isAi ? strokeColor : 'hsl(147, 60%, 50%)', strokeDasharray: '5 5', animation: 'dashdraw 0.5s linear infinite' } : {}),
           }}
         />
       </g>

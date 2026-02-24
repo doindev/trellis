@@ -211,6 +211,20 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
           if (!targets) return;
           targets.forEach((target: any, targetIdx: number) => {
             const isAi = connectionType.startsWith('ai_');
+            const sourceExec = this.getNodeExecStatus(sourceNodeId);
+            const targetExec = this.getNodeExecStatus(target.node);
+
+            // Animate edge when data is flowing: source finished, target hasn't
+            const animated = this.isExecuting
+              && sourceExec !== null && sourceExec !== 'running'
+              && (targetExec === null || targetExec === 'running');
+
+            // Show status color when both nodes have completed
+            let edgeStatus: string | undefined;
+            if (sourceExec && sourceExec !== 'running' && targetExec && targetExec !== 'running') {
+              edgeStatus = (targetExec === 'error' || sourceExec === 'error') ? 'error' : 'success';
+            }
+
             edges.push({
               id: `e-${sourceNodeId}-${connectionType}-${outputIndex}-${target.node}-${targetIdx}`,
               source: sourceNodeId,
@@ -219,9 +233,8 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
               targetHandle: `${connectionType}:${target.index || 0}`,
               type: 'trellisEdge',
               data: {
-                animated: this.executionData != null
-                  && !!this.executionData[sourceNodeId]
-                  && !!this.executionData[target.node],
+                animated,
+                status: edgeStatus,
                 connectionType,
                 isAi,
               },
@@ -232,6 +245,14 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     });
 
     return edges;
+  }
+
+  /** Get execution status for a node, or null if not yet executed */
+  private getNodeExecStatus(nodeId: string): string | null {
+    const execData = this.executionData?.[nodeId];
+    if (!execData) return null;
+    const entry = Array.isArray(execData) ? execData[0] : execData;
+    return entry?.status || null;
   }
 
   /**

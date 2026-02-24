@@ -56,8 +56,16 @@ public class ExecutionController {
     public Map<String, String> runWorkflow(
             @PathVariable String workflowId,
             @RequestBody(required = false) Map<String, Object> inputData) {
-        String executionId = workflowEngine.startExecution(workflowId, inputData);
+        String executionId = workflowEngine.prepareExecution(workflowId);
         return Map.of("executionId", executionId);
+    }
+
+    @PostMapping("/api/executions/{id}/start")
+    public Map<String, String> start(@PathVariable String id,
+                                     @RequestBody(required = false) Map<String, String> body) {
+        String triggerNodeId = body != null ? body.get("triggerNodeId") : null;
+        workflowEngine.triggerExecution(id, triggerNodeId);
+        return Map.of("status", "started");
     }
 
     @SuppressWarnings("unchecked")

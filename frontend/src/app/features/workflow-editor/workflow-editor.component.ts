@@ -86,6 +86,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.nodeTypeStore.loadNodeTypes();
+    this.wsService.connect();
 
     const id = this.route.snapshot.paramMap.get('id');
     const qp = this.route.snapshot.queryParams;
@@ -441,7 +442,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.startAutoSaveTimer();
   }
 
-  onExecute(): void {
+  onExecute(triggerNodeId?: string): void {
     const wf = this.store.workflow();
     if (!wf?.id) {
       this.store.saveWorkflow(this.replaceUrlOnFirstSave);
@@ -451,6 +452,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.store.setExecutionData(null);
     this.drawerExpanded = true;
     this.executionSub?.unsubscribe();
+
+    // Step 1: Prepare execution (creates record, returns ID, does NOT start)
     this.executionSub = this.workflowService.run(wf.id).subscribe({
       next: (result) => {
         const executionId = result.executionId;
@@ -459,24 +462,54 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           return;
         }
         this.currentExecutionId = executionId;
+
+        // Step 2: Subscribe to WebSocket BEFORE triggering execution
         const topic = `/topic/execution/${executionId}`;
+        const triggerStart = () => {
+          // Step 3: Trigger execution only after subscription is confirmed
+          this.workflowService.startExecution(executionId, triggerNodeId).subscribe({
+            error: () => {
+              this.store.setIsExecuting(false);
+              this.wsService.unsubscribe(topic);
+              this.currentExecutionId = null;
+            }
+          });
+        };
+
         this.wsService.subscribe(topic, (message) => {
           const event = JSON.parse(message.body);
-          if (event.event === 'nodeFinished') {
-            // Incrementally update execution data as each node finishes
+          if (event.event === 'nodeStarted') {
             const current = this.store.executionData() || {};
             this.store.setExecutionData({
               ...current,
-              [event.nodeId]: event.data
+              [event.nodeId]: [{ status: 'running' }]
+            });
+          } else if (event.event === 'nodeFinished') {
+            const current = this.store.executionData() || {};
+            const outputData = event.data;
+            const mainOutput = Array.isArray(outputData) ? outputData[0] : outputData;
+            const itemCount = Array.isArray(mainOutput) ? mainOutput.length : 0;
+            this.store.setExecutionData({
+              ...current,
+              [event.nodeId]: [{ status: event.status || 'success', data: outputData, itemCount }]
             });
           } else if (event.event === 'executionFinished') {
-            // Don't overwrite — nodeFinished events already populated clean per-nodeId output data.
-            // event.data is buildResultData() format keyed by node ID with metadata wrappers.
+            const current = this.store.executionData() || {};
+            const cleaned: Record<string, any> = {};
+            for (const [nid, val] of Object.entries(current)) {
+              const entry = Array.isArray(val) ? val[0] : val;
+              if (entry?.status === 'running') {
+                cleaned[nid] = [{ status: event.status === 'ERROR' ? 'error' : 'success' }];
+              } else {
+                cleaned[nid] = val;
+              }
+            }
+            this.store.setExecutionData(cleaned);
             this.store.setIsExecuting(false);
             this.wsService.unsubscribe(topic);
             this.currentExecutionId = null;
           }
-        });
+        }, triggerStart);
       },
       error: () => {
         this.store.setIsExecuting(false);
@@ -485,8 +518,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   onExecuteFromNode(nodeId: string): void {
-    // For now, execute the full workflow (backend can be enhanced to support partial execution)
-    this.onExecute();
+    this.onExecute(nodeId);
   }
 
   onStopExecution(): void {
@@ -589,11 +621,15 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   onNodeExecuted(event: { nodeId: string; data: any }): void {
     const current = this.store.executionData() || {};
     if (event.data === null) {
-      // Clear this node's data (execution starting)
-      const { [event.nodeId]: _, ...rest } = current;
-      this.store.setExecutionData(Object.keys(rest).length > 0 ? rest : null);
+      // Mark node as running (execution starting)
+      this.store.setExecutionData({ ...current, [event.nodeId]: [{ status: 'running' }] });
     } else {
-      this.store.setExecutionData({ ...current, [event.nodeId]: event.data });
+      const mainOutput = Array.isArray(event.data) ? event.data[0] : event.data;
+      const itemCount = Array.isArray(mainOutput) ? mainOutput.length : 0;
+      this.store.setExecutionData({
+        ...current,
+        [event.nodeId]: [{ status: 'success', data: event.data, itemCount }]
+      });
     }
   }
 

@@ -22,12 +22,22 @@ public class WebSocketService {
         ));
     }
 
-    public void sendNodeFinished(String executionId, String nodeId, String nodeName, Object outputData) {
+    public void sendNodeStarted(String executionId, String nodeId, String nodeName) {
+        send("/topic/execution/" + executionId, Map.of(
+                "event", "nodeStarted",
+                "executionId", executionId,
+                "nodeId", nodeId,
+                "nodeName", nodeName
+        ));
+    }
+
+    public void sendNodeFinished(String executionId, String nodeId, String nodeName, String status, Object outputData) {
         send("/topic/execution/" + executionId, Map.of(
                 "event", "nodeFinished",
                 "executionId", executionId,
                 "nodeId", nodeId,
                 "nodeName", nodeName,
+                "status", status,
                 "data", outputData != null ? outputData : Map.of()
         ));
     }

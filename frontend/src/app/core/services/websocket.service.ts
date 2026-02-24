@@ -43,13 +43,14 @@ export class WebSocketService implements OnDestroy {
     this.client.activate();
   }
 
-  subscribe(topic: string, callback: (message: IMessage) => void): void {
+  subscribe(topic: string, callback: (message: IMessage) => void, onSubscribed?: () => void): void {
     if (!this.client?.connected) {
       this.connect();
       this.connected$.subscribe(connected => {
         if (connected && !this.subscriptions.has(topic)) {
           const sub = this.client!.subscribe(topic, callback);
           this.subscriptions.set(topic, sub);
+          onSubscribed?.();
         }
       });
       return;
@@ -59,6 +60,7 @@ export class WebSocketService implements OnDestroy {
       const sub = this.client.subscribe(topic, callback);
       this.subscriptions.set(topic, sub);
     }
+    onSubscribed?.();
   }
 
   unsubscribe(topic: string): void {
