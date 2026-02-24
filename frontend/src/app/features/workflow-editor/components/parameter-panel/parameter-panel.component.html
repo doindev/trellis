@@ -404,7 +404,8 @@
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
-                      (valueChange)="onParameterChange(param.name, $event)" />
+                      (valueChange)="onParameterChange(param.name, $event)"
+                      (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
                   @case ('options') {
                     @if (param.name === 'model' && nodeType?.credentials?.length) {
@@ -421,7 +422,8 @@
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
-                        (valueChange)="onParameterChange(param.name, $event)" />
+                        (valueChange)="onParameterChange(param.name, $event)"
+                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                   }
                   @case ('multiOptions') {
@@ -444,7 +446,8 @@
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
                       [allParameters]="node.parameters"
-                      (valueChange)="onParameterChange(param.name, $event)" />
+                      (valueChange)="onParameterChange(param.name, $event)"
+                      (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
                   @case ('fixedCollection') {
                     <app-fixed-collection-param
@@ -493,7 +496,8 @@
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
-                        (valueChange)="onParameterChange(param.name, $event)" />
+                        (valueChange)="onParameterChange(param.name, $event)"
+                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                     @case ('string') {
                       <app-string-param

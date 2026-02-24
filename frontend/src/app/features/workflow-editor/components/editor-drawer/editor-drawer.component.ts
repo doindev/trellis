@@ -165,11 +165,11 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     entries.sort((a, b) => {
       const aRaw = this.executionData![a.node.id];
       const bRaw = this.executionData![b.node.id];
-      const aStartStr = (Array.isArray(aRaw) ? aRaw[0] : aRaw)?.startedAt;
-      const bStartStr = (Array.isArray(bRaw) ? bRaw[0] : bRaw)?.startedAt;
-      const aStart = aStartStr ? new Date(aStartStr).getTime() : 0;
-      const bStart = bStartStr ? new Date(bStartStr).getTime() : 0;
-      return aStart - bStart;
+      const aRun = Array.isArray(aRaw) ? aRaw[0] : aRaw;
+      const bRun = Array.isArray(bRaw) ? bRaw[0] : bRaw;
+      const aOrder = aRun?.executionOrder ?? Number.MAX_SAFE_INTEGER;
+      const bOrder = bRun?.executionOrder ?? Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
     });
 
     return entries;

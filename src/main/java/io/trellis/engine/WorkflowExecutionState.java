@@ -5,6 +5,7 @@ import lombok.Data;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 public class WorkflowExecutionState {
@@ -20,6 +21,7 @@ public class WorkflowExecutionState {
     private final Map<String, Object> workflowStaticData = new ConcurrentHashMap<>();
     private final Map<String, Map<String, Object>> nodeContextData = new ConcurrentHashMap<>();
     private final Map<String, Object> aiSuppliedData = new ConcurrentHashMap<>();
+    private final AtomicInteger executionOrderCounter = new AtomicInteger(0);
 
     @Data
     public static class NodeExecutionMetadata {
@@ -29,6 +31,7 @@ public class WorkflowExecutionState {
         private Instant startedAt;
         private Instant finishedAt;
         private String errorMessage;
+        private int executionOrder;
 
         public long getDurationMs() {
             if (startedAt == null || finishedAt == null) return 0;
@@ -40,6 +43,10 @@ public class WorkflowExecutionState {
         this.executionId = executionId;
         this.workflowId = workflowId;
         this.graph = graph;
+    }
+
+    public int nextExecutionOrder() {
+        return executionOrderCounter.getAndIncrement();
     }
 
     public void storeInput(String nodeId, List<Map<String, Object>> input) {
@@ -141,6 +148,7 @@ public class WorkflowExecutionState {
             m.put("startedAt", meta.getStartedAt() != null ? meta.getStartedAt().toString() : null);
             m.put("finishedAt", meta.getFinishedAt() != null ? meta.getFinishedAt().toString() : null);
             m.put("errorMessage", meta.getErrorMessage());
+            m.put("executionOrder", meta.getExecutionOrder());
             metaMap.put(entry.getKey(), m);
         }
         checkpoint.put("nodeMetadata", metaMap);
@@ -185,6 +193,9 @@ public class WorkflowExecutionState {
                 if (m.get("startedAt") != null) meta.setStartedAt(Instant.parse((String) m.get("startedAt")));
                 if (m.get("finishedAt") != null) meta.setFinishedAt(Instant.parse((String) m.get("finishedAt")));
                 meta.setErrorMessage((String) m.get("errorMessage"));
+                if (m.get("executionOrder") instanceof Number n) {
+                    meta.setExecutionOrder(n.intValue());
+                }
                 state.nodeMetadata.put(entry.getKey(), meta);
             }
         }
@@ -214,6 +225,7 @@ public class WorkflowExecutionState {
             nodeResult.put("startedAt", meta.getStartedAt() != null ? meta.getStartedAt().toString() : null);
             nodeResult.put("finishedAt", meta.getFinishedAt() != null ? meta.getFinishedAt().toString() : null);
             nodeResult.put("executionTime", meta.getDurationMs());
+            nodeResult.put("executionOrder", meta.getExecutionOrder());
             nodeResult.put("status", meta.getStatus());
             nodeResult.put("error", meta.getErrorMessage());
 

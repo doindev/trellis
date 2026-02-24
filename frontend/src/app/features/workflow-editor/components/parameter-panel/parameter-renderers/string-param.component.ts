@@ -28,7 +28,7 @@ import { NodeParameter } from '../../../../../core/models';
       <p class="param-description">{{ param.description }}</p>
     }
     @if (isExpression) {
-      <div class="expr-input-row">
+      <div class="expr-input-wrapper">
         <input type="text"
                class="form-control param-input expr-input"
                [ngModel]="value"
@@ -39,7 +39,7 @@ import { NodeParameter } from '../../../../../core/models';
                (dragover)="onDragOver($event)"
                (drop)="onDrop($event)">
         <button class="expr-editor-btn" (click)="openExpressionEditor.emit()" title="Open expression editor">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/>
           </svg>
         </button>
@@ -109,31 +109,33 @@ import { NodeParameter } from '../../../../../core/models';
     .expr-radio:hover .expr-radio-btn {
       color: hsl(0,0%,80%);
     }
-    .expr-input-row {
-      display: flex;
-      gap: 4px;
-      align-items: stretch;
+    .expr-input-wrapper {
+      position: relative;
     }
-    .expr-input-row .param-input {
-      flex: 1;
-      min-width: 0;
+    .expr-input-wrapper .param-input {
+      padding-right: 30px;
     }
     .expr-editor-btn {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      flex-shrink: 0;
-      background: hsl(0,0%,13%);
-      border: 1px solid hsl(30,80%,50%);
-      border-radius: 6px;
-      color: hsl(30,80%,55%);
+      width: 22px;
+      height: 22px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: hsl(30,80%,50%);
       cursor: pointer;
+      opacity: 0.6;
       transition: all 0.15s;
     }
     .expr-editor-btn:hover {
-      background: hsl(30,80%,50%);
-      color: hsl(0,0%,100%);
+      opacity: 1;
+      background: hsla(30,80%,50%,0.15);
     }
   `]
 })

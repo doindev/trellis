@@ -219,7 +219,9 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
               targetHandle: `${connectionType}:${target.index || 0}`,
               type: 'trellisEdge',
               data: {
-                animated: this.executionData != null,
+                animated: this.executionData != null
+                  && !!this.executionData[sourceNodeId]
+                  && !!this.executionData[target.node],
                 connectionType,
                 isAi,
               },

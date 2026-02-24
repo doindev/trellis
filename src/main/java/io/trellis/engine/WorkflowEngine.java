@@ -383,6 +383,7 @@ public class WorkflowEngine {
         meta.setNodeName(graphNode.getName());
         meta.setStartedAt(Instant.now());
         meta.setStatus("running");
+        meta.setExecutionOrder(state.nextExecutionOrder());
         state.getNodeMetadata().put(nodeId, meta);
 
         try {
@@ -626,6 +627,20 @@ public class WorkflowEngine {
 
         List<Map<String, Object>> nodeInput = state.collectInputForNode(nodeId);
 
+        // Skip nodes that have incoming main connections but received no data.
+        // This means the upstream branch (e.g. If true/false) did not route to this node.
+        if (nodeInput.isEmpty()) {
+            List<WorkflowGraph.Connection> mainIncoming = graph.getIncomingConnectionsByType(nodeId, "main");
+            if (!mainIncoming.isEmpty()) {
+                boolean hasUpstreamOutput = mainIncoming.stream().anyMatch(conn ->
+                        !state.getNodeOutput(conn.getSourceNodeId(), conn.getSourceOutputIndex()).isEmpty());
+                if (!hasUpstreamOutput) {
+                    log.debug("Node {} skipped (no input data from upstream branch)", nodeId);
+                    return true;
+                }
+            }
+        }
+
         if (nodeInput.isEmpty() && inputData != null) {
             // Determine if this node should receive the initial input data.
             // For webhook executions, inject data into the specific trigger node.
@@ -682,6 +697,7 @@ public class WorkflowEngine {
         meta.setNodeName(graphNode.getName());
         meta.setStartedAt(Instant.now());
         meta.setStatus("running");
+        meta.setExecutionOrder(state.nextExecutionOrder());
         state.getNodeMetadata().put(nodeId, meta);
 
         try {

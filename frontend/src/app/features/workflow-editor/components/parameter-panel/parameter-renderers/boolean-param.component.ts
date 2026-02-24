@@ -25,12 +25,21 @@ import { NodeParameter } from '../../../../../core/models';
       @if (param.description) {
         <p class="param-description">{{ param.description }}</p>
       }
-      <input type="text"
-             class="form-control param-input expr-input"
-             [ngModel]="value"
-             (ngModelChange)="valueChange.emit($event)"
-             [placeholder]="'={{ }}'"
-             [disabled]="readOnly">
+      <div class="expr-input-wrapper">
+        <input type="text"
+               class="form-control param-input expr-input"
+               [ngModel]="value"
+               (ngModelChange)="valueChange.emit($event)"
+               [placeholder]="expressionPlaceholder"
+               [disabled]="readOnly"
+               (dragover)="onDragOver($event)"
+               (drop)="onDrop($event)">
+        <button class="expr-editor-btn" (click)="openExpressionEditor.emit()" title="Open expression editor">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/>
+          </svg>
+        </button>
+      </div>
     } @else {
       <div class="boolean-param">
         <div class="bool-row">
@@ -113,6 +122,34 @@ import { NodeParameter } from '../../../../../core/models';
     .expr-radio:hover .expr-radio-btn {
       color: hsl(0,0%,80%);
     }
+    .expr-input-wrapper {
+      position: relative;
+    }
+    .expr-input-wrapper .param-input {
+      padding-right: 30px;
+    }
+    .expr-editor-btn {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: hsl(30,80%,50%);
+      cursor: pointer;
+      opacity: 0.6;
+      transition: all 0.15s;
+    }
+    .expr-editor-btn:hover {
+      opacity: 1;
+      background: hsla(30,80%,50%,0.15);
+    }
   `]
 })
 export class BooleanParamComponent {
@@ -120,20 +157,36 @@ export class BooleanParamComponent {
   @Input() value: any = false;
   @Input() readOnly = false;
   @Output() valueChange = new EventEmitter<any>();
+  @Output() openExpressionEditor = new EventEmitter<void>();
+
+  expressionMode = false;
+  expressionPlaceholder = 'e.g. {{$json.isActive}}';
 
   get isExpression(): boolean {
-    return typeof this.value === 'string' && this.value.startsWith('={{');
+    const str = String(this.value ?? '');
+    return str.includes('{{') || this.expressionMode;
   }
 
   setFixed(): void {
-    if (this.isExpression) {
-      this.valueChange.emit(this.param.defaultValue ?? false);
-    }
+    this.expressionMode = false;
   }
 
   setExpression(): void {
-    if (!this.isExpression) {
-      this.valueChange.emit('={{ }}');
-    }
+    this.expressionMode = true;
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    const data = event.dataTransfer?.getData('text/plain');
+    if (!data || !data.includes('$json.')) return;
+    const input = event.target as HTMLInputElement;
+    const currentVal = String(this.value ?? '');
+    const pos = input?.selectionStart ?? currentVal.length;
+    this.valueChange.emit(currentVal.substring(0, pos) + data + currentVal.substring(pos));
   }
 }
