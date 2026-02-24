@@ -133,14 +133,19 @@ public abstract class AbstractDatabaseNode extends AbstractNode {
 	// sets parameters on a prepared statement
 	protected void setParameters(PreparedStatement stmt, List<Object> params) throws SQLException {
 		if (params == null) return;
-		
+
 		for (int i = 0; i < params.size(); i++) {
 			Object param = params.get(i);
-			
+
 			if (param == null) {
 				stmt.setNull(i + 1, Types.NULL);
-			} else if (param instanceof String) {
-				stmt.setString(i + 1,  (String) param);
+			} else if (param instanceof String strVal) {
+				Timestamp ts = tryParseTimestamp(strVal);
+				if (ts != null) {
+					stmt.setTimestamp(i + 1, ts);
+				} else {
+					stmt.setString(i + 1, strVal);
+				}
 			} else if (param instanceof Integer) {
 				stmt.setInt(i + 1,  (Integer) param);
 			} else if (param instanceof Long) {
@@ -161,6 +166,28 @@ public abstract class AbstractDatabaseNode extends AbstractNode {
 		}
 	}
 	
+	// Timestamp patterns: "2026-02-24 19:03:58", "2026-02-24 19:03:58.608", "2026-02-24T19:03:58.608Z"
+	private static final java.util.regex.Pattern TIMESTAMP_PATTERN = java.util.regex.Pattern.compile(
+			"^\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})?$"
+	);
+
+	private Timestamp tryParseTimestamp(String value) {
+		if (value == null || value.length() < 19 || !TIMESTAMP_PATTERN.matcher(value).matches()) {
+			return null;
+		}
+		try {
+			// Handle ISO 8601 with timezone (e.g. "2026-02-24T19:03:58.608Z")
+			if (value.contains("T")) {
+				java.time.Instant instant = java.time.Instant.parse(value);
+				return Timestamp.from(instant);
+			}
+			// Handle "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS.nnn"
+			return Timestamp.valueOf(value);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	// converts SQL value types to JSON-compatible types
 	protected Object convertSqlValue(Object value) {
 		if (value == null) return null;

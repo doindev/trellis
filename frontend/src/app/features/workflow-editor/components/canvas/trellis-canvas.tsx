@@ -142,6 +142,11 @@ function TrellisCanvasInner({
   const [singleSelectedId, setSingleSelectedId] = useState<string | null>(null);
   const initialFitDone = useRef(false);
 
+  // Execute button: trigger node tracking and dropdown state
+  const [selectedTriggerId, setSelectedTriggerId] = useState<string | null>(null);
+  const [executeDropdownOpen, setExecuteDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   // Minimap: hidden by default, shown while panning or hovering the minimap
   const [isMinimapVisible, setIsMinimapVisible] = useState(false);
   const minimapHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -159,6 +164,40 @@ function TrellisCanvasInner({
       setIsMinimapVisible(false);
     }, 1000);
   }, []);
+
+  // Derive trigger nodes from React Flow state
+  const triggerNodes = useMemo(() =>
+    nodes
+      .filter(n => n.type === 'trellisTriggerNode')
+      .map(n => ({ id: n.id, name: (n.data as any).label as string })),
+    [nodes]
+  );
+
+  // Resolve active trigger (fallback to first if selected no longer exists)
+  const activeTriggerId = useMemo(() => {
+    if (triggerNodes.length === 0) return null;
+    if (selectedTriggerId && triggerNodes.some(t => t.id === selectedTriggerId)) {
+      return selectedTriggerId;
+    }
+    return triggerNodes[0].id;
+  }, [triggerNodes, selectedTriggerId]);
+
+  const activeTriggerName = useMemo(() =>
+    triggerNodes.find(t => t.id === activeTriggerId)?.name || '',
+    [triggerNodes, activeTriggerId]
+  );
+
+  // Close execute dropdown on outside click
+  useEffect(() => {
+    if (!executeDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as HTMLElement)) {
+        setExecuteDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [executeDropdownOpen]);
 
   // Track single node selection
   const onSelectionChange = useCallback(({ nodes: selectedNodes }: { nodes: Node[] }) => {
@@ -526,14 +565,58 @@ function TrellisCanvasInner({
             )}
           </Panel>
 
-          {nodes.length > 0 && !readOnly && (
+          {triggerNodes.length > 0 && !readOnly && (
             <div className="canvas-action-bar">
-              <button className="canvas-execute-btn" onClick={onExecute} disabled={isExecuting}>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
-                  <polygon points="6 3 20 12 6 21 6 3" />
-                </svg>
-                Execute
-              </button>
+              {triggerNodes.length === 1 ? (
+                <button
+                  className="canvas-execute-btn"
+                  onClick={() => onExecuteFromNode?.(triggerNodes[0].id)}
+                  disabled={isExecuting}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
+                    <polygon points="6 3 20 12 6 21 6 3" />
+                  </svg>
+                  Execute
+                </button>
+              ) : (
+                <div className="canvas-execute-split" ref={dropdownRef}>
+                  <button
+                    className="canvas-execute-btn canvas-execute-main"
+                    onClick={() => activeTriggerId && onExecuteFromNode?.(activeTriggerId)}
+                    disabled={isExecuting}
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
+                      <polygon points="6 3 20 12 6 21 6 3" />
+                    </svg>
+                    Execute from {activeTriggerName}
+                  </button>
+                  <button
+                    className="canvas-execute-btn canvas-execute-chevron"
+                    onClick={() => setExecuteDropdownOpen(!executeDropdownOpen)}
+                    disabled={isExecuting}
+                  >
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  {executeDropdownOpen && (
+                    <div className="canvas-execute-dropdown">
+                      {triggerNodes.map(t => (
+                        <button
+                          key={t.id}
+                          className={`canvas-execute-dropdown-item${t.id === activeTriggerId ? ' active' : ''}`}
+                          onClick={() => {
+                            setSelectedTriggerId(t.id);
+                            setExecuteDropdownOpen(false);
+                          }}
+                        >
+                          Execute from {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {isExecuting && (
                 <button className="canvas-stop-btn" onClick={onStopExecution}>
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none">
