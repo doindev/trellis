@@ -5,7 +5,9 @@ import io.trellis.entity.ExecutionEntity.ExecutionMode;
 import io.trellis.entity.ExecutionEntity.ExecutionStatus;
 import io.trellis.entity.WaitEntity.WaitType;
 import io.trellis.entity.WorkflowEntity;
+import io.trellis.entity.WorkflowVersionEntity;
 import io.trellis.nodes.core.*;
+import io.trellis.repository.WorkflowVersionRepository;
 import io.trellis.service.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class WorkflowEngine {
     private final ObjectMapper objectMapper;
     private final WaitService waitService;
     private final WaitPollerService waitPollerService;
+    private final WorkflowVersionRepository workflowVersionRepository;
 
     private final Map<String, WorkflowExecutionState> runningExecutions = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Map<String, Object>>> pendingWebhookResponses = new ConcurrentHashMap<>();
@@ -170,7 +173,7 @@ public class WorkflowEngine {
                     }
 
                     boolean ok = executeNodeInWorkflow(nodeId, execution.getId(), workflow, inputData,
-                            NodeExecutionContext.ExecutionMode.INTERNAL, graph, state, variables);
+                            NodeExecutionContext.ExecutionMode.INTERNAL, graph, state, variables, null);
                     if (!ok) return List.of();
 
                     // Handle loop nodes
@@ -186,12 +189,12 @@ public class WorkflowEngine {
                                     if (state.isCancelled()) break;
                                     boolean bodyOk = executeNodeInWorkflow(bodyNodeId, execution.getId(),
                                             workflow, null, NodeExecutionContext.ExecutionMode.INTERNAL,
-                                            graph, state, variables);
+                                            graph, state, variables, null);
                                     if (!bodyOk) return List.of();
                                 }
                                 boolean loopOk = executeNodeInWorkflow(nodeId, execution.getId(),
                                         workflow, null, NodeExecutionContext.ExecutionMode.INTERNAL,
-                                        graph, state, variables);
+                                        graph, state, variables, null);
                                 if (!loopOk) return List.of();
                             }
                         }
@@ -486,6 +489,22 @@ public class WorkflowEngine {
         return true;
     }
 
+    /**
+     * Resolve the effective pin data for this execution based on mode.
+     * MANUAL executions use the draft pin data from the workflow entity.
+     * Production executions (WEBHOOK, TRIGGER, POLLING) use pin data from
+     * the latest published version (only if the user chose to publish with pin data).
+     */
+    private Object resolveEffectivePinData(WorkflowEntity workflow, NodeExecutionContext.ExecutionMode mode) {
+        if (mode == NodeExecutionContext.ExecutionMode.MANUAL) {
+            return workflow.getPinData();
+        }
+        // For production modes, use the published version's pin data (if any)
+        return workflowVersionRepository.findFirstByWorkflowIdOrderByVersionNumberDesc(workflow.getId())
+                .map(WorkflowVersionEntity::getPinData)
+                .orElse(null);
+    }
+
     @Async("workflowExecutor")
     protected void executeAsync(String executionId, WorkflowEntity workflow,
                                  Map<String, Object> inputData, NodeExecutionContext.ExecutionMode mode) {
@@ -500,6 +519,8 @@ public class WorkflowEngine {
             runningExecutions.put(executionId, state);
 
             webSocketService.sendExecutionStarted(executionId, workflow.getId());
+
+            Object effectivePinData = resolveEffectivePinData(workflow, mode);
 
             List<String> order = graph.getTopologicalOrder();
             Map<String, String> variables = variableService.getAllVariablesAsMap();
@@ -522,7 +543,7 @@ public class WorkflowEngine {
                 }
 
                 boolean ok = executeNodeInWorkflow(nodeId, executionId, workflow, inputData,
-                        mode, graph, state, variables);
+                        mode, graph, state, variables, effectivePinData);
                 if (!ok) return; // fatal error
 
                 // Handle loop nodes: if this node is a loopOverItems and its loop output
@@ -543,13 +564,13 @@ public class WorkflowEngine {
                             for (String bodyNodeId : loopBody) {
                                 if (state.isCancelled()) break;
                                 boolean bodyOk = executeNodeInWorkflow(bodyNodeId, executionId,
-                                        workflow, null, mode, graph, state, variables);
+                                        workflow, null, mode, graph, state, variables, effectivePinData);
                                 if (!bodyOk) return;
                             }
 
                             // Re-execute the loop node itself (it reads new input from loop body)
                             boolean loopOk = executeNodeInWorkflow(nodeId, executionId,
-                                    workflow, null, mode, graph, state, variables);
+                                    workflow, null, mode, graph, state, variables, effectivePinData);
                             if (!loopOk) return;
                         }
                     }
@@ -591,12 +612,12 @@ public class WorkflowEngine {
                                            WorkflowEntity workflow, Map<String, Object> inputData,
                                            NodeExecutionContext.ExecutionMode mode,
                                            WorkflowGraph graph, WorkflowExecutionState state,
-                                           Map<String, String> variables) {
+                                           Map<String, String> variables, Object effectivePinData) {
         WorkflowGraph.WorkflowNode graphNode = graph.getNodes().get(nodeId);
         if (graphNode == null || graphNode.isDisabled()) return true;
 
         // Pin data bypass: use pinned output instead of executing the node
-        Object pinDataObj = workflow.getPinData();
+        Object pinDataObj = effectivePinData;
         if (pinDataObj instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> pinMap = (Map<String, Object>) pinDataObj;

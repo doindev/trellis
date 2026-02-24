@@ -629,11 +629,25 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.showPublishModal = true;
   }
 
-  onPublishConfirmed(event: { versionName: string; description: string }): void {
+  getPinnedNodeNames(): string[] {
+    const wf = this.store.workflow();
+    if (!wf?.pinData) return [];
+    const pinnedIds = Object.keys(wf.pinData);
+    if (pinnedIds.length === 0) return [];
+    return pinnedIds
+      .map(id => wf.nodes.find(n => n.id === id)?.name || id)
+      .sort();
+  }
+
+  onPublishConfirmed(event: { versionName: string; description: string; includePinData: boolean }): void {
     const wf = this.store.workflow();
     if (!wf?.id) return;
     this.workflowService.publish(wf.id, event).subscribe({
       next: (updated) => {
+        // Preserve draft pinData — the server no longer clears it on publish
+        if (wf.pinData && Object.keys(wf.pinData).length > 0) {
+          updated = { ...updated, pinData: wf.pinData };
+        }
         this.store.workflow.set(updated);
         this.showPublishModal = false;
       },

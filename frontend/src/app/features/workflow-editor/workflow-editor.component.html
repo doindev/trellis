@@ -129,6 +129,7 @@
   @if (showPublishModal) {
     <app-publish-modal
       [currentVersion]="store.workflow()?.currentVersion || 0"
+      [pinnedNodeNames]="getPinnedNodeNames()"
       (confirmed)="onPublishConfirmed($event)"
       (cancelled)="showPublishModal = false" />
   }

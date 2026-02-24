@@ -29,7 +29,7 @@ export class WorkflowService {
     return this.api.delete<void>(`${this.path}/${id}`);
   }
 
-  publish(id: string, request: { versionName?: string; description?: string }): Observable<Workflow> {
+  publish(id: string, request: { versionName?: string; description?: string; includePinData?: boolean }): Observable<Workflow> {
     return this.api.post<Workflow>(`${this.path}/${id}/publish`, request);
   }
 

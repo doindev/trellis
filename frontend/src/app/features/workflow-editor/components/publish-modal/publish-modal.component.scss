@@ -12,7 +12,7 @@
   background: hsl(0, 0%, 13%);
   border: 1px solid hsl(0, 0%, 24%);
   border-radius: 12px;
-  width: 420px;
+  width: 480px;
   max-width: 90vw;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
@@ -53,6 +53,77 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.pin-warning {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  background: hsla(38, 80%, 50%, 0.08);
+  border: 1px solid hsla(38, 80%, 50%, 0.25);
+  border-radius: 8px;
+}
+
+.pin-warning-icon {
+  flex-shrink: 0;
+  color: hsl(38, 80%, 55%);
+  padding-top: 1px;
+}
+
+.pin-warning-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pin-warning-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: hsl(38, 80%, 65%);
+}
+
+.pin-warning-text {
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 65%);
+  line-height: 1.4;
+}
+
+.pin-warning-list {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 80%);
+  line-height: 1.5;
+
+  li {
+    padding: 1px 0;
+  }
+}
+
+.pin-warning-checkbox {
+  margin-top: 8px;
+
+  .form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-check-input {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: hsl(247, 49%, 53%);
+    cursor: pointer;
+  }
+
+  .form-check-label {
+    font-size: 0.8125rem;
+    color: hsl(0, 0%, 80%);
+    cursor: pointer;
+    user-select: none;
+  }
 }
 
 .form-group {

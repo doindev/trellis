@@ -92,7 +92,7 @@ public class WorkflowService {
             versionName = "Version " + newVersion;
         }
 
-        WorkflowVersionEntity version = WorkflowVersionEntity.builder()
+        WorkflowVersionEntity.WorkflowVersionEntityBuilder versionBuilder = WorkflowVersionEntity.builder()
                 .workflowId(id)
                 .versionNumber(newVersion)
                 .versionName(versionName)
@@ -100,14 +100,17 @@ public class WorkflowService {
                 .nodes(entity.getNodes())
                 .connections(entity.getConnections())
                 .settings(entity.getSettings())
-                .publishedAt(Instant.now())
-                .build();
-        workflowVersionRepository.save(version);
+                .publishedAt(Instant.now());
+
+        if (request.isIncludePinData() && entity.getPinData() != null) {
+            versionBuilder.pinData(entity.getPinData());
+        }
+
+        workflowVersionRepository.save(versionBuilder.build());
 
         entity.setCurrentVersion(newVersion);
         entity.setPublished(true);
         entity.setVersionIsDirty(false);
-        entity.setPinData(null);
         entity = workflowRepository.save(entity);
 
         webhookService.registerWorkflowWebhooks(entity);

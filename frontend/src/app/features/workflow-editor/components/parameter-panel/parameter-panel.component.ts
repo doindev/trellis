@@ -189,16 +189,21 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   }
 
   get webhookPath(): string {
-    const path = this._localPath ?? this.node?.parameters?.['path'] ?? '';
-    return path.startsWith('/') ? path.substring(1) : path;
+    return this._localPath ?? this.node?.parameters?.['path'] ?? '';
+  }
+
+  private joinWebhookUrl(base: string, path: string): string {
+    const joined = base.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
+    // Collapse any double slashes in the path portion (preserve ://)
+    return joined.replace(/([^:])\/\/+/g, '$1/');
   }
 
   get fullWebhookUrl(): string {
-    return this.webhookUrlProduction + this.webhookPath;
+    return this.joinWebhookUrl(this.webhookUrlProduction, this.webhookPath);
   }
 
   get fullWebhookTestUrl(): string {
-    return this.webhookUrlTest + this.webhookPath;
+    return this.joinWebhookUrl(this.webhookUrlTest, this.webhookPath);
   }
 
   get currentHttpMethod(): string {

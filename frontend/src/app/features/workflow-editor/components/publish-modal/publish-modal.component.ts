@@ -11,11 +11,17 @@ import { FormsModule } from '@angular/forms';
 })
 export class PublishModalComponent implements OnInit {
   @Input() currentVersion = 0;
-  @Output() confirmed = new EventEmitter<{ versionName: string; description: string }>();
+  @Input() pinnedNodeNames: string[] = [];
+  @Output() confirmed = new EventEmitter<{ versionName: string; description: string; includePinData: boolean }>();
   @Output() cancelled = new EventEmitter<void>();
 
   versionName = '';
   description = '';
+  clearPinnedData = true;
+
+  get hasPinnedNodes(): boolean {
+    return this.pinnedNodeNames.length > 0;
+  }
 
   ngOnInit(): void {
     this.versionName = `Version ${this.currentVersion + 1}`;
@@ -24,7 +30,8 @@ export class PublishModalComponent implements OnInit {
   onConfirm(): void {
     this.confirmed.emit({
       versionName: this.versionName.trim() || `Version ${this.currentVersion + 1}`,
-      description: this.description.trim()
+      description: this.description.trim(),
+      includePinData: this.hasPinnedNodes && !this.clearPinnedData
     });
   }
 

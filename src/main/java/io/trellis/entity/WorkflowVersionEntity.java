@@ -45,6 +45,11 @@ public class WorkflowVersionEntity {
     @Column(columnDefinition = "TEXT")
     private Object settings;
 
+    @Lob
+    @Convert(converter = JsonObjectConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private Object pinData;
+
     @Builder.Default
     @Column(nullable = false)
     private Instant publishedAt = Instant.now();
