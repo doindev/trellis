@@ -1,0 +1,909 @@
+{
+  "name": "Data Transformation Node Tests",
+  "description": "Comprehensive feature coverage tests for all Data Transformation category nodes: Rename Keys (direct + regex), Aggregate (individual fields + all items), Summarize (all 7 aggregations + splitBy grouping), Remove Duplicates (allFields/allFieldsExcept/selectedFields + removeOtherFields + duplicates output), Date & Time (all 7 operations + multiple timeUnits), Crypto (all hash algorithms + all generate types + all encodings), HTML (template + extract text/html/attribute + table), Markdown (both directions), XML (with/without declaration), Compare Datasets (all 4 resolve strategies + fieldsToSkipComparing + multipleMatches). Also uses Set, Sort, Filter, Limit, Split Out, Merge as supporting nodes.",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Manual Trigger",
+      "type": "manualTrigger",
+      "typeVersion": 1,
+      "position": [80, 1200],
+      "parameters": {}
+    },
+    {
+      "id": "testData",
+      "name": "Generate Test Data",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [320, 800],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [\n  { json: { name: 'Alice', age: 35, city: 'New York', score: 92.5, email: 'alice@gmail.com', tags: ['admin', 'vip'], date: '2026-01-15T10:30:00Z' } },\n  { json: { name: 'Bob', age: 28, city: 'London', score: 85.0, email: 'bob@yahoo.com', tags: ['user', 'premium'], date: '2026-02-20T14:00:00Z' } },\n  { json: { name: 'Charlie', age: 42, city: 'Tokyo', score: 78.3, email: 'charlie@gmail.com', tags: ['admin', 'user'], date: '2026-03-10T08:15:00Z' } },\n  { json: { name: 'Diana', age: 31, city: 'Paris', score: 95.1, email: 'diana@outlook.com', tags: ['vip', 'premium'], date: '2026-04-05T16:45:00Z' } },\n  { json: { name: 'Eve', age: 25, city: 'New York', score: 88.7, email: 'eve@gmail.com', tags: ['user'], date: '2026-05-12T09:00:00Z' } },\n  { json: { name: 'Frank', age: 38, city: 'London', score: 72.4, email: 'frank@yahoo.com', tags: ['user', 'admin'], date: '2026-06-18T11:30:00Z' } },\n  { json: { name: 'Grace', age: 29, city: 'Tokyo', score: 91.2, email: 'grace@gmail.com', tags: ['premium', 'vip'], date: '2026-07-22T13:00:00Z' } },\n  { json: { name: 'Alice', age: 35, city: 'New York', score: 92.5, email: 'alice.dup@gmail.com', tags: ['admin', 'vip'], date: '2026-08-01T10:30:00Z' } }\n];"
+      }
+    },
+    {
+      "id": "setManual",
+      "name": "Set: Add Fields",
+      "type": "set",
+      "typeVersion": 1,
+      "position": [620, 80],
+      "parameters": {
+        "mode": "manual",
+        "fields": [
+          { "name": "fullLabel", "value": "Processed User", "type": "string" },
+          { "name": "isActive", "value": "true", "type": "boolean" },
+          { "name": "rating", "value": "5", "type": "number" }
+        ],
+        "includeOtherFields": true
+      }
+    },
+    {
+      "id": "setRawJson",
+      "name": "Set: Raw JSON Replace",
+      "type": "set",
+      "typeVersion": 1,
+      "position": [620, 240],
+      "parameters": {
+        "mode": "rawJson",
+        "rawJson": "{\"status\": \"replaced\", \"timestamp\": \"2026-01-01T00:00:00Z\", \"version\": 2}"
+      }
+    },
+    {
+      "id": "sortByAge",
+      "name": "Sort: By Age Desc",
+      "type": "sort",
+      "typeVersion": 1,
+      "position": [920, 80],
+      "parameters": {
+        "type": "simple",
+        "sortFieldsUi": [
+          { "fieldName": "age", "order": "descending" }
+        ]
+      }
+    },
+    {
+      "id": "filterOver30",
+      "name": "Filter: Age >= 30",
+      "type": "filter",
+      "typeVersion": 1,
+      "position": [1220, 80],
+      "parameters": {
+        "conditions": [
+          { "value1": "age", "dataType": "number", "operation": "gte", "value2": "30" }
+        ],
+        "combineOperation": "and"
+      }
+    },
+    {
+      "id": "limitFirst2",
+      "name": "Limit: First 2",
+      "type": "limit",
+      "typeVersion": 1,
+      "position": [1520, 80],
+      "parameters": {
+        "maxItems": 2,
+        "keep": "firstItems"
+      }
+    },
+    {
+      "id": "renameKeys",
+      "name": "Rename Keys: Direct",
+      "type": "renameKeys",
+      "typeVersion": 1,
+      "position": [620, 400],
+      "parameters": {
+        "keys": [
+          { "currentKey": "name", "newKey": "full_name" },
+          { "currentKey": "city", "newKey": "location" },
+          { "currentKey": "email", "newKey": "email_address" }
+        ]
+      }
+    },
+    {
+      "id": "aggregate",
+      "name": "Aggregate: Individual Fields",
+      "type": "aggregate",
+      "typeVersion": 1,
+      "position": [620, 540],
+      "parameters": {
+        "aggregate": "aggregateIndividualFields",
+        "fieldsToAggregate": [
+          { "fieldToAggregate": "name", "renameField": "allNames" },
+          { "fieldToAggregate": "city", "renameField": "allCities" },
+          { "fieldToAggregate": "score", "renameField": "allScores" }
+        ],
+        "options": {
+          "keepOnlyUnique": true
+        }
+      }
+    },
+    {
+      "id": "summarize",
+      "name": "Summarize: All Aggregations",
+      "type": "summarize",
+      "typeVersion": 1,
+      "position": [620, 680],
+      "parameters": {
+        "fieldsToSummarize": [
+          { "field": "name", "aggregation": "count" },
+          { "field": "age", "aggregation": "sum" },
+          { "field": "score", "aggregation": "average" },
+          { "field": "age", "aggregation": "min" },
+          { "field": "score", "aggregation": "max" },
+          { "field": "city", "aggregation": "concatenate" }
+        ],
+        "options": {
+          "separator": " | "
+        }
+      }
+    },
+    {
+      "id": "splitOut",
+      "name": "Split Out: Tags",
+      "type": "splitOut",
+      "typeVersion": 1,
+      "position": [620, 840],
+      "parameters": {
+        "fieldToSplit": "tags",
+        "include": "allOtherFields"
+      }
+    },
+    {
+      "id": "removeDupes",
+      "name": "Remove Duplicates: Selected",
+      "type": "removeDuplicates",
+      "typeVersion": 1,
+      "position": [920, 840],
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "tags"
+      }
+    },
+    {
+      "id": "sortRandom",
+      "name": "Sort: Random Shuffle",
+      "type": "sort",
+      "typeVersion": 1,
+      "position": [1220, 840],
+      "parameters": {
+        "type": "random"
+      }
+    },
+    {
+      "id": "limitLast3",
+      "name": "Limit: Last 3",
+      "type": "limit",
+      "typeVersion": 1,
+      "position": [1520, 840],
+      "parameters": {
+        "maxItems": 3,
+        "keep": "lastItems"
+      }
+    },
+    {
+      "id": "dtGetCurrent",
+      "name": "DateTime: Get Current",
+      "type": "dateTime",
+      "typeVersion": 1,
+      "position": [620, 1040],
+      "parameters": {
+        "operation": "getCurrentDate",
+        "outputFieldName": "currentDate",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "dtAddDays",
+      "name": "DateTime: Add 90 Days",
+      "type": "dateTime",
+      "typeVersion": 1,
+      "position": [920, 1040],
+      "parameters": {
+        "operation": "addToDate",
+        "date": "2026-06-15T12:00:00Z",
+        "duration": 90,
+        "timeUnit": "days",
+        "outputFieldName": "futureDate",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "dtFormat",
+      "name": "DateTime: Format",
+      "type": "dateTime",
+      "typeVersion": 1,
+      "position": [1220, 1040],
+      "parameters": {
+        "operation": "formatDate",
+        "date": "2026-03-15T14:30:00Z",
+        "format": "EEEE, MMMM dd, yyyy HH:mm",
+        "outputFieldName": "formattedDate",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "dtExtract",
+      "name": "DateTime: Extract Part",
+      "type": "dateTime",
+      "typeVersion": 1,
+      "position": [1520, 1040],
+      "parameters": {
+        "operation": "extractDatePart",
+        "date": "2026-07-22T13:00:00Z",
+        "datePart": "dayOfWeek",
+        "outputFieldName": "dayOfWeek",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "cryptoHash",
+      "name": "Crypto: SHA-256 Hex",
+      "type": "crypto",
+      "typeVersion": 1,
+      "position": [620, 1240],
+      "parameters": {
+        "action": "hash",
+        "hashType": "SHA-256",
+        "value": "test@example.com",
+        "encoding": "hex",
+        "propertyName": "emailHash"
+      }
+    },
+    {
+      "id": "cryptoHmac",
+      "name": "Crypto: HMAC Base64",
+      "type": "crypto",
+      "typeVersion": 1,
+      "position": [920, 1240],
+      "parameters": {
+        "action": "hmac",
+        "hashType": "SHA-256",
+        "value": "secret-message",
+        "secret": "my-secret-key",
+        "encoding": "base64",
+        "propertyName": "hmacResult"
+      }
+    },
+    {
+      "id": "cryptoGenerate",
+      "name": "Crypto: Generate UUID",
+      "type": "crypto",
+      "typeVersion": 1,
+      "position": [1220, 1240],
+      "parameters": {
+        "action": "generate",
+        "generateType": "uuid",
+        "propertyName": "generatedId"
+      }
+    },
+    {
+      "id": "htmlTable",
+      "name": "HTML: To Table",
+      "type": "html",
+      "typeVersion": 1,
+      "position": [620, 1440],
+      "parameters": {
+        "operation": "convertToTable",
+        "destinationKey": "htmlTable",
+        "options": {
+          "tableStyle": "border-collapse: collapse; width: 100%;",
+          "headerStyle": "background: #333; color: white; padding: 8px;",
+          "cellStyle": "border: 1px solid #ddd; padding: 8px;"
+        }
+      }
+    },
+    {
+      "id": "htmlExtract",
+      "name": "HTML: Extract Text",
+      "type": "html",
+      "typeVersion": 1,
+      "position": [920, 1440],
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "sourceField": "htmlTable",
+        "extractionValues": [
+          { "key": "headers", "cssSelector": "th", "returnValue": "text" },
+          { "key": "firstCell", "cssSelector": "td", "returnValue": "text" }
+        ]
+      }
+    },
+    {
+      "id": "mdHtmlToMd",
+      "name": "Markdown: HTML to MD",
+      "type": "markdown",
+      "typeVersion": 1,
+      "position": [920, 1600],
+      "parameters": {
+        "mode": "htmlToMarkdown",
+        "sourceField": "htmlTable",
+        "destinationKey": "markdownContent"
+      }
+    },
+    {
+      "id": "mdMdToHtml",
+      "name": "Markdown: MD to HTML",
+      "type": "markdown",
+      "typeVersion": 1,
+      "position": [1220, 1600],
+      "parameters": {
+        "mode": "markdownToHtml",
+        "sourceField": "markdownContent",
+        "destinationKey": "htmlFromMarkdown"
+      }
+    },
+    {
+      "id": "xmlJsonToXml",
+      "name": "XML: JSON to XML",
+      "type": "xml",
+      "typeVersion": 1,
+      "position": [620, 1760],
+      "parameters": {
+        "mode": "jsonToXml",
+        "dataField": "data",
+        "destinationKey": "xmlData",
+        "options": {
+          "rootElement": "person",
+          "prettyPrint": true
+        }
+      }
+    },
+    {
+      "id": "xmlToJson",
+      "name": "XML: XML to JSON",
+      "type": "xml",
+      "typeVersion": 1,
+      "position": [920, 1760],
+      "parameters": {
+        "mode": "xmlToJson",
+        "dataField": "xmlData",
+        "destinationKey": "parsedJson"
+      }
+    },
+    {
+      "id": "datasetA",
+      "name": "Dataset A (Merge)",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [320, 1960],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [\n  { json: { name: 'Alice', department: 'Engineering', salary: 95000 } },\n  { json: { name: 'Bob', department: 'Marketing', salary: 72000 } },\n  { json: { name: 'Charlie', department: 'Engineering', salary: 88000 } }\n];"
+      }
+    },
+    {
+      "id": "datasetB",
+      "name": "Dataset B (Merge)",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [320, 2120],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [\n  { json: { name: 'Alice', phone: '555-0001', active: true } },\n  { json: { name: 'Charlie', phone: '555-0003', active: false } },\n  { json: { name: 'Diana', phone: '555-0004', active: true } }\n];"
+      }
+    },
+    {
+      "id": "mergeAppend",
+      "name": "Merge: Append",
+      "type": "merge",
+      "typeVersion": 1,
+      "position": [620, 1960],
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "mergeCombine",
+      "name": "Merge: Combine By Key",
+      "type": "merge",
+      "typeVersion": 1,
+      "position": [620, 2120],
+      "parameters": {
+        "mode": "combineBySql",
+        "mergeKey": "name"
+      }
+    },
+    {
+      "id": "compSetA",
+      "name": "Products v1 (Compare)",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [320, 2320],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [\n  { json: { id: 1, product: 'Widget', price: 9.99, stock: 100 } },\n  { json: { id: 2, product: 'Gadget', price: 24.99, stock: 50 } },\n  { json: { id: 3, product: 'Doohickey', price: 14.99, stock: 75 } }\n];"
+      }
+    },
+    {
+      "id": "compSetB",
+      "name": "Products v2 (Compare)",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [320, 2480],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [\n  { json: { id: 1, product: 'Widget', price: 9.99, stock: 120 } },\n  { json: { id: 2, product: 'Gadget', price: 29.99, stock: 50 } },\n  { json: { id: 4, product: 'Thingamajig', price: 19.99, stock: 30 } }\n];"
+      }
+    },
+    {
+      "id": "compareDs",
+      "name": "Compare: Prefer A",
+      "type": "compareDatasets",
+      "typeVersion": 1,
+      "position": [620, 2400],
+      "parameters": {
+        "mergeByFields": [
+          { "field1": "id", "field2": "id" }
+        ],
+        "resolve": "preferInput1",
+        "options": {
+          "fuzzyCompare": true
+        }
+      }
+    },
+
+    {
+      "id": "dtSubtract",
+      "name": "DateTime: Subtract 6h",
+      "type": "dateTime",
+      "typeVersion": 1,
+      "position": [620, 2700],
+      "parameters": {
+        "operation": "subtractFromDate",
+        "date": "2026-06-15T12:00:00Z",
+        "duration": 6,
+        "timeUnit": "hours",
+        "outputFieldName": "pastDate",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "dtTimeBetween",
+      "name": "DateTime: Time Between",
+      "type": "dateTime",
+      "typeVersion": 1,
+      "position": [920, 2700],
+      "parameters": {
+        "operation": "getTimeBetween",
+        "date1": "2026-01-15T10:30:00Z",
+        "date2": "2026-06-15T14:00:00Z",
+        "timeUnit": "hours",
+        "outputFieldName": "hoursBetween",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "dtRound",
+      "name": "DateTime: Round to Month",
+      "type": "dateTime",
+      "typeVersion": 1,
+      "position": [1220, 2700],
+      "parameters": {
+        "operation": "roundDate",
+        "date": "2026-03-15T14:30:00Z",
+        "timeUnit": "months",
+        "outputFieldName": "roundedDate",
+        "timezone": "UTC"
+      }
+    },
+
+    {
+      "id": "cryptoHashMd5",
+      "name": "Crypto: MD5 Base64",
+      "type": "crypto",
+      "typeVersion": 1,
+      "position": [620, 2900],
+      "parameters": {
+        "action": "hash",
+        "hashType": "MD5",
+        "value": "hello-world-test",
+        "encoding": "base64",
+        "propertyName": "md5Hash"
+      }
+    },
+    {
+      "id": "cryptoPassword",
+      "name": "Crypto: Gen Password",
+      "type": "crypto",
+      "typeVersion": 1,
+      "position": [920, 2900],
+      "parameters": {
+        "action": "generate",
+        "generateType": "password",
+        "length": 16
+      }
+    },
+    {
+      "id": "cryptoHex",
+      "name": "Crypto: Gen Hex",
+      "type": "crypto",
+      "typeVersion": 1,
+      "position": [1220, 2900],
+      "parameters": {
+        "action": "generate",
+        "generateType": "hex",
+        "length": 8
+      }
+    },
+
+    {
+      "id": "htmlTemplate",
+      "name": "HTML: Generate Template",
+      "type": "html",
+      "typeVersion": 1,
+      "position": [620, 3100],
+      "parameters": {
+        "operation": "generateHtmlTemplate",
+        "html": "<div class=\"user-card\"><h2><strong>{{ name }}</strong></h2><p>Age: {{ age }}, City: {{ city }}</p><a href=\"mailto:{{ email }}\">Contact {{ name }}</a><span class=\"score\">{{ score }}</span></div>",
+        "destinationKey": "renderedHtml"
+      }
+    },
+    {
+      "id": "htmlExtractAdvanced",
+      "name": "HTML: Extract HTML & Attr",
+      "type": "html",
+      "typeVersion": 1,
+      "position": [920, 3100],
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "sourceField": "renderedHtml",
+        "extractionValues": [
+          { "key": "nameHtml", "cssSelector": "h2", "returnValue": "html" },
+          { "key": "emailHref", "cssSelector": "a", "returnValue": "attribute", "attribute": "href" },
+          { "key": "scoreText", "cssSelector": "span.score", "returnValue": "text" }
+        ]
+      }
+    },
+
+    {
+      "id": "removeDupesAll",
+      "name": "Remove Dupes: All Fields",
+      "type": "removeDuplicates",
+      "typeVersion": 1,
+      "position": [620, 3300],
+      "parameters": {
+        "compare": "allFields"
+      }
+    },
+    {
+      "id": "captureDuplicates",
+      "name": "Limit: Captured Dupes",
+      "type": "limit",
+      "typeVersion": 1,
+      "position": [920, 3300],
+      "parameters": {
+        "maxItems": 10,
+        "keep": "firstItems"
+      }
+    },
+    {
+      "id": "removeDupesExcept",
+      "name": "Remove Dupes: Except Fields",
+      "type": "removeDuplicates",
+      "typeVersion": 1,
+      "position": [1220, 3300],
+      "parameters": {
+        "compare": "allFieldsExcept",
+        "fieldsToExclude": "email,date"
+      }
+    },
+    {
+      "id": "removeDupesClean",
+      "name": "Remove Dupes: Keep Only Keys",
+      "type": "removeDuplicates",
+      "typeVersion": 1,
+      "position": [1520, 3300],
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "name,city",
+        "options": {
+          "removeOtherFields": true
+        }
+      }
+    },
+
+    {
+      "id": "compareDsPreferB",
+      "name": "Compare: Prefer B",
+      "type": "compareDatasets",
+      "typeVersion": 1,
+      "position": [620, 3500],
+      "parameters": {
+        "mergeByFields": [
+          { "field1": "id", "field2": "id" }
+        ],
+        "resolve": "preferInput2"
+      }
+    },
+    {
+      "id": "compareDsMix",
+      "name": "Compare: Mix Mode",
+      "type": "compareDatasets",
+      "typeVersion": 1,
+      "position": [920, 3500],
+      "parameters": {
+        "mergeByFields": [
+          { "field1": "id", "field2": "id" }
+        ],
+        "resolve": "mix",
+        "preferWhenMix": "input1",
+        "exceptWhenMix": "price,stock"
+      }
+    },
+    {
+      "id": "compareDsIncludeBoth",
+      "name": "Compare: Include Both",
+      "type": "compareDatasets",
+      "typeVersion": 1,
+      "position": [1220, 3500],
+      "parameters": {
+        "mergeByFields": [
+          { "field1": "id", "field2": "id" }
+        ],
+        "resolve": "includeBoth",
+        "options": {
+          "fieldsToSkipComparing": "stock",
+          "multipleMatches": "first"
+        }
+      }
+    },
+
+    {
+      "id": "summarizeGrouped",
+      "name": "Summarize: Grouped + Unique",
+      "type": "summarize",
+      "typeVersion": 1,
+      "position": [620, 3700],
+      "parameters": {
+        "fieldsToSummarize": [
+          { "field": "name", "aggregation": "countUnique" },
+          { "field": "score", "aggregation": "sum" },
+          { "field": "email", "aggregation": "concatenate" }
+        ],
+        "splitBy": "city",
+        "options": {
+          "separator": "; ",
+          "continueIfFieldNotFound": false
+        }
+      }
+    },
+    {
+      "id": "aggregateAll",
+      "name": "Aggregate: All Item Data",
+      "type": "aggregate",
+      "typeVersion": 1,
+      "position": [920, 3700],
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "allItems"
+      }
+    },
+    {
+      "id": "renameKeysRegex",
+      "name": "Rename Keys: Regex",
+      "type": "renameKeys",
+      "typeVersion": 1,
+      "position": [1220, 3700],
+      "parameters": {
+        "keys": [
+          { "currentKey": "tags", "newKey": "userTags" }
+        ],
+        "additionalOptions": {
+          "regexReplacement": [
+            {
+              "searchRegex": "^(name|city|email)$",
+              "replaceRegex": "user_$1",
+              "caseInsensitive": false,
+              "maxDepth": 0
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "xmlHeadless",
+      "name": "XML: Headless Export",
+      "type": "xml",
+      "typeVersion": 1,
+      "position": [620, 3900],
+      "parameters": {
+        "mode": "jsonToXml",
+        "dataField": "data",
+        "destinationKey": "xmlHeadless",
+        "options": {
+          "rootElement": "item",
+          "headless": true,
+          "prettyPrint": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "trigger": {
+      "main": [
+        [
+          { "node": "testData", "type": "main", "index": 0 },
+          { "node": "datasetA", "type": "main", "index": 0 },
+          { "node": "datasetB", "type": "main", "index": 0 },
+          { "node": "compSetA", "type": "main", "index": 0 },
+          { "node": "compSetB", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "testData": {
+      "main": [
+        [
+          { "node": "setManual", "type": "main", "index": 0 },
+          { "node": "setRawJson", "type": "main", "index": 0 },
+          { "node": "renameKeys", "type": "main", "index": 0 },
+          { "node": "aggregate", "type": "main", "index": 0 },
+          { "node": "summarize", "type": "main", "index": 0 },
+          { "node": "splitOut", "type": "main", "index": 0 },
+          { "node": "dtGetCurrent", "type": "main", "index": 0 },
+          { "node": "cryptoHash", "type": "main", "index": 0 },
+          { "node": "htmlTable", "type": "main", "index": 0 },
+          { "node": "xmlJsonToXml", "type": "main", "index": 0 },
+          { "node": "dtSubtract", "type": "main", "index": 0 },
+          { "node": "cryptoHashMd5", "type": "main", "index": 0 },
+          { "node": "htmlTemplate", "type": "main", "index": 0 },
+          { "node": "removeDupesAll", "type": "main", "index": 0 },
+          { "node": "removeDupesExcept", "type": "main", "index": 0 },
+          { "node": "removeDupesClean", "type": "main", "index": 0 },
+          { "node": "summarizeGrouped", "type": "main", "index": 0 },
+          { "node": "aggregateAll", "type": "main", "index": 0 },
+          { "node": "renameKeysRegex", "type": "main", "index": 0 },
+          { "node": "xmlHeadless", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "setManual": {
+      "main": [
+        [{ "node": "sortByAge", "type": "main", "index": 0 }]
+      ]
+    },
+    "sortByAge": {
+      "main": [
+        [{ "node": "filterOver30", "type": "main", "index": 0 }]
+      ]
+    },
+    "filterOver30": {
+      "main": [
+        [{ "node": "limitFirst2", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "splitOut": {
+      "main": [
+        [{ "node": "removeDupes", "type": "main", "index": 0 }]
+      ]
+    },
+    "removeDupes": {
+      "main": [
+        [{ "node": "sortRandom", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "sortRandom": {
+      "main": [
+        [{ "node": "limitLast3", "type": "main", "index": 0 }]
+      ]
+    },
+    "dtGetCurrent": {
+      "main": [
+        [{ "node": "dtAddDays", "type": "main", "index": 0 }]
+      ]
+    },
+    "dtAddDays": {
+      "main": [
+        [{ "node": "dtFormat", "type": "main", "index": 0 }]
+      ]
+    },
+    "dtFormat": {
+      "main": [
+        [{ "node": "dtExtract", "type": "main", "index": 0 }]
+      ]
+    },
+    "cryptoHash": {
+      "main": [
+        [{ "node": "cryptoHmac", "type": "main", "index": 0 }]
+      ]
+    },
+    "cryptoHmac": {
+      "main": [
+        [{ "node": "cryptoGenerate", "type": "main", "index": 0 }]
+      ]
+    },
+    "htmlTable": {
+      "main": [
+        [
+          { "node": "htmlExtract", "type": "main", "index": 0 },
+          { "node": "mdHtmlToMd", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "mdHtmlToMd": {
+      "main": [
+        [{ "node": "mdMdToHtml", "type": "main", "index": 0 }]
+      ]
+    },
+    "xmlJsonToXml": {
+      "main": [
+        [{ "node": "xmlToJson", "type": "main", "index": 0 }]
+      ]
+    },
+    "datasetA": {
+      "main": [
+        [
+          { "node": "mergeAppend", "type": "main", "index": 0 },
+          { "node": "mergeCombine", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "datasetB": {
+      "main": [
+        [
+          { "node": "mergeAppend", "type": "main", "index": 1 },
+          { "node": "mergeCombine", "type": "main", "index": 1 }
+        ]
+      ]
+    },
+    "compSetA": {
+      "main": [
+        [
+          { "node": "compareDs", "type": "main", "index": 0 },
+          { "node": "compareDsPreferB", "type": "main", "index": 0 },
+          { "node": "compareDsMix", "type": "main", "index": 0 },
+          { "node": "compareDsIncludeBoth", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "compSetB": {
+      "main": [
+        [
+          { "node": "compareDs", "type": "main", "index": 1 },
+          { "node": "compareDsPreferB", "type": "main", "index": 1 },
+          { "node": "compareDsMix", "type": "main", "index": 1 },
+          { "node": "compareDsIncludeBoth", "type": "main", "index": 1 }
+        ]
+      ]
+    },
+
+    "dtSubtract": {
+      "main": [
+        [{ "node": "dtTimeBetween", "type": "main", "index": 0 }]
+      ]
+    },
+    "dtTimeBetween": {
+      "main": [
+        [{ "node": "dtRound", "type": "main", "index": 0 }]
+      ]
+    },
+    "cryptoHashMd5": {
+      "main": [
+        [{ "node": "cryptoPassword", "type": "main", "index": 0 }]
+      ]
+    },
+    "cryptoPassword": {
+      "main": [
+        [{ "node": "cryptoHex", "type": "main", "index": 0 }]
+      ]
+    },
+    "htmlTemplate": {
+      "main": [
+        [{ "node": "htmlExtractAdvanced", "type": "main", "index": 0 }]
+      ]
+    },
+    "removeDupesAll": {
+      "main": [
+        [],
+        [{ "node": "captureDuplicates", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {}
+}
