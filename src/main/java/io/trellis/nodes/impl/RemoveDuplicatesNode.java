@@ -238,7 +238,6 @@ public class RemoveDuplicatesNode extends AbstractNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String operation = context.getParameter("operation", "removeDuplicateInputItems");
 
@@ -500,7 +499,6 @@ public class RemoveDuplicatesNode extends AbstractNode {
 	 * - "node" scope: data is namespaced by nodeId within workflowStaticData
 	 * - "workflow" scope: data is stored directly in workflowStaticData under a shared key
 	 */
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> getStaticDataStore(NodeExecutionContext context, String scope) {
 		Map<String, Object> wfStaticData = context.getWorkflowStaticData();
 		if (wfStaticData == null) {
