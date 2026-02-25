@@ -185,6 +185,7 @@ public class WorkflowEngine {
 
             WorkflowExecutionState state = new WorkflowExecutionState(
                     execution.getId(), workflowId, graph);
+            state.loadStaticData(workflow.getStaticData());
             runningExecutions.put(execution.getId(), state);
 
             try {
@@ -235,6 +236,7 @@ public class WorkflowEngine {
 
                 executionService.finish(execution.getId(), ExecutionStatus.SUCCESS,
                         state.buildResultData(), null);
+                saveStaticDataIfChanged(workflow, state);
 
                 // Return last node's output
                 for (int i = order.size() - 1; i >= 0; i--) {
@@ -346,6 +348,11 @@ public class WorkflowEngine {
 
             executionService.finish(executionId, ExecutionStatus.SUCCESS,
                     state.buildResultData(), null);
+            try {
+                workflowService.updateStaticData(workflowId, state.getWorkflowStaticData());
+            } catch (Exception ex) {
+                log.warn("Failed to persist staticData for workflow {}: {}", workflowId, ex.getMessage());
+            }
             webSocketService.sendExecutionFinished(executionId, "SUCCESS", state.buildResultData());
 
             completeWebhookResponseWithLastOutput(executionId, state, order);
@@ -553,6 +560,7 @@ public class WorkflowEngine {
 
             WorkflowExecutionState state = new WorkflowExecutionState(
                     executionId, workflow.getId(), graph);
+            state.loadStaticData(workflow.getStaticData());
             runningExecutions.put(executionId, state);
 
             webSocketService.sendExecutionStarted(executionId, workflow.getId());
@@ -616,6 +624,7 @@ public class WorkflowEngine {
 
             executionService.finish(executionId, ExecutionStatus.SUCCESS,
                     state.buildResultData(), null);
+            saveStaticDataIfChanged(workflow, state);
             webSocketService.sendExecutionFinished(executionId, "SUCCESS", state.buildResultData());
 
             // For lastNode mode: complete any pending webhook response with last node output
@@ -1106,5 +1115,29 @@ public class WorkflowEngine {
             return (Map<String, Object>) result;
         }
         return resolved;
+    }
+
+    /**
+     * Persist workflow staticData back to the entity if any nodes produced static data.
+     * Uses a fresh DB read + merge to avoid overwriting changes made by concurrent executions
+     * (e.g. when multiple app instances run the same workflow).
+     */
+    @SuppressWarnings("unchecked")
+    private void saveStaticDataIfChanged(WorkflowEntity workflow, WorkflowExecutionState state) {
+        Map<String, Object> stateData = state.getWorkflowStaticData();
+        if (stateData.isEmpty()) return;
+
+        try {
+            // Re-read the entity to get the latest staticData (another execution may have updated it)
+            WorkflowEntity fresh = workflowService.findById(workflow.getId());
+            Map<String, Object> existing = new LinkedHashMap<>();
+            if (fresh.getStaticData() instanceof Map) {
+                existing.putAll((Map<String, Object>) fresh.getStaticData());
+            }
+            existing.putAll(stateData);
+            workflowService.updateStaticData(workflow.getId(), existing);
+        } catch (Exception e) {
+            log.warn("Failed to persist staticData for workflow {}: {}", workflow.getId(), e.getMessage());
+        }
     }
 }

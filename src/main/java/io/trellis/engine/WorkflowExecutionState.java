@@ -45,6 +45,13 @@ public class WorkflowExecutionState {
         this.graph = graph;
     }
 
+    @SuppressWarnings("unchecked")
+    public void loadStaticData(Object entityStaticData) {
+        if (entityStaticData instanceof Map) {
+            workflowStaticData.putAll((Map<String, Object>) entityStaticData);
+        }
+    }
+
     public int nextExecutionOrder() {
         return executionOrderCounter.getAndIncrement();
     }

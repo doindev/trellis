@@ -172,6 +172,13 @@ public class WorkflowService {
         return toResponse(entity);
     }
 
+    @Transactional
+    public void updateStaticData(String id, Object staticData) {
+        WorkflowEntity entity = findById(id);
+        entity.setStaticData(staticData);
+        workflowRepository.save(entity);
+    }
+
     public WorkflowEntity findById(String id) {
         return workflowRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Workflow not found: " + id));
