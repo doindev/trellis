@@ -1,6 +1,6 @@
 PENDING NODES — n8n nodes not yet implemented in Trellis
 Generated: 2026-02-25
-Trellis implemented: 155 nodes | n8n total: ~512 nodes
+Trellis implemented: 165 nodes | n8n total: ~512 nodes
 
 Complexity Rating Scale (0-5):
   0 = Trivial (minimal logic, direct mapping)
@@ -147,20 +147,20 @@ ANALYTICS
 AWS SERVICES
 ================================================================================
 
-  AWS Certificate Manager ........................... [2] (type: awsCertificateManager)
+  AWS Certificate Manager ........................... [2] (type: awsCertificateManager) DONE
   AWS Cognito ....................................... [3] (type: awsCognito)
-  AWS Comprehend .................................... [2] (type: awsComprehend)
+  AWS Comprehend .................................... [2] (type: awsComprehend) DONE
   AWS DynamoDB ...................................... [3] (type: awsDynamoDb)
-  AWS ELB ........................................... [2] (type: awsElb)
+  AWS ELB ........................................... [2] (type: awsElb) DONE
   AWS IAM ........................................... [3] (type: awsIam)
-  AWS Lambda ........................................ [2] (type: awsLambda)
-  AWS Rekognition ................................... [2] (type: awsRekognition)
-  AWS SES ........................................... [2] (type: awsSes)
-  AWS SNS ........................................... [2] (type: awsSns)
+  AWS Lambda ........................................ [2] (type: awsLambda) DONE
+  AWS Rekognition ................................... [2] (type: awsRekognition) DONE
+  AWS SES ........................................... [2] (type: awsSes) DONE
+  AWS SNS ........................................... [2] (type: awsSns) DONE
   AWS SNS Trigger ................................... [3] (type: awsSnsTrigger)
-  AWS SQS ........................................... [2] (type: awsSqs)
-  AWS Textract ...................................... [2] (type: awsTextract)
-  AWS Transcribe .................................... [2] (type: awsTranscribe)
+  AWS SQS ........................................... [2] (type: awsSqs) DONE
+  AWS Textract ...................................... [2] (type: awsTextract) DONE
+  AWS Transcribe .................................... [2] (type: awsTranscribe) DONE
 
 ================================================================================
 CMS / WEBSITE BUILDERS
