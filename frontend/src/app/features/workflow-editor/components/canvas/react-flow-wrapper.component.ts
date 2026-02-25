@@ -195,7 +195,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
             displayName: typeDesc.displayName,
             icon: typeDesc.icon,
             subtitle: typeDesc.subtitle,
-            inputs: typeDesc.inputs,
+            inputs: this.computeNodeInputs(node, typeDesc),
             outputs: this.computeNodeOutputs(node, typeDesc),
             isTrigger: typeDesc.isTrigger,
           } : undefined,
@@ -289,6 +289,25 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     if (!execData) return null;
     const entry = Array.isArray(execData) ? execData[0] : execData;
     return entry?.status || null;
+  }
+
+  /**
+   * Compute the actual inputs for a node instance. Most nodes use the static type description,
+   * but the Merge node has a dynamic number of inputs based on the numberInputs parameter.
+   */
+  private computeNodeInputs(node: WorkflowNode, typeDesc: NodeTypeDescription): any[] {
+    if (node.type === 'merge') {
+      const mode = node.parameters?.['mode'] || 'append';
+      if (mode === 'append') {
+        const numInputs = Math.max(2, Math.min(10, Number(node.parameters?.['numberInputs']) || 2));
+        return Array.from({ length: numInputs }, (_, i) => ({
+          name: `input${i + 1}`,
+          displayName: `Input ${i + 1}`,
+          type: 'main',
+        }));
+      }
+    }
+    return typeDesc.inputs;
   }
 
   /**

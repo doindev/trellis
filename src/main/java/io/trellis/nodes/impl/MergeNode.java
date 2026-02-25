@@ -17,17 +17,17 @@ import io.trellis.nodes.core.NodeParameter.ParameterType;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Merge Node - combines data from two input branches into a single output.
+ * Merge Node - combines data from multiple input branches into a single output.
  * Supports three modes:
- * - Append: concatenates items from both inputs
- * - Combine by SQL-style key matching: joins items from both inputs by a shared key
+ * - Append: concatenates items from all inputs (supports 2-10 inputs)
+ * - Combine by SQL-style key matching: joins items from two inputs by a shared key
  * - Choose Branch: selects all items from one input branch
  */
 @Slf4j
 @Node(
 	type = "merge",
 	displayName = "Merge",
-	description = "Combine data from two input branches. Supports append, key-based merge, and branch selection.",
+	description = "Combine data from multiple input branches. Supports append, key-based merge, and branch selection.",
 	category = "Flow",
 	icon = "merge"
 )
@@ -52,7 +52,7 @@ public class MergeNode extends AbstractNode {
 			NodeParameter.builder()
 				.name("mode")
 				.displayName("Mode")
-				.description("How to combine the data from the two inputs.")
+				.description("How to combine the data from the inputs.")
 				.type(ParameterType.OPTIONS)
 				.defaultValue("append")
 				.required(true)
@@ -60,7 +60,7 @@ public class MergeNode extends AbstractNode {
 					ParameterOption.builder()
 						.name("Append")
 						.value("append")
-						.description("Append all items from Input 2 after Input 1")
+						.description("Append items from all inputs in order")
 						.build(),
 					ParameterOption.builder()
 						.name("Combine by Matching Key")
@@ -73,6 +73,26 @@ public class MergeNode extends AbstractNode {
 						.description("Select all items from one input and discard the other")
 						.build()
 				))
+				.build(),
+
+			NodeParameter.builder()
+				.name("numberInputs")
+				.displayName("Number of Inputs")
+				.description("The number of data inputs to merge. The node waits for all connected inputs to be executed.")
+				.type(ParameterType.OPTIONS)
+				.defaultValue(2)
+				.options(List.of(
+					ParameterOption.builder().name("2").value("2").build(),
+					ParameterOption.builder().name("3").value("3").build(),
+					ParameterOption.builder().name("4").value("4").build(),
+					ParameterOption.builder().name("5").value("5").build(),
+					ParameterOption.builder().name("6").value("6").build(),
+					ParameterOption.builder().name("7").value("7").build(),
+					ParameterOption.builder().name("8").value("8").build(),
+					ParameterOption.builder().name("9").value("9").build(),
+					ParameterOption.builder().name("10").value("10").build()
+				))
+				.displayOptions(Map.of("show", Map.of("mode", List.of("append"))))
 				.build(),
 
 			NodeParameter.builder()
@@ -108,41 +128,19 @@ public class MergeNode extends AbstractNode {
 			inputData = List.of();
 		}
 
-		// Split input data into two branches
-		// Convention: inputData contains items tagged with _inputIndex or we split by position
-		// For now, we split based on _inputIndex metadata or treat first half as input1, second as input2
+		if ("append".equals(mode)) {
+			int numberInputs = Math.max(2, Math.min(10, toInt(context.getParameter("numberInputs", 2), 2)));
+			return executeAppendN(inputData, numberInputs);
+		}
+
+		// For combineBySql and chooseBranch, use 2-input logic
 		List<Map<String, Object>> input1 = new ArrayList<>();
 		List<Map<String, Object>> input2 = new ArrayList<>();
-
-		for (Map<String, Object> item : inputData) {
-			Map<String, Object> json = unwrapJson(item);
-			Object inputIndex = json.get("_inputIndex");
-			if (inputIndex == null) {
-				inputIndex = item.get("_inputIndex");
-			}
-
-			if (inputIndex != null && toInt(inputIndex, 0) == 1) {
-				input2.add(item);
-			} else {
-				input1.add(item);
-			}
-		}
-
-		// If no _inputIndex tags, split evenly as a fallback
-		if (input2.isEmpty() && input1.size() > 1 && inputData.stream().noneMatch(i -> {
-			Map<String, Object> j = unwrapJson(i);
-			return j.containsKey("_inputIndex") || i.containsKey("_inputIndex");
-		})) {
-			// Keep all in input1 - single branch scenario
-			log.debug("Merge node: all {} items treated as input 1 (no _inputIndex tags)", inputData.size());
-		}
+		splitTwoInputs(inputData, input1, input2);
 
 		List<Map<String, Object>> result;
 
 		switch (mode) {
-			case "append":
-				result = mergeAppend(input1, input2);
-				break;
 			case "combineBySql":
 				String mergeKey = context.getParameter("mergeKey", "id");
 				result = mergeBySqlKey(input1, input2, mergeKey);
@@ -160,6 +158,62 @@ public class MergeNode extends AbstractNode {
 			input1.size(), input2.size(), result.size(), mode);
 
 		return NodeExecutionResult.success(result);
+	}
+
+	/**
+	 * Split input data into two buckets by _inputIndex (0 and 1).
+	 */
+	private void splitTwoInputs(List<Map<String, Object>> inputData,
+			List<Map<String, Object>> input1, List<Map<String, Object>> input2) {
+		for (Map<String, Object> item : inputData) {
+			int idx = getInputIndex(item);
+			if (idx == 1) {
+				input2.add(item);
+			} else {
+				input1.add(item);
+			}
+		}
+	}
+
+	/**
+	 * Append mode with N inputs: split items into N buckets by _inputIndex,
+	 * then concatenate all buckets in order.
+	 */
+	private NodeExecutionResult executeAppendN(List<Map<String, Object>> inputData, int numberInputs) {
+		List<List<Map<String, Object>>> buckets = new ArrayList<>();
+		for (int i = 0; i < numberInputs; i++) {
+			buckets.add(new ArrayList<>());
+		}
+
+		for (Map<String, Object> item : inputData) {
+			int idx = getInputIndex(item);
+			if (idx >= 0 && idx < numberInputs) {
+				buckets.get(idx).add(item);
+			} else {
+				buckets.get(0).add(item);
+			}
+		}
+
+		List<Map<String, Object>> result = new ArrayList<>();
+		for (List<Map<String, Object>> bucket : buckets) {
+			result.addAll(bucket);
+		}
+
+		log.debug("Merge node: append {} inputs, {} total items -> {} output items",
+			numberInputs, inputData.size(), result.size());
+		return NodeExecutionResult.success(result);
+	}
+
+	/**
+	 * Read the _inputIndex from an item (checking both json wrapper and root).
+	 */
+	private int getInputIndex(Map<String, Object> item) {
+		Map<String, Object> json = unwrapJson(item);
+		Object inputIndex = json.get("_inputIndex");
+		if (inputIndex == null) {
+			inputIndex = item.get("_inputIndex");
+		}
+		return toInt(inputIndex, 0);
 	}
 
 	private List<Map<String, Object>> mergeAppend(List<Map<String, Object>> input1,

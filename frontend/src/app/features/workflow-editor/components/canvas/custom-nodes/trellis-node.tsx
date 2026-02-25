@@ -93,7 +93,7 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
             style={{ top: `${((index + 1) / (mainInputs.length + 1)) * 100}%` }}
             className="trellis-handle"
           />
-          {data.nodeType === 'compareDatasets' && (
+          {(data.nodeType === 'compareDatasets' || data.nodeType === 'merge') && (
             <span
               className="input-handle-label"
               style={{ top: `${((index + 1) / (mainInputs.length + 1)) * 100}%` }}
