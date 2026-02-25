@@ -634,6 +634,22 @@
   }
 }
 
+/* Input handle labels — Compare Datasets Input A/B */
+.input-handle-label {
+  position: absolute;
+  left: -8px;
+  transform: translate(-100%, -50%);
+  z-index: 10;
+  background: hsl(0, 0%, 9%);
+  color: hsl(0, 0%, 58%);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 1px 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  border-radius: 4px;
+}
+
 /* Output handle labels — Webhook method, If true/false */
 .output-handle-label {
   position: absolute;

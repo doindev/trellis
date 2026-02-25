@@ -85,14 +85,23 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
     <div className={`trellis-node action-node${statusClass}${selectedClass}${disabledClass}${hasAiHandles ? ' has-ai-handles' : ''}${isIconOnly ? ' icon-only' : ''}`} style={nodeStyle}>
       {/* Main input handles (left) */}
       {mainInputs.map((input, index) => (
-        <Handle
-          key={`input-${input.name}`}
-          type="target"
-          position={Position.Left}
-          id={encodeHandleId(input.type, index)}
-          style={{ top: `${((index + 1) / (mainInputs.length + 1)) * 100}%` }}
-          className="trellis-handle"
-        />
+        <React.Fragment key={`input-${input.name}`}>
+          <Handle
+            type="target"
+            position={Position.Left}
+            id={encodeHandleId(input.type, index)}
+            style={{ top: `${((index + 1) / (mainInputs.length + 1)) * 100}%` }}
+            className="trellis-handle"
+          />
+          {data.nodeType === 'compareDatasets' && (
+            <span
+              className="input-handle-label"
+              style={{ top: `${((index + 1) / (mainInputs.length + 1)) * 100}%` }}
+            >
+              {input.displayName || input.name}
+            </span>
+          )}
+        </React.Fragment>
       ))}
 
       {/* AI output handles (top) — for sub-nodes like Chat Model */}
@@ -179,7 +188,7 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
               data.onOutputHandleDoubleClick?.(encodeHandleId(output.type, index));
             }}
           />
-          {(data.nodeType === 'if' && mainOutputs.length >= 2 || data.nodeType === 'switch' || data.nodeType === 'loopOverItems') && (
+          {(data.nodeType === 'if' && mainOutputs.length >= 2 || data.nodeType === 'switch' || data.nodeType === 'loopOverItems' || data.nodeType === 'compareDatasets') && (
             <span
               className="output-handle-label"
               style={{ top: `${((index + 1) / (mainOutputs.length + 1)) * 100}%` }}
