@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { memo, useState, useRef, useEffect, useContext } from 'react';
 import { NodeToolbar, Position } from '@xyflow/react';
 import { CanvasActionsContext } from '../trellis-canvas';
 
@@ -10,7 +10,7 @@ interface NodeActionToolbarProps {
   isSubNode?: boolean;
 }
 
-export default function NodeActionToolbar({ nodeId, selected, nearby, disabled, isSubNode }: NodeActionToolbarProps) {
+function NodeActionToolbar({ nodeId, selected, nearby, disabled, isSubNode }: NodeActionToolbarProps) {
   const ctx = useContext(CanvasActionsContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -142,3 +142,5 @@ export default function NodeActionToolbar({ nodeId, selected, nearby, disabled, 
     </NodeToolbar>
   );
 }
+
+export default memo(NodeActionToolbar);

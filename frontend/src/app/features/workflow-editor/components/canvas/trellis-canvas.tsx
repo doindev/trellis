@@ -224,24 +224,106 @@ function TrellisCanvasInner({
     setSingleSelectedId(selectedNodes.length === 1 ? selectedNodes[0].id : null);
   }, []);
 
-  // Sync nodes from Angular without resetting viewport
+  // Sync nodes from Angular — only update nodes whose data actually changed.
+  // Merges with React Flow's internal node state (measured, width, height) to avoid flicker.
   useEffect(() => {
-    setNodes(initialNodes.map(n => ({
-      ...n,
-      data: {
-        ...n.data,
-        onOutputHandleDoubleClick: (handleId: string) => {
-          outputHandleDoubleClickRef.current?.(n.id, handleId);
-        },
-      },
-    })));
+    setNodes(prevNodes => {
+      const prevMap = new Map(prevNodes.map(n => [n.id, n]));
+      let changed = false;
+
+      const result = initialNodes.map(newNode => {
+        const prev = prevMap.get(newNode.id);
+        const newData = newNode.data as any;
+        const prevData = prev?.data as any;
+
+        // Brand-new node — no previous state to preserve
+        if (!prev) {
+          changed = true;
+          return {
+            ...newNode,
+            data: {
+              ...newData,
+              onOutputHandleDoubleClick: (handleId: string) => {
+                outputHandleDoubleClickRef.current?.(newNode.id, handleId);
+              },
+            },
+          };
+        }
+
+        // Check if anything meaningful changed for this node
+        const dataChanged =
+             prev.type !== newNode.type
+          || prev.position?.x !== newNode.position?.x
+          || prev.position?.y !== newNode.position?.y
+          || prev.selected !== newNode.selected
+          || prevData?.executionStatus !== newData?.executionStatus
+          || prevData?.itemCount !== newData?.itemCount
+          || prevData?.label !== newData?.label
+          || prevData?.disabled !== newData?.disabled
+          || prevData?.isPinned !== newData?.isPinned;
+
+        // Reuse previous node object if nothing changed (preserves referential equality for memo)
+        if (!dataChanged) return prev;
+
+        changed = true;
+        // Merge: keep React Flow internals (measured, width, height) from prev,
+        // override with Angular's updated fields
+        return {
+          ...prev,
+          ...newNode,
+          data: {
+            ...newData,
+            onOutputHandleDoubleClick: prevData?.onOutputHandleDoubleClick
+              || ((handleId: string) => {
+                outputHandleDoubleClickRef.current?.(newNode.id, handleId);
+              }),
+          },
+        };
+      });
+
+      // Check for removed nodes
+      if (!changed && prevNodes.length !== initialNodes.length) {
+        changed = true;
+      }
+
+      return changed ? result : prevNodes;
+    });
   }, [initialNodes, setNodes]);
 
+  // Sync edges — only update edges whose data actually changed
   useEffect(() => {
-    setEdges(initialEdges.map(e => ({
-      ...e,
-      data: { ...e.data, readOnly },
-    })));
+    setEdges(prevEdges => {
+      const prevMap = new Map(prevEdges.map(e => [e.id, e]));
+      let changed = false;
+
+      const result = initialEdges.map(newEdge => {
+        const prev = prevMap.get(newEdge.id);
+        const newData = newEdge.data as any;
+        const prevData = prev?.data as any;
+
+        if (!prev) {
+          changed = true;
+          return { ...newEdge, data: { ...newData, readOnly } };
+        }
+
+        const dataChanged =
+             prevData?.animated !== newData?.animated
+          || prevData?.status !== newData?.status
+          || prevData?.readOnly !== (newData?.readOnly ?? readOnly);
+
+        if (!dataChanged) return prev;
+
+        changed = true;
+        // Merge with previous edge to preserve React Flow internals
+        return { ...prev, ...newEdge, data: { ...newData, readOnly } };
+      });
+
+      if (!changed && prevEdges.length !== initialEdges.length) {
+        changed = true;
+      }
+
+      return changed ? result : prevEdges;
+    });
   }, [initialEdges, setEdges, readOnly]);
 
   // Mark ready once on initial load so the canvas fades in

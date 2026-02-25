@@ -64,7 +64,77 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   private nodeIdCounter = 0;
   private viewportHelper: { getViewportCenter: () => { x: number; y: number } } | null = null;
 
+  // Stable callback references — created once, never recreated
+  private callbacks: Partial<TrellisCanvasProps> | null = null;
+
   constructor(private ngZone: NgZone) {}
+
+  private getCallbacks(): Partial<TrellisCanvasProps> {
+    if (!this.callbacks) {
+      this.callbacks = {
+        onNodeClick: (nodeId: string) => {
+          this.ngZone.run(() => this.nodeSelected.emit(nodeId));
+        },
+        onNodeDoubleClick: (nodeId: string) => {
+          this.ngZone.run(() => this.nodeDoubleClicked.emit(nodeId));
+        },
+        onNodeAdd: (type: string, position: { x: number; y: number }, displayName: string, version: number) => {
+          this.ngZone.run(() => {
+            const id = `node_${Date.now()}_${this.nodeIdCounter++}`;
+            const newNode: WorkflowNode = {
+              id,
+              name: displayName,
+              type,
+              typeVersion: version,
+              parameters: {},
+              position: [position.x, position.y],
+            };
+            this.nodeAdded.emit(newNode);
+          });
+        },
+        onPaneClick: () => {
+          this.ngZone.run(() => this.nodeSelected.emit(null));
+        },
+        onNodeDelete: (nodeId: string) => {
+          this.ngZone.run(() => this.nodeRemoved.emit(nodeId));
+        },
+        onNodesChange: (positions: Record<string, [number, number]>) => {
+          this.ngZone.run(() => this.nodesPositionChanged.emit(positions));
+        },
+        onConnectionsChange: (connections: any) => {
+          this.ngZone.run(() => this.connectionsChanged.emit(connections));
+        },
+        onExecute: () => {
+          this.ngZone.run(() => this.execute.emit());
+        },
+        onStopExecution: () => {
+          this.ngZone.run(() => this.stopExecution.emit());
+        },
+        onViewportHelperReady: (helper) => {
+          this.viewportHelper = helper;
+        },
+        onOutputHandleDoubleClick: (nodeId: string, handleId: string) => {
+          this.ngZone.run(() => this.outputHandleDoubleClicked.emit({ nodeId, handleId }));
+        },
+        onToggleNodeDisabled: (nodeId: string) => {
+          this.ngZone.run(() => this.toggleNodeDisabled.emit(nodeId));
+        },
+        onDuplicateNode: (nodeId: string) => {
+          this.ngZone.run(() => this.duplicateNode.emit(nodeId));
+        },
+        onExecuteFromNode: (nodeId: string) => {
+          this.ngZone.run(() => this.executeFromNode.emit(nodeId));
+        },
+        onCopyNode: (nodeId: string) => {
+          this.ngZone.run(() => this.copyNode.emit(nodeId));
+        },
+        onInsertNodeOnEdge: (info: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }) => {
+          this.ngZone.run(() => this.insertNodeOnEdge.emit(info));
+        },
+      };
+    }
+    return this.callbacks;
+  }
 
   ngAfterViewInit(): void {
     this.root = createRoot(this.hostRef.nativeElement);
@@ -82,6 +152,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       this.root.unmount();
       this.root = null;
     }
+    this.callbacks = null;
   }
 
   private renderReact(): void {
@@ -95,65 +166,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       initialEdges: reactEdges,
       isExecuting: this.isExecuting,
       readOnly: this.readOnly,
-      onNodeClick: (nodeId: string) => {
-        this.ngZone.run(() => this.nodeSelected.emit(nodeId));
-      },
-      onNodeDoubleClick: (nodeId: string) => {
-        this.ngZone.run(() => this.nodeDoubleClicked.emit(nodeId));
-      },
-      onNodeAdd: (type: string, position: { x: number; y: number }, displayName: string, version: number) => {
-        this.ngZone.run(() => {
-          const id = `node_${Date.now()}_${this.nodeIdCounter++}`;
-          const newNode: WorkflowNode = {
-            id,
-            name: displayName,
-            type,
-            typeVersion: version,
-            parameters: {},
-            position: [position.x, position.y],
-          };
-          this.nodeAdded.emit(newNode);
-        });
-      },
-      onPaneClick: () => {
-        this.ngZone.run(() => this.nodeSelected.emit(null));
-      },
-      onNodeDelete: (nodeId: string) => {
-        this.ngZone.run(() => this.nodeRemoved.emit(nodeId));
-      },
-      onNodesChange: (positions: Record<string, [number, number]>) => {
-        this.ngZone.run(() => this.nodesPositionChanged.emit(positions));
-      },
-      onConnectionsChange: (connections: any) => {
-        this.ngZone.run(() => this.connectionsChanged.emit(connections));
-      },
-      onExecute: () => {
-        this.ngZone.run(() => this.execute.emit());
-      },
-      onStopExecution: () => {
-        this.ngZone.run(() => this.stopExecution.emit());
-      },
-      onViewportHelperReady: (helper) => {
-        this.viewportHelper = helper;
-      },
-      onOutputHandleDoubleClick: (nodeId: string, handleId: string) => {
-        this.ngZone.run(() => this.outputHandleDoubleClicked.emit({ nodeId, handleId }));
-      },
-      onToggleNodeDisabled: (nodeId: string) => {
-        this.ngZone.run(() => this.toggleNodeDisabled.emit(nodeId));
-      },
-      onDuplicateNode: (nodeId: string) => {
-        this.ngZone.run(() => this.duplicateNode.emit(nodeId));
-      },
-      onExecuteFromNode: (nodeId: string) => {
-        this.ngZone.run(() => this.executeFromNode.emit(nodeId));
-      },
-      onCopyNode: (nodeId: string) => {
-        this.ngZone.run(() => this.copyNode.emit(nodeId));
-      },
-      onInsertNodeOnEdge: (info: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }) => {
-        this.ngZone.run(() => this.insertNodeOnEdge.emit(info));
-      },
+      ...this.getCallbacks(),
     };
 
     this.root.render(createElement(TrellisCanvas, props));
@@ -214,8 +227,31 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
             const sourceExec = this.getNodeExecStatus(sourceNodeId);
             const targetExec = this.getNodeExecStatus(target.node);
 
-            // Animate edge when data is flowing: source finished, target hasn't
+            // Determine the real output index for this edge.
+            // For "main" connections the array position IS the output index.
+            // For named types ("loop", "done", etc.) look up the index in the node type description.
+            let realOutputIndex = outputIndex;
+            if (connectionType !== 'main') {
+              const sourceNode = this.workflow?.nodes?.find(n => n.id === sourceNodeId);
+              if (sourceNode) {
+                const typeDesc = this.nodeTypeMap.get(sourceNode.type);
+                if (typeDesc?.outputs) {
+                  const idx = typeDesc.outputs.findIndex((o: any) => o.name === connectionType);
+                  if (idx >= 0) realOutputIndex = idx;
+                }
+              }
+            }
+
+            // Check if this specific output is active (has data) on the source node
+            const sourceExecData = this.executionData?.[sourceNodeId];
+            const sourceExecEntry = Array.isArray(sourceExecData) ? sourceExecData[0] : sourceExecData;
+            const sourceActiveOutputs: number[] | undefined = sourceExecEntry?.activeOutputs;
+            const isActiveOutput = !sourceActiveOutputs || sourceActiveOutputs.length === 0
+              || sourceActiveOutputs.includes(realOutputIndex);
+
+            // Animate edge only when data is actively flowing through THIS output
             const animated = this.isExecuting
+              && isActiveOutput
               && sourceExec !== null && sourceExec !== 'running'
               && (targetExec === null || targetExec === 'running');
 

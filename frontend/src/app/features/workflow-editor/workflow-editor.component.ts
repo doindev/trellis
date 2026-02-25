@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, HostListener, NgZone, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
@@ -71,12 +71,15 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   private executionSub?: Subscription;
   private currentExecutionId: string | null = null;
   private autoSaveInterval: ReturnType<typeof setInterval> | null = null;
+  private executionPollInterval: ReturnType<typeof setInterval> | null = null;
   private readonly AUTO_SAVE_INTERVAL = 2_000;
+  private readonly EXECUTION_POLL_INTERVAL = 5_000;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private location: Location,
+    private ngZone: NgZone,
     private workflowService: WorkflowService,
     private executionService: ExecutionService,
     private wsService: WebSocketService,
@@ -139,6 +142,50 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (this.autoSaveInterval !== null) {
       clearInterval(this.autoSaveInterval);
       this.autoSaveInterval = null;
+    }
+  }
+
+  /** Poll execution status via REST as a safety net in case the WebSocket event is missed. */
+  private startExecutionPoll(): void {
+    this.stopExecutionPoll();
+    this.executionPollInterval = setInterval(() => {
+      const execId = this.currentExecutionId;
+      if (!execId || !this.store.isExecuting()) {
+        this.stopExecutionPoll();
+        return;
+      }
+      this.executionService.get(execId).subscribe({
+        next: (exec) => {
+          if (exec.status !== 'RUNNING' && exec.status !== 'NEW' && exec.status !== 'WAITING') {
+            this.ngZone.run(() => {
+              // Clean up any nodes still marked as 'running'
+              const current = this.store.executionData() || {};
+              const cleaned: Record<string, any> = {};
+              for (const [nid, val] of Object.entries(current)) {
+                const entry = Array.isArray(val) ? val[0] : val;
+                if (entry?.status === 'running') {
+                  cleaned[nid] = [{ status: exec.status === 'ERROR' ? 'error' : 'success' }];
+                } else {
+                  cleaned[nid] = val;
+                }
+              }
+              this.store.setExecutionData(cleaned);
+              this.store.setIsExecuting(false);
+              const topic = `/topic/execution/${execId}`;
+              this.wsService.unsubscribe(topic);
+              this.currentExecutionId = null;
+              this.stopExecutionPoll();
+            });
+          }
+        }
+      });
+    }, this.EXECUTION_POLL_INTERVAL);
+  }
+
+  private stopExecutionPoll(): void {
+    if (this.executionPollInterval !== null) {
+      clearInterval(this.executionPollInterval);
+      this.executionPollInterval = null;
     }
   }
 
@@ -476,39 +523,53 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           });
         };
 
+        this.startExecutionPoll();
+
         this.wsService.subscribe(topic, (message) => {
-          const event = JSON.parse(message.body);
-          if (event.event === 'nodeStarted') {
-            const current = this.store.executionData() || {};
-            this.store.setExecutionData({
-              ...current,
-              [event.nodeId]: [{ status: 'running' }]
-            });
-          } else if (event.event === 'nodeFinished') {
-            const current = this.store.executionData() || {};
-            const outputData = event.data;
-            const mainOutput = Array.isArray(outputData) ? outputData[0] : outputData;
-            const itemCount = Array.isArray(mainOutput) ? mainOutput.length : 0;
-            this.store.setExecutionData({
-              ...current,
-              [event.nodeId]: [{ status: event.status || 'success', data: outputData, itemCount }]
-            });
-          } else if (event.event === 'executionFinished') {
-            const current = this.store.executionData() || {};
-            const cleaned: Record<string, any> = {};
-            for (const [nid, val] of Object.entries(current)) {
-              const entry = Array.isArray(val) ? val[0] : val;
-              if (entry?.status === 'running') {
-                cleaned[nid] = [{ status: event.status === 'ERROR' ? 'error' : 'success' }];
-              } else {
-                cleaned[nid] = val;
+          this.ngZone.run(() => {
+            const event = JSON.parse(message.body);
+            if (event.event === 'nodeStarted') {
+              const current = this.store.executionData() || {};
+              this.store.setExecutionData({
+                ...current,
+                [event.nodeId]: [{ status: 'running' }]
+              });
+            } else if (event.event === 'nodeFinished') {
+              const current = this.store.executionData() || {};
+              const outputData = event.data;
+              const mainOutput = Array.isArray(outputData) ? outputData[0] : outputData;
+              const itemCount = Array.isArray(mainOutput) ? mainOutput.length : 0;
+              // Determine which output indices have data (for multi-output nodes like Loop)
+              const activeOutputs: number[] = [];
+              if (Array.isArray(outputData)) {
+                for (let i = 0; i < outputData.length; i++) {
+                  if (Array.isArray(outputData[i]) && outputData[i].length > 0) {
+                    activeOutputs.push(i);
+                  }
+                }
               }
+              this.store.setExecutionData({
+                ...current,
+                [event.nodeId]: [{ status: event.status || 'success', data: outputData, itemCount, activeOutputs }]
+              });
+            } else if (event.event === 'executionFinished') {
+              const current = this.store.executionData() || {};
+              const cleaned: Record<string, any> = {};
+              for (const [nid, val] of Object.entries(current)) {
+                const entry = Array.isArray(val) ? val[0] : val;
+                if (entry?.status === 'running') {
+                  cleaned[nid] = [{ status: event.status === 'ERROR' ? 'error' : 'success' }];
+                } else {
+                  cleaned[nid] = val;
+                }
+              }
+              this.store.setExecutionData(cleaned);
+              this.store.setIsExecuting(false);
+              this.wsService.unsubscribe(topic);
+              this.currentExecutionId = null;
+              this.stopExecutionPoll();
             }
-            this.store.setExecutionData(cleaned);
-            this.store.setIsExecuting(false);
-            this.wsService.unsubscribe(topic);
-            this.currentExecutionId = null;
-          }
+          });
         }, triggerStart);
       },
       error: () => {
@@ -529,6 +590,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
     this.executionSub?.unsubscribe();
     this.store.setIsExecuting(false);
+    this.stopExecutionPoll();
   }
 
   ngOnDestroy(): void {
@@ -537,6 +599,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
     this.executionSub?.unsubscribe();
     this.stopAutoSaveTimer();
+    this.stopExecutionPoll();
   }
 
   onTabChanged(tab: 'editor' | 'executions'): void {

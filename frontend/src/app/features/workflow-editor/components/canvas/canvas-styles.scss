@@ -658,6 +658,13 @@
   to { stroke-dashoffset: -10; }
 }
 
+/* CSS-driven edge animation — applied via className to avoid inline style churn */
+.react-flow__edge .trellis-edge-animated {
+  stroke-dasharray: 5 5;
+  animation: dashdraw 0.5s linear infinite;
+  will-change: stroke-dashoffset;
+}
+
 @keyframes running-glow {
   0%, 100% { box-shadow: 0 0 0 0 hsla(7, 100%, 68%, 0.2); }
   50% { box-shadow: 0 0 8px 2px hsla(7, 100%, 68%, 0.3); }

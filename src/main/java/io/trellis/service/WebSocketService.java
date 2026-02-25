@@ -43,11 +43,12 @@ public class WebSocketService {
     }
 
     public void sendExecutionFinished(String executionId, String status, Object resultData) {
+        // Only send minimal payload via WebSocket to avoid exceeding message size limits.
+        // Full result data is persisted by ExecutionService.finish() and available via REST API.
         send("/topic/execution/" + executionId, Map.of(
                 "event", "executionFinished",
                 "executionId", executionId,
-                "status", status,
-                "data", resultData != null ? resultData : Map.of()
+                "status", status
         ));
     }
 

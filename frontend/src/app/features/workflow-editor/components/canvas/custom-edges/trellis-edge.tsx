@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useContext } from 'react';
+import React, { memo, useState, useRef, useCallback, useContext, useMemo } from 'react';
 import {
   getSmoothStepPath,
   BaseEdge,
@@ -28,7 +28,7 @@ const AI_EDGE_COLORS: Record<string, string> = {
   ai_agent: 'hsl(200, 80%, 55%)',
 };
 
-export default function TrellisEdge({
+function TrellisEdgeComponent({
   id,
   source,
   target,
@@ -77,28 +77,35 @@ export default function TrellisEdge({
   const connectionType = data?.connectionType || 'main';
   const readOnly = data?.readOnly || false;
 
-  let strokeColor = 'hsl(0, 0%, 24%)';
-  if (selected) strokeColor = 'hsl(7, 100%, 68%)';
-  else if (status === 'success') strokeColor = 'hsl(147, 60%, 40%)';
-  else if (status === 'error') strokeColor = 'hsl(355, 83%, 52%)';
-  else if (isAi) strokeColor = AI_EDGE_COLORS[connectionType] || 'hsl(200, 80%, 55%)';
+  const strokeColor = useMemo(() => {
+    if (selected) return 'hsl(7, 100%, 68%)';
+    if (isAnimated && !isAi) return 'hsl(147, 60%, 50%)';
+    if (status === 'success') return 'hsl(147, 60%, 40%)';
+    if (status === 'error') return 'hsl(355, 83%, 52%)';
+    if (isAi) return AI_EDGE_COLORS[connectionType] || 'hsl(200, 80%, 55%)';
+    return 'hsl(0, 0%, 24%)';
+  }, [selected, status, isAi, isAnimated, connectionType]);
+
+  const edgeStyle = useMemo(() => ({
+    stroke: strokeColor,
+    strokeWidth: 2,
+    transition: 'stroke 0.3s ease',
+    ...style,
+    ...(isAi && !isAnimated ? { strokeDasharray: '6 3' } : {}),
+  }), [strokeColor, isAi, isAnimated, style]);
+
+  // Build CSS class string for animation (CSS-driven, not inline style)
+  const className = isAnimated ? 'trellis-edge-animated' : '';
 
   return (
     <>
-      {/* Wrap in <g> so mouse events on BaseEdge's interaction path bubble up */}
       <g onMouseEnter={showToolbar} onMouseLeave={hideToolbar}>
         <BaseEdge
           id={id}
           path={edgePath}
           markerEnd={markerEnd}
-          style={{
-            stroke: strokeColor,
-            strokeWidth: 2,
-            transition: 'stroke 0.15s ease',
-            ...style,
-            ...(isAi && !isAnimated ? { strokeDasharray: '6 3' } : {}),
-            ...(isAnimated ? { stroke: isAi ? strokeColor : 'hsl(147, 60%, 50%)', strokeDasharray: '5 5', animation: 'dashdraw 0.5s linear infinite' } : {}),
-          }}
+          style={edgeStyle}
+          className={className}
         />
       </g>
       {!readOnly && (
@@ -143,3 +150,16 @@ export default function TrellisEdge({
     </>
   );
 }
+
+export default memo(TrellisEdgeComponent, (prev, next) => {
+  return (
+    prev.sourceX === next.sourceX &&
+    prev.sourceY === next.sourceY &&
+    prev.targetX === next.targetX &&
+    prev.targetY === next.targetY &&
+    prev.selected === next.selected &&
+    prev.data?.animated === next.data?.animated &&
+    prev.data?.status === next.data?.status &&
+    prev.data?.readOnly === next.data?.readOnly
+  );
+});
