@@ -1,0 +1,690 @@
+PENDING NODES — n8n nodes not yet implemented in Trellis
+Generated: 2026-02-25
+Trellis implemented: 128 nodes | n8n total: ~512 nodes
+
+Complexity Rating Scale (0-5):
+  0 = Trivial (minimal logic, direct mapping)
+  1 = Simple (straightforward API/logic, single operation)
+  2 = Moderate (standard REST API, multiple operations, auth handling)
+  3 = Significant (complex API, many resources/operations, OAuth, pagination)
+  4 = Complex (database drivers, streaming, real-time, webhooks)
+  5 = Very Complex (deep infrastructure, custom protocols, stateful systems)
+
+Nodes are sorted by category, then alphabetically by display name.
+Excluded: n8n-internal nodes (n8n, n8nTrigger, stickyNote), demo/training nodes,
+internal test nodes, vector store insert/load split variants already covered by
+base implementations. Deprecated/legacy nodes are listed at the end of the file.
+
+================================================================================
+AI / CHAT MODELS (LLMs)
+================================================================================
+
+  AWS Bedrock Chat Model ............................ [2] (type: lmChatAwsBedrock)
+  Cohere Chat Model ................................. [2] (type: lmChatCohere)
+  DeepSeek Chat Model ............................... [1] (type: lmChatDeepSeek) DONE
+  Google Vertex AI Chat Model ....................... [2] (type: lmChatGoogleVertex)
+  Groq Chat Model ................................... [1] (type: lmChatGroq) DONE
+  Hugging Face Inference Chat Model ................. [2] (type: lmChatHuggingFaceInference)
+  Lemonade Chat Model ............................... [1] (type: lmChatLemonade) DONE
+  OpenRouter Chat Model ............................. [1] (type: lmChatOpenRouter) DONE
+  Vercel AI Gateway Chat Model ...................... [2] (type: lmChatVercelAiGateway)
+  xAI Grok Chat Model .............................. [1] (type: lmChatXAiGrok) DONE
+
+================================================================================
+AI / COMPLETION MODELS (NON-CHAT / LEGACY)
+================================================================================
+
+  Cohere Model ...................................... [2] (type: lmCohere)
+  Hugging Face Inference Model ...................... [2] (type: lmOpenHuggingFaceInference)
+  Lemonade Model .................................... [1] (type: lmLemonade)
+  Ollama Model ...................................... [1] (type: lmOllama)
+  OpenAI Model ...................................... [1] (type: lmOpenAi)
+
+================================================================================
+AI / DOCUMENT LOADERS
+================================================================================
+
+  Binary Input Loader ............................... [2] (type: documentBinaryInputLoader)
+  Default Data Loader ............................... [1] (type: documentDefaultDataLoader) DONE
+  GitHub Document Loader ............................ [3] (type: documentGithubLoader)
+  JSON Input Loader ................................. [1] (type: documentJsonInputLoader)
+
+================================================================================
+AI / EMBEDDINGS
+================================================================================
+
+  AWS Bedrock Embeddings ............................ [2] (type: embeddingsAwsBedrock)
+  Cohere Embeddings ................................. [2] (type: embeddingsCohere)
+  Google Gemini Embeddings .......................... [1] (type: embeddingsGoogleGemini) DONE
+  Google Vertex AI Embeddings ....................... [2] (type: embeddingsGoogleVertex)
+  Hugging Face Inference Embeddings ................. [2] (type: embeddingsHuggingFaceInference)
+  Lemonade Embeddings ............................... [1] (type: embeddingsLemonade) DONE
+  Mistral Cloud Embeddings .......................... [1] (type: embeddingsMistralCloud) DONE
+
+================================================================================
+AI / MCP (MODEL CONTEXT PROTOCOL)
+================================================================================
+
+  MCP Client ........................................ [3] (type: mcpClient)
+  MCP Server Trigger ................................ [4] (type: mcpTrigger)
+
+================================================================================
+AI / MEMORY
+================================================================================
+
+  Chat Memory Manager ............................... [2] (type: memoryManager)
+  Chat Messages Retriever ........................... [2] (type: memoryChatRetriever)
+  Zep Memory ........................................ [2] (type: memoryZep)
+
+================================================================================
+AI / MISCELLANEOUS
+================================================================================
+
+  AI Transform ...................................... [3] (type: aiTransform)
+  LangChain Code .................................... [3] (type: code-langchain)
+  OpenAI Assistant ................................... [3] (type: openAiAssistant)
+
+================================================================================
+AI / OUTPUT PARSERS
+================================================================================
+
+  Auto-fixing Output Parser ......................... [2] (type: outputParserAutofixing)
+
+================================================================================
+AI / RERANKERS
+================================================================================
+
+  Cohere Reranker ................................... [2] (type: rerankerCohere)
+
+================================================================================
+AI / TEXT SPLITTERS
+================================================================================
+
+  Character Text Splitter ........................... [1] (type: textSplitterCharacterTextSplitter) DONE
+  Recursive Character Text Splitter ................. [1] (type: textSplitterRecursiveCharacterTextSplitter) DONE
+  Token Splitter .................................... [2] (type: textSplitterTokenSplitter)
+
+================================================================================
+AI / TOOLS
+================================================================================
+
+  AI Agent Tool ..................................... [2] (type: agentTool)
+  SearXNG Search .................................... [2] (type: toolSearXng)
+  SerpApi (Google Search) ........................... [2] (type: toolSerpApi)
+  Think Tool ........................................ [1] (type: toolThink) DONE
+  Vector Store Question Answer Tool ................. [2] (type: toolVectorStore)
+  Wolfram|Alpha ..................................... [2] (type: toolWolframAlpha)
+
+================================================================================
+AI / TRIGGERS
+================================================================================
+
+  Chat Trigger ...................................... [3] (type: chatTrigger)
+  Manual Chat Trigger ............................... [2] (type: manualChatTrigger)
+
+================================================================================
+AI / VECTOR STORES
+================================================================================
+
+  Zep Vector Store .................................. [2] (type: vectorStoreZep)
+
+================================================================================
+AI / VENDOR NODES (ROOT)
+================================================================================
+
+  Anthropic (Root Node) ............................. [3] (type: anthropic)
+  Google Gemini (Root Node) ......................... [3] (type: googleGemini)
+  Ollama (Root Node) ................................ [3] (type: ollama)
+  OpenAI (LangChain Root Node) ...................... [3] (type: openAi-langchain)
+
+================================================================================
+ANALYTICS
+================================================================================
+
+  Google Analytics .................................. [3] (type: googleAnalytics)
+
+================================================================================
+AWS SERVICES
+================================================================================
+
+  AWS Certificate Manager ........................... [2] (type: awsCertificateManager)
+  AWS Cognito ....................................... [3] (type: awsCognito)
+  AWS Comprehend .................................... [2] (type: awsComprehend)
+  AWS DynamoDB ...................................... [3] (type: awsDynamoDb)
+  AWS ELB ........................................... [2] (type: awsElb)
+  AWS IAM ........................................... [3] (type: awsIam)
+  AWS Lambda ........................................ [2] (type: awsLambda)
+  AWS Rekognition ................................... [2] (type: awsRekognition)
+  AWS SES ........................................... [2] (type: awsSes)
+  AWS SNS ........................................... [2] (type: awsSns)
+  AWS SNS Trigger ................................... [3] (type: awsSnsTrigger)
+  AWS SQS ........................................... [2] (type: awsSqs)
+  AWS Textract ...................................... [2] (type: awsTextract)
+  AWS Transcribe .................................... [2] (type: awsTranscribe)
+
+================================================================================
+CMS / WEBSITE BUILDERS
+================================================================================
+
+  Bubble ............................................ [2] (type: bubble)
+  Cockpit ........................................... [2] (type: cockpit)
+  Contentful ........................................ [3] (type: contentful)
+  Discourse ......................................... [3] (type: discourse)
+  Ghost ............................................. [2] (type: ghost)
+  Storyblok ......................................... [2] (type: storyblok)
+  Strapi ............................................ [2] (type: strapi)
+  Webflow ........................................... [3] (type: webflow)
+  Webflow Trigger ................................... [3] (type: webflowTrigger)
+  Wordpress ......................................... [3] (type: wordpress)
+
+================================================================================
+CLOUD STORAGE
+================================================================================
+
+  AWS S3 ............................................ [3] (type: awsS3)
+  Azure Storage ..................................... [3] (type: azureStorage)
+  Box ............................................... [3] (type: box)
+  Box Trigger ....................................... [3] (type: boxTrigger)
+  Dropbox ........................................... [3] (type: dropbox)
+  Google Cloud Storage .............................. [3] (type: googleCloudStorage)
+  Google Drive ...................................... [3] (type: googleDrive)
+  Google Drive Trigger .............................. [3] (type: googleDriveTrigger)
+  Microsoft OneDrive ................................ [3] (type: microsoftOneDrive)
+  Microsoft OneDrive Trigger ........................ [3] (type: microsoftOneDriveTrigger)
+  Microsoft SharePoint .............................. [4] (type: microsoftSharePoint)
+  Nextcloud ......................................... [2] (type: nextCloud)
+  S3 (Generic) ...................................... [3] (type: s3)
+
+================================================================================
+COMMUNICATION / CHAT & MESSAGING
+================================================================================
+
+  Discord ........................................... [4] (type: discord)
+  Gotify ............................................ [1] (type: gotify) DONE
+  Line .............................................. [2] (type: line)
+  Matrix ............................................ [3] (type: matrix)
+  Mattermost ........................................ [3] (type: mattermost)
+  MessageBird ....................................... [2] (type: messageBird)
+  Microsoft Teams ................................... [4] (type: microsoftTeams)
+  Microsoft Teams Trigger ........................... [4] (type: microsoftTeamsTrigger)
+  Mocean ............................................ [1] (type: mocean) DONE
+  MSG91 ............................................. [1] (type: msg91) DONE
+  Plivo ............................................. [2] (type: plivo)
+  Pushbullet ........................................ [2] (type: pushbullet)
+  Pushcut ........................................... [1] (type: pushcut) DONE
+  Pushcut Trigger ................................... [2] (type: pushcutTrigger)
+  Pushover .......................................... [1] (type: pushover) DONE
+  RocketChat ........................................ [3] (type: rocketchat)
+  seven (Sms77) ..................................... [1] (type: sms77) DONE
+  SIGNL4 ............................................ [2] (type: signl4)
+  Slack ............................................. [4] (type: slack)
+  Slack Trigger ..................................... [4] (type: slackTrigger)
+  Telegram .......................................... [3] (type: telegram)
+  Telegram Trigger .................................. [3] (type: telegramTrigger)
+  Twake ............................................. [2] (type: twake)
+  Twilio ............................................ [3] (type: twilio)
+  Twilio Trigger .................................... [3] (type: twilioTrigger)
+  Twist ............................................. [2] (type: twist)
+  Vonage ............................................ [2] (type: vonage)
+  Webex by Cisco .................................... [3] (type: ciscoWebex)
+  Webex by Cisco Trigger ............................ [3] (type: ciscoWebexTrigger)
+  WhatsApp Business Cloud ........................... [3] (type: whatsApp)
+  WhatsApp Trigger .................................. [3] (type: whatsAppTrigger)
+  Zoom .............................................. [3] (type: zoom)
+  Zulip ............................................. [2] (type: zulip)
+
+================================================================================
+COMMUNICATION / EMAIL
+================================================================================
+
+  Brevo ............................................. [3] (type: brevo)
+  Brevo Trigger ..................................... [3] (type: brevoTrigger)
+  Gmail ............................................. [4] (type: gmail)
+  Gmail Trigger ..................................... [4] (type: gmailTrigger)
+  Mailgun ........................................... [2] (type: mailgun)
+  Mailjet ........................................... [2] (type: mailjet)
+  Mailjet Trigger ................................... [2] (type: mailjetTrigger)
+  Mandrill .......................................... [2] (type: mandrill)
+  Microsoft Outlook ................................. [4] (type: microsoftOutlook)
+  Microsoft Outlook Trigger ......................... [4] (type: microsoftOutlookTrigger)
+  Postmark Trigger .................................. [2] (type: postmarkTrigger)
+  Send Email (SMTP) ................................. [2] (type: emailSend)
+  SendGrid .......................................... [3] (type: sendGrid)
+
+================================================================================
+CORE / FLOW CONTROL
+================================================================================
+
+  Execute Command ................................... [1] (type: executeCommand) DONE
+  Execution Data .................................... [1] (type: executionData) DONE
+  Stop and Error .................................... [0] (type: stopAndError) DONE
+
+================================================================================
+CORE / TRIGGERS
+================================================================================
+
+  Email Trigger (IMAP) .............................. [4] (type: emailReadImap)
+  Error Trigger ..................................... [2] (type: errorTrigger)
+  Local File Trigger ................................ [3] (type: localFileTrigger)
+  SSE Trigger ....................................... [3] (type: sseTrigger)
+
+================================================================================
+CRM & SALES
+================================================================================
+
+  Affinity .......................................... [3] (type: affinity)
+  Affinity Trigger .................................. [3] (type: affinityTrigger)
+  Agile CRM ......................................... [3] (type: agileCrm)
+  Copper ............................................ [3] (type: copper)
+  Copper Trigger .................................... [3] (type: copperTrigger)
+  Freshworks CRM ................................... [3] (type: freshworksCrm)
+  HighLevel ......................................... [3] (type: highLevel)
+  HubSpot ........................................... [4] (type: hubspot)
+  HubSpot Trigger ................................... [4] (type: hubspotTrigger)
+  Keap .............................................. [3] (type: keap)
+  Keap Trigger ...................................... [3] (type: keapTrigger)
+  Microsoft Dynamics CRM ............................ [4] (type: microsoftDynamicsCrm)
+  Monica CRM ........................................ [2] (type: monicaCrm)
+  Pipedrive ......................................... [3] (type: pipedrive)
+  Pipedrive Trigger ................................. [3] (type: pipedriveTrigger)
+  Salesforce ........................................ [5] (type: salesforce)
+  Salesforce Trigger ................................ [4] (type: salesforceTrigger)
+  Salesmate ......................................... [2] (type: salesmate)
+  Zoho CRM .......................................... [3] (type: zohoCrm)
+
+================================================================================
+CUSTOMER SUPPORT
+================================================================================
+
+  Drift ............................................. [2] (type: drift)
+  Freshdesk ......................................... [3] (type: freshdesk)
+  Freshservice ...................................... [3] (type: freshservice)
+  HaloPSA ........................................... [3] (type: haloPsa)
+  Help Scout ........................................ [3] (type: helpScout)
+  Help Scout Trigger ................................ [3] (type: helpScoutTrigger)
+  Intercom .......................................... [3] (type: intercom)
+  ServiceNow ........................................ [4] (type: serviceNow)
+  SyncroMSP ......................................... [2] (type: syncroMsp)
+  Zammad ............................................ [3] (type: zammad)
+  Zendesk ........................................... [4] (type: zendesk)
+  Zendesk Trigger ................................... [4] (type: zendeskTrigger)
+
+================================================================================
+DATA & STORAGE / DATABASES
+================================================================================
+
+  Azure Cosmos DB ................................... [4] (type: azureCosmosDb)
+  Baserow ........................................... [2] (type: baserow)
+  CrateDB ........................................... [2] (type: crateDb)
+  Elasticsearch ..................................... [3] (type: elasticsearch)
+  Google BigQuery ................................... [3] (type: googleBigQuery)
+  Google Cloud Firestore ............................ [3] (type: googleFirebaseCloudFirestore)
+  Google Cloud Realtime Database ..................... [3] (type: googleFirebaseRealtimeDatabase)
+  Microsoft SQL Server .............................. [3] (type: microsoftSql)
+  NocoDB ............................................ [2] (type: nocoDb)
+  Postgres Trigger .................................. [3] (type: postgresTrigger)
+  QuestDB ........................................... [2] (type: questDb)
+  Redis Trigger ..................................... [3] (type: redisTrigger)
+  Snowflake ......................................... [3] (type: snowflake)
+  Supabase .......................................... [3] (type: supabase)
+  TimescaleDB ....................................... [2] (type: timescaleDb)
+
+================================================================================
+DATA TRANSFORMATION
+================================================================================
+
+  Compression ....................................... [2] (type: compression)
+  HTML Extract ...................................... [2] (type: htmlExtract)
+  iCalendar ......................................... [2] (type: iCalendar)
+  JWT ............................................... [2] (type: jwt)
+  Spreadsheet File .................................. [3] (type: spreadsheetFile)
+  TOTP .............................................. [1] (type: totp) DONE
+
+================================================================================
+DEVELOPMENT / DEVOPS
+================================================================================
+
+  Bitbucket Trigger ................................. [3] (type: bitbucketTrigger)
+  CircleCI .......................................... [2] (type: circleCi)
+  Git ............................................... [3] (type: git)
+  GitHub ............................................ [4] (type: github)
+  GitHub Trigger .................................... [3] (type: githubTrigger)
+  GitLab ............................................ [4] (type: gitlab)
+  GitLab Trigger .................................... [3] (type: gitlabTrigger)
+  Grafana ........................................... [3] (type: grafana)
+  Jenkins ........................................... [2] (type: jenkins)
+  Npm ............................................... [2] (type: npm)
+  Rundeck ........................................... [2] (type: rundeck)
+  Sentry.io ......................................... [3] (type: sentryIo)
+  TravisCI .......................................... [2] (type: travisCi)
+
+================================================================================
+E-COMMERCE / PAYMENTS
+================================================================================
+
+  Chargebee ......................................... [3] (type: chargebee)
+  Chargebee Trigger ................................. [3] (type: chargebeeTrigger)
+  Invoice Ninja ..................................... [3] (type: invoiceNinja)
+  Invoice Ninja Trigger ............................. [3] (type: invoiceNinjaTrigger)
+  Magento 2 ......................................... [4] (type: magento2)
+  Paddle ............................................ [3] (type: paddle)
+  PayPal ............................................ [4] (type: payPal)
+  PayPal Trigger .................................... [3] (type: payPalTrigger)
+  QuickBooks Online ................................. [4] (type: quickBooks)
+  Shopify ........................................... [4] (type: shopify)
+  Shopify Trigger ................................... [4] (type: shopifyTrigger)
+  Stripe ............................................ [4] (type: stripe)
+  Stripe Trigger .................................... [4] (type: stripeTrigger)
+  WooCommerce ....................................... [4] (type: wooCommerce)
+  WooCommerce Trigger ............................... [3] (type: wooCommerceTrigger)
+
+================================================================================
+FILE OPERATIONS
+================================================================================
+
+  Convert to File ................................... [2] (type: convertToFile)
+  Edit Image ........................................ [3] (type: editImage)
+  Extract from File ................................. [2] (type: extractFromFile)
+  Read PDF .......................................... [2] (type: readPdf)
+  Read/Write Files from Disk ........................ [2] (type: readWriteFile)
+  SSH ............................................... [3] (type: ssh)
+
+================================================================================
+FINANCE
+================================================================================
+
+  ProfitWell ........................................ [2] (type: profitWell)
+  Wise .............................................. [3] (type: wise)
+  Wise Trigger ...................................... [3] (type: wiseTrigger)
+  Xero .............................................. [4] (type: xero)
+
+================================================================================
+GOOGLE SERVICES
+================================================================================
+
+  Google Ads ........................................ [4] (type: googleAds)
+  Google Books ...................................... [2] (type: googleBooks)
+  Google Business Profile ........................... [3] (type: googleBusinessProfile)
+  Google Business Profile Trigger ................... [3] (type: googleBusinessProfileTrigger)
+  Google Calendar ................................... [3] (type: googleCalendar)
+  Google Calendar Trigger ........................... [3] (type: googleCalendarTrigger)
+  Google Chat ....................................... [3] (type: googleChat)
+  Google Cloud Natural Language ...................... [2] (type: googleCloudNaturalLanguage)
+  Google Contacts ................................... [3] (type: googleContacts)
+  Google Docs ....................................... [3] (type: googleDocs)
+  Google Perspective ................................ [2] (type: googlePerspective)
+  Google Slides ..................................... [3] (type: googleSlides)
+  Google Translate .................................. [1] (type: googleTranslate) DONE
+  Google Workspace Admin ............................ [3] (type: gSuiteAdmin)
+  YouTube ........................................... [3] (type: youTube)
+
+================================================================================
+HR
+================================================================================
+
+  BambooHR ......................................... [3] (type: bambooHr)
+  Workable Trigger .................................. [2] (type: workableTrigger)
+
+================================================================================
+MARKETING / EMAIL MARKETING
+================================================================================
+
+  ActiveCampaign .................................... [3] (type: activeCampaign)
+  ActiveCampaign Trigger ............................ [3] (type: activeCampaignTrigger)
+  Autopilot ......................................... [2] (type: autopilot)
+  Autopilot Trigger ................................. [2] (type: autopilotTrigger)
+  ConvertKit ........................................ [2] (type: convertKit)
+  ConvertKit Trigger ................................ [2] (type: convertKitTrigger)
+  Customer.io ....................................... [3] (type: customerIo)
+  Customer.io Trigger ............................... [3] (type: customerIoTrigger)
+  E-goi ............................................. [2] (type: egoi)
+  Emelia ............................................ [2] (type: emelia)
+  Emelia Trigger .................................... [2] (type: emeliaTrigger)
+  GetResponse ....................................... [3] (type: getResponse)
+  GetResponse Trigger ............................... [3] (type: getResponseTrigger)
+  Iterable .......................................... [3] (type: iterable)
+  Lemlist ........................................... [2] (type: lemlist)
+  Lemlist Trigger ................................... [2] (type: lemlistTrigger)
+  Mailcheck ......................................... [1] (type: mailcheck) DONE
+  Mailchimp ......................................... [3] (type: mailchimp)
+  Mailchimp Trigger ................................. [3] (type: mailchimpTrigger)
+  MailerLite ........................................ [2] (type: mailerLite)
+  MailerLite Trigger ................................ [2] (type: mailerLiteTrigger)
+  Mautic ............................................ [3] (type: mautic)
+  Mautic Trigger .................................... [3] (type: mauticTrigger)
+  Segment ........................................... [3] (type: segment)
+  Sendy ............................................. [1] (type: sendy) DONE
+
+================================================================================
+MESSAGE QUEUES / STREAMING
+================================================================================
+
+  AMQP Sender ...................................... [3] (type: amqp)
+  AMQP Trigger ...................................... [4] (type: amqpTrigger)
+  Kafka ............................................. [4] (type: kafka)
+  Kafka Trigger ..................................... [5] (type: kafkaTrigger)
+  MQTT .............................................. [3] (type: mqtt)
+  MQTT Trigger ...................................... [4] (type: mqttTrigger)
+  RabbitMQ .......................................... [3] (type: rabbitMq)
+  RabbitMQ Trigger .................................. [4] (type: rabbitMqTrigger)
+
+================================================================================
+MICROSOFT SERVICES
+================================================================================
+
+  Microsoft Entra ID ................................ [3] (type: microsoftEntra)
+  Microsoft Graph Security .......................... [3] (type: microsoftGraphSecurity)
+
+================================================================================
+MISCELLANEOUS
+================================================================================
+
+  Action Network .................................... [2] (type: actionNetwork)
+  Adalo ............................................. [2] (type: adalo)
+  Airtop ............................................ [2] (type: airtop)
+  APITemplate.io .................................... [2] (type: apiTemplateIo)
+  Bannerbear ........................................ [2] (type: bannerbear)
+  Beeminder ......................................... [2] (type: beeminder)
+  Bitly ............................................. [1] (type: bitly) DONE
+  Bitwarden ......................................... [3] (type: bitwarden)
+  Brandfetch ........................................ [1] (type: brandfetch) DONE
+  Clearbit .......................................... [2] (type: clearbit)
+  Clockify .......................................... [3] (type: clockify)
+  Clockify Trigger .................................. [3] (type: clockifyTrigger)
+  Cloudflare ........................................ [3] (type: cloudflare)
+  CoinGecko ......................................... [2] (type: coinGecko)
+  Cortex ............................................ [2] (type: cortex)
+  Currents .......................................... [2] (type: currents)
+  Currents Trigger .................................. [2] (type: currentsTrigger)
+  Demio ............................................. [2] (type: demio)
+  DHL ............................................... [2] (type: dhl)
+  Dropcontact ....................................... [2] (type: dropcontact)
+  Elastic Security .................................. [3] (type: elasticSecurity)
+  ERPNext ........................................... [3] (type: erpNext)
+  Eventbrite Trigger ................................ [2] (type: eventbriteTrigger)
+  Figma Trigger (Beta) .............................. [3] (type: figmaTrigger)
+  FileMaker ......................................... [3] (type: fileMaker)
+  Flow .............................................. [2] (type: flow)
+  Flow Trigger ...................................... [2] (type: flowTrigger)
+  Gong .............................................. [3] (type: gong)
+  GoToWebinar ....................................... [3] (type: goToWebinar)
+  GraphQL ........................................... [2] (type: graphQl)
+  Gumroad Trigger ................................... [2] (type: gumroadTrigger)
+  Hacker News ....................................... [1] (type: hackerNews) DONE
+  Harvest ........................................... [3] (type: harvest)
+  Home Assistant .................................... [3] (type: homeAssistant)
+  Hunter ............................................ [2] (type: hunter)
+  LDAP .............................................. [3] (type: ldap)
+  LoneScale ......................................... [2] (type: loneScale)
+  LoneScale Trigger ................................. [2] (type: loneScaleTrigger)
+  Marketstack ....................................... [1] (type: marketstack) DONE
+  Metabase .......................................... [2] (type: metabase)
+  Mindee ............................................ [2] (type: mindee)
+  MISP .............................................. [3] (type: misp)
+  NASA .............................................. [1] (type: nasa) DONE
+  Netlify ........................................... [2] (type: netlify)
+  Netlify Trigger ................................... [2] (type: netlifyTrigger)
+  Netscaler ADC ..................................... [3] (type: netscalerAdc)
+  Odoo .............................................. [3] (type: odoo)
+  Okta .............................................. [3] (type: okta)
+  One Simple API .................................... [1] (type: oneSimpleApi) DONE
+  Onfleet ........................................... [3] (type: onfleet)
+  Onfleet Trigger ................................... [3] (type: onfleetTrigger)
+  OpenThesaurus ..................................... [1] (type: openThesaurus) DONE
+  OpenWeatherMap .................................... [1] (type: openWeatherMap) DONE
+  Orbit ............................................. [2] (type: orbit)
+  Oura .............................................. [2] (type: oura)
+  PagerDuty ......................................... [3] (type: pagerDuty)
+  Peekalink ......................................... [1] (type: peekalink) DONE
+  Phantombuster ..................................... [2] (type: phantombuster)
+  Philips Hue ....................................... [2] (type: philipsHue)
+  PostBin ........................................... [1] (type: postBin) DONE
+  PostHog ........................................... [2] (type: postHog)
+  QuickChart ........................................ [1] (type: quickChart) DONE
+  Raindrop .......................................... [2] (type: raindrop)
+  RSS Feed Trigger .................................. [3] (type: rssFeedReadTrigger)
+  RSS Read .......................................... [1] (type: rssFeedRead) DONE
+  SecurityScorecard ................................. [2] (type: securityScorecard)
+  Splunk ............................................ [3] (type: splunk)
+  Spotify ........................................... [3] (type: spotify)
+  Strava ............................................ [2] (type: strava)
+  Strava Trigger .................................... [2] (type: stravaTrigger)
+  Tapfiliate ........................................ [2] (type: tapfiliate)
+  TheHive ........................................... [3] (type: theHive)
+  TheHive 5 Trigger ................................. [3] (type: theHiveProjectTrigger)
+  TheHive (Project) ................................. [3] (type: theHiveProject)
+  TheHive Trigger ................................... [3] (type: theHiveTrigger)
+  Toggl Trigger ..................................... [2] (type: togglTrigger)
+  Track Time Saved .................................. [1] (type: timeSaved) DONE
+  Unleashed Software ................................ [2] (type: unleashedSoftware)
+  Uplead ............................................ [1] (type: uplead) DONE
+  uProc ............................................. [1] (type: uProc) DONE
+  UptimeRobot ....................................... [2] (type: uptimeRobot)
+  urlscan.io ........................................ [2] (type: urlScanIo)
+  Venafi TLS Protect Cloud .......................... [3] (type: venafiTlsProtectCloud)
+  Venafi TLS Protect Cloud Trigger .................. [3] (type: venafiTlsProtectCloudTrigger)
+  Venafi TLS Protect Datacenter ..................... [3] (type: venafiTlsProtectDatacenter)
+  Venafi TLS Protect Datacenter Trigger ............. [3] (type: venafiTlsProtectDatacenterTrigger)
+  Vero .............................................. [2] (type: vero)
+  Yourls ............................................ [1] (type: yourls) DONE
+
+================================================================================
+PROJECT MANAGEMENT
+================================================================================
+
+  Asana ............................................. [4] (type: asana)
+  Asana Trigger ..................................... [3] (type: asanaTrigger)
+  ClickUp ........................................... [4] (type: clickUp)
+  ClickUp Trigger ................................... [3] (type: clickUpTrigger)
+  Google Tasks ...................................... [2] (type: googleTasks)
+  Jira Software ..................................... [5] (type: jira)
+  Jira Trigger ...................................... [4] (type: jiraTrigger)
+  Linear ............................................ [3] (type: linear)
+  Linear Trigger .................................... [3] (type: linearTrigger)
+  Microsoft To Do ................................... [2] (type: microsoftToDo)
+  Monday.com ........................................ [3] (type: mondayCom)
+  Notion ............................................ [4] (type: notion)
+  Notion Trigger .................................... [3] (type: notionTrigger)
+  Taiga ............................................. [2] (type: taiga)
+  Taiga Trigger ..................................... [2] (type: taigaTrigger)
+  Todoist ........................................... [2] (type: todoist)
+  Trello ............................................ [3] (type: trello)
+  Trello Trigger .................................... [3] (type: trelloTrigger)
+  Wekan ............................................. [2] (type: wekan)
+
+================================================================================
+SCHEDULING / CALENDAR
+================================================================================
+
+  Acuity Scheduling Trigger ......................... [2] (type: acuitySchedulingTrigger)
+  Cal.com Trigger ................................... [2] (type: calTrigger)
+  Calendly Trigger .................................. [2] (type: calendlyTrigger)
+
+================================================================================
+SOCIAL MEDIA
+================================================================================
+
+  Disqus ............................................ [2] (type: disqus)
+  Facebook Graph API ................................ [3] (type: facebookGraphApi)
+  Facebook Lead Ads Trigger ......................... [3] (type: facebookLeadAdsTrigger)
+  Facebook Trigger .................................. [3] (type: facebookTrigger)
+  LinkedIn .......................................... [3] (type: linkedIn)
+  Medium ............................................ [2] (type: medium)
+  Reddit ............................................ [2] (type: reddit)
+  X (Formerly Twitter) .............................. [3] (type: twitter)
+
+================================================================================
+SPREADSHEETS & DATA TABLES
+================================================================================
+
+  Airtable .......................................... [3] (type: airtable)
+  Airtable Trigger .................................. [3] (type: airtableTrigger)
+  Coda .............................................. [3] (type: coda)
+  Google Sheets ..................................... [4] (type: googleSheets)
+  Google Sheets Trigger ............................. [3] (type: googleSheetsTrigger)
+  Grist ............................................. [2] (type: grist)
+  Microsoft Excel 365 ............................... [4] (type: microsoftExcel)
+  Quick Base ........................................ [2] (type: quickBase)
+  SeaTable .......................................... [2] (type: seaTable)
+  SeaTable Trigger .................................. [2] (type: seaTableTrigger)
+  Stackby ........................................... [2] (type: stackby)
+
+================================================================================
+SURVEYS & FORMS
+================================================================================
+
+  Form.io Trigger ................................... [2] (type: formIoTrigger)
+  Formstack Trigger ................................. [2] (type: formstackTrigger)
+  Jotform Trigger ................................... [2] (type: jotFormTrigger)
+  KoBoToolbox ....................................... [2] (type: koBoToolbox)
+  KoBoToolbox Trigger ............................... [2] (type: koBoToolboxTrigger)
+  SurveyMonkey Trigger .............................. [2] (type: surveyMonkeyTrigger)
+  Typeform Trigger .................................. [2] (type: typeformTrigger)
+  Wufoo Trigger ..................................... [2] (type: wufooTrigger)
+
+================================================================================
+STANDALONE AI SERVICES (BASE PACKAGE)
+================================================================================
+
+  DeepL ............................................. [2] (type: deepL)
+  Humantic AI ....................................... [2] (type: humanticAi)
+  Jina AI ........................................... [2] (type: jinaAi)
+  LingvaNex ......................................... [1] (type: lingvaNex) DONE
+  Microsoft Agent 365 Trigger ....................... [4] (type: microsoftAgent365Trigger)
+  Mistral AI (Standalone) ........................... [3] (type: mistralAi)
+  OpenAI (Standalone) ............................... [4] (type: openAi)
+  Perplexity ........................................ [2] (type: perplexity)
+
+
+================================================================================
+================================================================================
+DEPRECATED / LEGACY NODES
+================================================================================
+================================================================================
+
+The following nodes are deprecated in n8n but listed here for completeness.
+They have been replaced by newer equivalents.
+
+  Convert to/from Binary Data ....................... [1] (type: moveBinaryData)
+      Replaced by: convertToFile / extractFromFile
+
+  Cron .............................................. [1] (type: cron)
+      Replaced by: scheduleTrigger
+
+  Function Item ..................................... [1] (type: functionItem)
+      Replaced by: code
+
+  Interval .......................................... [1] (type: interval)
+      Replaced by: scheduleTrigger
+
+  Item Lists ........................................ [1] (type: itemLists)
+      Replaced by: sort, limit, removeDuplicates, splitOut, aggregate, summarize
+
+  Read Binary File .................................. [1] (type: readBinaryFile)
+      Replaced by: readWriteFile
+
+  Read Binary Files ................................. [1] (type: readBinaryFiles)
+      Replaced by: readWriteFile
+
+  Write Binary File ................................. [1] (type: writeBinaryFile)
+      Replaced by: readWriteFile

@@ -24,6 +24,7 @@ public class NodeOutput {
 		AI_RETRIEVER("ai_retriever"),
 		AI_TEXT_SPLITTER("ai_textSplitter"),
 		AI_VECTOR_STORE("ai_vectorStore"),
+		AI_DOCUMENT("ai_document"),
 		AI_AGENT("ai_agent");
 
 		private final String jsonValue;
