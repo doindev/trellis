@@ -188,7 +188,8 @@
   margin: 0;
   white-space: pre-wrap;
   overflow: auto;
-  max-height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .empty-state {
@@ -557,8 +558,11 @@
 
 .logs-detail-body {
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
   padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .detail-output-bar {
@@ -566,6 +570,7 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .output-label {
@@ -618,6 +623,7 @@
 .output-table-wrapper {
   overflow: auto;
   flex: 1;
+  min-height: 0;
   border: 1px solid hsl(0, 0%, 20%);
   border-radius: 8px;
   background: hsl(0, 0%, 9%);

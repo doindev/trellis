@@ -374,6 +374,10 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   }
 
   onClearExecution(): void {
+    if (this.expanded) {
+      this.expanded = false;
+      this.expandedChange.emit(false);
+    }
     this.clearExecution.emit();
   }
 
