@@ -497,7 +497,6 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
     this.store.setIsExecuting(true);
     this.store.setExecutionData(null);
-    this.drawerExpanded = true;
     this.executionSub?.unsubscribe();
 
     // Step 1: Prepare execution (creates record, returns ID, does NOT start)

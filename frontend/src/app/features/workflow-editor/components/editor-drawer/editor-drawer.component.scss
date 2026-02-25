@@ -124,6 +124,38 @@
   height: 28px;
 }
 
+.collapsed-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-clear-execution {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: none;
+  border: none;
+  outline: none;
+  border-radius: 4px;
+  color: hsl(0, 0%, 50%);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, background-color 0.15s;
+
+  &:hover {
+    color: hsl(355, 83%, 65%);
+    background: hsla(355, 83%, 52%, 0.08);
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
 .collapsed-label {
   font-size: 0.6875rem;
   font-weight: 600;
@@ -461,15 +493,14 @@
   .detail-actions {
     margin-left: auto;
   }
+}
 
-  > .btn-collapse {
-    flex-shrink: 0;
-
-    // When collapse button is the only child (no node selected), push to right
-    &:first-child {
-      margin-left: auto;
-    }
-  }
+.header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .detail-title {

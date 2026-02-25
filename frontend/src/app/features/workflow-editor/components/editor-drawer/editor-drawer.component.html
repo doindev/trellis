@@ -2,11 +2,21 @@
   @if (!expanded) {
     <div class="drawer-collapsed-bar">
       <span class="collapsed-label">LOGS</span>
-      <button class="btn-collapse" (click)="toggleExpanded()" title="Expand drawer (L)">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="6 15 12 9 18 15"/>
-        </svg>
-      </button>
+      <div class="collapsed-bar-actions">
+        @if (showClearExecution) {
+          <button class="btn-clear-execution" (click)="onClearExecution()" title="Clear execution">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+            </svg>
+            <span>Clear execution</span>
+          </button>
+        }
+        <button class="btn-collapse" (click)="toggleExpanded()" title="Expand drawer (L)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 15 12 9 18 15"/>
+          </svg>
+        </button>
+      </div>
     </div>
   }
 
@@ -61,11 +71,21 @@
                 <button class="btn-io-toggle" [class.active]="detailView === 'output'" (click)="detailView = 'output'">Output</button>
               </div>
             }
-            <button class="btn-collapse" [class.expanded]="expanded" (click)="toggleExpanded()" [title]="expanded ? 'Collapse drawer (L)' : 'Expand drawer (L)'">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
+            <div class="header-right-actions">
+              @if (showClearExecution) {
+                <button class="btn-clear-execution" (click)="onClearExecution()" title="Clear execution">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                  </svg>
+                  <span>Clear execution</span>
+                </button>
+              }
+              <button class="btn-collapse" [class.expanded]="expanded" (click)="toggleExpanded()" [title]="expanded ? 'Collapse drawer (L)' : 'Expand drawer (L)'">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           @if (selectedLogsEntry) {

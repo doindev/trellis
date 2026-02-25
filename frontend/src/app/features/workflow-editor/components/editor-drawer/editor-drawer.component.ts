@@ -50,14 +50,17 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   @Input() executionNodes: WorkflowNode[] = [];
   @Input() nodeTypeMap: Map<string, any> = new Map();
   @Input() executionStatus = '';
+  @Input() autoExpandOnView = true;
 
   @Input() set viewingExecution(value: boolean) {
     if (value && !this._viewingExecution) {
-      this.activeTab = 'logs';
-      this.selectedLogsNodeId = null;
-      if (!this.expanded) {
-        this.expanded = true;
-        this.expandedChange.emit(true);
+      if (this.autoExpandOnView) {
+        this.activeTab = 'logs';
+        this.selectedLogsNodeId = null;
+        if (!this.expanded) {
+          this.expanded = true;
+          this.expandedChange.emit(true);
+        }
       }
     } else if (!value && this._viewingExecution) {
       if (this.activeTab === 'logs') {
@@ -90,6 +93,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   detailView: 'input' | 'output' = 'output';
   displayMode: 'table' | 'json' = 'table';
   @Output() openNodeDetail = new EventEmitter<string>();
+  @Output() clearExecution = new EventEmitter<void>();
   private iconCache = new Map<string, SafeHtml>();
 
   constructor(
@@ -133,6 +137,26 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
 
   // ── Logs tab ──
 
+  /** Extract main output items from either Executions-tab format ({ main: [[...]] }) or editor-tab WebSocket format ([[...]]) */
+  private getRunMainOutput(run: any): any[] | null {
+    if (!run?.data) return null;
+    // Executions-tab: run.data = { main: [[items...]] }
+    const fromMain = run.data?.main?.[0];
+    if (Array.isArray(fromMain)) return fromMain;
+    // Editor-tab WebSocket: run.data = [[items...]]
+    if (Array.isArray(run.data) && Array.isArray(run.data[0])) return run.data[0];
+    return null;
+  }
+
+  /** Extract main input items from either data format */
+  private getRunMainInput(run: any): any[] | null {
+    if (!run?.inputData) return null;
+    const fromMain = run.inputData?.main?.[0];
+    if (Array.isArray(fromMain)) return fromMain;
+    if (Array.isArray(run.inputData) && Array.isArray(run.inputData[0])) return run.inputData[0];
+    return null;
+  }
+
   get logsNodeList(): LogsNodeEntry[] {
     if (!this.executionNodes?.length || !this.executionData) return [];
 
@@ -144,13 +168,11 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
 
       const typeDesc = this.nodeTypeMap?.get(node.type);
       const run = Array.isArray(raw) ? raw[0] : raw;
-      if (!run || (run.startedAt == null && run.executionTime == null)) continue;
+      if (!run || (run.startedAt == null && run.executionTime == null && !run.status)) continue;
       const status = run?.error ? 'error' : (run?.status || 'success');
       const duration = run?.executionTime || 0;
-      const outputItems = Array.isArray(raw)
-        ? run?.data?.main?.[0]
-        : (raw?.data?.main?.[0] || raw?.data);
-      const itemCount = Array.isArray(outputItems) ? outputItems.length : 0;
+      const mainOutput = this.getRunMainOutput(run);
+      const itemCount = run?.itemCount ?? (Array.isArray(mainOutput) ? mainOutput.length : 0);
 
       entries.push({
         node,
@@ -203,7 +225,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     if (!raw) return '';
 
     const run = Array.isArray(raw) ? raw[0] : raw;
-    const mainOutput = run?.data?.main?.[0];
+    const mainOutput = this.getRunMainOutput(run);
     if (Array.isArray(mainOutput)) {
       const items = mainOutput.map((item: any) => item?.json || item || {});
       return JSON.stringify(items, null, 2);
@@ -216,7 +238,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     const raw = this.executionData[this.selectedLogsNodeId];
     if (!raw) return [];
     const run = Array.isArray(raw) ? raw[0] : raw;
-    const mainOutput = run?.data?.main?.[0];
+    const mainOutput = this.getRunMainOutput(run);
     if (!Array.isArray(mainOutput)) return [];
     return mainOutput.map((item: any) => item?.json || item || {});
   }
@@ -248,7 +270,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     const raw = this.executionData[this.selectedLogsNodeId];
     if (!raw) return [];
     const run = Array.isArray(raw) ? raw[0] : raw;
-    const mainInput = run?.inputData?.main?.[0];
+    const mainInput = this.getRunMainInput(run);
     if (!Array.isArray(mainInput)) return [];
     return mainInput.map((item: any) => item?.json || item || {});
   }
@@ -268,7 +290,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     const raw = this.executionData[this.selectedLogsNodeId];
     if (!raw) return '';
     const run = Array.isArray(raw) ? raw[0] : raw;
-    const mainInput = run?.inputData?.main?.[0];
+    const mainInput = this.getRunMainInput(run);
     if (Array.isArray(mainInput)) {
       const items = mainInput.map((item: any) => item?.json || item || {});
       return JSON.stringify(items, null, 2);
@@ -345,6 +367,14 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   getObjectEntries(value: any): [string, any][] {
     if (!value || typeof value !== 'object') return [];
     return Object.entries(value);
+  }
+
+  get showClearExecution(): boolean {
+    return !this.autoExpandOnView && this._viewingExecution;
+  }
+
+  onClearExecution(): void {
+    this.clearExecution.emit();
   }
 
   // ── Common ──

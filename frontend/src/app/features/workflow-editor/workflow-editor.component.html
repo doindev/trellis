@@ -109,12 +109,14 @@
         [isExecuting]="store.isExecuting()"
         [workflowId]="store.workflow()?.id || null"
         [expanded]="drawerExpanded"
-        [viewingExecution]="activeTab === 'executions' && !!executionWorkflow"
-        [executionNodes]="executionWorkflow?.nodes || []"
+        [viewingExecution]="activeTab === 'executions' ? !!executionWorkflow : !!store.executionData()"
+        [executionNodes]="activeTab === 'executions' ? (executionWorkflow?.nodes || []) : (store.executionData() ? store.nodes() : [])"
         [nodeTypeMap]="nodeTypeStore.nodeTypes()"
-        [executionStatus]="viewingExecution?.status || ''"
+        [executionStatus]="activeTab === 'executions' ? (viewingExecution?.status || '') : (store.isExecuting() ? 'RUNNING' : (store.executionData() ? 'SUCCESS' : ''))"
+        [autoExpandOnView]="activeTab === 'executions'"
         (expandedChange)="drawerExpanded = $event"
-        (openNodeDetail)="store.selectNode($event)" />
+        (openNodeDetail)="store.selectNode($event)"
+        (clearExecution)="store.setExecutionData(null)" />
     </div>
   </div>
 
