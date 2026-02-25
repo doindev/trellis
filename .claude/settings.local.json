@@ -112,7 +112,8 @@
       "WebFetch(domain:neo4j.com)",
       "Bash(mvn compiler:compile:*)",
       "Bash(pushd:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(mvn dependency:resolve:*)"
     ]
   }
 }

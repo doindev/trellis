@@ -1,6 +1,6 @@
 PENDING NODES — n8n nodes not yet implemented in Trellis
 Generated: 2026-02-25
-Trellis implemented: 128 nodes | n8n total: ~512 nodes
+Trellis implemented: 155 nodes | n8n total: ~512 nodes
 
 Complexity Rating Scale (0-5):
   0 = Trivial (minimal logic, direct mapping)
@@ -19,15 +19,15 @@ base implementations. Deprecated/legacy nodes are listed at the end of the file.
 AI / CHAT MODELS (LLMs)
 ================================================================================
 
-  AWS Bedrock Chat Model ............................ [2] (type: lmChatAwsBedrock)
-  Cohere Chat Model ................................. [2] (type: lmChatCohere)
+  AWS Bedrock Chat Model ............................ [2] (type: lmChatAwsBedrock) DONE
+  Cohere Chat Model ................................. [2] (type: lmChatCohere) DONE
   DeepSeek Chat Model ............................... [1] (type: lmChatDeepSeek) DONE
-  Google Vertex AI Chat Model ....................... [2] (type: lmChatGoogleVertex)
+  Google Vertex AI Chat Model ....................... [2] (type: lmChatGoogleVertex) DONE
   Groq Chat Model ................................... [1] (type: lmChatGroq) DONE
-  Hugging Face Inference Chat Model ................. [2] (type: lmChatHuggingFaceInference)
+  Hugging Face Inference Chat Model ................. [2] (type: lmChatHuggingFaceInference) SKIP (n8n has no chat model for HF, only completion)
   Lemonade Chat Model ............................... [1] (type: lmChatLemonade) DONE
   OpenRouter Chat Model ............................. [1] (type: lmChatOpenRouter) DONE
-  Vercel AI Gateway Chat Model ...................... [2] (type: lmChatVercelAiGateway)
+  Vercel AI Gateway Chat Model ...................... [2] (type: lmChatVercelAiGateway) DONE
   xAI Grok Chat Model .............................. [1] (type: lmChatXAiGrok) DONE
 
 ================================================================================
@@ -44,7 +44,7 @@ AI / COMPLETION MODELS (NON-CHAT / LEGACY)
 AI / DOCUMENT LOADERS
 ================================================================================
 
-  Binary Input Loader ............................... [2] (type: documentBinaryInputLoader)
+  Binary Input Loader ............................... [2] (type: documentBinaryInputLoader) SKIP (deprecated, merged into documentDefaultDataLoader)
   Default Data Loader ............................... [1] (type: documentDefaultDataLoader) DONE
   GitHub Document Loader ............................ [3] (type: documentGithubLoader)
   JSON Input Loader ................................. [1] (type: documentJsonInputLoader)
@@ -53,11 +53,11 @@ AI / DOCUMENT LOADERS
 AI / EMBEDDINGS
 ================================================================================
 
-  AWS Bedrock Embeddings ............................ [2] (type: embeddingsAwsBedrock)
-  Cohere Embeddings ................................. [2] (type: embeddingsCohere)
+  AWS Bedrock Embeddings ............................ [2] (type: embeddingsAwsBedrock) DONE
+  Cohere Embeddings ................................. [2] (type: embeddingsCohere) DONE
   Google Gemini Embeddings .......................... [1] (type: embeddingsGoogleGemini) DONE
-  Google Vertex AI Embeddings ....................... [2] (type: embeddingsGoogleVertex)
-  Hugging Face Inference Embeddings ................. [2] (type: embeddingsHuggingFaceInference)
+  Google Vertex AI Embeddings ....................... [2] (type: embeddingsGoogleVertex) DONE
+  Hugging Face Inference Embeddings ................. [2] (type: embeddingsHuggingFaceInference) DONE
   Lemonade Embeddings ............................... [1] (type: embeddingsLemonade) DONE
   Mistral Cloud Embeddings .......................... [1] (type: embeddingsMistralCloud) DONE
 
@@ -72,9 +72,9 @@ AI / MCP (MODEL CONTEXT PROTOCOL)
 AI / MEMORY
 ================================================================================
 
-  Chat Memory Manager ............................... [2] (type: memoryManager)
-  Chat Messages Retriever ........................... [2] (type: memoryChatRetriever)
-  Zep Memory ........................................ [2] (type: memoryZep)
+  Chat Memory Manager ............................... [2] (type: memoryManager) DONE
+  Chat Messages Retriever ........................... [2] (type: memoryChatRetriever) SKIP (deprecated in n8n, replaced by memoryManager)
+  Zep Memory ........................................ [2] (type: memoryZep) SKIP (deprecated in n8n)
 
 ================================================================================
 AI / MISCELLANEOUS
@@ -88,13 +88,13 @@ AI / MISCELLANEOUS
 AI / OUTPUT PARSERS
 ================================================================================
 
-  Auto-fixing Output Parser ......................... [2] (type: outputParserAutofixing)
+  Auto-fixing Output Parser ......................... [2] (type: outputParserAutofixing) SKIP (deprecated, functionality in structured output parser)
 
 ================================================================================
 AI / RERANKERS
 ================================================================================
 
-  Cohere Reranker ................................... [2] (type: rerankerCohere)
+  Cohere Reranker ................................... [2] (type: rerankerCohere) DONE
 
 ================================================================================
 AI / TEXT SPLITTERS
@@ -102,31 +102,31 @@ AI / TEXT SPLITTERS
 
   Character Text Splitter ........................... [1] (type: textSplitterCharacterTextSplitter) DONE
   Recursive Character Text Splitter ................. [1] (type: textSplitterRecursiveCharacterTextSplitter) DONE
-  Token Splitter .................................... [2] (type: textSplitterTokenSplitter)
+  Token Splitter .................................... [2] (type: textSplitterTokenSplitter) DONE
 
 ================================================================================
 AI / TOOLS
 ================================================================================
 
-  AI Agent Tool ..................................... [2] (type: agentTool)
-  SearXNG Search .................................... [2] (type: toolSearXng)
-  SerpApi (Google Search) ........................... [2] (type: toolSerpApi)
+  AI Agent Tool ..................................... [2] (type: agentTool) SKIP (complex nested agent, tightly coupled to execution engine)
+  SearXNG Search .................................... [2] (type: toolSearXng) DONE
+  SerpApi (Google Search) ........................... [2] (type: toolSerpApi) DONE
   Think Tool ........................................ [1] (type: toolThink) DONE
-  Vector Store Question Answer Tool ................. [2] (type: toolVectorStore)
-  Wolfram|Alpha ..................................... [2] (type: toolWolframAlpha)
+  Vector Store Question Answer Tool ................. [2] (type: toolVectorStore) DONE
+  Wolfram|Alpha ..................................... [2] (type: toolWolframAlpha) DONE
 
 ================================================================================
 AI / TRIGGERS
 ================================================================================
 
   Chat Trigger ...................................... [3] (type: chatTrigger)
-  Manual Chat Trigger ............................... [2] (type: manualChatTrigger)
+  Manual Chat Trigger ............................... [2] (type: manualChatTrigger) DONE
 
 ================================================================================
 AI / VECTOR STORES
 ================================================================================
 
-  Zep Vector Store .................................. [2] (type: vectorStoreZep)
+  Zep Vector Store .................................. [2] (type: vectorStoreZep) SKIP (deprecated in n8n)
 
 ================================================================================
 AI / VENDOR NODES (ROOT)
@@ -333,10 +333,10 @@ DATA & STORAGE / DATABASES
 DATA TRANSFORMATION
 ================================================================================
 
-  Compression ....................................... [2] (type: compression)
-  HTML Extract ...................................... [2] (type: htmlExtract)
-  iCalendar ......................................... [2] (type: iCalendar)
-  JWT ............................................... [2] (type: jwt)
+  Compression ....................................... [2] (type: compression) DONE
+  HTML Extract ...................................... [2] (type: htmlExtract) SKIP (deprecated/hidden in n8n)
+  iCalendar ......................................... [2] (type: iCalendar) SKIP (deprecated/hidden in n8n)
+  JWT ............................................... [2] (type: jwt) DONE
   Spreadsheet File .................................. [3] (type: spreadsheetFile)
   TOTP .............................................. [1] (type: totp) DONE
 
@@ -382,11 +382,11 @@ E-COMMERCE / PAYMENTS
 FILE OPERATIONS
 ================================================================================
 
-  Convert to File ................................... [2] (type: convertToFile)
+  Convert to File ................................... [2] (type: convertToFile) DONE
   Edit Image ........................................ [3] (type: editImage)
-  Extract from File ................................. [2] (type: extractFromFile)
-  Read PDF .......................................... [2] (type: readPdf)
-  Read/Write Files from Disk ........................ [2] (type: readWriteFile)
+  Extract from File ................................. [2] (type: extractFromFile) DONE
+  Read PDF .......................................... [2] (type: readPdf) SKIP (deprecated/hidden in n8n)
+  Read/Write Files from Disk ........................ [2] (type: readWriteFile) DONE
   SSH ............................................... [3] (type: ssh)
 
 ================================================================================

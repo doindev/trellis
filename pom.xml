@@ -197,6 +197,14 @@
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-hugging-face</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-vertex-ai-gemini</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-vertex-ai</artifactId>
+		</dependency>
 
 		<!-- LangChain4j MCP -->
 		<dependency>
@@ -312,6 +320,41 @@
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>lambda</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>bedrockruntime</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>acm</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>comprehend</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>elasticloadbalancingv2</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>rekognition</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>textract</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>transcribe</artifactId>
 			<version>${aws.sdk.version}</version>
 		</dependency>
 
