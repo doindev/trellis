@@ -698,3 +698,171 @@
 .cell-value {
   word-break: break-all;
 }
+
+// Schema view
+
+.schema-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.schema-search-icon {
+  position: absolute;
+  left: 7px;
+  color: hsl(0, 0%, 40%);
+  pointer-events: none;
+}
+
+.schema-search-input {
+  width: 140px;
+  height: 24px;
+  padding: 0 8px 0 24px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 4px;
+  color: hsl(0, 0%, 90%);
+  font-size: 0.6875rem;
+  font-family: inherit;
+  outline: none;
+
+  &::placeholder {
+    color: hsl(0, 0%, 40%);
+  }
+
+  &:focus {
+    border-color: hsl(0, 0%, 40%);
+  }
+}
+
+.schema-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: hsl(0, 0%, 46%);
+  font-size: 0.8125rem;
+}
+
+.schema-tree-wrapper {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid hsl(0, 0%, 20%);
+  border-radius: 8px;
+  background: hsl(0, 0%, 9%);
+  padding: 4px 0;
+}
+
+.schema-tree {
+  font-size: 0.75rem;
+}
+
+.schema-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  min-height: 28px;
+
+  &:hover {
+    background: hsl(0, 0%, 17%);
+  }
+}
+
+.schema-expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 50%);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+  transform: rotate(90deg);
+
+  &.collapsed {
+    transform: rotate(0deg);
+  }
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+  }
+}
+
+.schema-expand-spacer {
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.schema-type-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-family: 'Consolas', 'Monaco', monospace;
+  flex-shrink: 0;
+  background: hsl(0, 0%, 20%);
+  color: hsl(0, 0%, 60%);
+
+  &[data-type="string"] {
+    background: hsla(210, 60%, 50%, 0.15);
+    color: hsl(210, 70%, 65%);
+  }
+  &[data-type="number"] {
+    background: hsla(30, 70%, 50%, 0.15);
+    color: hsl(30, 80%, 65%);
+  }
+  &[data-type="boolean"] {
+    background: hsla(270, 60%, 50%, 0.15);
+    color: hsl(270, 70%, 70%);
+  }
+  &[data-type="object"] {
+    background: hsla(0, 0%, 50%, 0.15);
+    color: hsl(0, 0%, 65%);
+  }
+  &[data-type="array"] {
+    background: hsla(170, 60%, 40%, 0.15);
+    color: hsl(170, 60%, 60%);
+  }
+  &[data-type="null"] {
+    background: hsla(0, 50%, 50%, 0.1);
+    color: hsl(0, 0%, 50%);
+  }
+}
+
+.schema-key {
+  font-weight: 600;
+  color: hsl(0, 0%, 90%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40%;
+  flex-shrink: 0;
+}
+
+.schema-value {
+  color: hsl(0, 0%, 55%);
+  font-size: 0.75rem;
+  font-family: 'Consolas', 'Monaco', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+:host ::ng-deep .search-hl {
+  background-color: hsl(50, 90%, 45%);
+  color: hsl(0, 0%, 10%);
+  border-radius: 1px;
+  padding: 0 1px;
+}

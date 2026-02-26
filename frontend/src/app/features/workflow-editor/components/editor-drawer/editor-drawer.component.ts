@@ -15,6 +15,16 @@ export interface LogsNodeEntry {
   itemCount: number;
 }
 
+export interface SchemaNode {
+  key: string;
+  type: string;
+  value: string;
+  path: string;
+  level: number;
+  children?: SchemaNode[];
+  expanded?: boolean;
+}
+
 const ICON_PATHS: Record<string, string> = {
   'globe': '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
   'merge': '<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
@@ -91,7 +101,9 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
 
   selectedLogsNodeId: string | null = null;
   detailView: 'input' | 'output' = 'output';
-  displayMode: 'table' | 'json' = 'table';
+  displayMode: 'schema' | 'table' | 'json' = 'table';
+  schemaSearch = '';
+  schemaCollapsed = new Set<string>();
   @Output() openNodeDetail = new EventEmitter<string>();
   @Output() clearExecution = new EventEmitter<void>();
   private iconCache = new Map<string, SafeHtml>();
@@ -318,6 +330,8 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     this.selectedLogsNodeId = nodeId;
     this.detailView = 'output';
     this.displayMode = 'table';
+    this.schemaSearch = '';
+    this.schemaCollapsed.clear();
   }
 
   getNodeIconHtml(iconName: string): SafeHtml {
@@ -367,6 +381,110 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   getObjectEntries(value: any): [string, any][] {
     if (!value || typeof value !== 'object') return [];
     return Object.entries(value);
+  }
+
+  // ── Schema view ──
+
+  get activeDetailSchemaNodes(): SchemaNode[] {
+    const items = this.activeDetailItems;
+    if (items.length === 0) return [];
+    const tree = this.buildSchema(items);
+    return this.flattenSchema(tree, this.schemaCollapsed, this.schemaSearch);
+  }
+
+  buildSchema(items: Record<string, any>[], parentPath = '', level = 0): SchemaNode[] {
+    const merged: Record<string, any> = {};
+    for (const item of items) {
+      if (item && typeof item === 'object' && !Array.isArray(item)) {
+        for (const [k, v] of Object.entries(item)) {
+          if (!(k in merged)) merged[k] = v;
+        }
+      }
+    }
+    return this.objectToSchema(merged, parentPath, level);
+  }
+
+  private objectToSchema(obj: Record<string, any>, parentPath: string, level: number): SchemaNode[] {
+    const nodes: SchemaNode[] = [];
+    for (const [key, value] of Object.entries(obj)) {
+      const path = parentPath ? `${parentPath}.${key}` : key;
+      const type = this.schemaTypeOf(value);
+      const node: SchemaNode = { key, type, path, level, value: '', expanded: true };
+
+      if (type === 'object' && value !== null) {
+        node.children = this.objectToSchema(value, path, level + 1);
+        node.value = `{${Object.keys(value).length}}`;
+      } else if (type === 'array') {
+        node.value = `[${(value as any[]).length}]`;
+        if ((value as any[]).length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+          node.children = this.objectToSchema(value[0], path + '[0]', level + 1);
+        }
+      } else {
+        node.value = value === null ? 'null' : String(value);
+      }
+      nodes.push(node);
+    }
+    return nodes;
+  }
+
+  flattenSchema(nodes: SchemaNode[], collapsed: Set<string>, search: string): SchemaNode[] {
+    const result: SchemaNode[] = [];
+    const term = search.toLowerCase();
+    for (const node of nodes) {
+      const matches = !search || node.key.toLowerCase().includes(term) || node.value.toLowerCase().includes(term);
+      const hasChildren = node.children && node.children.length > 0;
+      const childFlat = hasChildren ? this.flattenSchema(node.children!, collapsed, search) : [];
+      const childrenMatch = childFlat.length > 0;
+
+      if (matches || childrenMatch) {
+        result.push(node);
+        if (hasChildren) {
+          const isCollapsed = collapsed.has(node.path) && !search;
+          if (!isCollapsed) {
+            result.push(...childFlat);
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  toggleSchemaNode(path: string): void {
+    if (this.schemaCollapsed.has(path)) {
+      this.schemaCollapsed.delete(path);
+    } else {
+      this.schemaCollapsed.add(path);
+    }
+  }
+
+  isSchemaCollapsed(path: string): boolean {
+    return this.schemaCollapsed.has(path);
+  }
+
+  private schemaTypeOf(value: any): string {
+    if (value === null || value === undefined) return 'null';
+    if (Array.isArray(value)) return 'array';
+    return typeof value;
+  }
+
+  typeIcon(type: string): string {
+    switch (type) {
+      case 'string': return 'Aa';
+      case 'number': return '#';
+      case 'boolean': return '\u2713';
+      case 'object': return '{}';
+      case 'array': return '[]';
+      case 'null': return '\u2205';
+      default: return '?';
+    }
+  }
+
+  highlightText(text: string): SafeHtml {
+    if (!this.schemaSearch || !text) return text;
+    const escaped = this.schemaSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    const highlighted = String(text).replace(regex, '<mark class="search-hl">$1</mark>');
+    return this.sanitizer.bypassSecurityTrustHtml(highlighted);
   }
 
   get showClearExecution(): boolean {

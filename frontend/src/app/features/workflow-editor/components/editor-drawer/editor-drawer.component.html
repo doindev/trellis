@@ -93,6 +93,11 @@
               <div class="detail-output-bar">
                 <span class="output-label">{{ detailView === 'input' ? 'Input' : 'Output' }}</span>
                 <div class="display-mode-toggle">
+                  <button class="btn-display-mode" [class.active]="displayMode === 'schema'" (click)="displayMode = 'schema'" title="Schema view">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M16 12H3"/><path d="M16 6H3"/><path d="M10 18H3"/><path d="M21 6l-3-3v6"/><path d="M21 18l-3-3v6"/>
+                    </svg>
+                  </button>
                   <button class="btn-display-mode" [class.active]="displayMode === 'table'" (click)="displayMode = 'table'" title="Table view">
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18"/>
@@ -104,10 +109,45 @@
                     </svg>
                   </button>
                 </div>
+                @if (displayMode === 'schema') {
+                  <div class="schema-search-wrapper">
+                    <svg class="schema-search-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                    </svg>
+                    <input class="schema-search-input" type="text" placeholder="Search fields..."
+                           [(ngModel)]="schemaSearch" />
+                  </div>
+                }
                 <span class="output-item-count">{{ activeDetailItemCount }} {{ activeDetailItemCount === 1 ? 'item' : 'items' }}</span>
               </div>
 
-              @if (displayMode === 'json') {
+              @if (displayMode === 'schema') {
+                @if (activeDetailSchemaNodes.length === 0) {
+                  <div class="schema-empty">{{ schemaSearch ? 'No matching fields' : 'No data' }}</div>
+                } @else {
+                  <div class="schema-tree-wrapper">
+                    <div class="schema-tree">
+                      @for (node of activeDetailSchemaNodes; track node.path) {
+                        <div class="schema-row" [style.padding-left.px]="node.level * 16 + 8">
+                          @if (node.children && node.children.length > 0) {
+                            <button class="schema-expand" (click)="toggleSchemaNode(node.path)"
+                                    [class.collapsed]="isSchemaCollapsed(node.path)">
+                              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                              </svg>
+                            </button>
+                          } @else {
+                            <span class="schema-expand-spacer"></span>
+                          }
+                          <span class="schema-type-pill" [attr.data-type]="node.type">{{ typeIcon(node.type) }}</span>
+                          <span class="schema-key" [innerHTML]="highlightText(node.key)"></span>
+                          <span class="schema-value" [innerHTML]="highlightText(node.value)"></span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              } @else if (displayMode === 'json') {
                 <pre class="output-json">{{ activeDetailJson }}</pre>
               } @else if (activeDetailColumns.length > 0) {
                 <div class="output-table-wrapper">
