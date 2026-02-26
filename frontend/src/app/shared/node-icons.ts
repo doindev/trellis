@@ -1,4 +1,5 @@
 import {
+  // Already imported
   Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
   UnfoldVertical, Route, Pen, Code,
   CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
@@ -6,10 +7,25 @@ import {
   Table2, Timer, ClipboardList, FileInput,
   Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
   Database, HardDriveUpload, ShieldCheck, Tag,
+  // New imports
+  Mail, Send, MessageSquare, MessageCircle, Users, Cloud, Bell, Bolt, Book,
+  ChartBar, ChartLine, CloudSun, Cog, Eye, File, FileArchive, FileOutput,
+  FileSpreadsheet, FileImage, Hash, Inbox, Key, Languages, Lightbulb,
+  Newspaper, Palette, Rocket, Scissors, Terminal, Triangle, TriangleAlert,
+  WandSparkles, Rss, GitBranch, CreditCard, ShoppingCart, ShoppingBag,
+  DollarSign, LifeBuoy, LayoutDashboard, LayoutGrid, Calendar, Share2,
+  Phone, Shield, Activity, House, Video, SquareCheck, Megaphone, Image,
+  Truck, Bug, Briefcase, HardDrive, Building, Music, Bookmark, Package,
+  Radio, ArrowLeftRight, Wifi, Monitor, Wrench, RefreshCw, Target, PenTool,
+  Smartphone, Coins, AtSign, ThumbsUp, Sparkles, Contact, Settings,
+  Workflow, IdCard,
   LucideIconData,
 } from 'lucide-angular';
 
+// ---------------------------------------------------------------------------
 // Custom brand icons not available in Lucide — defined in LucideIconData format
+// ---------------------------------------------------------------------------
+
 const Openai: LucideIconData = [
   ['path', { d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z' }],
   ['path', { d: 'M12 6v12' }],
@@ -116,20 +132,499 @@ const Signpost: LucideIconData = [
   ['path', { d: 'M12 12H5l-2 2 2 2h7z' }],
 ];
 
-/**
- * All icons used as node icons across the application.
- * Includes standard Lucide icons and custom brand icons.
- * Add new node icons here — they'll be available in the palette,
- * parameter panel, and anywhere else that uses NODE_ICON_SET.
- */
+// ---------------------------------------------------------------------------
+// All icons used as node icons across the application.
+// Includes standard Lucide icons, custom brand icons, and brand aliases.
+// Add new node icons here — they'll be available in the palette,
+// parameter panel, and anywhere else that uses NODE_ICON_SET.
+//
+// Keys are PascalCase. lucide-angular normalizes them to kebab-case for
+// lookup, so `GoogleSheets: Table2` is found when the template requests
+// the name "googleSheets".
+// ---------------------------------------------------------------------------
 export const NODE_ICON_SET = {
-  Globe, Merge, ArrowRight, Split, Clock, Play, Webhook, Reply,
-  UnfoldVertical, Route, Pen, Code,
-  CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
-  Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
-  Table2, Timer, ClipboardList, FileInput,
-  Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
-  Database, HardDriveUpload, ShieldCheck,
-  Openai, Anthropic, Google, Ollama, Mistral, Azure, Tavily, Mcp, BalanceScale, Tag, Datadog, Signpost,
-  Postgres, Mysql, Oracle, Mongo, Redis, Neo4j,
+  // =======================================================================
+  // Standard Lucide icons (direct references — backend name matches icon)
+  // =======================================================================
+  ArrowRight,
+  ArrowUpNarrowWide,
+  Bell,
+  Bolt,
+  Book,
+  BookOpen,
+  Bot,
+  Brain,
+  Calculator,
+  CalendarClock,
+  ChartBar,
+  ChartLine,
+  ClipboardList,
+  Clock,
+  CloudSun,
+  Code,
+  Cog,
+  CopyMinus,
+  Database,
+  Eye,
+  File,
+  FileArchive,
+  FileCode,
+  FileInput,
+  FileText,
+  GitCompare,
+  Globe,
+  HardDriveUpload,
+  Hash,
+  Inbox,
+  Key,
+  Layers,
+  Lightbulb,
+  Link,
+  ListEnd,
+  ListFilter,
+  Lock,
+  Merge,
+  Newspaper,
+  Palette,
+  Pen,
+  Play,
+  Repeat,
+  Replace,
+  Rocket,
+  Route,
+  Rss,
+  ScanText,
+  Scissors,
+  Search,
+  Sigma,
+  Split,
+  Table2,
+  Tag,
+  Terminal,
+  Timer,
+  Triangle,
+  UnfoldVertical,
+  Webhook,
+
+  // =======================================================================
+  // Custom brand icons (SVG definitions above)
+  // =======================================================================
+  Openai,
+  Anthropic,
+  Google,
+  Ollama,
+  Mistral,
+  Azure,
+  Tavily,
+  Mcp,
+  BalanceScale,
+  Datadog,
+  Signpost,
+  Postgres,
+  Mysql,
+  Oracle,
+  Mongo,
+  Redis,
+  Neo4j,
+
+  // =======================================================================
+  // Aliased Lucide icons — backend name differs from Lucide icon name
+  // =======================================================================
+  AddressCard: IdCard,
+  Comment: MessageCircle,
+  Comments: MessageCircle,
+  Email: Mail,
+  EmailSend: Send,
+  Envelope: Mail,
+  ErrorTrigger: TriangleAlert,
+  ExclamationTriangle: TriangleAlert,
+  EditImage: Image,
+  FileExport: FileOutput,
+  FileImport: FileInput,
+  Flow: Workflow,
+  Git: GitBranch,
+  Language: Languages,
+  LocalFileTrigger: File,
+  Robot: Bot,
+  SpreadsheetFile: FileSpreadsheet,
+  SseTrigger: Radio,
+  WandMagicSparkles: WandSparkles,
+
+  // =======================================================================
+  // CRM / Users  (→ Users)
+  // =======================================================================
+  Affinity: Users,
+  AgileCrm: Users,
+  BambooHr: Users,
+  Clearbit: Users,
+  Copper: Users,
+  Dropcontact: Contact,
+  FreshworksCrm: Users,
+  HighLevel: Users,
+  Hubspot: Users,
+  HumanticAi: Users,
+  Hunter: Users,
+  Keap: Users,
+  LoneScale: Users,
+  MonicaCrm: Users,
+  Pipedrive: Users,
+  Salesforce: Users,
+  Salesmate: Users,
+  ZohoCrm: Users,
+  Ldap: Users,
+
+  // =======================================================================
+  // Communication / Chat  (→ MessageSquare)
+  // =======================================================================
+  CiscoWebex: MessageSquare,
+  Discord: MessageSquare,
+  Drift: MessageSquare,
+  Intercom: MessageSquare,
+  Line: MessageSquare,
+  Mattermost: MessageSquare,
+  Matrix: MessageSquare,
+  MessageBird: MessageSquare,
+  Rocketchat: MessageSquare,
+  Slack: MessageSquare,
+  Twake: MessageSquare,
+  Twist: MessageSquare,
+  WhatsApp: MessageSquare,
+  Zulip: MessageSquare,
+  Discourse: MessageSquare,
+
+  // =======================================================================
+  // Email / Marketing  (→ Mail)
+  // =======================================================================
+  ActiveCampaign: Mail,
+  Brevo: Send,
+  ConvertKit: Mail,
+  CustomerIo: Mail,
+  Egoi: Mail,
+  Emelia: Mail,
+  GetResponse: Mail,
+  Gmail: Mail,
+  Iterable: Mail,
+  Lemlist: Mail,
+  Mailchimp: Mail,
+  MailerLite: Mail,
+  Mailgun: Mail,
+  Mailjet: Mail,
+  Mandrill: Mail,
+  Postmark: Mail,
+  SendGrid: Send,
+  Vero: Mail,
+
+  // =======================================================================
+  // Phone / Telephony  (→ Phone)
+  // =======================================================================
+  Gong: Phone,
+  Plivo: Phone,
+  Twilio: Phone,
+  Vonage: Phone,
+
+  // =======================================================================
+  // Cloud  (→ Cloud)
+  // =======================================================================
+  Aws: Cloud,
+  Cloudflare: Cloud,
+  Netlify: Cloud,
+  Nextcloud: Cloud,
+
+  // =======================================================================
+  // Database  (→ Database)
+  // =======================================================================
+  AwsDynamoDb: Database,
+  AzureCosmosDb: Database,
+  Cratedb: Database,
+  Elasticsearch: Database,
+  GoogleBigQuery: Database,
+  GoogleFirebaseCloudFirestore: Database,
+  GoogleFirebaseRealtimeDatabase: Database,
+  MicrosoftSql: Database,
+  NocoDb: Database,
+  Questdb: Database,
+  QuickBase: Database,
+  Snowflake: Database,
+  Supabase: Database,
+  Timescaledb: Database,
+
+  // =======================================================================
+  // Storage  (→ HardDrive)
+  // =======================================================================
+  AwsS3: HardDrive,
+  AzureStorage: HardDrive,
+  Box: HardDrive,
+  Dropbox: HardDrive,
+  GoogleDrive: HardDrive,
+  MicrosoftOneDrive: HardDrive,
+  S3: HardDrive,
+
+  // =======================================================================
+  // Security / Shield  (→ Shield)
+  // =======================================================================
+  AwsIam: Shield,
+  Bitwarden: Shield,
+  ElasticSecurity: Shield,
+  MicrosoftEntra: Shield,
+  MicrosoftGraphSecurity: Shield,
+  Misp: Shield,
+  SecurityScorecard: Shield,
+  TheHive: Shield,
+  Venafi: Shield,
+  UrlScanIo: Shield,
+
+  // =======================================================================
+  // Auth / Key  (→ Key)
+  // =======================================================================
+  AwsCognito: Key,
+  Okta: Key,
+
+  // =======================================================================
+  // Notification / Bell  (→ Bell)
+  // =======================================================================
+  AwsSns: Bell,
+  PagerDuty: Bell,
+  Pushbullet: Bell,
+  Pushcut: Bell,
+  Signl4: Bell,
+
+  // =======================================================================
+  // DevOps / Git  (→ GitBranch)
+  // =======================================================================
+  Bitbucket: GitBranch,
+  Github: GitBranch,
+  Gitlab: GitBranch,
+
+  // =======================================================================
+  // CI/CD  (→ RefreshCw)
+  // =======================================================================
+  CircleCi: RefreshCw,
+  TravisCi: RefreshCw,
+
+  // =======================================================================
+  // Support / Helpdesk  (→ LifeBuoy)
+  // =======================================================================
+  Freshdesk: LifeBuoy,
+  Freshservice: LifeBuoy,
+  HaloPsa: LifeBuoy,
+  HelpScout: LifeBuoy,
+  Servicenow: LifeBuoy,
+  Zammad: LifeBuoy,
+  Zendesk: LifeBuoy,
+
+  // =======================================================================
+  // Forms / Survey  (→ ClipboardList)
+  // =======================================================================
+  FormIo: ClipboardList,
+  Formstack: ClipboardList,
+  JotForm: ClipboardList,
+  KoBoToolbox: ClipboardList,
+  SurveyMonkey: ClipboardList,
+  Typeform: ClipboardList,
+  Wufoo: ClipboardList,
+
+  // =======================================================================
+  // Task / Check  (→ SquareCheck)
+  // =======================================================================
+  Asana: SquareCheck,
+  ClickUp: SquareCheck,
+  GoogleTasks: SquareCheck,
+  MicrosoftToDo: SquareCheck,
+  Todoist: SquareCheck,
+
+  // =======================================================================
+  // Payment  (→ CreditCard)
+  // =======================================================================
+  Chargebee: CreditCard,
+  Paddle: CreditCard,
+  PayPal: CreditCard,
+  Stripe: CreditCard,
+  Wise: CreditCard,
+
+  // =======================================================================
+  // E-commerce  (→ ShoppingCart)
+  // =======================================================================
+  Gumroad: ShoppingCart,
+  Magento: ShoppingCart,
+  WooCommerce: ShoppingCart,
+
+  // =======================================================================
+  // Shopify  (→ ShoppingBag)
+  // =======================================================================
+  Shopify: ShoppingBag,
+
+  // =======================================================================
+  // Finance  (→ DollarSign)
+  // =======================================================================
+  CoinGecko: Coins,
+  InvoiceNinja: DollarSign,
+  ProfitWell: DollarSign,
+  QuickBooks: DollarSign,
+  Xero: DollarSign,
+
+  // =======================================================================
+  // CMS / Layout  (→ LayoutDashboard)
+  // =======================================================================
+  Adalo: LayoutDashboard,
+  Baserow: LayoutDashboard,
+  Bubble: LayoutDashboard,
+  Cockpit: LayoutDashboard,
+  Coda: LayoutDashboard,
+  Contentful: LayoutDashboard,
+  Storyblok: LayoutDashboard,
+  Strapi: LayoutDashboard,
+  Webflow: LayoutDashboard,
+  Wordpress: LayoutDashboard,
+  MondayCom: LayoutDashboard,
+
+  // =======================================================================
+  // Kanban / Grid  (→ LayoutGrid)
+  // =======================================================================
+  Trello: LayoutGrid,
+  Wekan: LayoutGrid,
+
+  // =======================================================================
+  // Table  (→ Table2)
+  // =======================================================================
+  Airtable: Table2,
+  Grist: Table2,
+  MicrosoftExcel: Table2,
+  GoogleSheets: Table2,
+  SeaTable: Table2,
+  Stackby: Table2,
+
+  // =======================================================================
+  // Google services
+  // =======================================================================
+  GoogleAds: Megaphone,
+  GoogleAnalytics: ChartBar,
+  GoogleBooks: BookOpen,
+  GoogleBusinessProfile: Building,
+  GoogleCalendar: Calendar,
+  GoogleChat: MessageSquare,
+  GoogleCloudNaturalLanguage: Languages,
+  GoogleCloudStorage: Cloud,
+  GoogleContacts: Users,
+  GoogleDocs: FileText,
+  GoogleGemini: Sparkles,
+  GooglePerspective: Eye,
+  GoogleSlides: FileText,
+  GoogleWorkspaceAdmin: Settings,
+
+  // =======================================================================
+  // Microsoft services
+  // =======================================================================
+  Microsoft: Monitor,
+  MicrosoftDynamicsCrm: Users,
+  MicrosoftOutlook: Mail,
+  MicrosoftSharePoint: Share2,
+  MicrosoftTeams: MessageSquare,
+
+  // =======================================================================
+  // Calendar / Scheduling  (→ Calendar)
+  // =======================================================================
+  AcuityScheduling: Calendar,
+  Cal: Calendar,
+  Calendly: Calendar,
+  Eventbrite: Calendar,
+
+  // =======================================================================
+  // Time tracking  (→ Clock)
+  // =======================================================================
+  Clockify: Clock,
+  Harvest: Clock,
+  Toggl: Clock,
+
+  // =======================================================================
+  // Marketing  (→ Megaphone)
+  // =======================================================================
+  ActionNetwork: Megaphone,
+  Autopilot: Megaphone,
+  Mautic: Megaphone,
+  Tapfiliate: Share2,
+
+  // =======================================================================
+  // Analytics  (→ ChartBar)
+  // =======================================================================
+  Grafana: ChartBar,
+  Metabase: ChartBar,
+  PostHog: ChartBar,
+  Segment: ChartBar,
+  Splunk: ChartBar,
+
+  // =======================================================================
+  // Video  (→ Video)
+  // =======================================================================
+  Demio: Video,
+  GoToWebinar: Video,
+  YouTube: Video,
+  Zoom: Video,
+
+  // =======================================================================
+  // Social  (→ Share2)
+  // =======================================================================
+  Facebook: Share2,
+  LinkedIn: Share2,
+
+  // Twitter  (→ AtSign)
+  Twitter: AtSign,
+
+  // Reddit  (→ MessageCircle)
+  Reddit: MessageCircle,
+
+  // =======================================================================
+  // AI / ML  (→ Brain)
+  // =======================================================================
+  Cortex: Brain,
+  Huggingface: Bot,
+  JinaAi: Brain,
+  Perplexity: Brain,
+  Phantombuster: Bot,
+
+  // =======================================================================
+  // Misc — individual mappings
+  // =======================================================================
+  Airtop: Globe,
+  Amqp: ArrowLeftRight,
+  ApiTemplateIo: FileImage,
+  Bannerbear: Image,
+  Beeminder: Target,
+  DeepL: Languages,
+  Dhl: Truck,
+  ErpNext: Building,
+  Figma: PenTool,
+  FileMaker: File,
+  Graphql: Code,
+  HomeAssistant: House,
+  Kafka: ArrowLeftRight,
+  Linear: ClipboardList,
+  Medium: FileText,
+  Mindee: ScanText,
+  Mqtt: Wifi,
+  Netscaler: Globe,
+  Notion: FileText,
+  Npm: Package,
+  Odoo: Building,
+  Onfleet: Truck,
+  Oura: Activity,
+  PhilipsHue: Lightbulb,
+  RabbitMq: ArrowLeftRight,
+  Raindrop: Bookmark,
+  Rundeck: Terminal,
+  SentryIo: Bug,
+  Spotify: Music,
+  Ssh: Terminal,
+  Strava: Activity,
+  SyncroMsp: Settings,
+  Telegram: Send,
+  UnleashedSoftware: Package,
+  UptimeRobot: Activity,
+  Workable: Briefcase,
+  Ghost: FileText,
+
+  // =======================================================================
+  // Utility — extra standard Lucide icons used elsewhere
+  // =======================================================================
+  Reply,
+  ShieldCheck,
 };
