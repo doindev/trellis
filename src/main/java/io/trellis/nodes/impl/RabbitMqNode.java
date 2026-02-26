@@ -190,7 +190,6 @@ public class RabbitMqNode extends AbstractApiNode {
 	// ========================= Execute =========================
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String operation = context.getParameter("operation", "sendMessage");
 		Map<String, Object> credentials = context.getCredentials();
@@ -225,7 +224,6 @@ public class RabbitMqNode extends AbstractApiNode {
 
 	// ========================= Send Message =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeSendMessage(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String vhost = context.getParameter("vhost", "/");
 		String exchange = context.getParameter("exchange", "amq.default");
@@ -312,7 +310,6 @@ public class RabbitMqNode extends AbstractApiNode {
 
 	// ========================= Get Messages =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeGetMessages(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String vhost = context.getParameter("vhost", "/");
 		String queue = context.getParameter("queue", "");
@@ -360,7 +357,6 @@ public class RabbitMqNode extends AbstractApiNode {
 
 	// ========================= List Queues =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeListQueues(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String vhost = context.getParameter("vhost", "/");
 		String url = baseUrl + "/queues/" + encode(vhost);
@@ -381,7 +377,6 @@ public class RabbitMqNode extends AbstractApiNode {
 
 	// ========================= List Exchanges =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeListExchanges(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String vhost = context.getParameter("vhost", "/");
 		String url = baseUrl + "/exchanges/" + encode(vhost);
@@ -402,7 +397,6 @@ public class RabbitMqNode extends AbstractApiNode {
 
 	// ========================= Create Queue =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCreateQueue(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String vhost = context.getParameter("vhost", "/");
 		String queue = context.getParameter("queue", "");
@@ -509,7 +503,6 @@ public class RabbitMqNode extends AbstractApiNode {
 
 	// ========================= Get Queue Info =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeGetQueueInfo(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String vhost = context.getParameter("vhost", "/");
 		String queue = context.getParameter("queue", "");

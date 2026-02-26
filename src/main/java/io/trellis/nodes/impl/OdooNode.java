@@ -163,7 +163,6 @@ public class OdooNode extends AbstractApiNode {
 
 	// ========================= Read =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeRead(NodeExecutionContext context, String baseUrl,
 			String db, int uid, String password, String model) throws Exception {
 		String recordIdsStr = context.getParameter("recordIds", "");
@@ -221,7 +220,6 @@ public class OdooNode extends AbstractApiNode {
 
 	// ========================= Search =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeSearch(NodeExecutionContext context, String baseUrl,
 			String db, int uid, String password, String model) throws Exception {
 		String domainJson = context.getParameter("domain", "[]");
@@ -249,7 +247,6 @@ public class OdooNode extends AbstractApiNode {
 
 	// ========================= Search & Read =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeSearchRead(NodeExecutionContext context, String baseUrl,
 			String db, int uid, String password, String model) throws Exception {
 		String domainJson = context.getParameter("domain", "[]");

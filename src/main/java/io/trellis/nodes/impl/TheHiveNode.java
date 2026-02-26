@@ -475,7 +475,6 @@ public class TheHiveNode extends AbstractApiNode {
 
 	// ========================= Alert Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeAlert(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 
@@ -545,7 +544,6 @@ public class TheHiveNode extends AbstractApiNode {
 
 	// ========================= Case Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCase(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 
@@ -598,7 +596,6 @@ public class TheHiveNode extends AbstractApiNode {
 
 	// ========================= Log Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeLog(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 
@@ -635,7 +632,6 @@ public class TheHiveNode extends AbstractApiNode {
 
 	// ========================= Observable Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeObservable(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 
@@ -707,7 +703,6 @@ public class TheHiveNode extends AbstractApiNode {
 
 	// ========================= Task Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeTask(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 
@@ -791,7 +786,6 @@ public class TheHiveNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toListResult(HttpResponse<String> response) throws Exception {
 		if (response.statusCode() >= 400) {
 			return apiError(response);

@@ -30,7 +30,6 @@ public class JsonInputLoaderNode extends AbstractDocumentLoaderNode {
 
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Object supplyData(NodeExecutionContext context) throws Exception {
 		String jsonDataParam = context.getParameter("jsonData", "");

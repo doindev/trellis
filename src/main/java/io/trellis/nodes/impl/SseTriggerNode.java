@@ -88,7 +88,6 @@ public class SseTriggerNode extends AbstractTriggerNode {
 	// ========================= Execute =========================
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String url = context.getParameter("url", "");
 		int maxEvents = toInt(context.getParameter("maxEvents", 100), 100);

@@ -225,7 +225,6 @@ public class NotionNode extends AbstractApiNode {
 
 	// ========================= Database Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeDatabase(NodeExecutionContext context, String operation,
 			Map<String, String> headers) throws Exception {
 		switch (operation) {
@@ -265,7 +264,6 @@ public class NotionNode extends AbstractApiNode {
 
 	// ========================= Database Page Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeDatabasePage(NodeExecutionContext context, String operation,
 			Map<String, String> headers) throws Exception {
 		switch (operation) {
@@ -317,7 +315,6 @@ public class NotionNode extends AbstractApiNode {
 
 	// ========================= Page Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executePage(NodeExecutionContext context, String operation,
 			Map<String, String> headers) throws Exception {
 		switch (operation) {
@@ -361,7 +358,6 @@ public class NotionNode extends AbstractApiNode {
 
 	// ========================= User Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeUser(NodeExecutionContext context, String operation,
 			Map<String, String> headers) throws Exception {
 		switch (operation) {
@@ -402,7 +398,6 @@ public class NotionNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toArrayFromList(Object listObj) {
 		if (listObj instanceof List) {
 			List<Map<String, Object>> results = new ArrayList<>();

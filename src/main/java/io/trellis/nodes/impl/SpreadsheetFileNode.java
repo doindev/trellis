@@ -167,7 +167,6 @@ public class SpreadsheetFileNode extends AbstractNode {
 
 	// ========================= From JSON =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeFromJson(NodeExecutionContext context, String delimiter) {
 		boolean includeHeader = toBoolean(context.getParameter("includeHeader", true), true);
 		String columnsStr = context.getParameter("columns", "");

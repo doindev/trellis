@@ -83,7 +83,6 @@ public class BitbucketTriggerNode extends AbstractTriggerNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		try {
 			List<String> events = context.getParameter("events", List.of());

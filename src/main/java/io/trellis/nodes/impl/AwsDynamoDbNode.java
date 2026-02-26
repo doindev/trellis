@@ -224,7 +224,6 @@ public class AwsDynamoDbNode extends AbstractNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private Map<String, AttributeValue> convertToAttributeValueMap(Map<String, Object> map) {
 		Map<String, AttributeValue> result = new LinkedHashMap<>();
 		for (Map.Entry<String, Object> entry : map.entrySet()) {

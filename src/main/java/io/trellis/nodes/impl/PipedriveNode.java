@@ -525,7 +525,6 @@ public class PipedriveNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toResult(HttpResponse<String> response) throws Exception {
 		if (response.statusCode() >= 400) {
 			return pipedriveError(response);

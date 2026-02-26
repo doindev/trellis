@@ -210,7 +210,6 @@ public class BambooHrNode extends AbstractApiNode {
 
 	// ========================= Employee Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeEmployee(NodeExecutionContext context, String baseUrl,
 			Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
@@ -311,7 +310,6 @@ public class BambooHrNode extends AbstractApiNode {
 
 	// ========================= Time Off Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeTimeOff(NodeExecutionContext context, String baseUrl,
 			Map<String, String> headers) throws Exception {
 		String start = context.getParameter("timeOffStart", "");

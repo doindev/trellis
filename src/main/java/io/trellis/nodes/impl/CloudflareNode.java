@@ -194,7 +194,6 @@ public class CloudflareNode extends AbstractApiNode {
 
 	// ========================= Zone Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeZone(NodeExecutionContext context, Map<String, String> headers) throws Exception {
 		Map<String, Object> filters = context.getParameter("zoneFilters", Map.of());
 
@@ -228,7 +227,6 @@ public class CloudflareNode extends AbstractApiNode {
 
 	// ========================= Zone Certificate Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeZoneCertificate(NodeExecutionContext context, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String zoneId = context.getParameter("zoneId", "");

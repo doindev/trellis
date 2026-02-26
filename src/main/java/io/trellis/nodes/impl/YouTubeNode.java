@@ -262,7 +262,6 @@ public class YouTubeNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeChannel(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "get");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");
@@ -313,7 +312,6 @@ public class YouTubeNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executePlaylist(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");
@@ -392,7 +390,6 @@ public class YouTubeNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executePlaylistItem(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");

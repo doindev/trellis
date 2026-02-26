@@ -169,7 +169,6 @@ public class AirtableNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeRecord(NodeExecutionContext context, String operation, Map<String, String> headers) throws Exception {
 		String baseId = context.getParameter("baseId", "");
 		String tableName = context.getParameter("tableName", "");

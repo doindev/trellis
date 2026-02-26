@@ -252,7 +252,6 @@ public class ZohoCrmNode extends AbstractApiNode {
 		return toResult(response);
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeGetAll(NodeExecutionContext context, String module, Map<String, String> headers) throws Exception {
 		boolean returnAll = toBoolean(context.getParameters().get("returnAll"), false);
 		int limit = toInt(context.getParameters().get("limit"), 200);
@@ -331,7 +330,6 @@ public class ZohoCrmNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toResult(HttpResponse<String> response) throws Exception {
 		if (response.statusCode() >= 400) {
 			return zohoError(response);

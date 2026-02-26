@@ -172,7 +172,6 @@ public class GoogleAdsNode extends AbstractApiNode {
 
 	// ========================= Campaign Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCampaign(NodeExecutionContext context, String operation,
 			String customerId, Map<String, String> headers) throws Exception {
 		switch (operation) {
@@ -287,7 +286,6 @@ public class GoogleAdsNode extends AbstractApiNode {
 
 	// ========================= GAQL Query Execution =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeGaqlQuery(String customerId, String gaql,
 			Map<String, String> headers) throws Exception {
 		String url = BASE_URL + "/customers/" + customerId + "/googleAds:searchStream";

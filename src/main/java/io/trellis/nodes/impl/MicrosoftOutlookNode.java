@@ -399,7 +399,6 @@ public class MicrosoftOutlookNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toArrayResult(HttpResponse<String> response, String key) throws Exception {
 		if (response.statusCode() >= 400) {
 			return outlookError(response);

@@ -281,7 +281,6 @@ public class NetscalerAdcNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeServer(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String serverName = context.getParameter("serverName", "");
@@ -333,7 +332,6 @@ public class NetscalerAdcNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeServiceGroup(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String sgName = context.getParameter("sgName", "");

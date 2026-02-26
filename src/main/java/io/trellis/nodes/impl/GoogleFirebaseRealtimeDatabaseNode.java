@@ -156,7 +156,6 @@ public class GoogleFirebaseRealtimeDatabaseNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(Map.of("success", true))));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeGet(NodeExecutionContext context, String url,
 			Map<String, String> headers) throws Exception {
 		Map<String, Object> options = context.getParameter("getOptions", Map.of());

@@ -318,7 +318,6 @@ public class ElasticsearchNode extends AbstractApiNode {
 		return NodeExecutionResult.error("Elasticsearch API error (HTTP " + response.statusCode() + "): " + body);
 	}
 
-	@SuppressWarnings("unchecked")
 	private List<Object> parseJsonToList(String json) {
 		try {
 			if (json == null || json.isBlank()) return List.of();

@@ -107,7 +107,6 @@ public class MicrosoftAgent365TriggerNode extends AbstractApiNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String resource = context.getParameter("resource", "activities");
 		Map<String, Object> credentials = context.getCredentials();

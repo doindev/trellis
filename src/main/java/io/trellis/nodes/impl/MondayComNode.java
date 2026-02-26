@@ -242,7 +242,6 @@ public class MondayComNode extends AbstractApiNode {
 
 	// ========================= Board Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeBoard(NodeExecutionContext context, String operation,
 			Map<String, String> headers) throws Exception {
 		switch (operation) {
@@ -452,7 +451,6 @@ public class MondayComNode extends AbstractApiNode {
 		return parsed;
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult extractBoardItems(Map<String, Object> result, String key) {
 		Object obj = result.get(key);
 		if (obj instanceof List) {

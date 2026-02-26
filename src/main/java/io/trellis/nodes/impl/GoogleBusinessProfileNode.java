@@ -197,7 +197,6 @@ public class GoogleBusinessProfileNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executePost(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");
@@ -296,7 +295,6 @@ public class GoogleBusinessProfileNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeReview(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");

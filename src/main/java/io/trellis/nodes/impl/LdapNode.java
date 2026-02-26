@@ -183,7 +183,6 @@ public class LdapNode extends AbstractNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(Map.of("dn", dn, "attribute", attrName, "match", match))));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCreate(NodeExecutionContext context, DirContext dirContext) throws Exception {
 		String dn = context.getParameter("dn", "");
 		String attrsJson = context.getParameter("createAttributes", "{}");
@@ -213,7 +212,6 @@ public class LdapNode extends AbstractNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(Map.of("dn", dn, "deleted", true))));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeModify(NodeExecutionContext context, DirContext dirContext) throws Exception {
 		String dn = context.getParameter("dn", "");
 		String modOp = context.getParameter("modifyOperation", "replace");
@@ -331,7 +329,6 @@ public class LdapNode extends AbstractNode {
 		return new InitialDirContext(env);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> parseJsonAttributes(String json) {
 		try {
 			if (json == null || json.isBlank()) return Map.of();

@@ -80,7 +80,6 @@ public class AmqpTriggerNode extends AbstractTriggerNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String queue = context.getParameter("queue", "");
 		int prefetch = toInt(context.getParameter("prefetch", 10), 10);
@@ -115,7 +114,6 @@ public class AmqpTriggerNode extends AbstractTriggerNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult consumeViaReflection(String host, int port, String username, String password,
 			String vhost, String queue, int prefetch, int maxMessages, boolean autoAck,
 			boolean noLocal, boolean exclusive, int timeout) throws Exception {

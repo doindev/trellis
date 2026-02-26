@@ -392,7 +392,6 @@ public class MispNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeAttribute(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		switch (operation) {
@@ -430,7 +429,6 @@ public class MispNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeEvent(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		switch (operation) {
@@ -493,7 +491,6 @@ public class MispNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeFeed(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		switch (operation) {
@@ -599,7 +596,6 @@ public class MispNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeOrganisation(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		switch (operation) {
@@ -631,7 +627,6 @@ public class MispNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeTag(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		switch (operation) {
@@ -695,7 +690,6 @@ public class MispNode extends AbstractApiNode {
 		return headers;
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toResult(HttpResponse<String> response, String dataKey) throws Exception {
 		if (response.statusCode() >= 400) return apiError(response);
 		String body = response.body();
@@ -709,7 +703,6 @@ public class MispNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toListResult(HttpResponse<String> response, String dataKey) throws Exception {
 		if (response.statusCode() >= 400) return apiError(response);
 		String body = response.body();

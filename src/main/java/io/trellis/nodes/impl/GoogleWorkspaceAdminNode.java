@@ -241,7 +241,6 @@ public class GoogleWorkspaceAdminNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeUser(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");
@@ -369,7 +368,6 @@ public class GoogleWorkspaceAdminNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeGroup(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");

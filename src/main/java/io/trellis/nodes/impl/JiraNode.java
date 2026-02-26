@@ -397,7 +397,6 @@ public class JiraNode extends AbstractApiNode {
 
 	// ========================= Issue Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeIssue(NodeExecutionContext context, String operation, String baseUrl, Map<String, String> headers) throws Exception {
 		String restApi = baseUrl + "/rest/api/2";
 
@@ -715,7 +714,6 @@ public class JiraNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toListResult(HttpResponse<String> response, String dataKey) throws Exception {
 		if (response.statusCode() >= 400) {
 			return apiError(response);

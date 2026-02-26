@@ -163,7 +163,6 @@ public class VenafiTlsProtectCloudNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCertificate(NodeExecutionContext context, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 
@@ -212,7 +211,6 @@ public class VenafiTlsProtectCloudNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCertificateRequest(NodeExecutionContext context, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 

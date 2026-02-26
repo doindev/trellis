@@ -84,7 +84,6 @@ public class MqttTriggerNode extends AbstractTriggerNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String topic = context.getParameter("topic", "");
 		int qos = toInt(context.getParameter("qos", "1"), 1);
@@ -126,7 +125,6 @@ public class MqttTriggerNode extends AbstractTriggerNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult subscribeViaReflection(String brokerUrl, String clientId,
 			String username, String password, String topic, int qos,
 			int maxMessages, int timeout, Map<String, Object> options) throws Exception {

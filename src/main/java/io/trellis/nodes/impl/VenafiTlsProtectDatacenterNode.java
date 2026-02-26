@@ -163,7 +163,6 @@ public class VenafiTlsProtectDatacenterNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCertificate(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 

@@ -178,7 +178,6 @@ public class SplunkNode extends AbstractApiNode {
 
 	// ========================= Search Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeSearch(NodeExecutionContext context, String baseUrl,
 			Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "create");

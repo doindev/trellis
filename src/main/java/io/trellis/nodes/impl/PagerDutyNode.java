@@ -241,7 +241,6 @@ public class PagerDutyNode extends AbstractApiNode {
 
 	// ========================= Incident Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeIncident(NodeExecutionContext context, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 
@@ -386,7 +385,6 @@ public class PagerDutyNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toResultWithKey(HttpResponse<String> response, String dataKey) throws Exception {
 		if (response.statusCode() >= 400) {
 			return apiError(response);
@@ -403,7 +401,6 @@ public class PagerDutyNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toListResult(HttpResponse<String> response, String dataKey) throws Exception {
 		if (response.statusCode() >= 400) {
 			return apiError(response);

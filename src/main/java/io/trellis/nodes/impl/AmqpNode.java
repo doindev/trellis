@@ -113,7 +113,6 @@ public class AmqpNode extends AbstractNode {
 	// ========================= Execute =========================
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String exchange = context.getParameter("exchange", "");
 		String routingKey = context.getParameter("routingKey", "");
@@ -147,7 +146,6 @@ public class AmqpNode extends AbstractNode {
 
 	// ========================= Reflection-based AMQP Send =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult sendViaReflection(String host, int port, String username, String password,
 			String vhost, String exchange, String routingKey, String message, Map<String, Object> options) throws Exception {
 

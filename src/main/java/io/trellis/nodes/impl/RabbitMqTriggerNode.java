@@ -90,7 +90,6 @@ public class RabbitMqTriggerNode extends AbstractApiNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String queue = context.getParameter("queue", "");
 		String vhost = context.getParameter("vhost", "/");

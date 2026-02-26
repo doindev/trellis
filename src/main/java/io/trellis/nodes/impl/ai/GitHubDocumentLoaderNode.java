@@ -46,7 +46,6 @@ public class GitHubDocumentLoaderNode extends AbstractDocumentLoaderNode {
 
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Object supplyData(NodeExecutionContext context) throws Exception {
 		String token = context.getCredentialString("apiKey", "");

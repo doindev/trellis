@@ -302,7 +302,6 @@ public class EditImageNode extends AbstractNode {
 	// ========================= Execute =========================
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String operation = context.getParameter("operation", "resize");
 
@@ -661,7 +660,6 @@ public class EditImageNode extends AbstractNode {
 
 	// ========================= Get Information =========================
 
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> getImageInformation(Map<String, Object> json, String binaryProperty) throws Exception {
 		Map<String, Object> info = new LinkedHashMap<>();
 
@@ -690,7 +688,6 @@ public class EditImageNode extends AbstractNode {
 
 	// ========================= Helpers =========================
 
-	@SuppressWarnings("unchecked")
 	private byte[] getImageBytes(Map<String, Object> json, String binaryProperty) {
 		Object data = json.get(binaryProperty);
 		if (data == null) {

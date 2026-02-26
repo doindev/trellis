@@ -175,7 +175,6 @@ public class GoogleBusinessProfileTriggerNode extends AbstractApiNode {
 		return headers;
 	}
 
-	@SuppressWarnings("unchecked")
 	private String getReviewTimestamp(Map<String, Object> review, String triggerOn) {
 		if ("updatedReviews".equals(triggerOn)) {
 			Object updateTime = review.get("updateTime");

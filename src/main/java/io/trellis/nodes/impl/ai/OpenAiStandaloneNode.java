@@ -637,7 +637,6 @@ public class OpenAiStandaloneNode extends AbstractApiNode {
 
 	// ========================= Image Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeImage(NodeExecutionContext context, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "generate");
 
@@ -856,7 +855,6 @@ public class OpenAiStandaloneNode extends AbstractApiNode {
 		return headers;
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult extractDataArray(Map<String, Object> parsed) {
 		Object data = parsed.get("data");
 		if (data instanceof List) {

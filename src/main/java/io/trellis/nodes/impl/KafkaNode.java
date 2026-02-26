@@ -113,7 +113,6 @@ public class KafkaNode extends AbstractNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String topic = context.getParameter("topic", "");
 		String message = context.getParameter("message", "");
@@ -150,7 +149,6 @@ public class KafkaNode extends AbstractNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult sendViaReflection(String bootstrapServers, String topic, String key,
 			String message, int partition, String headersJson, String compression,
 			String acks, int timeout, Map<String, Object> credentials) throws Exception {
@@ -247,7 +245,6 @@ public class KafkaNode extends AbstractNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> parseHeadersJson(String json) {
 		if (json == null || json.isBlank() || "{}".equals(json.trim())) {
 			return Map.of();

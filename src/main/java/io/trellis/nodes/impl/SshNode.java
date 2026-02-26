@@ -120,7 +120,6 @@ public class SshNode extends AbstractNode {
 	// ========================= Execute =========================
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String operation = context.getParameter("operation", "command");
 		Map<String, Object> credentials = context.getCredentials();

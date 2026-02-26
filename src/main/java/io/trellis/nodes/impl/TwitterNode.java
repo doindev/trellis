@@ -203,7 +203,6 @@ public class TwitterNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeTweet(NodeExecutionContext context, String operation, Map<String, String> headers) throws Exception {
 		switch (operation) {
 			case "create": {

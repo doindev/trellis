@@ -233,7 +233,6 @@ public class GoogleBigQueryNode extends AbstractApiNode {
 
 	// ========================= Dataset Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeDataset(NodeExecutionContext context, String projectId,
 			Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
@@ -270,7 +269,6 @@ public class GoogleBigQueryNode extends AbstractApiNode {
 
 	// ========================= Table Execute =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeTable(NodeExecutionContext context, String projectId,
 			Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
@@ -422,7 +420,6 @@ public class GoogleBigQueryNode extends AbstractApiNode {
 		return fieldNames;
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult extractListResult(Map<String, Object> parsed, String listKey) {
 		Object listData = parsed.get(listKey);
 		if (listData instanceof List) {

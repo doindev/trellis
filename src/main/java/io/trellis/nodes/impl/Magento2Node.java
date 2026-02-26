@@ -451,7 +451,6 @@ public class Magento2Node extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toSearchResult(HttpResponse<String> response) throws Exception {
 		if (response.statusCode() >= 400) {
 			return magentoError(response);

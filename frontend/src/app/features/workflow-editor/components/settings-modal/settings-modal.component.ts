@@ -7,7 +7,6 @@ export interface WorkflowSettings {
   saveExecutionProgress?: string;       // 'default' | 'yes' | 'no'
   saveManualExecutions?: string;         // 'default' | 'yes' | 'no'
   executionTimeout?: number;             // seconds, -1 = disabled
-  estimatedTimeSavedPerExecution?: number; // minutes
   parallelExecution?: boolean;
 }
 
@@ -66,16 +65,6 @@ export interface WorkflowSettings {
                    placeholder="No timeout"
                    min="-1">
             <span class="form-hint">Cancel execution after this many seconds. -1 or empty = no timeout</span>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Estimated Time Saved Per Execution (minutes)</label>
-            <input class="form-input"
-                   type="number"
-                   [(ngModel)]="form.estimatedTimeSavedPerExecution"
-                   placeholder="0"
-                   min="0">
-            <span class="form-hint">Estimated minutes saved per run, used for insights</span>
           </div>
 
           <div class="form-group">
@@ -169,7 +158,6 @@ export class SettingsModalComponent implements OnInit {
       saveExecutionProgress: this.settings.saveExecutionProgress || 'default',
       saveManualExecutions: this.settings.saveManualExecutions || 'default',
       executionTimeout: this.settings.executionTimeout ?? -1,
-      estimatedTimeSavedPerExecution: this.settings.estimatedTimeSavedPerExecution ?? 0,
       parallelExecution: this.settings.parallelExecution ?? false
     };
   }

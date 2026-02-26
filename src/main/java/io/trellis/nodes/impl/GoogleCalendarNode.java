@@ -265,7 +265,6 @@ public class GoogleCalendarNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCalendar(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");
 		Map<String, String> headers = getAuthHeaders(accessToken);
@@ -286,7 +285,6 @@ public class GoogleCalendarNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(result)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeEvent(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");

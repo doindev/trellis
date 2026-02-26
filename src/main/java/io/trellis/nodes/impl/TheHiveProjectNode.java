@@ -367,7 +367,6 @@ public class TheHiveProjectNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeAlert(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		switch (operation) {
@@ -418,7 +417,6 @@ public class TheHiveProjectNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeCase(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		switch (operation) {
@@ -488,7 +486,6 @@ public class TheHiveProjectNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeObservable(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		switch (operation) {
@@ -573,7 +570,6 @@ public class TheHiveProjectNode extends AbstractApiNode {
 		return toListResult(response);
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeTask(NodeExecutionContext context, String baseUrl, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		switch (operation) {
@@ -638,7 +634,6 @@ public class TheHiveProjectNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toListResult(HttpResponse<String> response) throws Exception {
 		if (response.statusCode() >= 400) {
 			return apiError(response);

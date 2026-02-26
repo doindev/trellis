@@ -1,6 +1,6 @@
 package io.trellis.nodes.impl;
 
-import java.lang.reflect.Method;
+
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -131,7 +131,6 @@ public class MqttNode extends AbstractNode {
 	// ========================= Execute =========================
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String operation = context.getParameter("operation", "publish");
 		String topic = context.getParameter("topic", "");
@@ -178,7 +177,6 @@ public class MqttNode extends AbstractNode {
 
 	// ========================= Publish =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executePublish(NodeExecutionContext context, String brokerUrl, String clientId,
 			String username, String password, String topic, int qos, Map<String, Object> options) throws Exception {
 

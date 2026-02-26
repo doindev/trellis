@@ -544,7 +544,6 @@ public class WiseNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toArrayResult(HttpResponse<String> response) throws Exception {
 		if (response.statusCode() >= 400) {
 			return apiError(response);

@@ -179,7 +179,6 @@ public class MicrosoftGraphSecurityNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeAlert(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");
@@ -273,7 +272,6 @@ public class MicrosoftGraphSecurityNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeSecureScore(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");

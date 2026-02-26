@@ -82,7 +82,6 @@ public class KafkaTriggerNode extends AbstractTriggerNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String topic = context.getParameter("topic", "");
 		String groupId = context.getParameter("groupId", "trellis-consumer-group");
@@ -114,7 +113,6 @@ public class KafkaTriggerNode extends AbstractTriggerNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult consumeViaReflection(String bootstrapServers, String topic, String groupId,
 			boolean fromBeginning, int maxMessages, int pollTimeout, int sessionTimeout,
 			boolean autoCommit, Map<String, Object> credentials, NodeExecutionContext context) throws Exception {

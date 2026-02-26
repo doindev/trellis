@@ -218,7 +218,6 @@ public class GoogleChatNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeSpace(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "list");
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");

@@ -359,7 +359,6 @@ public class DropboxNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult toListResult(HttpResponse<String> response, String dataKey) throws Exception {
 		if (response.statusCode() >= 400) {
 			return dropboxError(response);

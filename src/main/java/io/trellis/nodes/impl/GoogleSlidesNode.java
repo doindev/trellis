@@ -147,7 +147,6 @@ public class GoogleSlidesNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(result)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeGetSlide(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String accessToken = (String) credentials.getOrDefault("accessToken", "");
 		Map<String, String> headers = getAuthHeaders(accessToken);

@@ -130,7 +130,6 @@ public class LinkedInNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult createPost(NodeExecutionContext context, Map<String, String> headers) throws Exception {
 		String personUrn = context.getParameter("personUrn", "");
 		String text = context.getParameter("text", "");

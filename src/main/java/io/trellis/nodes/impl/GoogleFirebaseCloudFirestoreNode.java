@@ -225,7 +225,6 @@ public class GoogleFirebaseCloudFirestoreNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeGetAll(NodeExecutionContext context, String basePath,
 			String collection, Map<String, String> headers) throws Exception {
 		Map<String, Object> options = context.getParameter("listOptions", Map.of());
@@ -281,7 +280,6 @@ public class GoogleFirebaseCloudFirestoreNode extends AbstractApiNode {
 		return NodeExecutionResult.success(List.of(wrapInJson(parsed)));
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeQuery(NodeExecutionContext context, String basePath,
 			Map<String, String> headers) throws Exception {
 		String queryJson = context.getParameter("queryJson", "{}");
@@ -327,7 +325,6 @@ public class GoogleFirebaseCloudFirestoreNode extends AbstractApiNode {
 	 * Converts a plain JSON map into Firestore value format.
 	 * e.g. {"name": "John"} -> {"name": {"stringValue": "John"}}
 	 */
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> toFirestoreFields(Map<String, Object> fields) {
 		Map<String, Object> firestoreFields = new LinkedHashMap<>();
 		for (Map.Entry<String, Object> entry : fields.entrySet()) {

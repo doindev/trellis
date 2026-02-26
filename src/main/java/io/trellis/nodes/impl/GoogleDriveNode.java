@@ -255,7 +255,6 @@ public class GoogleDriveNode extends AbstractApiNode {
 
 	// ========================= File Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeFile(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "list");
 		Map<String, String> headers = getAuthHeaders(credentials);
@@ -418,7 +417,6 @@ public class GoogleDriveNode extends AbstractApiNode {
 
 	// ========================= Drive Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeDrive(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
 		String operation = context.getParameter("operation", "list");
 		Map<String, String> headers = getAuthHeaders(credentials);

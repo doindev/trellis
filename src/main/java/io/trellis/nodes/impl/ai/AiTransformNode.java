@@ -83,7 +83,6 @@ public class AiTransformNode extends AbstractNode {
 
 					// Try to parse the response as JSON; if it fails, wrap it as a string
 					try {
-						@SuppressWarnings("unchecked")
 						Map<String, Object> parsed = objectMapper.readValue(response,
 								new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
 						results.add(wrapInJson(parsed));

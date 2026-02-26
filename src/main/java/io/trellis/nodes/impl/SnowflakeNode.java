@@ -312,7 +312,6 @@ public class SnowflakeNode extends AbstractApiNode {
 		return headers;
 	}
 
-	@SuppressWarnings("unchecked")
 	private List<Object> parseJsonArrayGeneric(String json) {
 		try {
 			if (json == null || json.isBlank()) return List.of();

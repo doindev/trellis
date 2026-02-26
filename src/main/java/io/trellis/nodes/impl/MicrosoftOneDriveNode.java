@@ -189,7 +189,6 @@ public class MicrosoftOneDriveNode extends AbstractApiNode {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeOperation(String operation, NodeExecutionContext context, Map<String, String> headers) throws Exception {
 		switch (operation) {
 			case "copy": {

@@ -225,7 +225,6 @@ public class GrafanaNode extends AbstractApiNode {
 
 	// ========================= Dashboard Operations =========================
 
-	@SuppressWarnings("unchecked")
 	private NodeExecutionResult executeDashboard(NodeExecutionContext context, String operation,
 			String baseUrl, Map<String, String> headers) throws Exception {
 		switch (operation) {
