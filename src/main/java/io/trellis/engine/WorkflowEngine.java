@@ -491,7 +491,8 @@ public class WorkflowEngine {
                             result.getOutput() : List.of(List.of()));
                     webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                             meta.getStatus(), state.getNodeOutputs().get(nodeId),
-                            meta.getDurationMs(), meta.getExecutionOrder());
+                            meta.getDurationMs(), meta.getExecutionOrder(),
+                            result.getError().getMessage());
                     executionService.finish(executionId, ExecutionStatus.ERROR,
                             state.buildResultData(), result.getError().getMessage());
                     webSocketService.sendExecutionFinished(executionId, "ERROR", state.buildResultData());
@@ -515,7 +516,8 @@ public class WorkflowEngine {
 
             webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                     meta.getStatus(), state.getNodeOutputs().get(nodeId),
-                    meta.getDurationMs(), meta.getExecutionOrder());
+                    meta.getDurationMs(), meta.getExecutionOrder(),
+                    meta.getErrorMessage());
 
         } catch (Exception e) {
             meta.setFinishedAt(Instant.now());
@@ -530,11 +532,13 @@ public class WorkflowEngine {
                 state.storeOutput(nodeId, List.of(errorItems));
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                         meta.getStatus(), state.getNodeOutputs().get(nodeId),
-                        meta.getDurationMs(), meta.getExecutionOrder());
+                        meta.getDurationMs(), meta.getExecutionOrder(),
+                        e.getMessage());
             } else {
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                         meta.getStatus(), List.of(List.of()),
-                        meta.getDurationMs(), meta.getExecutionOrder());
+                        meta.getDurationMs(), meta.getExecutionOrder(),
+                        e.getMessage());
                 executionService.finish(executionId, ExecutionStatus.ERROR,
                         state.buildResultData(), e.getMessage());
                 webSocketService.sendExecutionFinished(executionId, "ERROR", state.buildResultData());
@@ -818,7 +822,8 @@ public class WorkflowEngine {
                             result.getOutput() : List.of(List.of()));
                     webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                             meta.getStatus(), state.getNodeOutputs().get(nodeId),
-                            meta.getDurationMs(), meta.getExecutionOrder());
+                            meta.getDurationMs(), meta.getExecutionOrder(),
+                            result.getError().getMessage());
                     if (state.tryMarkFinished()) {
                         executionService.finish(executionId, ExecutionStatus.ERROR,
                                 state.buildResultData(), result.getError().getMessage());
@@ -845,7 +850,8 @@ public class WorkflowEngine {
 
             webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                     meta.getStatus(), state.getNodeOutputs().get(nodeId),
-                    meta.getDurationMs(), meta.getExecutionOrder());
+                    meta.getDurationMs(), meta.getExecutionOrder(),
+                    meta.getErrorMessage());
 
         } catch (Exception e) {
             meta.setFinishedAt(Instant.now());
@@ -860,11 +866,13 @@ public class WorkflowEngine {
                 state.storeOutput(nodeId, List.of(errorItems));
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                         meta.getStatus(), state.getNodeOutputs().get(nodeId),
-                        meta.getDurationMs(), meta.getExecutionOrder());
+                        meta.getDurationMs(), meta.getExecutionOrder(),
+                        e.getMessage());
             } else {
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                         meta.getStatus(), List.of(List.of()),
-                        meta.getDurationMs(), meta.getExecutionOrder());
+                        meta.getDurationMs(), meta.getExecutionOrder(),
+                        e.getMessage());
                 if (state.tryMarkFinished()) {
                     executionService.finish(executionId, ExecutionStatus.ERROR,
                             state.buildResultData(), e.getMessage());

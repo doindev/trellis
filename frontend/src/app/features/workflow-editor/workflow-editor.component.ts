@@ -547,9 +547,13 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
                   }
                 }
               }
+              const nodeEntry: Record<string, any> = { status: event.status || 'success', data: outputData, itemCount, activeOutputs, executionTime: event.executionTime || 0, executionOrder: event.executionOrder ?? 0 };
+              if (event.error) {
+                nodeEntry['error'] = event.error;
+              }
               this.store.setExecutionData({
                 ...current,
-                [event.nodeId]: [{ status: event.status || 'success', data: outputData, itemCount, activeOutputs, executionTime: event.executionTime || 0, executionOrder: event.executionOrder ?? 0 }]
+                [event.nodeId]: [nodeEntry]
               });
             } else if (event.event === 'executionFinished') {
               const current = this.store.executionData() || {};

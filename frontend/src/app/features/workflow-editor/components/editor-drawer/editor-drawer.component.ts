@@ -13,6 +13,7 @@ export interface LogsNodeEntry {
   status: string;
   duration: number;
   itemCount: number;
+  errorMessage?: string;
 }
 
 export interface SchemaNode {
@@ -192,6 +193,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
       const duration = run?.executionTime || 0;
       const mainOutput = this.getRunMainOutput(run);
       const itemCount = run?.itemCount ?? (Array.isArray(mainOutput) ? mainOutput.length : 0);
+      const errorMessage = run?.error || undefined;
 
       entries.push({
         node,
@@ -200,6 +202,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
         status,
         duration,
         itemCount,
+        errorMessage,
       });
     }
 
@@ -282,6 +285,10 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     const entry = this.selectedLogsEntry;
     if (!entry) return '';
     return `${this.capitalizeStatus(entry.status)} in ${this.formatMs(entry.duration)}`;
+  }
+
+  get selectedNodeErrorMessage(): string | null {
+    return this.selectedLogsEntry?.errorMessage || null;
   }
 
   get selectedNodeInputItems(): Record<string, any>[] {

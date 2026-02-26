@@ -144,7 +144,16 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
 
   // Node execution state
   isNodeExecuting = false;
-  nodeExecutionError: string | null = null;
+  private _singleNodeError: string | null = null;
+
+  get nodeExecutionError(): string | null {
+    if (this._singleNodeError) return this._singleNodeError;
+    // Check workflow execution data for this node's error
+    const raw = this.executionData?.[this.node?.id];
+    if (!raw) return null;
+    const run = Array.isArray(raw) ? raw[0] : raw;
+    return run?.error || null;
+  }
 
   // Webhook test listening state
   isListening = false;
@@ -930,7 +939,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   executeNode(): void {
     if (this.isNodeExecuting || !this.node) return;
     this.isNodeExecuting = true;
-    this.nodeExecutionError = null;
+    this._singleNodeError = null;
     // Clear current output for this node
     this.nodeExecuted.emit({ nodeId: this.node.id, data: null });
 
@@ -948,13 +957,13 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.isNodeExecuting = false;
         if (res.error) {
-          this.nodeExecutionError = res.error;
+          this._singleNodeError = res.error;
         }
         this.nodeExecuted.emit({ nodeId: this.node.id, data: res.output });
       },
       error: (err) => {
         this.isNodeExecuting = false;
-        this.nodeExecutionError = err.message || 'Execution failed';
+        this._singleNodeError = err.message || 'Execution failed';
       }
     });
   }

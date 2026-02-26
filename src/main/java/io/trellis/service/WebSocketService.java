@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Slf4j
@@ -34,16 +35,27 @@ public class WebSocketService {
     public void sendNodeFinished(String executionId, String nodeId, String nodeName,
                                  String status, Object outputData,
                                  long executionTimeMs, int executionOrder) {
-        send("/topic/execution/" + executionId, Map.of(
-                "event", "nodeFinished",
-                "executionId", executionId,
-                "nodeId", nodeId,
-                "nodeName", nodeName,
-                "status", status,
-                "data", outputData != null ? outputData : Map.of(),
-                "executionTime", executionTimeMs,
-                "executionOrder", executionOrder
-        ));
+        sendNodeFinished(executionId, nodeId, nodeName, status, outputData,
+                executionTimeMs, executionOrder, null);
+    }
+
+    public void sendNodeFinished(String executionId, String nodeId, String nodeName,
+                                 String status, Object outputData,
+                                 long executionTimeMs, int executionOrder,
+                                 String errorMessage) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("event", "nodeFinished");
+        payload.put("executionId", executionId);
+        payload.put("nodeId", nodeId);
+        payload.put("nodeName", nodeName);
+        payload.put("status", status);
+        payload.put("data", outputData != null ? outputData : Map.of());
+        payload.put("executionTime", executionTimeMs);
+        payload.put("executionOrder", executionOrder);
+        if (errorMessage != null) {
+            payload.put("error", errorMessage);
+        }
+        send("/topic/execution/" + executionId, payload);
     }
 
     public void sendExecutionFinished(String executionId, String status, Object resultData) {

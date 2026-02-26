@@ -592,6 +592,37 @@
   min-height: 0;
 }
 
+.node-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: hsla(355, 83%, 52%, 0.1);
+  border: 1px solid hsla(355, 83%, 52%, 0.25);
+  border-radius: 6px;
+  flex-shrink: 0;
+
+  .error-banner-icon {
+    flex-shrink: 0;
+    color: hsl(355, 83%, 60%);
+    margin-top: 1px;
+  }
+
+  .error-banner-text {
+    font-size: 0.8125rem;
+    color: hsl(355, 83%, 72%);
+    word-break: break-word;
+    line-height: 1.4;
+  }
+}
+
+.logs-node-item.has-error {
+  .node-name {
+    color: hsl(355, 83%, 72%);
+  }
+}
+
 .detail-output-bar {
   display: flex;
   align-items: center;
