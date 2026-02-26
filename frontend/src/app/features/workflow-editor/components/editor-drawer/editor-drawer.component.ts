@@ -103,7 +103,9 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   detailView: 'input' | 'output' = 'output';
   displayMode: 'schema' | 'table' | 'json' = 'table';
   schemaSearch = '';
+  searchExpanded = false;
   schemaCollapsed = new Set<string>();
+  @ViewChild('drawerSearchEl') drawerSearchEl?: ElementRef<HTMLInputElement>;
   @Output() openNodeDetail = new EventEmitter<string>();
   @Output() clearExecution = new EventEmitter<void>();
   private iconCache = new Map<string, SafeHtml>();
@@ -331,7 +333,29 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     this.detailView = 'output';
     this.displayMode = 'table';
     this.schemaSearch = '';
+    this.searchExpanded = false;
     this.schemaCollapsed.clear();
+  }
+
+  toggleSearch(): void {
+    this.searchExpanded = !this.searchExpanded;
+    if (this.searchExpanded) {
+      setTimeout(() => this.drawerSearchEl?.nativeElement.focus());
+    } else {
+      this.schemaSearch = '';
+    }
+  }
+
+  onSearchBlur(): void {
+    if (!this.schemaSearch) {
+      this.searchExpanded = false;
+    }
+  }
+
+  clearSearch(event: MouseEvent): void {
+    event.preventDefault();
+    this.schemaSearch = '';
+    this.drawerSearchEl?.nativeElement.focus();
   }
 
   getNodeIconHtml(iconName: string): SafeHtml {
@@ -481,10 +505,27 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
 
   highlightText(text: string): SafeHtml {
     if (!this.schemaSearch || !text) return text;
+    const html = this.escapeHtml(String(text));
     const escaped = this.schemaSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escaped})`, 'gi');
-    const highlighted = String(text).replace(regex, '<mark class="search-hl">$1</mark>');
+    const highlighted = html.replace(regex, '<mark class="search-hl">$1</mark>');
     return this.sanitizer.bypassSecurityTrustHtml(highlighted);
+  }
+
+  get activeDetailJsonHighlighted(): SafeHtml {
+    const json = this.activeDetailJson;
+    if (!json) return '';
+    const html = this.escapeHtml(json);
+    if (!this.schemaSearch) {
+      return this.sanitizer.bypassSecurityTrustHtml(html);
+    }
+    const escaped = this.schemaSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    return this.sanitizer.bypassSecurityTrustHtml(html.replace(regex, '<mark class="search-hl">$1</mark>'));
+  }
+
+  private escapeHtml(text: string): string {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   get showClearExecution(): boolean {

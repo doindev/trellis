@@ -616,8 +616,92 @@
 
 .output-item-count {
   font-size: 0.6875rem;
-  color: hsl(0, 0%, 46%);
+  background: hsl(0, 0%, 20%);
+  color: hsl(0, 0%, 68%);
+  padding: 1px 6px;
+  border-radius: 3px;
   margin-left: auto;
+  flex-shrink: 0;
+}
+
+.header-search {
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: width 0.2s ease;
+  overflow: hidden;
+
+  &.expanded {
+    background: hsl(0, 0%, 9%);
+    border: 1px solid hsl(0, 0%, 24%);
+  }
+}
+
+.search-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 46%);
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 4px;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+    background: hsl(0, 0%, 17%);
+  }
+
+  .expanded & {
+    background: none;
+    &:hover {
+      background: none;
+    }
+  }
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 150px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: hsl(0, 0%, 96%);
+  font-size: 0.75rem;
+  padding: 4px 22px 4px 0;
+
+  &::placeholder {
+    color: hsl(0, 0%, 38%);
+  }
+}
+
+.search-clear {
+  position: absolute;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 46%);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 3px;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+    background: hsl(0, 0%, 20%);
+  }
 }
 
 .output-table-wrapper {
@@ -700,40 +784,6 @@
 }
 
 // Schema view
-
-.schema-search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.schema-search-icon {
-  position: absolute;
-  left: 7px;
-  color: hsl(0, 0%, 40%);
-  pointer-events: none;
-}
-
-.schema-search-input {
-  width: 140px;
-  height: 24px;
-  padding: 0 8px 0 24px;
-  background: hsl(0, 0%, 9%);
-  border: 1px solid hsl(0, 0%, 24%);
-  border-radius: 4px;
-  color: hsl(0, 0%, 90%);
-  font-size: 0.6875rem;
-  font-family: inherit;
-  outline: none;
-
-  &::placeholder {
-    color: hsl(0, 0%, 40%);
-  }
-
-  &:focus {
-    border-color: hsl(0, 0%, 40%);
-  }
-}
 
 .schema-empty {
   display: flex;
