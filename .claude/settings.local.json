@@ -114,7 +114,8 @@
       "Bash(pushd:*)",
       "Bash(npm run build:*)",
       "Bash(mvn dependency:resolve:*)",
-      "Bash(tr:*)"
+      "Bash(tr:*)",
+      "Bash(jar -tf:*)"
     ]
   }
 }

@@ -48,14 +48,76 @@ public class ModelListService {
     }
 
     private List<ModelInfo> listAnthropicModels(Map<String, Object> data, String modelType) {
-        var builder = dev.langchain4j.model.anthropic.AnthropicModelCatalog.builder()
-                .apiKey(getString(data, "apiKey"));
+        try {
+            var builder = dev.langchain4j.model.anthropic.AnthropicModelCatalog.builder()
+                    .apiKey(getString(data, "apiKey"));
+            String baseUrl = getString(data, "baseUrl");
+            if (baseUrl != null && !baseUrl.isBlank()) {
+                builder.baseUrl(baseUrl);
+            }
+
+            var models = builder.build().listModels();
+            log.debug("Anthropic model catalog returned {} models", models.size());
+            return filterAndMap(models, modelType);
+        } catch (Exception e) {
+            log.warn("Anthropic model catalog failed, falling back to direct API call: {}", e.getMessage());
+            return listAnthropicModelsDirect(data, modelType);
+        }
+    }
+
+    /**
+     * Fallback: call the Anthropic /v1/models endpoint directly via HTTP.
+     */
+    @SuppressWarnings("unchecked")
+    private List<ModelInfo> listAnthropicModelsDirect(Map<String, Object> data, String modelType) {
+        String apiKey = getString(data, "apiKey");
         String baseUrl = getString(data, "baseUrl");
-        if (baseUrl != null && !baseUrl.isBlank()) {
-            builder.baseUrl(baseUrl);
+        if (baseUrl == null || baseUrl.isBlank()) {
+            baseUrl = "https://api.anthropic.com";
+        }
+        // Strip trailing slash
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
 
-        return filterAndMap(builder.build().listModels(), modelType);
+        try {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(baseUrl + "/v1/models"))
+                    .header("x-api-key", apiKey)
+                    .header("anthropic-version", "2023-06-01")
+                    .GET()
+                    .build();
+
+            java.net.http.HttpResponse<String> response = client.send(request,
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                log.warn("Anthropic /v1/models returned status {}: {}", response.statusCode(), response.body());
+                return List.of();
+            }
+
+            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
+            Map<String, Object> body = om.readValue(response.body(), Map.class);
+            List<Map<String, Object>> modelList = (List<Map<String, Object>>) body.get("data");
+            if (modelList == null) return List.of();
+
+            return modelList.stream()
+                    .filter(m -> {
+                        if (modelType == null || modelType.isBlank()) return true;
+                        // Anthropic models are all chat models
+                        return "chat".equalsIgnoreCase(modelType);
+                    })
+                    .map(m -> ModelInfo.builder()
+                            .id((String) m.get("id"))
+                            .name(m.get("display_name") != null ? (String) m.get("display_name") : (String) m.get("id"))
+                            .build())
+                    .sorted(Comparator.comparing(ModelInfo::getName))
+                    .toList();
+        } catch (Exception e) {
+            log.error("Direct Anthropic model listing failed: {}", e.getMessage(), e);
+            return List.of();
+        }
     }
 
     private List<ModelInfo> listGeminiModels(Map<String, Object> data, String modelType) {
