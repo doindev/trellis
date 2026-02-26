@@ -1,0 +1,102 @@
+{
+  "name": "AI Agent Calculator Test",
+  "nodes": [
+    {
+      "id": "manual_trigger",
+      "name": "Manual Trigger",
+      "type": "manualTrigger",
+      "typeVersion": 1,
+      "parameters": {},
+      "position": [200, 200]
+    },
+    {
+      "id": "webhook_trigger",
+      "name": "Webhook",
+      "type": "webhook",
+      "typeVersion": 1,
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/ai",
+        "authentication": "none",
+        "responseMode": "responseNode"
+      },
+      "position": [200, 450]
+    },
+    {
+      "id": "generate_question",
+      "name": "Generate Random Question",
+      "type": "code",
+      "typeVersion": 1,
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const ops = ['+', '-', '*'];\nconst a = Math.floor(Math.random() * 50) + 1;\nconst b = Math.floor(Math.random() * 50) + 1;\nconst op = ops[Math.floor(Math.random() * ops.length)];\nreturn [{ json: { input: `Use the calculator tool to compute: ${a} ${op} ${b}` } }];"
+      },
+      "position": [500, 320]
+    },
+    {
+      "id": "ai_agent",
+      "name": "AI Agent",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "parameters": {
+        "systemMessage": "You are a helpful assistant. When asked to calculate something, always use the calculator tool to compute the result. Return the expression and the result clearly.",
+        "prompt": "{{input}}",
+        "maxIterations": 5
+      },
+      "position": [800, 320]
+    },
+    {
+      "id": "anthropic_model",
+      "name": "Anthropic Chat Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "parameters": {
+        "model": "",
+        "temperature": 0.7,
+        "maxTokens": 1024
+      },
+      "credentials": {},
+      "position": [600, 580]
+    },
+    {
+      "id": "calculator_tool",
+      "name": "Calculator",
+      "type": "calculatorTool",
+      "typeVersion": 1,
+      "parameters": {},
+      "position": [800, 580]
+    },
+    {
+      "id": "respond_webhook",
+      "name": "Respond to Webhook",
+      "type": "respondToWebhook",
+      "typeVersion": 1,
+      "parameters": {
+        "respondWith": "firstIncomingItem"
+      },
+      "position": [1100, 320]
+    }
+  ],
+  "connections": {
+    "manual_trigger": {
+      "main": [[{ "node": "generate_question", "type": "main", "index": 0 }]]
+    },
+    "webhook_trigger": {
+      "main": [[{ "node": "generate_question", "type": "main", "index": 0 }]]
+    },
+    "generate_question": {
+      "main": [[{ "node": "ai_agent", "type": "main", "index": 0 }]]
+    },
+    "anthropic_model": {
+      "ai_languageModel": [[{ "node": "ai_agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "calculator_tool": {
+      "ai_tool": [[{ "node": "ai_agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "ai_agent": {
+      "main": [[{ "node": "respond_webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {}
+}

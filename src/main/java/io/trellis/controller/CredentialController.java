@@ -4,6 +4,8 @@ import io.trellis.credentials.CredentialType;
 import io.trellis.credentials.CredentialTypeRegistry;
 import io.trellis.dto.CredentialCreateRequest;
 import io.trellis.dto.CredentialResponse;
+import io.trellis.dto.CredentialTestRequest;
+import io.trellis.dto.CredentialTestResult;
 import io.trellis.dto.CredentialUpdateRequest;
 import io.trellis.dto.ModelInfo;
 import io.trellis.exception.NotFoundException;
@@ -53,6 +55,11 @@ public class CredentialController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String id) {
         credentialService.deleteCredential(id);
+    }
+
+    @PostMapping("/test")
+    public CredentialTestResult testCredentials(@RequestBody CredentialTestRequest request) {
+        return modelListService.testCredentials(request.getType(), request.getData());
     }
 
     @GetMapping("/{id}/models")

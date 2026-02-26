@@ -1,5 +1,6 @@
 package io.trellis.service;
 
+import io.trellis.dto.CredentialTestResult;
 import io.trellis.dto.ModelInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -7,10 +8,113 @@ import org.springframework.stereotype.Service;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @Slf4j
 public class ModelListService {
+
+    private static final Set<String> TESTABLE_TYPES = Set.of(
+            "openAiApi", "anthropicApi", "googleAiApi", "mistralApi", "ollamaApi"
+    );
+
+    /**
+     * Tests whether the given credentials are valid by attempting to list models.
+     *
+     * @param credentialType the credential type (e.g. "openAiApi", "anthropicApi")
+     * @param credentialData credential data map (apiKey, baseUrl, etc.)
+     * @return result indicating success or failure with error message
+     */
+    public CredentialTestResult testCredentials(String credentialType, Map<String, Object> credentialData) {
+        if (!TESTABLE_TYPES.contains(credentialType)) {
+            return CredentialTestResult.success();
+        }
+        try {
+            switch (credentialType) {
+                case "openAiApi" -> listOpenAiModels(credentialData, null);
+                case "anthropicApi" -> testAnthropicConnection(credentialData);
+                case "googleAiApi" -> listGeminiModels(credentialData, null);
+                case "mistralApi" -> listMistralModels(credentialData, null);
+                case "ollamaApi" -> listOllamaModels(credentialData);
+                default -> { /* unreachable */ }
+            }
+            return CredentialTestResult.success();
+        } catch (Exception e) {
+            String message = extractErrorMessage(e);
+            log.debug("Credential test failed for type {}: {}", credentialType, message);
+            return CredentialTestResult.failure(message);
+        }
+    }
+
+    /**
+     * Tests Anthropic credentials by calling /v1/models directly and throwing on any failure.
+     * Unlike listAnthropicModels which silently falls back, this propagates errors.
+     */
+    private void testAnthropicConnection(Map<String, Object> data) throws Exception {
+        String apiKey = getString(data, "apiKey");
+        String baseUrl = getString(data, "baseUrl");
+        if (baseUrl == null || baseUrl.isBlank()) {
+            baseUrl = "https://api.anthropic.com";
+        }
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+
+        java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create(baseUrl + "/v1/models"))
+                .header("x-api-key", apiKey)
+                .header("anthropic-version", "2023-06-01")
+                .GET()
+                .build();
+
+        java.net.http.HttpResponse<String> response = client.send(request,
+                java.net.http.HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            // Parse error message from JSON response if possible
+            String errorMsg = "HTTP " + response.statusCode();
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
+                @SuppressWarnings("unchecked")
+                Map<String, Object> body = om.readValue(response.body(), Map.class);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> error = (Map<String, Object>) body.get("error");
+                if (error != null && error.get("message") != null) {
+                    errorMsg = (String) error.get("message");
+                }
+            } catch (Exception ignored) {}
+            throw new RuntimeException(errorMsg + " (" + response.statusCode() + ")");
+        }
+    }
+
+    private String extractErrorMessage(Exception e) {
+        String msg = e.getMessage();
+        if (msg == null) {
+            msg = e.getClass().getSimpleName();
+        }
+        // Extract HTTP status codes from common exception messages
+        if (msg.contains("401") || msg.toLowerCase().contains("unauthorized")) {
+            return "Invalid API key (401 Unauthorized)";
+        }
+        if (msg.contains("403") || msg.toLowerCase().contains("forbidden")) {
+            return "Access denied (403 Forbidden)";
+        }
+        if (msg.contains("429") || msg.toLowerCase().contains("rate limit")) {
+            return "Rate limited (429 Too Many Requests)";
+        }
+        if (msg.toLowerCase().contains("connection refused") || msg.toLowerCase().contains("connect timed out")) {
+            return "Could not connect to the API server. Check the URL and try again.";
+        }
+        if (msg.toLowerCase().contains("unknown host") || msg.toLowerCase().contains("nodename nor servname")) {
+            return "Could not resolve API host. Check the URL and try again.";
+        }
+        // Truncate long messages
+        if (msg.length() > 200) {
+            msg = msg.substring(0, 200) + "...";
+        }
+        return msg;
+    }
 
     /**
      * Lists available models for a given credential type using the provider's API.

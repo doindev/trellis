@@ -284,7 +284,9 @@ public class WorkflowGraph {
 
     /**
      * BFS from startNodeId through outgoing connections to find all reachable node IDs
-     * (including the start node itself).
+     * (including the start node itself). Also includes AI sub-node providers: when a
+     * reachable node has non-main incoming connections (e.g. ai_languageModel, ai_tool),
+     * those source nodes are included so they get executed before the consuming node.
      */
     public Set<String> getReachableNodes(String startNodeId) {
         Set<String> reachable = new LinkedHashSet<>();
@@ -294,10 +296,21 @@ public class WorkflowGraph {
 
         while (!queue.isEmpty()) {
             String nodeId = queue.poll();
+            // Follow outgoing connections (normal forward traversal)
             for (Connection conn : outgoingConnections.getOrDefault(nodeId, List.of())) {
                 String target = conn.getTargetNodeId();
                 if (reachable.add(target)) {
                     queue.add(target);
+                }
+            }
+            // Include AI sub-node providers: non-main incoming connections feed
+            // AI objects (language models, tools, memory) that must execute first
+            for (Connection conn : incomingConnections.getOrDefault(nodeId, List.of())) {
+                if (!"main".equals(conn.getType())) {
+                    String source = conn.getSourceNodeId();
+                    if (reachable.add(source)) {
+                        queue.add(source);
+                    }
                 }
             }
         }

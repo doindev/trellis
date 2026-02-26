@@ -55,6 +55,9 @@ export class CredentialCreateModalComponent implements OnInit {
   editorTab = signal<'connection' | 'sharing' | 'details'>('connection');
   isEditing = signal(false);
   saving = signal(false);
+  validating = signal(false);
+  validationError = signal<string | null>(null);
+  formDisabled = computed(() => this.validating() || this.saving());
 
   constructor(private credentialService: CredentialService) {}
 
@@ -103,6 +106,7 @@ export class CredentialCreateModalComponent implements OnInit {
     this.editorSchema.set(type);
     this.editorTab.set('connection');
     this.isEditing.set(false);
+    this.validationError.set(null);
     this.showEditorModal.set(true);
   }
 
@@ -110,6 +114,7 @@ export class CredentialCreateModalComponent implements OnInit {
     this.editorCredential.set({ ...cred });
     this.isEditing.set(true);
     this.editorTab.set('connection');
+    this.validationError.set(null);
     this.showEditorModal.set(true);
 
     if (cred.type) {
@@ -151,6 +156,7 @@ export class CredentialCreateModalComponent implements OnInit {
     this.editorSchema.set(type);
     this.editorTab.set('connection');
     this.isEditing.set(false);
+    this.validationError.set(null);
     this.showEditorModal.set(true);
   }
 
@@ -176,7 +182,28 @@ export class CredentialCreateModalComponent implements OnInit {
     const cred = this.editorCredential();
     if (!cred.name || !cred.type) return;
 
-    this.saving.set(true);
+    this.validationError.set(null);
+    this.validating.set(true);
+
+    this.credentialService.testCredentials(cred.type, cred.data || {}).subscribe({
+      next: (testResult) => {
+        if (!testResult.success) {
+          this.validationError.set(testResult.error || 'Credential validation failed');
+          this.validating.set(false);
+          return;
+        }
+        this.validating.set(false);
+        this.saving.set(true);
+        this.persistCredential(cred);
+      },
+      error: (err) => {
+        this.validationError.set('Could not validate credentials. Please try again.');
+        this.validating.set(false);
+      }
+    });
+  }
+
+  private persistCredential(cred: Partial<Credential>): void {
     const operation = this.isEditing() && cred.id
       ? this.credentialService.update(cred.id, cred)
       : this.credentialService.create(cred);

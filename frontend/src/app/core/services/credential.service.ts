@@ -46,4 +46,8 @@ export class CredentialService {
     if (modelType) params['modelType'] = modelType;
     return this.api.get<ModelInfo[]>(`${this.path}/${credentialId}/models`, params);
   }
+
+  testCredentials(type: string, data: Record<string, any>): Observable<{ success: boolean; error?: string }> {
+    return this.api.post<{ success: boolean; error?: string }>(`${this.path}/test`, { type, data });
+  }
 }
