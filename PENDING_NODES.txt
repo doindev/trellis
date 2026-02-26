@@ -1,6 +1,6 @@
 PENDING NODES — n8n nodes not yet implemented in Trellis
 Generated: 2026-02-25
-Trellis implemented: 250 nodes | n8n total: ~512 nodes
+Trellis implemented: 285 nodes | n8n total: ~512 nodes
 
 Complexity Rating Scale (0-5):
   0 = Trivial (minimal logic, direct mapping)
@@ -438,13 +438,13 @@ MARKETING / EMAIL MARKETING
   Customer.io ....................................... [3] (type: customerIo)
   Customer.io Trigger ............................... [3] (type: customerIoTrigger)
   E-goi ............................................. [2] (type: egoi) DONE
-  Emelia ............................................ [2] (type: emelia)
-  Emelia Trigger .................................... [2] (type: emeliaTrigger)
+  Emelia ............................................ [2] (type: emelia) DONE
+  Emelia Trigger .................................... [2] (type: emeliaTrigger) DONE
   GetResponse ....................................... [3] (type: getResponse)
   GetResponse Trigger ............................... [3] (type: getResponseTrigger)
   Iterable .......................................... [3] (type: iterable)
-  Lemlist ........................................... [2] (type: lemlist)
-  Lemlist Trigger ................................... [2] (type: lemlistTrigger)
+  Lemlist ........................................... [2] (type: lemlist) DONE
+  Lemlist Trigger ................................... [2] (type: lemlistTrigger) DONE
   Mailcheck ......................................... [1] (type: mailcheck) DONE
   Mailchimp ......................................... [3] (type: mailchimp)
   Mailchimp Trigger ................................. [3] (type: mailchimpTrigger)
@@ -479,10 +479,10 @@ MICROSOFT SERVICES
 MISCELLANEOUS
 ================================================================================
 
-  Action Network .................................... [2] (type: actionNetwork)
-  Adalo ............................................. [2] (type: adalo)
-  Airtop ............................................ [2] (type: airtop)
-  APITemplate.io .................................... [2] (type: apiTemplateIo)
+  Action Network .................................... [2] (type: actionNetwork) DONE
+  Adalo ............................................. [2] (type: adalo) DONE
+  Airtop ............................................ [2] (type: airtop) DONE
+  APITemplate.io .................................... [2] (type: apiTemplateIo) DONE
   Bannerbear ........................................ [2] (type: bannerbear) DONE
   Beeminder ......................................... [2] (type: beeminder) DONE
   Bitly ............................................. [1] (type: bitly) DONE
@@ -493,7 +493,7 @@ MISCELLANEOUS
   Clockify Trigger .................................. [3] (type: clockifyTrigger)
   Cloudflare ........................................ [3] (type: cloudflare)
   CoinGecko ......................................... [2] (type: coinGecko) DONE
-  Cortex ............................................ [2] (type: cortex)
+  Cortex ............................................ [2] (type: cortex) DONE
   Currents .......................................... [2] (type: currents) DONE
   Currents Trigger .................................. [2] (type: currentsTrigger) DONE
   Demio ............................................. [2] (type: demio) DONE
@@ -515,11 +515,11 @@ MISCELLANEOUS
   Home Assistant .................................... [3] (type: homeAssistant)
   Hunter ............................................ [2] (type: hunter) DONE
   LDAP .............................................. [3] (type: ldap)
-  LoneScale ......................................... [2] (type: loneScale)
-  LoneScale Trigger ................................. [2] (type: loneScaleTrigger)
+  LoneScale ......................................... [2] (type: loneScale) DONE
+  LoneScale Trigger ................................. [2] (type: loneScaleTrigger) DONE
   Marketstack ....................................... [1] (type: marketstack) DONE
-  Metabase .......................................... [2] (type: metabase)
-  Mindee ............................................ [2] (type: mindee)
+  Metabase .......................................... [2] (type: metabase) DONE
+  Mindee ............................................ [2] (type: mindee) DONE
   MISP .............................................. [3] (type: misp)
   NASA .............................................. [1] (type: nasa) DONE
   Netlify ........................................... [2] (type: netlify) DONE
@@ -537,11 +537,11 @@ MISCELLANEOUS
   PagerDuty ......................................... [3] (type: pagerDuty)
   Peekalink ......................................... [1] (type: peekalink) DONE
   Phantombuster ..................................... [2] (type: phantombuster) DONE
-  Philips Hue ....................................... [2] (type: philipsHue)
+  Philips Hue ....................................... [2] (type: philipsHue) DONE
   PostBin ........................................... [1] (type: postBin) DONE
   PostHog ........................................... [2] (type: postHog) DONE
   QuickChart ........................................ [1] (type: quickChart) DONE
-  Raindrop .......................................... [2] (type: raindrop)
+  Raindrop .......................................... [2] (type: raindrop) DONE
   RSS Feed Trigger .................................. [3] (type: rssFeedReadTrigger)
   RSS Read .......................................... [1] (type: rssFeedRead) DONE
   SecurityScorecard ................................. [2] (type: securityScorecard) DONE
@@ -556,7 +556,7 @@ MISCELLANEOUS
   TheHive Trigger ................................... [3] (type: theHiveTrigger)
   Toggl Trigger ..................................... [2] (type: togglTrigger) DONE
   Track Time Saved .................................. [1] (type: timeSaved) DONE
-  Unleashed Software ................................ [2] (type: unleashedSoftware)
+  Unleashed Software ................................ [2] (type: unleashedSoftware) DONE
   Uplead ............................................ [1] (type: uplead) DONE
   uProc ............................................. [1] (type: uProc) DONE
   UptimeRobot ....................................... [2] (type: uptimeRobot) DONE
@@ -585,12 +585,12 @@ PROJECT MANAGEMENT
   Monday.com ........................................ [3] (type: mondayCom)
   Notion ............................................ [4] (type: notion)
   Notion Trigger .................................... [3] (type: notionTrigger)
-  Taiga ............................................. [2] (type: taiga)
-  Taiga Trigger ..................................... [2] (type: taigaTrigger)
-  Todoist ........................................... [2] (type: todoist)
+  Taiga ............................................. [2] (type: taiga) DONE
+  Taiga Trigger ..................................... [2] (type: taigaTrigger) DONE
+  Todoist ........................................... [2] (type: todoist) DONE
   Trello ............................................ [3] (type: trello)
   Trello Trigger .................................... [3] (type: trelloTrigger)
-  Wekan ............................................. [2] (type: wekan)
+  Wekan ............................................. [2] (type: wekan) DONE
 
 ================================================================================
 SCHEDULING / CALENDAR
@@ -610,7 +610,7 @@ SOCIAL MEDIA
   Facebook Trigger .................................. [3] (type: facebookTrigger)
   LinkedIn .......................................... [3] (type: linkedIn)
   Medium ............................................ [2] (type: medium) DONE
-  Reddit ............................................ [2] (type: reddit)
+  Reddit ............................................ [2] (type: reddit) DONE
   X (Formerly Twitter) .............................. [3] (type: twitter)
 
 ================================================================================
@@ -622,25 +622,25 @@ SPREADSHEETS & DATA TABLES
   Coda .............................................. [3] (type: coda)
   Google Sheets ..................................... [4] (type: googleSheets)
   Google Sheets Trigger ............................. [3] (type: googleSheetsTrigger)
-  Grist ............................................. [2] (type: grist)
+  Grist ............................................. [2] (type: grist) DONE
   Microsoft Excel 365 ............................... [4] (type: microsoftExcel)
-  Quick Base ........................................ [2] (type: quickBase)
-  SeaTable .......................................... [2] (type: seaTable)
-  SeaTable Trigger .................................. [2] (type: seaTableTrigger)
-  Stackby ........................................... [2] (type: stackby)
+  Quick Base ........................................ [2] (type: quickBase) DONE
+  SeaTable .......................................... [2] (type: seaTable) DONE
+  SeaTable Trigger .................................. [2] (type: seaTableTrigger) DONE
+  Stackby ........................................... [2] (type: stackby) DONE
 
 ================================================================================
 SURVEYS & FORMS
 ================================================================================
 
-  Form.io Trigger ................................... [2] (type: formIoTrigger)
-  Formstack Trigger ................................. [2] (type: formstackTrigger)
-  Jotform Trigger ................................... [2] (type: jotFormTrigger)
-  KoBoToolbox ....................................... [2] (type: koBoToolbox)
-  KoBoToolbox Trigger ............................... [2] (type: koBoToolboxTrigger)
-  SurveyMonkey Trigger .............................. [2] (type: surveyMonkeyTrigger)
-  Typeform Trigger .................................. [2] (type: typeformTrigger)
-  Wufoo Trigger ..................................... [2] (type: wufooTrigger)
+  Form.io Trigger ................................... [2] (type: formIoTrigger) DONE
+  Formstack Trigger ................................. [2] (type: formstackTrigger) DONE
+  Jotform Trigger ................................... [2] (type: jotFormTrigger) DONE
+  KoBoToolbox ....................................... [2] (type: koBoToolbox) DONE
+  KoBoToolbox Trigger ............................... [2] (type: koBoToolboxTrigger) DONE
+  SurveyMonkey Trigger .............................. [2] (type: surveyMonkeyTrigger) DONE
+  Typeform Trigger .................................. [2] (type: typeformTrigger) DONE
+  Wufoo Trigger ..................................... [2] (type: wufooTrigger) DONE
 
 ================================================================================
 STANDALONE AI SERVICES (BASE PACKAGE)
@@ -648,7 +648,7 @@ STANDALONE AI SERVICES (BASE PACKAGE)
 
   DeepL ............................................. [2] (type: deepL) DONE
   Humantic AI ....................................... [2] (type: humanticAi) DONE
-  Jina AI ........................................... [2] (type: jinaAi)
+  Jina AI ........................................... [2] (type: jinaAi) DONE
   LingvaNex ......................................... [1] (type: lingvaNex) DONE
   Microsoft Agent 365 Trigger ....................... [4] (type: microsoftAgent365Trigger)
   Mistral AI (Standalone) ........................... [3] (type: mistralAi)

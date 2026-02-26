@@ -363,6 +363,16 @@
 			<artifactId>transcribe</artifactId>
 			<version>${aws.sdk.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>cognitoidentityprovider</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>iam</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
 
 		<!-- Redis client for Redis Chat Memory and Vector Store -->
 		<dependency>

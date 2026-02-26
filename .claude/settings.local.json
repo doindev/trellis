@@ -113,7 +113,8 @@
       "Bash(mvn compiler:compile:*)",
       "Bash(pushd:*)",
       "Bash(npm run build:*)",
-      "Bash(mvn dependency:resolve:*)"
+      "Bash(mvn dependency:resolve:*)",
+      "Bash(tr:*)"
     ]
   }
 }
