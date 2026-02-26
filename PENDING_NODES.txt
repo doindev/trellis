@@ -1,6 +1,6 @@
 PENDING NODES — n8n nodes not yet implemented in Trellis
 Generated: 2026-02-25
-Trellis implemented: 285 nodes | n8n total: ~512 nodes
+Trellis implemented: ~508 nodes | n8n total: ~512 nodes
 
 Complexity Rating Scale (0-5):
   0 = Trivial (minimal logic, direct mapping)
@@ -36,9 +36,9 @@ AI / COMPLETION MODELS (NON-CHAT / LEGACY)
 
   Cohere Model ...................................... [2] (type: lmCohere) DONE
   Hugging Face Inference Model ...................... [2] (type: lmOpenHuggingFaceInference) DONE
-  Lemonade Model .................................... [1] (type: lmLemonade)
-  Ollama Model ...................................... [1] (type: lmOllama)
-  OpenAI Model ...................................... [1] (type: lmOpenAi)
+  Lemonade Model .................................... [1] (type: lmLemonade) DONE
+  Ollama Model ...................................... [1] (type: lmOllama) DONE
+  OpenAI Model ...................................... [1] (type: lmOpenAi) DONE
 
 ================================================================================
 AI / DOCUMENT LOADERS
@@ -46,8 +46,8 @@ AI / DOCUMENT LOADERS
 
   Binary Input Loader ............................... [2] (type: documentBinaryInputLoader) SKIP (deprecated, merged into documentDefaultDataLoader)
   Default Data Loader ............................... [1] (type: documentDefaultDataLoader) DONE
-  GitHub Document Loader ............................ [3] (type: documentGithubLoader)
-  JSON Input Loader ................................. [1] (type: documentJsonInputLoader)
+  GitHub Document Loader ............................ [3] (type: documentGithubLoader) DONE
+  JSON Input Loader ................................. [1] (type: documentJsonInputLoader) DONE
 
 ================================================================================
 AI / EMBEDDINGS
@@ -65,8 +65,8 @@ AI / EMBEDDINGS
 AI / MCP (MODEL CONTEXT PROTOCOL)
 ================================================================================
 
-  MCP Client ........................................ [3] (type: mcpClient)
-  MCP Server Trigger ................................ [4] (type: mcpTrigger)
+  MCP Client ........................................ [3] (type: mcpClient) DONE
+  MCP Server Trigger ................................ [4] (type: mcpTrigger) DONE
 
 ================================================================================
 AI / MEMORY
@@ -80,9 +80,9 @@ AI / MEMORY
 AI / MISCELLANEOUS
 ================================================================================
 
-  AI Transform ...................................... [3] (type: aiTransform)
-  LangChain Code .................................... [3] (type: code-langchain)
-  OpenAI Assistant ................................... [3] (type: openAiAssistant)
+  AI Transform ...................................... [3] (type: aiTransform) DONE
+  LangChain Code .................................... [3] (type: code-langchain) DONE
+  OpenAI Assistant ................................... [3] (type: openAiAssistant) DONE
 
 ================================================================================
 AI / OUTPUT PARSERS
@@ -119,7 +119,7 @@ AI / TOOLS
 AI / TRIGGERS
 ================================================================================
 
-  Chat Trigger ...................................... [3] (type: chatTrigger)
+  Chat Trigger ...................................... [3] (type: chatTrigger) DONE
   Manual Chat Trigger ............................... [2] (type: manualChatTrigger) DONE
 
 ================================================================================
@@ -132,32 +132,32 @@ AI / VECTOR STORES
 AI / VENDOR NODES (ROOT)
 ================================================================================
 
-  Anthropic (Root Node) ............................. [3] (type: anthropic)
-  Google Gemini (Root Node) ......................... [3] (type: googleGemini)
-  Ollama (Root Node) ................................ [3] (type: ollama)
-  OpenAI (LangChain Root Node) ...................... [3] (type: openAi-langchain)
+  Anthropic (Root Node) ............................. [3] (type: anthropic) DONE
+  Google Gemini (Root Node) ......................... [3] (type: googleGemini) DONE
+  Ollama (Root Node) ................................ [3] (type: ollama) DONE
+  OpenAI (LangChain Root Node) ...................... [3] (type: openAi-langchain) DONE
 
 ================================================================================
 ANALYTICS
 ================================================================================
 
-  Google Analytics .................................. [3] (type: googleAnalytics)
+  Google Analytics .................................. [3] (type: googleAnalytics) DONE
 
 ================================================================================
 AWS SERVICES
 ================================================================================
 
   AWS Certificate Manager ........................... [2] (type: awsCertificateManager) DONE
-  AWS Cognito ....................................... [3] (type: awsCognito)
+  AWS Cognito ....................................... [3] (type: awsCognito) DONE
   AWS Comprehend .................................... [2] (type: awsComprehend) DONE
-  AWS DynamoDB ...................................... [3] (type: awsDynamoDb)
+  AWS DynamoDB ...................................... [3] (type: awsDynamoDb) DONE
   AWS ELB ........................................... [2] (type: awsElb) DONE
-  AWS IAM ........................................... [3] (type: awsIam)
+  AWS IAM ........................................... [3] (type: awsIam) DONE
   AWS Lambda ........................................ [2] (type: awsLambda) DONE
   AWS Rekognition ................................... [2] (type: awsRekognition) DONE
   AWS SES ........................................... [2] (type: awsSes) DONE
   AWS SNS ........................................... [2] (type: awsSns) DONE
-  AWS SNS Trigger ................................... [3] (type: awsSnsTrigger)
+  AWS SNS Trigger ................................... [3] (type: awsSnsTrigger) DONE
   AWS SQS ........................................... [2] (type: awsSqs) DONE
   AWS Textract ...................................... [2] (type: awsTextract) DONE
   AWS Transcribe .................................... [2] (type: awsTranscribe) DONE
@@ -168,45 +168,45 @@ CMS / WEBSITE BUILDERS
 
   Bubble ............................................ [2] (type: bubble) DONE
   Cockpit ........................................... [2] (type: cockpit) DONE
-  Contentful ........................................ [3] (type: contentful)
-  Discourse ......................................... [3] (type: discourse)
+  Contentful ........................................ [3] (type: contentful) DONE
+  Discourse ......................................... [3] (type: discourse) DONE
   Ghost ............................................. [2] (type: ghost) DONE
   Storyblok ......................................... [2] (type: storyblok) DONE
   Strapi ............................................ [2] (type: strapi) DONE
-  Webflow ........................................... [3] (type: webflow)
-  Webflow Trigger ................................... [3] (type: webflowTrigger)
-  Wordpress ......................................... [3] (type: wordpress)
+  Webflow ........................................... [3] (type: webflow) DONE
+  Webflow Trigger ................................... [3] (type: webflowTrigger) DONE
+  Wordpress ......................................... [3] (type: wordpress) DONE
 
 ================================================================================
 CLOUD STORAGE
 ================================================================================
 
-  AWS S3 ............................................ [3] (type: awsS3)
-  Azure Storage ..................................... [3] (type: azureStorage)
-  Box ............................................... [3] (type: box)
-  Box Trigger ....................................... [3] (type: boxTrigger)
-  Dropbox ........................................... [3] (type: dropbox)
-  Google Cloud Storage .............................. [3] (type: googleCloudStorage)
-  Google Drive ...................................... [3] (type: googleDrive)
-  Google Drive Trigger .............................. [3] (type: googleDriveTrigger)
-  Microsoft OneDrive ................................ [3] (type: microsoftOneDrive)
-  Microsoft OneDrive Trigger ........................ [3] (type: microsoftOneDriveTrigger)
-  Microsoft SharePoint .............................. [4] (type: microsoftSharePoint)
+  AWS S3 ............................................ [3] (type: awsS3) DONE
+  Azure Storage ..................................... [3] (type: azureStorage) DONE
+  Box ............................................... [3] (type: box) DONE
+  Box Trigger ....................................... [3] (type: boxTrigger) DONE
+  Dropbox ........................................... [3] (type: dropbox) DONE
+  Google Cloud Storage .............................. [3] (type: googleCloudStorage) DONE
+  Google Drive ...................................... [3] (type: googleDrive) DONE
+  Google Drive Trigger .............................. [3] (type: googleDriveTrigger) DONE
+  Microsoft OneDrive ................................ [3] (type: microsoftOneDrive) DONE
+  Microsoft OneDrive Trigger ........................ [3] (type: microsoftOneDriveTrigger) DONE
+  Microsoft SharePoint .............................. [4] (type: microsoftSharePoint) DONE
   Nextcloud ......................................... [2] (type: nextCloud) DONE
-  S3 (Generic) ...................................... [3] (type: s3)
+  S3 (Generic) ...................................... [3] (type: s3) DONE
 
 ================================================================================
 COMMUNICATION / CHAT & MESSAGING
 ================================================================================
 
-  Discord ........................................... [4] (type: discord)
+  Discord ........................................... [4] (type: discord) DONE
   Gotify ............................................ [1] (type: gotify) DONE
   Line .............................................. [2] (type: line) DONE
-  Matrix ............................................ [3] (type: matrix)
-  Mattermost ........................................ [3] (type: mattermost)
+  Matrix ............................................ [3] (type: matrix) DONE
+  Mattermost ........................................ [3] (type: mattermost) DONE
   MessageBird ....................................... [2] (type: messageBird) DONE
-  Microsoft Teams ................................... [4] (type: microsoftTeams)
-  Microsoft Teams Trigger ........................... [4] (type: microsoftTeamsTrigger)
+  Microsoft Teams ................................... [4] (type: microsoftTeams) DONE
+  Microsoft Teams Trigger ........................... [4] (type: microsoftTeamsTrigger) DONE
   Mocean ............................................ [1] (type: mocean) DONE
   MSG91 ............................................. [1] (type: msg91) DONE
   Plivo ............................................. [2] (type: plivo) DONE
@@ -214,42 +214,42 @@ COMMUNICATION / CHAT & MESSAGING
   Pushcut ........................................... [1] (type: pushcut) DONE
   Pushcut Trigger ................................... [2] (type: pushcutTrigger) DONE
   Pushover .......................................... [1] (type: pushover) DONE
-  RocketChat ........................................ [3] (type: rocketchat)
+  RocketChat ........................................ [3] (type: rocketchat) DONE
   seven (Sms77) ..................................... [1] (type: sms77) DONE
   SIGNL4 ............................................ [2] (type: signl4) DONE
-  Slack ............................................. [4] (type: slack)
-  Slack Trigger ..................................... [4] (type: slackTrigger)
-  Telegram .......................................... [3] (type: telegram)
-  Telegram Trigger .................................. [3] (type: telegramTrigger)
+  Slack ............................................. [4] (type: slack) DONE
+  Slack Trigger ..................................... [4] (type: slackTrigger) DONE
+  Telegram .......................................... [3] (type: telegram) DONE
+  Telegram Trigger .................................. [3] (type: telegramTrigger) DONE
   Twake ............................................. [2] (type: twake) DONE
-  Twilio ............................................ [3] (type: twilio)
-  Twilio Trigger .................................... [3] (type: twilioTrigger)
+  Twilio ............................................ [3] (type: twilio) DONE
+  Twilio Trigger .................................... [3] (type: twilioTrigger) DONE
   Twist ............................................. [2] (type: twist) DONE
   Vonage ............................................ [2] (type: vonage) DONE
-  Webex by Cisco .................................... [3] (type: ciscoWebex)
-  Webex by Cisco Trigger ............................ [3] (type: ciscoWebexTrigger)
-  WhatsApp Business Cloud ........................... [3] (type: whatsApp)
-  WhatsApp Trigger .................................. [3] (type: whatsAppTrigger)
-  Zoom .............................................. [3] (type: zoom)
+  Webex by Cisco .................................... [3] (type: ciscoWebex) DONE
+  Webex by Cisco Trigger ............................ [3] (type: ciscoWebexTrigger) DONE
+  WhatsApp Business Cloud ........................... [3] (type: whatsApp) DONE
+  WhatsApp Trigger .................................. [3] (type: whatsAppTrigger) DONE
+  Zoom .............................................. [3] (type: zoom) DONE
   Zulip ............................................. [2] (type: zulip) DONE
 
 ================================================================================
 COMMUNICATION / EMAIL
 ================================================================================
 
-  Brevo ............................................. [3] (type: brevo)
-  Brevo Trigger ..................................... [3] (type: brevoTrigger)
-  Gmail ............................................. [4] (type: gmail)
-  Gmail Trigger ..................................... [4] (type: gmailTrigger)
+  Brevo ............................................. [3] (type: brevo) DONE
+  Brevo Trigger ..................................... [3] (type: brevoTrigger) DONE
+  Gmail ............................................. [4] (type: gmail) DONE
+  Gmail Trigger ..................................... [4] (type: gmailTrigger) DONE
   Mailgun ........................................... [2] (type: mailgun) DONE
   Mailjet ........................................... [2] (type: mailjet) DONE
   Mailjet Trigger ................................... [2] (type: mailjetTrigger) DONE
   Mandrill .......................................... [2] (type: mandrill) DONE
-  Microsoft Outlook ................................. [4] (type: microsoftOutlook)
-  Microsoft Outlook Trigger ......................... [4] (type: microsoftOutlookTrigger)
+  Microsoft Outlook ................................. [4] (type: microsoftOutlook) DONE
+  Microsoft Outlook Trigger ......................... [4] (type: microsoftOutlookTrigger) DONE
   Postmark Trigger .................................. [2] (type: postmarkTrigger) DONE
   Send Email (SMTP) ................................. [2] (type: emailSend) DONE
-  SendGrid .......................................... [3] (type: sendGrid)
+  SendGrid .......................................... [3] (type: sendGrid) DONE
 
 ================================================================================
 CORE / FLOW CONTROL
@@ -263,70 +263,70 @@ CORE / FLOW CONTROL
 CORE / TRIGGERS
 ================================================================================
 
-  Email Trigger (IMAP) .............................. [4] (type: emailReadImap)
+  Email Trigger (IMAP) .............................. [4] (type: emailReadImap) DONE
   Error Trigger ..................................... [2] (type: errorTrigger) DONE
-  Local File Trigger ................................ [3] (type: localFileTrigger)
-  SSE Trigger ....................................... [3] (type: sseTrigger)
+  Local File Trigger ................................ [3] (type: localFileTrigger) DONE
+  SSE Trigger ....................................... [3] (type: sseTrigger) DONE
 
 ================================================================================
 CRM & SALES
 ================================================================================
 
-  Affinity .......................................... [3] (type: affinity)
-  Affinity Trigger .................................. [3] (type: affinityTrigger)
-  Agile CRM ......................................... [3] (type: agileCrm)
-  Copper ............................................ [3] (type: copper)
-  Copper Trigger .................................... [3] (type: copperTrigger)
-  Freshworks CRM ................................... [3] (type: freshworksCrm)
-  HighLevel ......................................... [3] (type: highLevel)
-  HubSpot ........................................... [4] (type: hubspot)
-  HubSpot Trigger ................................... [4] (type: hubspotTrigger)
-  Keap .............................................. [3] (type: keap)
-  Keap Trigger ...................................... [3] (type: keapTrigger)
-  Microsoft Dynamics CRM ............................ [4] (type: microsoftDynamicsCrm)
+  Affinity .......................................... [3] (type: affinity) DONE
+  Affinity Trigger .................................. [3] (type: affinityTrigger) DONE
+  Agile CRM ......................................... [3] (type: agileCrm) DONE
+  Copper ............................................ [3] (type: copper) DONE
+  Copper Trigger .................................... [3] (type: copperTrigger) DONE
+  Freshworks CRM ................................... [3] (type: freshworksCrm) DONE
+  HighLevel ......................................... [3] (type: highLevel) DONE
+  HubSpot ........................................... [4] (type: hubspot) DONE
+  HubSpot Trigger ................................... [4] (type: hubspotTrigger) DONE
+  Keap .............................................. [3] (type: keap) DONE
+  Keap Trigger ...................................... [3] (type: keapTrigger) DONE
+  Microsoft Dynamics CRM ............................ [4] (type: microsoftDynamicsCrm) DONE
   Monica CRM ........................................ [2] (type: monicaCrm) DONE
-  Pipedrive ......................................... [3] (type: pipedrive)
-  Pipedrive Trigger ................................. [3] (type: pipedriveTrigger)
-  Salesforce ........................................ [5] (type: salesforce)
-  Salesforce Trigger ................................ [4] (type: salesforceTrigger)
+  Pipedrive ......................................... [3] (type: pipedrive) DONE
+  Pipedrive Trigger ................................. [3] (type: pipedriveTrigger) DONE
+  Salesforce ........................................ [5] (type: salesforce) DONE
+  Salesforce Trigger ................................ [4] (type: salesforceTrigger) DONE
   Salesmate ......................................... [2] (type: salesmate) DONE
-  Zoho CRM .......................................... [3] (type: zohoCrm)
+  Zoho CRM .......................................... [3] (type: zohoCrm) DONE
 
 ================================================================================
 CUSTOMER SUPPORT
 ================================================================================
 
   Drift ............................................. [2] (type: drift) DONE
-  Freshdesk ......................................... [3] (type: freshdesk)
-  Freshservice ...................................... [3] (type: freshservice)
-  HaloPSA ........................................... [3] (type: haloPsa)
-  Help Scout ........................................ [3] (type: helpScout)
-  Help Scout Trigger ................................ [3] (type: helpScoutTrigger)
-  Intercom .......................................... [3] (type: intercom)
-  ServiceNow ........................................ [4] (type: serviceNow)
+  Freshdesk ......................................... [3] (type: freshdesk) DONE
+  Freshservice ...................................... [3] (type: freshservice) DONE
+  HaloPSA ........................................... [3] (type: haloPsa) DONE
+  Help Scout ........................................ [3] (type: helpScout) DONE
+  Help Scout Trigger ................................ [3] (type: helpScoutTrigger) DONE
+  Intercom .......................................... [3] (type: intercom) DONE
+  ServiceNow ........................................ [4] (type: serviceNow) DONE
   SyncroMSP ......................................... [2] (type: syncroMsp) DONE
-  Zammad ............................................ [3] (type: zammad)
-  Zendesk ........................................... [4] (type: zendesk)
-  Zendesk Trigger ................................... [4] (type: zendeskTrigger)
+  Zammad ............................................ [3] (type: zammad) DONE
+  Zendesk ........................................... [4] (type: zendesk) DONE
+  Zendesk Trigger ................................... [4] (type: zendeskTrigger) DONE
 
 ================================================================================
 DATA & STORAGE / DATABASES
 ================================================================================
 
-  Azure Cosmos DB ................................... [4] (type: azureCosmosDb)
+  Azure Cosmos DB ................................... [4] (type: azureCosmosDb) DONE
   Baserow ........................................... [2] (type: baserow) DONE
   CrateDB ........................................... [2] (type: crateDb) DONE
-  Elasticsearch ..................................... [3] (type: elasticsearch)
-  Google BigQuery ................................... [3] (type: googleBigQuery)
-  Google Cloud Firestore ............................ [3] (type: googleFirebaseCloudFirestore)
-  Google Cloud Realtime Database ..................... [3] (type: googleFirebaseRealtimeDatabase)
-  Microsoft SQL Server .............................. [3] (type: microsoftSql)
+  Elasticsearch ..................................... [3] (type: elasticsearch) DONE
+  Google BigQuery ................................... [3] (type: googleBigQuery) DONE
+  Google Cloud Firestore ............................ [3] (type: googleFirebaseCloudFirestore) DONE
+  Google Cloud Realtime Database ..................... [3] (type: googleFirebaseRealtimeDatabase) DONE
+  Microsoft SQL Server .............................. [3] (type: microsoftSql) DONE
   NocoDB ............................................ [2] (type: nocoDb) DONE
-  Postgres Trigger .................................. [3] (type: postgresTrigger)
+  Postgres Trigger .................................. [3] (type: postgresTrigger) DONE
   QuestDB ........................................... [2] (type: questDb) DONE
-  Redis Trigger ..................................... [3] (type: redisTrigger)
-  Snowflake ......................................... [3] (type: snowflake)
-  Supabase .......................................... [3] (type: supabase)
+  Redis Trigger ..................................... [3] (type: redisTrigger) DONE
+  Snowflake ......................................... [3] (type: snowflake) DONE
+  Supabase .......................................... [3] (type: supabase) DONE
   TimescaleDB ....................................... [2] (type: timescaleDb) DONE
 
 ================================================================================
@@ -337,143 +337,143 @@ DATA TRANSFORMATION
   HTML Extract ...................................... [2] (type: htmlExtract) SKIP (deprecated/hidden in n8n)
   iCalendar ......................................... [2] (type: iCalendar) SKIP (deprecated/hidden in n8n)
   JWT ............................................... [2] (type: jwt) DONE
-  Spreadsheet File .................................. [3] (type: spreadsheetFile)
+  Spreadsheet File .................................. [3] (type: spreadsheetFile) DONE
   TOTP .............................................. [1] (type: totp) DONE
 
 ================================================================================
 DEVELOPMENT / DEVOPS
 ================================================================================
 
-  Bitbucket Trigger ................................. [3] (type: bitbucketTrigger)
+  Bitbucket Trigger ................................. [3] (type: bitbucketTrigger) DONE
   CircleCI .......................................... [2] (type: circleCi) DONE
-  Git ............................................... [3] (type: git)
-  GitHub ............................................ [4] (type: github)
-  GitHub Trigger .................................... [3] (type: githubTrigger)
-  GitLab ............................................ [4] (type: gitlab)
-  GitLab Trigger .................................... [3] (type: gitlabTrigger)
-  Grafana ........................................... [3] (type: grafana)
+  Git ............................................... [3] (type: git) DONE
+  GitHub ............................................ [4] (type: github) DONE
+  GitHub Trigger .................................... [3] (type: githubTrigger) DONE
+  GitLab ............................................ [4] (type: gitlab) DONE
+  GitLab Trigger .................................... [3] (type: gitlabTrigger) DONE
+  Grafana ........................................... [3] (type: grafana) DONE
   Jenkins ........................................... [2] (type: jenkins) DONE
   Npm ............................................... [2] (type: npm) DONE
   Rundeck ........................................... [2] (type: rundeck) DONE
-  Sentry.io ......................................... [3] (type: sentryIo)
+  Sentry.io ......................................... [3] (type: sentryIo) DONE
   TravisCI .......................................... [2] (type: travisCi) DONE
 
 ================================================================================
 E-COMMERCE / PAYMENTS
 ================================================================================
 
-  Chargebee ......................................... [3] (type: chargebee)
-  Chargebee Trigger ................................. [3] (type: chargebeeTrigger)
-  Invoice Ninja ..................................... [3] (type: invoiceNinja)
-  Invoice Ninja Trigger ............................. [3] (type: invoiceNinjaTrigger)
-  Magento 2 ......................................... [4] (type: magento2)
-  Paddle ............................................ [3] (type: paddle)
-  PayPal ............................................ [4] (type: payPal)
-  PayPal Trigger .................................... [3] (type: payPalTrigger)
-  QuickBooks Online ................................. [4] (type: quickBooks)
-  Shopify ........................................... [4] (type: shopify)
-  Shopify Trigger ................................... [4] (type: shopifyTrigger)
-  Stripe ............................................ [4] (type: stripe)
-  Stripe Trigger .................................... [4] (type: stripeTrigger)
-  WooCommerce ....................................... [4] (type: wooCommerce)
-  WooCommerce Trigger ............................... [3] (type: wooCommerceTrigger)
+  Chargebee ......................................... [3] (type: chargebee) DONE
+  Chargebee Trigger ................................. [3] (type: chargebeeTrigger) DONE
+  Invoice Ninja ..................................... [3] (type: invoiceNinja) DONE
+  Invoice Ninja Trigger ............................. [3] (type: invoiceNinjaTrigger) DONE
+  Magento 2 ......................................... [4] (type: magento2) DONE
+  Paddle ............................................ [3] (type: paddle) DONE
+  PayPal ............................................ [4] (type: payPal) DONE
+  PayPal Trigger .................................... [3] (type: payPalTrigger) DONE
+  QuickBooks Online ................................. [4] (type: quickBooks) DONE
+  Shopify ........................................... [4] (type: shopify) DONE
+  Shopify Trigger ................................... [4] (type: shopifyTrigger) DONE
+  Stripe ............................................ [4] (type: stripe) DONE
+  Stripe Trigger .................................... [4] (type: stripeTrigger) DONE
+  WooCommerce ....................................... [4] (type: wooCommerce) DONE
+  WooCommerce Trigger ............................... [3] (type: wooCommerceTrigger) DONE
 
 ================================================================================
 FILE OPERATIONS
 ================================================================================
 
   Convert to File ................................... [2] (type: convertToFile) DONE
-  Edit Image ........................................ [3] (type: editImage)
+  Edit Image ........................................ [3] (type: editImage) DONE
   Extract from File ................................. [2] (type: extractFromFile) DONE
   Read PDF .......................................... [2] (type: readPdf) SKIP (deprecated/hidden in n8n)
   Read/Write Files from Disk ........................ [2] (type: readWriteFile) DONE
-  SSH ............................................... [3] (type: ssh)
+  SSH ............................................... [3] (type: ssh) DONE
 
 ================================================================================
 FINANCE
 ================================================================================
 
   ProfitWell ........................................ [2] (type: profitWell) DONE
-  Wise .............................................. [3] (type: wise)
-  Wise Trigger ...................................... [3] (type: wiseTrigger)
-  Xero .............................................. [4] (type: xero)
+  Wise .............................................. [3] (type: wise) DONE
+  Wise Trigger ...................................... [3] (type: wiseTrigger) DONE
+  Xero .............................................. [4] (type: xero) DONE
 
 ================================================================================
 GOOGLE SERVICES
 ================================================================================
 
-  Google Ads ........................................ [4] (type: googleAds)
+  Google Ads ........................................ [4] (type: googleAds) DONE
   Google Books ...................................... [2] (type: googleBooks) DONE
-  Google Business Profile ........................... [3] (type: googleBusinessProfile)
-  Google Business Profile Trigger ................... [3] (type: googleBusinessProfileTrigger)
-  Google Calendar ................................... [3] (type: googleCalendar)
-  Google Calendar Trigger ........................... [3] (type: googleCalendarTrigger)
-  Google Chat ....................................... [3] (type: googleChat)
+  Google Business Profile ........................... [3] (type: googleBusinessProfile) DONE
+  Google Business Profile Trigger ................... [3] (type: googleBusinessProfileTrigger) DONE
+  Google Calendar ................................... [3] (type: googleCalendar) DONE
+  Google Calendar Trigger ........................... [3] (type: googleCalendarTrigger) DONE
+  Google Chat ....................................... [3] (type: googleChat) DONE
   Google Cloud Natural Language ...................... [2] (type: googleCloudNaturalLanguage) DONE
-  Google Contacts ................................... [3] (type: googleContacts)
-  Google Docs ....................................... [3] (type: googleDocs)
+  Google Contacts ................................... [3] (type: googleContacts) DONE
+  Google Docs ....................................... [3] (type: googleDocs) DONE
   Google Perspective ................................ [2] (type: googlePerspective) DONE
-  Google Slides ..................................... [3] (type: googleSlides)
+  Google Slides ..................................... [3] (type: googleSlides) DONE
   Google Translate .................................. [1] (type: googleTranslate) DONE
-  Google Workspace Admin ............................ [3] (type: gSuiteAdmin)
-  YouTube ........................................... [3] (type: youTube)
+  Google Workspace Admin ............................ [3] (type: gSuiteAdmin) DONE
+  YouTube ........................................... [3] (type: youTube) DONE
 
 ================================================================================
 HR
 ================================================================================
 
-  BambooHR ......................................... [3] (type: bambooHr)
+  BambooHR ......................................... [3] (type: bambooHr) DONE
   Workable Trigger .................................. [2] (type: workableTrigger) DONE
 
 ================================================================================
 MARKETING / EMAIL MARKETING
 ================================================================================
 
-  ActiveCampaign .................................... [3] (type: activeCampaign)
-  ActiveCampaign Trigger ............................ [3] (type: activeCampaignTrigger)
+  ActiveCampaign .................................... [3] (type: activeCampaign) DONE
+  ActiveCampaign Trigger ............................ [3] (type: activeCampaignTrigger) DONE
   Autopilot ......................................... [2] (type: autopilot) DONE
   Autopilot Trigger ................................. [2] (type: autopilotTrigger) DONE
   ConvertKit ........................................ [2] (type: convertKit) DONE
   ConvertKit Trigger ................................ [2] (type: convertKitTrigger) DONE
-  Customer.io ....................................... [3] (type: customerIo)
-  Customer.io Trigger ............................... [3] (type: customerIoTrigger)
+  Customer.io ....................................... [3] (type: customerIo) DONE
+  Customer.io Trigger ............................... [3] (type: customerIoTrigger) DONE
   E-goi ............................................. [2] (type: egoi) DONE
   Emelia ............................................ [2] (type: emelia) DONE
   Emelia Trigger .................................... [2] (type: emeliaTrigger) DONE
-  GetResponse ....................................... [3] (type: getResponse)
-  GetResponse Trigger ............................... [3] (type: getResponseTrigger)
-  Iterable .......................................... [3] (type: iterable)
+  GetResponse ....................................... [3] (type: getResponse) DONE
+  GetResponse Trigger ............................... [3] (type: getResponseTrigger) DONE
+  Iterable .......................................... [3] (type: iterable) DONE
   Lemlist ........................................... [2] (type: lemlist) DONE
   Lemlist Trigger ................................... [2] (type: lemlistTrigger) DONE
   Mailcheck ......................................... [1] (type: mailcheck) DONE
-  Mailchimp ......................................... [3] (type: mailchimp)
-  Mailchimp Trigger ................................. [3] (type: mailchimpTrigger)
+  Mailchimp ......................................... [3] (type: mailchimp) DONE
+  Mailchimp Trigger ................................. [3] (type: mailchimpTrigger) DONE
   MailerLite ........................................ [2] (type: mailerLite) DONE
   MailerLite Trigger ................................ [2] (type: mailerLiteTrigger) DONE
-  Mautic ............................................ [3] (type: mautic)
-  Mautic Trigger .................................... [3] (type: mauticTrigger)
-  Segment ........................................... [3] (type: segment)
+  Mautic ............................................ [3] (type: mautic) DONE
+  Mautic Trigger .................................... [3] (type: mauticTrigger) DONE
+  Segment ........................................... [3] (type: segment) DONE
   Sendy ............................................. [1] (type: sendy) DONE
 
 ================================================================================
 MESSAGE QUEUES / STREAMING
 ================================================================================
 
-  AMQP Sender ...................................... [3] (type: amqp)
-  AMQP Trigger ...................................... [4] (type: amqpTrigger)
-  Kafka ............................................. [4] (type: kafka)
-  Kafka Trigger ..................................... [5] (type: kafkaTrigger)
-  MQTT .............................................. [3] (type: mqtt)
-  MQTT Trigger ...................................... [4] (type: mqttTrigger)
-  RabbitMQ .......................................... [3] (type: rabbitMq)
-  RabbitMQ Trigger .................................. [4] (type: rabbitMqTrigger)
+  AMQP Sender ...................................... [3] (type: amqp) DONE
+  AMQP Trigger ...................................... [4] (type: amqpTrigger) DONE
+  Kafka ............................................. [4] (type: kafka) DONE
+  Kafka Trigger ..................................... [5] (type: kafkaTrigger) DONE
+  MQTT .............................................. [3] (type: mqtt) DONE
+  MQTT Trigger ...................................... [4] (type: mqttTrigger) DONE
+  RabbitMQ .......................................... [3] (type: rabbitMq) DONE
+  RabbitMQ Trigger .................................. [4] (type: rabbitMqTrigger) DONE
 
 ================================================================================
 MICROSOFT SERVICES
 ================================================================================
 
-  Microsoft Entra ID ................................ [3] (type: microsoftEntra)
-  Microsoft Graph Security .......................... [3] (type: microsoftGraphSecurity)
+  Microsoft Entra ID ................................ [3] (type: microsoftEntra) DONE
+  Microsoft Graph Security .......................... [3] (type: microsoftGraphSecurity) DONE
 
 ================================================================================
 MISCELLANEOUS
@@ -486,12 +486,12 @@ MISCELLANEOUS
   Bannerbear ........................................ [2] (type: bannerbear) DONE
   Beeminder ......................................... [2] (type: beeminder) DONE
   Bitly ............................................. [1] (type: bitly) DONE
-  Bitwarden ......................................... [3] (type: bitwarden)
+  Bitwarden ......................................... [3] (type: bitwarden) DONE
   Brandfetch ........................................ [1] (type: brandfetch) DONE
   Clearbit .......................................... [2] (type: clearbit) DONE
-  Clockify .......................................... [3] (type: clockify)
-  Clockify Trigger .................................. [3] (type: clockifyTrigger)
-  Cloudflare ........................................ [3] (type: cloudflare)
+  Clockify .......................................... [3] (type: clockify) DONE
+  Clockify Trigger .................................. [3] (type: clockifyTrigger) DONE
+  Cloudflare ........................................ [3] (type: cloudflare) DONE
   CoinGecko ......................................... [2] (type: coinGecko) DONE
   Cortex ............................................ [2] (type: cortex) DONE
   Currents .......................................... [2] (type: currents) DONE
@@ -499,42 +499,42 @@ MISCELLANEOUS
   Demio ............................................. [2] (type: demio) DONE
   DHL ............................................... [2] (type: dhl) DONE
   Dropcontact ....................................... [2] (type: dropcontact) DONE
-  Elastic Security .................................. [3] (type: elasticSecurity)
-  ERPNext ........................................... [3] (type: erpNext)
+  Elastic Security .................................. [3] (type: elasticSecurity) DONE
+  ERPNext ........................................... [3] (type: erpNext) DONE
   Eventbrite Trigger ................................ [2] (type: eventbriteTrigger) DONE
-  Figma Trigger (Beta) .............................. [3] (type: figmaTrigger)
-  FileMaker ......................................... [3] (type: fileMaker)
+  Figma Trigger (Beta) .............................. [3] (type: figmaTrigger) DONE
+  FileMaker ......................................... [3] (type: fileMaker) DONE
   Flow .............................................. [2] (type: flow) DONE
   Flow Trigger ...................................... [2] (type: flowTrigger) DONE
-  Gong .............................................. [3] (type: gong)
-  GoToWebinar ....................................... [3] (type: goToWebinar)
+  Gong .............................................. [3] (type: gong) DONE
+  GoToWebinar ....................................... [3] (type: goToWebinar) DONE
   GraphQL ........................................... [2] (type: graphQl) DONE
   Gumroad Trigger ................................... [2] (type: gumroadTrigger) DONE
   Hacker News ....................................... [1] (type: hackerNews) DONE
-  Harvest ........................................... [3] (type: harvest)
-  Home Assistant .................................... [3] (type: homeAssistant)
+  Harvest ........................................... [3] (type: harvest) DONE
+  Home Assistant .................................... [3] (type: homeAssistant) DONE
   Hunter ............................................ [2] (type: hunter) DONE
-  LDAP .............................................. [3] (type: ldap)
+  LDAP .............................................. [3] (type: ldap) DONE
   LoneScale ......................................... [2] (type: loneScale) DONE
   LoneScale Trigger ................................. [2] (type: loneScaleTrigger) DONE
   Marketstack ....................................... [1] (type: marketstack) DONE
   Metabase .......................................... [2] (type: metabase) DONE
   Mindee ............................................ [2] (type: mindee) DONE
-  MISP .............................................. [3] (type: misp)
+  MISP .............................................. [3] (type: misp) DONE
   NASA .............................................. [1] (type: nasa) DONE
   Netlify ........................................... [2] (type: netlify) DONE
   Netlify Trigger ................................... [2] (type: netlifyTrigger) DONE
-  Netscaler ADC ..................................... [3] (type: netscalerAdc)
-  Odoo .............................................. [3] (type: odoo)
-  Okta .............................................. [3] (type: okta)
+  Netscaler ADC ..................................... [3] (type: netscalerAdc) DONE
+  Odoo .............................................. [3] (type: odoo) DONE
+  Okta .............................................. [3] (type: okta) DONE
   One Simple API .................................... [1] (type: oneSimpleApi) DONE
-  Onfleet ........................................... [3] (type: onfleet)
-  Onfleet Trigger ................................... [3] (type: onfleetTrigger)
+  Onfleet ........................................... [3] (type: onfleet) DONE
+  Onfleet Trigger ................................... [3] (type: onfleetTrigger) DONE
   OpenThesaurus ..................................... [1] (type: openThesaurus) DONE
   OpenWeatherMap .................................... [1] (type: openWeatherMap) DONE
   Orbit ............................................. [2] (type: orbit) SKIP (deprecated - service shut down)
   Oura .............................................. [2] (type: oura) DONE
-  PagerDuty ......................................... [3] (type: pagerDuty)
+  PagerDuty ......................................... [3] (type: pagerDuty) DONE
   Peekalink ......................................... [1] (type: peekalink) DONE
   Phantombuster ..................................... [2] (type: phantombuster) DONE
   Philips Hue ....................................... [2] (type: philipsHue) DONE
@@ -542,18 +542,18 @@ MISCELLANEOUS
   PostHog ........................................... [2] (type: postHog) DONE
   QuickChart ........................................ [1] (type: quickChart) DONE
   Raindrop .......................................... [2] (type: raindrop) DONE
-  RSS Feed Trigger .................................. [3] (type: rssFeedReadTrigger)
+  RSS Feed Trigger .................................. [3] (type: rssFeedReadTrigger) DONE
   RSS Read .......................................... [1] (type: rssFeedRead) DONE
   SecurityScorecard ................................. [2] (type: securityScorecard) DONE
-  Splunk ............................................ [3] (type: splunk)
-  Spotify ........................................... [3] (type: spotify)
+  Splunk ............................................ [3] (type: splunk) DONE
+  Spotify ........................................... [3] (type: spotify) DONE
   Strava ............................................ [2] (type: strava) DONE
   Strava Trigger .................................... [2] (type: stravaTrigger) DONE
   Tapfiliate ........................................ [2] (type: tapfiliate) DONE
-  TheHive ........................................... [3] (type: theHive)
-  TheHive 5 Trigger ................................. [3] (type: theHiveProjectTrigger)
-  TheHive (Project) ................................. [3] (type: theHiveProject)
-  TheHive Trigger ................................... [3] (type: theHiveTrigger)
+  TheHive ........................................... [3] (type: theHive) DONE
+  TheHive 5 Trigger ................................. [3] (type: theHiveProjectTrigger) DONE
+  TheHive (Project) ................................. [3] (type: theHiveProject) DONE
+  TheHive Trigger ................................... [3] (type: theHiveTrigger) DONE
   Toggl Trigger ..................................... [2] (type: togglTrigger) DONE
   Track Time Saved .................................. [1] (type: timeSaved) DONE
   Unleashed Software ................................ [2] (type: unleashedSoftware) DONE
@@ -561,10 +561,10 @@ MISCELLANEOUS
   uProc ............................................. [1] (type: uProc) DONE
   UptimeRobot ....................................... [2] (type: uptimeRobot) DONE
   urlscan.io ........................................ [2] (type: urlScanIo) DONE
-  Venafi TLS Protect Cloud .......................... [3] (type: venafiTlsProtectCloud)
-  Venafi TLS Protect Cloud Trigger .................. [3] (type: venafiTlsProtectCloudTrigger)
-  Venafi TLS Protect Datacenter ..................... [3] (type: venafiTlsProtectDatacenter)
-  Venafi TLS Protect Datacenter Trigger ............. [3] (type: venafiTlsProtectDatacenterTrigger)
+  Venafi TLS Protect Cloud .......................... [3] (type: venafiTlsProtectCloud) DONE
+  Venafi TLS Protect Cloud Trigger .................. [3] (type: venafiTlsProtectCloudTrigger) DONE
+  Venafi TLS Protect Datacenter ..................... [3] (type: venafiTlsProtectDatacenter) DONE
+  Venafi TLS Protect Datacenter Trigger ............. [3] (type: venafiTlsProtectDatacenterTrigger) DONE
   Vero .............................................. [2] (type: vero) DONE
   Yourls ............................................ [1] (type: yourls) DONE
 
@@ -572,24 +572,24 @@ MISCELLANEOUS
 PROJECT MANAGEMENT
 ================================================================================
 
-  Asana ............................................. [4] (type: asana)
-  Asana Trigger ..................................... [3] (type: asanaTrigger)
-  ClickUp ........................................... [4] (type: clickUp)
-  ClickUp Trigger ................................... [3] (type: clickUpTrigger)
+  Asana ............................................. [4] (type: asana) DONE
+  Asana Trigger ..................................... [3] (type: asanaTrigger) DONE
+  ClickUp ........................................... [4] (type: clickUp) DONE
+  ClickUp Trigger ................................... [3] (type: clickUpTrigger) DONE
   Google Tasks ...................................... [2] (type: googleTasks) DONE
-  Jira Software ..................................... [5] (type: jira)
-  Jira Trigger ...................................... [4] (type: jiraTrigger)
-  Linear ............................................ [3] (type: linear)
-  Linear Trigger .................................... [3] (type: linearTrigger)
+  Jira Software ..................................... [5] (type: jira) DONE
+  Jira Trigger ...................................... [4] (type: jiraTrigger) DONE
+  Linear ............................................ [3] (type: linear) DONE
+  Linear Trigger .................................... [3] (type: linearTrigger) DONE
   Microsoft To Do ................................... [2] (type: microsoftToDo) DONE
-  Monday.com ........................................ [3] (type: mondayCom)
-  Notion ............................................ [4] (type: notion)
-  Notion Trigger .................................... [3] (type: notionTrigger)
+  Monday.com ........................................ [3] (type: mondayCom) DONE
+  Notion ............................................ [4] (type: notion) DONE
+  Notion Trigger .................................... [3] (type: notionTrigger) DONE
   Taiga ............................................. [2] (type: taiga) DONE
   Taiga Trigger ..................................... [2] (type: taigaTrigger) DONE
   Todoist ........................................... [2] (type: todoist) DONE
-  Trello ............................................ [3] (type: trello)
-  Trello Trigger .................................... [3] (type: trelloTrigger)
+  Trello ............................................ [3] (type: trello) DONE
+  Trello Trigger .................................... [3] (type: trelloTrigger) DONE
   Wekan ............................................. [2] (type: wekan) DONE
 
 ================================================================================
@@ -605,25 +605,25 @@ SOCIAL MEDIA
 ================================================================================
 
   Disqus ............................................ [2] (type: disqus) DONE
-  Facebook Graph API ................................ [3] (type: facebookGraphApi)
-  Facebook Lead Ads Trigger ......................... [3] (type: facebookLeadAdsTrigger)
-  Facebook Trigger .................................. [3] (type: facebookTrigger)
-  LinkedIn .......................................... [3] (type: linkedIn)
+  Facebook Graph API ................................ [3] (type: facebookGraphApi) DONE
+  Facebook Lead Ads Trigger ......................... [3] (type: facebookLeadAdsTrigger) DONE
+  Facebook Trigger .................................. [3] (type: facebookTrigger) DONE
+  LinkedIn .......................................... [3] (type: linkedIn) DONE
   Medium ............................................ [2] (type: medium) DONE
   Reddit ............................................ [2] (type: reddit) DONE
-  X (Formerly Twitter) .............................. [3] (type: twitter)
+  X (Formerly Twitter) .............................. [3] (type: twitter) DONE
 
 ================================================================================
 SPREADSHEETS & DATA TABLES
 ================================================================================
 
-  Airtable .......................................... [3] (type: airtable)
-  Airtable Trigger .................................. [3] (type: airtableTrigger)
-  Coda .............................................. [3] (type: coda)
-  Google Sheets ..................................... [4] (type: googleSheets)
-  Google Sheets Trigger ............................. [3] (type: googleSheetsTrigger)
+  Airtable .......................................... [3] (type: airtable) DONE
+  Airtable Trigger .................................. [3] (type: airtableTrigger) DONE
+  Coda .............................................. [3] (type: coda) DONE
+  Google Sheets ..................................... [4] (type: googleSheets) DONE
+  Google Sheets Trigger ............................. [3] (type: googleSheetsTrigger) DONE
   Grist ............................................. [2] (type: grist) DONE
-  Microsoft Excel 365 ............................... [4] (type: microsoftExcel)
+  Microsoft Excel 365 ............................... [4] (type: microsoftExcel) DONE
   Quick Base ........................................ [2] (type: quickBase) DONE
   SeaTable .......................................... [2] (type: seaTable) DONE
   SeaTable Trigger .................................. [2] (type: seaTableTrigger) DONE
@@ -650,9 +650,9 @@ STANDALONE AI SERVICES (BASE PACKAGE)
   Humantic AI ....................................... [2] (type: humanticAi) DONE
   Jina AI ........................................... [2] (type: jinaAi) DONE
   LingvaNex ......................................... [1] (type: lingvaNex) DONE
-  Microsoft Agent 365 Trigger ....................... [4] (type: microsoftAgent365Trigger)
-  Mistral AI (Standalone) ........................... [3] (type: mistralAi)
-  OpenAI (Standalone) ............................... [4] (type: openAi)
+  Microsoft Agent 365 Trigger ....................... [4] (type: microsoftAgent365Trigger) DONE
+  Mistral AI (Standalone) ........................... [3] (type: mistralAi) DONE
+  OpenAI (Standalone) ............................... [4] (type: openAi) DONE
   Perplexity ........................................ [2] (type: perplexity) DONE
 
 
