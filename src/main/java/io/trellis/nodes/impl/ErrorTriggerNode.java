@@ -3,7 +3,6 @@ package io.trellis.nodes.impl;
 import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractNode;
 import io.trellis.nodes.core.*;
-import io.trellis.nodes.core.NodeParameter.ParameterType;
 
 import java.util.*;
 

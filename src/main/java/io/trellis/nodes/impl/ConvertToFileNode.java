@@ -174,7 +174,6 @@ public class ConvertToFileNode extends AbstractNode {
 		return createFileInfo(data, mimeType, fileName);
 	}
 
-	@SuppressWarnings("unchecked")
 	private List<Map<String, Object>> unwrapJsonList(List<Map<String, Object>> items) {
 		List<Map<String, Object>> result = new ArrayList<>();
 		for (Map<String, Object> item : items) {

@@ -1,6 +1,6 @@
 PENDING NODES — n8n nodes not yet implemented in Trellis
 Generated: 2026-02-25
-Trellis implemented: 202 nodes | n8n total: ~512 nodes
+Trellis implemented: 250 nodes | n8n total: ~512 nodes
 
 Complexity Rating Scale (0-5):
   0 = Trivial (minimal logic, direct mapping)
@@ -431,13 +431,13 @@ MARKETING / EMAIL MARKETING
 
   ActiveCampaign .................................... [3] (type: activeCampaign)
   ActiveCampaign Trigger ............................ [3] (type: activeCampaignTrigger)
-  Autopilot ......................................... [2] (type: autopilot)
-  Autopilot Trigger ................................. [2] (type: autopilotTrigger)
-  ConvertKit ........................................ [2] (type: convertKit)
-  ConvertKit Trigger ................................ [2] (type: convertKitTrigger)
+  Autopilot ......................................... [2] (type: autopilot) DONE
+  Autopilot Trigger ................................. [2] (type: autopilotTrigger) DONE
+  ConvertKit ........................................ [2] (type: convertKit) DONE
+  ConvertKit Trigger ................................ [2] (type: convertKitTrigger) DONE
   Customer.io ....................................... [3] (type: customerIo)
   Customer.io Trigger ............................... [3] (type: customerIoTrigger)
-  E-goi ............................................. [2] (type: egoi)
+  E-goi ............................................. [2] (type: egoi) DONE
   Emelia ............................................ [2] (type: emelia)
   Emelia Trigger .................................... [2] (type: emeliaTrigger)
   GetResponse ....................................... [3] (type: getResponse)
@@ -448,8 +448,8 @@ MARKETING / EMAIL MARKETING
   Mailcheck ......................................... [1] (type: mailcheck) DONE
   Mailchimp ......................................... [3] (type: mailchimp)
   Mailchimp Trigger ................................. [3] (type: mailchimpTrigger)
-  MailerLite ........................................ [2] (type: mailerLite)
-  MailerLite Trigger ................................ [2] (type: mailerLiteTrigger)
+  MailerLite ........................................ [2] (type: mailerLite) DONE
+  MailerLite Trigger ................................ [2] (type: mailerLiteTrigger) DONE
   Mautic ............................................ [3] (type: mautic)
   Mautic Trigger .................................... [3] (type: mauticTrigger)
   Segment ........................................... [3] (type: segment)
@@ -483,37 +483,37 @@ MISCELLANEOUS
   Adalo ............................................. [2] (type: adalo)
   Airtop ............................................ [2] (type: airtop)
   APITemplate.io .................................... [2] (type: apiTemplateIo)
-  Bannerbear ........................................ [2] (type: bannerbear)
-  Beeminder ......................................... [2] (type: beeminder)
+  Bannerbear ........................................ [2] (type: bannerbear) DONE
+  Beeminder ......................................... [2] (type: beeminder) DONE
   Bitly ............................................. [1] (type: bitly) DONE
   Bitwarden ......................................... [3] (type: bitwarden)
   Brandfetch ........................................ [1] (type: brandfetch) DONE
-  Clearbit .......................................... [2] (type: clearbit)
+  Clearbit .......................................... [2] (type: clearbit) DONE
   Clockify .......................................... [3] (type: clockify)
   Clockify Trigger .................................. [3] (type: clockifyTrigger)
   Cloudflare ........................................ [3] (type: cloudflare)
   CoinGecko ......................................... [2] (type: coinGecko) DONE
   Cortex ............................................ [2] (type: cortex)
-  Currents .......................................... [2] (type: currents)
-  Currents Trigger .................................. [2] (type: currentsTrigger)
-  Demio ............................................. [2] (type: demio)
-  DHL ............................................... [2] (type: dhl)
-  Dropcontact ....................................... [2] (type: dropcontact)
+  Currents .......................................... [2] (type: currents) DONE
+  Currents Trigger .................................. [2] (type: currentsTrigger) DONE
+  Demio ............................................. [2] (type: demio) DONE
+  DHL ............................................... [2] (type: dhl) DONE
+  Dropcontact ....................................... [2] (type: dropcontact) DONE
   Elastic Security .................................. [3] (type: elasticSecurity)
   ERPNext ........................................... [3] (type: erpNext)
-  Eventbrite Trigger ................................ [2] (type: eventbriteTrigger)
+  Eventbrite Trigger ................................ [2] (type: eventbriteTrigger) DONE
   Figma Trigger (Beta) .............................. [3] (type: figmaTrigger)
   FileMaker ......................................... [3] (type: fileMaker)
-  Flow .............................................. [2] (type: flow)
-  Flow Trigger ...................................... [2] (type: flowTrigger)
+  Flow .............................................. [2] (type: flow) DONE
+  Flow Trigger ...................................... [2] (type: flowTrigger) DONE
   Gong .............................................. [3] (type: gong)
   GoToWebinar ....................................... [3] (type: goToWebinar)
   GraphQL ........................................... [2] (type: graphQl) DONE
-  Gumroad Trigger ................................... [2] (type: gumroadTrigger)
+  Gumroad Trigger ................................... [2] (type: gumroadTrigger) DONE
   Hacker News ....................................... [1] (type: hackerNews) DONE
   Harvest ........................................... [3] (type: harvest)
   Home Assistant .................................... [3] (type: homeAssistant)
-  Hunter ............................................ [2] (type: hunter)
+  Hunter ............................................ [2] (type: hunter) DONE
   LDAP .............................................. [3] (type: ldap)
   LoneScale ......................................... [2] (type: loneScale)
   LoneScale Trigger ................................. [2] (type: loneScaleTrigger)
@@ -522,8 +522,8 @@ MISCELLANEOUS
   Mindee ............................................ [2] (type: mindee)
   MISP .............................................. [3] (type: misp)
   NASA .............................................. [1] (type: nasa) DONE
-  Netlify ........................................... [2] (type: netlify)
-  Netlify Trigger ................................... [2] (type: netlifyTrigger)
+  Netlify ........................................... [2] (type: netlify) DONE
+  Netlify Trigger ................................... [2] (type: netlifyTrigger) DONE
   Netscaler ADC ..................................... [3] (type: netscalerAdc)
   Odoo .............................................. [3] (type: odoo)
   Okta .............................................. [3] (type: okta)
@@ -533,39 +533,39 @@ MISCELLANEOUS
   OpenThesaurus ..................................... [1] (type: openThesaurus) DONE
   OpenWeatherMap .................................... [1] (type: openWeatherMap) DONE
   Orbit ............................................. [2] (type: orbit) SKIP (deprecated - service shut down)
-  Oura .............................................. [2] (type: oura)
+  Oura .............................................. [2] (type: oura) DONE
   PagerDuty ......................................... [3] (type: pagerDuty)
   Peekalink ......................................... [1] (type: peekalink) DONE
-  Phantombuster ..................................... [2] (type: phantombuster)
+  Phantombuster ..................................... [2] (type: phantombuster) DONE
   Philips Hue ....................................... [2] (type: philipsHue)
   PostBin ........................................... [1] (type: postBin) DONE
-  PostHog ........................................... [2] (type: postHog)
+  PostHog ........................................... [2] (type: postHog) DONE
   QuickChart ........................................ [1] (type: quickChart) DONE
   Raindrop .......................................... [2] (type: raindrop)
   RSS Feed Trigger .................................. [3] (type: rssFeedReadTrigger)
   RSS Read .......................................... [1] (type: rssFeedRead) DONE
-  SecurityScorecard ................................. [2] (type: securityScorecard)
+  SecurityScorecard ................................. [2] (type: securityScorecard) DONE
   Splunk ............................................ [3] (type: splunk)
   Spotify ........................................... [3] (type: spotify)
-  Strava ............................................ [2] (type: strava)
-  Strava Trigger .................................... [2] (type: stravaTrigger)
-  Tapfiliate ........................................ [2] (type: tapfiliate)
+  Strava ............................................ [2] (type: strava) DONE
+  Strava Trigger .................................... [2] (type: stravaTrigger) DONE
+  Tapfiliate ........................................ [2] (type: tapfiliate) DONE
   TheHive ........................................... [3] (type: theHive)
   TheHive 5 Trigger ................................. [3] (type: theHiveProjectTrigger)
   TheHive (Project) ................................. [3] (type: theHiveProject)
   TheHive Trigger ................................... [3] (type: theHiveTrigger)
-  Toggl Trigger ..................................... [2] (type: togglTrigger)
+  Toggl Trigger ..................................... [2] (type: togglTrigger) DONE
   Track Time Saved .................................. [1] (type: timeSaved) DONE
   Unleashed Software ................................ [2] (type: unleashedSoftware)
   Uplead ............................................ [1] (type: uplead) DONE
   uProc ............................................. [1] (type: uProc) DONE
-  UptimeRobot ....................................... [2] (type: uptimeRobot)
-  urlscan.io ........................................ [2] (type: urlScanIo)
+  UptimeRobot ....................................... [2] (type: uptimeRobot) DONE
+  urlscan.io ........................................ [2] (type: urlScanIo) DONE
   Venafi TLS Protect Cloud .......................... [3] (type: venafiTlsProtectCloud)
   Venafi TLS Protect Cloud Trigger .................. [3] (type: venafiTlsProtectCloudTrigger)
   Venafi TLS Protect Datacenter ..................... [3] (type: venafiTlsProtectDatacenter)
   Venafi TLS Protect Datacenter Trigger ............. [3] (type: venafiTlsProtectDatacenterTrigger)
-  Vero .............................................. [2] (type: vero)
+  Vero .............................................. [2] (type: vero) DONE
   Yourls ............................................ [1] (type: yourls) DONE
 
 ================================================================================
@@ -576,12 +576,12 @@ PROJECT MANAGEMENT
   Asana Trigger ..................................... [3] (type: asanaTrigger)
   ClickUp ........................................... [4] (type: clickUp)
   ClickUp Trigger ................................... [3] (type: clickUpTrigger)
-  Google Tasks ...................................... [2] (type: googleTasks)
+  Google Tasks ...................................... [2] (type: googleTasks) DONE
   Jira Software ..................................... [5] (type: jira)
   Jira Trigger ...................................... [4] (type: jiraTrigger)
   Linear ............................................ [3] (type: linear)
   Linear Trigger .................................... [3] (type: linearTrigger)
-  Microsoft To Do ................................... [2] (type: microsoftToDo)
+  Microsoft To Do ................................... [2] (type: microsoftToDo) DONE
   Monday.com ........................................ [3] (type: mondayCom)
   Notion ............................................ [4] (type: notion)
   Notion Trigger .................................... [3] (type: notionTrigger)
@@ -596,15 +596,15 @@ PROJECT MANAGEMENT
 SCHEDULING / CALENDAR
 ================================================================================
 
-  Acuity Scheduling Trigger ......................... [2] (type: acuitySchedulingTrigger)
-  Cal.com Trigger ................................... [2] (type: calTrigger)
-  Calendly Trigger .................................. [2] (type: calendlyTrigger)
+  Acuity Scheduling Trigger ......................... [2] (type: acuitySchedulingTrigger) DONE
+  Cal.com Trigger ................................... [2] (type: calTrigger) DONE
+  Calendly Trigger .................................. [2] (type: calendlyTrigger) DONE
 
 ================================================================================
 SOCIAL MEDIA
 ================================================================================
 
-  Disqus ............................................ [2] (type: disqus)
+  Disqus ............................................ [2] (type: disqus) DONE
   Facebook Graph API ................................ [3] (type: facebookGraphApi)
   Facebook Lead Ads Trigger ......................... [3] (type: facebookLeadAdsTrigger)
   Facebook Trigger .................................. [3] (type: facebookTrigger)
@@ -647,7 +647,7 @@ STANDALONE AI SERVICES (BASE PACKAGE)
 ================================================================================
 
   DeepL ............................................. [2] (type: deepL) DONE
-  Humantic AI ....................................... [2] (type: humanticAi)
+  Humantic AI ....................................... [2] (type: humanticAi) DONE
   Jina AI ........................................... [2] (type: jinaAi)
   LingvaNex ......................................... [1] (type: lingvaNex) DONE
   Microsoft Agent 365 Trigger ....................... [4] (type: microsoftAgent365Trigger)
