@@ -31,14 +31,18 @@ public class WebSocketService {
         ));
     }
 
-    public void sendNodeFinished(String executionId, String nodeId, String nodeName, String status, Object outputData) {
+    public void sendNodeFinished(String executionId, String nodeId, String nodeName,
+                                 String status, Object outputData,
+                                 long executionTimeMs, int executionOrder) {
         send("/topic/execution/" + executionId, Map.of(
                 "event", "nodeFinished",
                 "executionId", executionId,
                 "nodeId", nodeId,
                 "nodeName", nodeName,
                 "status", status,
-                "data", outputData != null ? outputData : Map.of()
+                "data", outputData != null ? outputData : Map.of(),
+                "executionTime", executionTimeMs,
+                "executionOrder", executionOrder
         ));
     }
 
