@@ -5,6 +5,7 @@ import lombok.Data;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
@@ -22,6 +23,7 @@ public class WorkflowExecutionState {
     private final Map<String, Map<String, Object>> nodeContextData = new ConcurrentHashMap<>();
     private final Map<String, Object> aiSuppliedData = new ConcurrentHashMap<>();
     private final AtomicInteger executionOrderCounter = new AtomicInteger(0);
+    private final AtomicBoolean executionFinished = new AtomicBoolean(false);
 
     @Data
     public static class NodeExecutionMetadata {
@@ -54,6 +56,15 @@ public class WorkflowExecutionState {
 
     public int nextExecutionOrder() {
         return executionOrderCounter.getAndIncrement();
+    }
+
+    /**
+     * Atomically mark this execution as finished. Returns true if this call
+     * was the first to mark it (caller should proceed with finish logic),
+     * false if another thread already marked it (caller should skip).
+     */
+    public boolean tryMarkFinished() {
+        return executionFinished.compareAndSet(false, true);
     }
 
     public void storeInput(String nodeId, List<Map<String, Object>> input) {

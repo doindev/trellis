@@ -234,6 +234,33 @@ public class WorkflowGraph {
         return body;
     }
 
+    /**
+     * Returns the set of all loop body node IDs across all loopOverItems nodes in the graph.
+     * These nodes are excluded from parallel scheduling since they are handled inline by their loop.
+     */
+    public Set<String> findAllLoopBodyNodes() {
+        Set<String> allLoopBody = new HashSet<>();
+        for (WorkflowNode node : nodes.values()) {
+            if ("loopOverItems".equals(node.getType())) {
+                allLoopBody.addAll(findLoopBodyNodes(node.getId()));
+            }
+        }
+        return allLoopBody;
+    }
+
+    /**
+     * Returns the set of direct predecessor node IDs (nodes with outgoing main connections to this node).
+     */
+    public Set<String> getPredecessors(String nodeId) {
+        Set<String> preds = new HashSet<>();
+        for (Connection conn : incomingConnections.getOrDefault(nodeId, List.of())) {
+            if ("main".equals(conn.getType())) {
+                preds.add(conn.getSourceNodeId());
+            }
+        }
+        return preds;
+    }
+
     public List<Connection> getIncomingConnectionsByType(String nodeId, String type) {
         return incomingConnections.getOrDefault(nodeId, List.of()).stream()
                 .filter(c -> type.equals(c.getType()))

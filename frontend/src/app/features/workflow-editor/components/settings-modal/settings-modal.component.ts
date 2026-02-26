@@ -8,6 +8,7 @@ export interface WorkflowSettings {
   saveManualExecutions?: string;         // 'default' | 'yes' | 'no'
   executionTimeout?: number;             // seconds, -1 = disabled
   estimatedTimeSavedPerExecution?: number; // minutes
+  parallelExecution?: boolean;
 }
 
 @Component({
@@ -76,6 +77,16 @@ export interface WorkflowSettings {
                    min="0">
             <span class="form-hint">Estimated minutes saved per run, used for insights</span>
           </div>
+
+          <div class="form-group">
+            <label class="form-check-label">
+              <input type="checkbox"
+                     class="form-check-input"
+                     [(ngModel)]="form.parallelExecution">
+              Parallel Branch Execution
+            </label>
+            <span class="form-hint">Execute independent branches simultaneously using a thread pool</span>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn-cancel" (click)="onCancel()">Cancel</button>
@@ -128,6 +139,20 @@ export interface WorkflowSettings {
       font-size: 0.75rem;
       color: hsl(0, 0%, 45%);
     }
+    .form-check-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      color: hsl(0, 0%, 96%);
+      cursor: pointer;
+    }
+    .form-check-input {
+      width: 16px;
+      height: 16px;
+      accent-color: hsl(247, 49%, 53%);
+      cursor: pointer;
+    }
   `]
 })
 export class SettingsModalComponent implements OnInit {
@@ -144,7 +169,8 @@ export class SettingsModalComponent implements OnInit {
       saveExecutionProgress: this.settings.saveExecutionProgress || 'default',
       saveManualExecutions: this.settings.saveManualExecutions || 'default',
       executionTimeout: this.settings.executionTimeout ?? -1,
-      estimatedTimeSavedPerExecution: this.settings.estimatedTimeSavedPerExecution ?? 0
+      estimatedTimeSavedPerExecution: this.settings.estimatedTimeSavedPerExecution ?? 0,
+      parallelExecution: this.settings.parallelExecution ?? false
     };
   }
 

@@ -10,6 +10,7 @@ import io.trellis.nodes.core.*;
 import io.trellis.repository.WorkflowVersionRepository;
 import io.trellis.service.*;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
@@ -36,6 +38,9 @@ public class WorkflowEngine {
     private final WaitService waitService;
     private final WaitPollerService waitPollerService;
     private final WorkflowVersionRepository workflowVersionRepository;
+
+    @Resource(name = "branchExecutorService")
+    private ExecutorService branchExecutorService;
 
     private final Map<String, WorkflowExecutionState> runningExecutions = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Map<String, Object>>> pendingWebhookResponses = new ConcurrentHashMap<>();
@@ -586,46 +591,25 @@ public class WorkflowEngine {
                 order = order.stream().filter(reachable::contains).toList();
             }
 
-            for (String nodeId : order) {
-                if (state.isCancelled()) {
-                    executionService.finish(executionId, ExecutionStatus.CANCELED,
-                            state.buildResultData(), "Execution cancelled by user");
-                    webSocketService.sendExecutionFinished(executionId, "CANCELED", state.buildResultData());
-                    return;
-                }
+            boolean parallelEnabled = isParallelEnabled(workflow);
 
-                boolean ok = executeNodeInWorkflow(nodeId, executionId, workflow, inputData,
-                        mode, graph, state, variables, effectivePinData);
-                if (!ok) return; // fatal error
-
-                // Handle loop nodes: if this node is a loopOverItems and its loop output
-                // (index 1) has data, re-execute the loop body iteratively.
-                WorkflowGraph.WorkflowNode graphNode = graph.getNodes().get(nodeId);
-                if (graphNode != null && "loopOverItems".equals(graphNode.getType())) {
-                    List<String> loopBody = graph.findLoopBodyNodes(nodeId);
-                    if (!loopBody.isEmpty()) {
-                        int maxIterations = 10_000;
-                        for (int iteration = 0; iteration < maxIterations; iteration++) {
-                            if (state.isCancelled()) break;
-
-                            // Check if loop output (index 1) has data
-                            List<Map<String, Object>> loopOutput = state.getNodeOutput(nodeId, 1);
-                            if (loopOutput.isEmpty()) break; // Loop complete
-
-                            // Execute all loop body nodes
-                            for (String bodyNodeId : loopBody) {
-                                if (state.isCancelled()) break;
-                                boolean bodyOk = executeNodeInWorkflow(bodyNodeId, executionId,
-                                        workflow, null, mode, graph, state, variables, effectivePinData);
-                                if (!bodyOk) return;
-                            }
-
-                            // Re-execute the loop node itself (it reads new input from loop body)
-                            boolean loopOk = executeNodeInWorkflow(nodeId, executionId,
-                                    workflow, null, mode, graph, state, variables, effectivePinData);
-                            if (!loopOk) return;
-                        }
+            if (parallelEnabled) {
+                log.info("Parallel branch execution enabled for workflow {}", workflow.getId());
+                executeParallel(executionId, workflow, inputData, mode, graph, state,
+                        variables, effectivePinData, order);
+                if (state.isCancelled() || state.getExecutionFinished().get()) return;
+            } else {
+                for (String nodeId : order) {
+                    if (state.isCancelled()) {
+                        executionService.finish(executionId, ExecutionStatus.CANCELED,
+                                state.buildResultData(), "Execution cancelled by user");
+                        webSocketService.sendExecutionFinished(executionId, "CANCELED", state.buildResultData());
+                        return;
                     }
+
+                    boolean ok = executeSingleNodeInBatch(nodeId, executionId, workflow, inputData,
+                            mode, graph, state, variables, effectivePinData);
+                    if (!ok) return;
                 }
             }
 
@@ -835,10 +819,12 @@ public class WorkflowEngine {
                     webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                             meta.getStatus(), state.getNodeOutputs().get(nodeId),
                             meta.getDurationMs(), meta.getExecutionOrder());
-                    executionService.finish(executionId, ExecutionStatus.ERROR,
-                            state.buildResultData(), result.getError().getMessage());
-                    webSocketService.sendExecutionFinished(
-                            executionId, "ERROR", state.buildResultData());
+                    if (state.tryMarkFinished()) {
+                        executionService.finish(executionId, ExecutionStatus.ERROR,
+                                state.buildResultData(), result.getError().getMessage());
+                        webSocketService.sendExecutionFinished(
+                                executionId, "ERROR", state.buildResultData());
+                    }
                     return false;
                 }
 
@@ -879,14 +865,181 @@ public class WorkflowEngine {
                 webSocketService.sendNodeFinished(executionId, nodeId, graphNode.getName(),
                         meta.getStatus(), List.of(List.of()),
                         meta.getDurationMs(), meta.getExecutionOrder());
-                executionService.finish(executionId, ExecutionStatus.ERROR,
-                        state.buildResultData(), e.getMessage());
-                webSocketService.sendExecutionFinished(
-                        executionId, "ERROR", state.buildResultData());
+                if (state.tryMarkFinished()) {
+                    executionService.finish(executionId, ExecutionStatus.ERROR,
+                            state.buildResultData(), e.getMessage());
+                    webSocketService.sendExecutionFinished(
+                            executionId, "ERROR", state.buildResultData());
+                }
                 return false;
             }
         }
 
+        return true;
+    }
+
+    /**
+     * Check if the workflow has parallel branch execution enabled in its settings.
+     */
+    @SuppressWarnings("unchecked")
+    private boolean isParallelEnabled(WorkflowEntity workflow) {
+        Object settingsObj = workflow.getSettings();
+        if (settingsObj instanceof Map) {
+            Map<String, Object> settings = (Map<String, Object>) settingsObj;
+            return Boolean.TRUE.equals(settings.get("parallelExecution"));
+        }
+        return false;
+    }
+
+    /**
+     * Execute the loop body for a loopOverItems node. Extracted to be shared by
+     * both the sequential and parallel execution paths.
+     * Returns true if execution should continue, false on fatal error.
+     */
+    private boolean handleLoopBody(String loopNodeId, String executionId,
+                                    WorkflowEntity workflow, NodeExecutionContext.ExecutionMode mode,
+                                    WorkflowGraph graph, WorkflowExecutionState state,
+                                    Map<String, String> variables, Object effectivePinData) {
+        List<String> loopBody = graph.findLoopBodyNodes(loopNodeId);
+        if (loopBody.isEmpty()) return true;
+
+        int maxIterations = 10_000;
+        for (int iteration = 0; iteration < maxIterations; iteration++) {
+            if (state.isCancelled()) break;
+
+            List<Map<String, Object>> loopOutput = state.getNodeOutput(loopNodeId, 1);
+            if (loopOutput.isEmpty()) break;
+
+            for (String bodyNodeId : loopBody) {
+                if (state.isCancelled()) break;
+                boolean bodyOk = executeNodeInWorkflow(bodyNodeId, executionId,
+                        workflow, null, mode, graph, state, variables, effectivePinData);
+                if (!bodyOk) return false;
+            }
+
+            boolean loopOk = executeNodeInWorkflow(loopNodeId, executionId,
+                    workflow, null, mode, graph, state, variables, effectivePinData);
+            if (!loopOk) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Execute the workflow using the ready-set parallel algorithm.
+     * Nodes whose predecessors have all completed become "ready" and are
+     * submitted to a thread pool simultaneously. Single-ready-node batches
+     * execute on the current thread to avoid overhead.
+     */
+    private void executeParallel(String executionId, WorkflowEntity workflow,
+                                  Map<String, Object> inputData,
+                                  NodeExecutionContext.ExecutionMode mode,
+                                  WorkflowGraph graph, WorkflowExecutionState state,
+                                  Map<String, String> variables, Object effectivePinData,
+                                  List<String> order) {
+        Set<String> loopBodyNodes = graph.findAllLoopBodyNodes();
+        Set<String> completed = ConcurrentHashMap.newKeySet();
+        Set<String> scheduled = new HashSet<>(order);  // only nodes in the execution order
+
+        // Filter: remove loop body nodes from the scheduling set (they run inline)
+        scheduled.removeAll(loopBodyNodes);
+
+        while (true) {
+            if (state.isCancelled()) {
+                if (state.tryMarkFinished()) {
+                    executionService.finish(executionId, ExecutionStatus.CANCELED,
+                            state.buildResultData(), "Execution cancelled by user");
+                    webSocketService.sendExecutionFinished(executionId, "CANCELED", state.buildResultData());
+                }
+                return;
+            }
+
+            // Find all ready nodes: in scheduled set, not yet completed, all predecessors completed
+            List<String> ready = new ArrayList<>();
+            for (String nodeId : order) {
+                if (!scheduled.contains(nodeId) || completed.contains(nodeId)) continue;
+                Set<String> preds = graph.getPredecessors(nodeId);
+                // Predecessors that are loop body nodes are considered satisfied if
+                // their parent loop node has completed
+                preds.removeAll(loopBodyNodes);
+                if (completed.containsAll(preds)) {
+                    ready.add(nodeId);
+                }
+            }
+
+            if (ready.isEmpty()) break;  // all done
+
+            // Execute the batch
+            boolean ok = executeNodeBatchParallel(ready, executionId, workflow, inputData,
+                    mode, graph, state, variables, effectivePinData, completed);
+            if (!ok) return;  // fatal error already handled
+        }
+    }
+
+    /**
+     * Execute a batch of ready nodes. If only one node, runs on the current thread.
+     * If multiple nodes, submits them to the branch executor in parallel.
+     * Returns true if execution should continue, false on fatal error.
+     */
+    private boolean executeNodeBatchParallel(List<String> readyNodes, String executionId,
+                                              WorkflowEntity workflow, Map<String, Object> inputData,
+                                              NodeExecutionContext.ExecutionMode mode,
+                                              WorkflowGraph graph, WorkflowExecutionState state,
+                                              Map<String, String> variables, Object effectivePinData,
+                                              Set<String> completed) {
+        if (readyNodes.size() == 1) {
+            // Single node — execute on current thread to avoid overhead
+            boolean ok = executeSingleNodeInBatch(readyNodes.get(0), executionId, workflow,
+                    inputData, mode, graph, state, variables, effectivePinData);
+            if (ok) {
+                completed.add(readyNodes.get(0));
+            }
+            return ok;
+        }
+
+        // Multiple ready nodes — submit all to thread pool
+        List<CompletableFuture<Boolean>> futures = new ArrayList<>();
+        for (String nodeId : readyNodes) {
+            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
+                    executeSingleNodeInBatch(nodeId, executionId, workflow,
+                            inputData, mode, graph, state, variables, effectivePinData),
+                    branchExecutorService);
+            futures.add(future);
+        }
+
+        // Wait for all to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        // Check results
+        for (int i = 0; i < futures.size(); i++) {
+            boolean ok = futures.get(i).join();
+            if (ok) {
+                completed.add(readyNodes.get(i));
+            } else {
+                return false;  // fatal error — workflow should stop
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Execute a single node and its loop body (if it's a loopOverItems node).
+     * Used as the unit of work for both sequential and parallel batch execution.
+     */
+    private boolean executeSingleNodeInBatch(String nodeId, String executionId,
+                                              WorkflowEntity workflow, Map<String, Object> inputData,
+                                              NodeExecutionContext.ExecutionMode mode,
+                                              WorkflowGraph graph, WorkflowExecutionState state,
+                                              Map<String, String> variables, Object effectivePinData) {
+        boolean ok = executeNodeInWorkflow(nodeId, executionId, workflow, inputData,
+                mode, graph, state, variables, effectivePinData);
+        if (!ok) return false;
+
+        // Handle loop nodes inline
+        WorkflowGraph.WorkflowNode graphNode = graph.getNodes().get(nodeId);
+        if (graphNode != null && "loopOverItems".equals(graphNode.getType())) {
+            return handleLoopBody(nodeId, executionId, workflow, mode,
+                    graph, state, variables, effectivePinData);
+        }
         return true;
     }
 

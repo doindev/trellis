@@ -9,6 +9,10 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableAsync
@@ -25,6 +29,20 @@ public class AsyncExecutionConfig {
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(30);
         executor.initialize();
+        return executor;
+    }
+
+    @Bean(name = "branchExecutorService")
+    public ExecutorService branchExecutorService() {
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                4, 16, 60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(100));
+        executor.setThreadFactory(r -> {
+            Thread t = new Thread(r);
+            t.setName("wf-branch-" + t.getId());
+            t.setDaemon(true);
+            return t;
+        });
         return executor;
     }
 
