@@ -82,6 +82,12 @@
     		<version>0.0.1</version>
 		</dependency>
 
+		<!-- Jakarta Mail (SMTP Email Send) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 		<!-- GraalVM Polyglot (Code Node: JS + Python) -->
 		<dependency>
 			<groupId>org.graalvm.polyglot</groupId>
