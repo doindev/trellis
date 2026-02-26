@@ -360,8 +360,35 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid hsl(0, 0%, 17%);
   overflow: hidden;
+}
+
+.logs-resize-handle {
+  width: 5px;
+  cursor: ew-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: hsl(0, 0%, 17%);
+  transition: background-color 0.15s;
+
+  &:hover,
+  &:active {
+    background: hsl(0, 0%, 30%);
+  }
+
+  .logs-resize-grip {
+    width: 2px;
+    height: 24px;
+    background: hsl(0, 0%, 30%);
+    border-radius: 1px;
+  }
+
+  &:hover .logs-resize-grip,
+  &:active .logs-resize-grip {
+    background: hsl(0, 0%, 46%);
+  }
 }
 
 .logs-overview-header {

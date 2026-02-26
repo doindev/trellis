@@ -99,6 +99,11 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   private shouldScrollChat = false;
   private chatSessionId: string | null = null;
 
+  logsOverviewWidth = 280;
+  private logsResizing = false;
+  private logsResizeStartX = 0;
+  private logsResizeStartWidth = 0;
+
   selectedLogsNodeId: string | null = null;
   detailView: 'input' | 'output' = 'output';
   displayMode: 'schema' | 'table' | 'json' = 'table';
@@ -557,6 +562,30 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
       this.connectChat();
       this.shouldScrollChat = true;
     }
+  }
+
+  onLogsResizeStart(event: MouseEvent): void {
+    event.preventDefault();
+    this.logsResizing = true;
+    this.logsResizeStartX = event.clientX;
+    this.logsResizeStartWidth = this.logsOverviewWidth;
+
+    const onMove = (e: MouseEvent) => {
+      if (!this.logsResizing) return;
+      const delta = e.clientX - this.logsResizeStartX;
+      const container = (event.target as HTMLElement).closest('.logs-content');
+      const maxWidth = container ? container.clientWidth * 0.6 : 600;
+      this.logsOverviewWidth = Math.max(180, Math.min(maxWidth, this.logsResizeStartWidth + delta));
+    };
+
+    const onUp = () => {
+      this.logsResizing = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
   }
 
   onDragStart(event: MouseEvent): void {

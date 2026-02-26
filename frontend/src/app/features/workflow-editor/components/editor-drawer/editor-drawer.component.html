@@ -28,7 +28,7 @@
     <div class="drawer-body">
       <div class="logs-content">
         <!-- Left: node list (always visible) -->
-        <div class="logs-overview">
+        <div class="logs-overview" [style.width.px]="logsOverviewWidth">
           <div class="logs-overview-header">
             <span class="logs-title">Logs</span>
           </div>
@@ -55,6 +55,11 @@
               }
             </div>
           </div>
+        </div>
+
+        <!-- Resize handle between overview and detail -->
+        <div class="logs-resize-handle" (mousedown)="onLogsResizeStart($event)">
+          <div class="logs-resize-grip"></div>
         </div>
 
         <!-- Right: detail panel (always visible) -->
