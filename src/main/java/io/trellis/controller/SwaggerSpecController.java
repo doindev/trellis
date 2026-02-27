@@ -54,6 +54,7 @@ public class SwaggerSpecController {
                 String webhookPath = (String) parameters.getOrDefault("path", "");
                 if (webhookPath.isEmpty()) continue;
 
+                String httpMethod = ((String) parameters.getOrDefault("httpMethod", "GET")).toLowerCase();
                 String normalizedPath = webhookPath.startsWith("/") ? webhookPath : "/" + webhookPath;
                 String pathKey = "/webhook" + normalizedPath;
 
@@ -66,14 +67,16 @@ public class SwaggerSpecController {
                 operation.put("operationId", workflow.getId() + "_" + node.get("id"));
                 operation.put("tags", List.of("Workflows"));
 
-                // Request body from mcpInputSchema
-                Map<String, Object> requestSchema = buildInputSchema(workflow.getMcpInputSchema());
-                Map<String, Object> requestBody = new LinkedHashMap<>();
-                requestBody.put("required", true);
-                requestBody.put("content", Map.of(
-                        "application/json", Map.of("schema", requestSchema)
-                ));
-                operation.put("requestBody", requestBody);
+                // Request body only for methods that support it
+                if ("post".equals(httpMethod) || "put".equals(httpMethod) || "patch".equals(httpMethod)) {
+                    Map<String, Object> requestSchema = buildInputSchema(workflow.getMcpInputSchema());
+                    Map<String, Object> requestBody = new LinkedHashMap<>();
+                    requestBody.put("required", true);
+                    requestBody.put("content", Map.of(
+                            "application/json", Map.of("schema", requestSchema)
+                    ));
+                    operation.put("requestBody", requestBody);
+                }
 
                 // Response from mcpOutputSchema
                 Map<String, Object> responseSchema = buildOutputSchema(workflow.getMcpOutputSchema());
@@ -86,7 +89,7 @@ public class SwaggerSpecController {
                 }
                 operation.put("responses", Map.of("200", response200));
 
-                paths.put(pathKey, Map.of("post", operation));
+                paths.put(pathKey, Map.of(httpMethod, operation));
             }
         }
 
