@@ -8,9 +8,11 @@ import io.trellis.nodes.core.NodeExecutionContext;
 import io.trellis.nodes.core.NodeParameter;
 import io.trellis.nodes.core.NodeParameter.ParameterType;
 import io.trellis.nodes.core.NodeParameter.ParameterOption;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+@Slf4j
 @Node(
 		type = "anthropicChatModel",
 		displayName = "Anthropic Chat Model",
@@ -28,6 +30,8 @@ public class AnthropicChatModelNode extends AbstractChatModelNode {
 		String model = context.getParameter("model", "claude-sonnet-4-20250514");
 		double temperature = toDouble(context.getParameters().get("temperature"), 0.7);
 		int maxTokens = toInt(context.getParameters().get("maxTokens"), 1024);
+		log.info("Creating Anthropic model: model='{}', baseUrl='{}', temp={}, maxTokens={}",
+				model, baseUrl, temperature, maxTokens);
 
 		var builder = AnthropicChatModel.builder()
 				.apiKey(apiKey)
@@ -36,6 +40,12 @@ public class AnthropicChatModelNode extends AbstractChatModelNode {
 				.maxTokens(maxTokens);
 
 		if (baseUrl != null && !baseUrl.isBlank()) {
+			// LangChain4j expects baseUrl ending with /v1 (e.g. https://api.anthropic.com/v1)
+			// Normalize: strip trailing slash, append /v1 if missing
+			baseUrl = baseUrl.replaceAll("/+$", "");
+			if (!baseUrl.endsWith("/v1")) {
+				baseUrl = baseUrl + "/v1";
+			}
 			builder.baseUrl(baseUrl);
 		}
 

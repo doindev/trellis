@@ -52,13 +52,7 @@ public class ModelListService {
      */
     private void testAnthropicConnection(Map<String, Object> data) throws Exception {
         String apiKey = getString(data, "apiKey");
-        String baseUrl = getString(data, "baseUrl");
-        if (baseUrl == null || baseUrl.isBlank()) {
-            baseUrl = "https://api.anthropic.com";
-        }
-        if (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-        }
+        String baseUrl = normalizeAnthropicBaseUrl(getString(data, "baseUrl"));
 
         java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
         java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
@@ -125,6 +119,7 @@ public class ModelListService {
      * @return list of available models, sorted by name
      */
     public List<ModelInfo> listModels(String credentialType, Map<String, Object> credentialData, String modelType) {
+        log.info("listModels called: type='{}', modelType='{}'", credentialType, modelType);
         try {
             return switch (credentialType) {
                 case "openAiApi" -> listOpenAiModels(credentialData, modelType);
@@ -157,12 +152,26 @@ public class ModelListService {
                     .apiKey(getString(data, "apiKey"));
             String baseUrl = getString(data, "baseUrl");
             if (baseUrl != null && !baseUrl.isBlank()) {
+                // Normalize: LangChain4j expects baseUrl with /v1 suffix
+                baseUrl = baseUrl.replaceAll("/+$", "");
+                if (!baseUrl.endsWith("/v1")) {
+                    baseUrl = baseUrl + "/v1";
+                }
                 builder.baseUrl(baseUrl);
             }
 
             var models = builder.build().listModels();
-            log.debug("Anthropic model catalog returned {} models", models.size());
-            return filterAndMap(models, modelType);
+            log.info("Anthropic model catalog returned {} models", models.size());
+            if (!models.isEmpty()) {
+                var first = models.get(0);
+                log.info("First model: name='{}', type={}", first.name(), first.type());
+            }
+            var result = filterAndMap(models, modelType);
+            if (result.isEmpty() && !models.isEmpty()) {
+                log.warn("filterAndMap returned 0 from {} catalog models — falling back to direct API", models.size());
+                return listAnthropicModelsDirect(data, modelType);
+            }
+            return result;
         } catch (Exception e) {
             log.warn("Anthropic model catalog failed, falling back to direct API call: {}", e.getMessage());
             return listAnthropicModelsDirect(data, modelType);
@@ -175,14 +184,8 @@ public class ModelListService {
     @SuppressWarnings("unchecked")
     private List<ModelInfo> listAnthropicModelsDirect(Map<String, Object> data, String modelType) {
         String apiKey = getString(data, "apiKey");
-        String baseUrl = getString(data, "baseUrl");
-        if (baseUrl == null || baseUrl.isBlank()) {
-            baseUrl = "https://api.anthropic.com";
-        }
-        // Strip trailing slash
-        if (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-        }
+        String baseUrl = normalizeAnthropicBaseUrl(getString(data, "baseUrl"));
+        log.info("listAnthropicModelsDirect: using baseUrl='{}', full URL='{}'", baseUrl, baseUrl + "/v1/models");
 
         try {
             java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
@@ -284,6 +287,21 @@ public class ModelListService {
                         .build())
                 .sorted(Comparator.comparing(ModelInfo::getName))
                 .toList();
+    }
+
+    /**
+     * Normalizes the Anthropic base URL to the root domain (without /v1 suffix).
+     * Used by methods that manually construct full API paths like /v1/models.
+     */
+    private String normalizeAnthropicBaseUrl(String baseUrl) {
+        if (baseUrl == null || baseUrl.isBlank()) {
+            return "https://api.anthropic.com";
+        }
+        baseUrl = baseUrl.replaceAll("/+$", "");
+        if (baseUrl.endsWith("/v1")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 3);
+        }
+        return baseUrl;
     }
 
     private String getString(Map<String, Object> data, String key) {

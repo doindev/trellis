@@ -32,7 +32,7 @@ public class AnthropicApiCredentials implements CredentialProviderInterface {
                 NodeParameter.builder()
                         .name("baseUrl").displayName("Base URL")
                         .type(ParameterType.STRING)
-                        .defaultValue("https://api.anthropic.com")
+                        .defaultValue("https://api.anthropic.com/v1")
                         .description("Override for proxies or compatible APIs")
                         .build()
         );
