@@ -76,7 +76,7 @@ public class TrellisMcpServerManager {
             String description = wf.getMcpDescription() != null ? wf.getMcpDescription()
                     : wf.getDescription() != null ? wf.getDescription()
                     : "Execute workflow: " + wf.getName();
-            tools.put(toolName, new McpToolDef(toolName, description, wf.getId()));
+            tools.put(toolName, new McpToolDef(toolName, description, wf.getId(), wf.getMcpInputSchema()));
         }
         log.info("Refreshed MCP tools: {}", tools.keySet());
     }
@@ -235,19 +235,54 @@ public class TrellisMcpServerManager {
                     Map<String, Object> t = new LinkedHashMap<>();
                     t.put("name", tool.name);
                     t.put("description", tool.description);
-                    t.put("inputSchema", Map.of(
-                            "type", "object",
-                            "properties", Map.of(
-                                    "input", Map.of(
-                                            "type", "string",
-                                            "description", "Input data for the workflow"
-                                    )
-                            )
-                    ));
+                    t.put("inputSchema", buildInputSchema(tool.mcpInputSchema));
                     return t;
                 })
                 .toList();
         return jsonRpcResult(id, Map.of("tools", toolList));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> buildInputSchema(Object mcpInputSchema) {
+        if (mcpInputSchema instanceof List<?> paramList && !paramList.isEmpty()) {
+            Map<String, Object> properties = new LinkedHashMap<>();
+            List<String> required = new ArrayList<>();
+            for (Object item : paramList) {
+                if (item instanceof Map<?, ?> param) {
+                    String name = (String) param.get("name");
+                    String type = (String) param.get("type");
+                    String description = (String) param.get("description");
+                    Boolean isRequired = (Boolean) param.get("required");
+                    if (name == null || name.isBlank()) continue;
+                    Map<String, Object> prop = new LinkedHashMap<>();
+                    prop.put("type", type != null ? type : "string");
+                    if (description != null && !description.isBlank()) {
+                        prop.put("description", description);
+                    }
+                    properties.put(name, prop);
+                    if (Boolean.TRUE.equals(isRequired)) {
+                        required.add(name);
+                    }
+                }
+            }
+            Map<String, Object> schema = new LinkedHashMap<>();
+            schema.put("type", "object");
+            schema.put("properties", properties);
+            if (!required.isEmpty()) {
+                schema.put("required", required);
+            }
+            return schema;
+        }
+        // Fallback: generic input string
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "input", Map.of(
+                                "type", "string",
+                                "description", "Input data for the workflow"
+                        )
+                )
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -262,11 +297,17 @@ public class TrellisMcpServerManager {
         }
 
         try {
-            String input = arguments != null
-                    ? String.valueOf(arguments.getOrDefault("input", ""))
-                    : "";
-            List<Map<String, Object>> inputItems = List.of(
-                    Map.of("json", Map.of("input", input)));
+            List<Map<String, Object>> inputItems;
+            if (tool.mcpInputSchema instanceof List<?> paramList && !paramList.isEmpty()) {
+                // Custom schema: pass all arguments directly as the JSON data item
+                inputItems = List.of(Map.of("json", arguments != null ? arguments : Map.of()));
+            } else {
+                // Legacy: single input string
+                String input = arguments != null
+                        ? String.valueOf(arguments.getOrDefault("input", ""))
+                        : "";
+                inputItems = List.of(Map.of("json", Map.of("input", input)));
+            }
 
             List<Map<String, Object>> result = workflowEngine.executeSubWorkflow(
                     tool.workflowId, inputItems);
@@ -342,7 +383,7 @@ public class TrellisMcpServerManager {
 
     public record McpHandleResult(Map<String, Object> body, String sessionId) {}
 
-    private record McpToolDef(String name, String description, String workflowId) {}
+    private record McpToolDef(String name, String description, String workflowId, Object mcpInputSchema) {}
 
     @Data
     @AllArgsConstructor

@@ -11,4 +11,7 @@ public class WorkflowUpdateRequest {
     private Object settings;
     private Object staticData;
     private Object pinData;
+    private Boolean mcpEnabled;
+    private String mcpDescription;
+    private Object mcpInputSchema;
 }

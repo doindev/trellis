@@ -257,7 +257,7 @@ export class WorkflowEditorStore {
     this.commitChange({ ...wf, settings: { ...wf.settings, ...settings } }, 'settings');
   }
 
-  importWorkflowData(data: { name?: string; nodes?: any[]; connections?: any; settings?: any }): void {
+  importWorkflowData(data: { name?: string; nodes?: any[]; connections?: any; settings?: any; mcpEnabled?: boolean; mcpDescription?: string; mcpInputSchema?: any[] }): void {
     const wf = this.workflow();
     if (!wf) return;
     const updated: Workflow = {
@@ -266,6 +266,9 @@ export class WorkflowEditorStore {
       connections: data.connections || wf.connections,
     };
     if (data.settings) updated.settings = data.settings;
+    if (data.mcpEnabled !== undefined) updated.mcpEnabled = data.mcpEnabled;
+    if (data.mcpDescription !== undefined) updated.mcpDescription = data.mcpDescription;
+    if (data.mcpInputSchema !== undefined) updated.mcpInputSchema = data.mcpInputSchema;
     this.commitChange(updated, 'import');
     this.resetHistory(updated);
   }

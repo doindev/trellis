@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow, McpEndpoint, McpClient } from '../../core/services/settings.service';
+import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter } from '../../core/services/settings.service';
 import { NodeTypeService } from '../../core/services/node-type.service';
 import { NodeTypeDescription } from '../../core/models';
 
@@ -59,6 +59,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
   mcpMenuStyle: Record<string, string> = {};
   private mcpMenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
   private mcpMenuScrollListener: (() => void) | null = null;
+
+  // Param editor modal
+  showParamEditorModal = false;
+  paramEditorWorkflow: McpWorkflow | null = null;
+  paramEditorParams: McpParameter[] = [];
+  paramEditorSaving = false;
+  paramEditorAutoDetecting = false;
 
   get showMcpProjectColumn(): boolean {
     return this.mcpWorkflows.some(wf => !!wf.projectId);
@@ -397,9 +404,143 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.editingWorkflowId = null;
   }
 
+  // --- Param editor ---
+
+  private static readonly AUTO_DESCRIPTIONS: Record<string, string> = {
+    query: 'The search query to execute',
+    url: 'The URL to process',
+    email: 'An email address',
+    message: 'The message content',
+    name: 'The name',
+    id: 'The unique identifier',
+    limit: 'Maximum number of results to return',
+    offset: 'Number of results to skip',
+    filter: 'Filter criteria',
+    prompt: 'The prompt text',
+    text: 'The text content',
+    content: 'The content',
+    title: 'The title',
+    body: 'The body content',
+    subject: 'The subject line',
+    description: 'A description',
+    input: 'The input data',
+    output: 'The output data',
+    key: 'The key',
+    value: 'The value',
+    token: 'The authentication token',
+    password: 'The password',
+    username: 'The username',
+    firstName: 'The first name',
+    lastName: 'The last name',
+    phone: 'The phone number',
+    address: 'The address',
+    city: 'The city',
+    country: 'The country',
+    status: 'The status',
+    type: 'The type',
+    category: 'The category',
+    tag: 'The tag',
+    tags: 'The tags',
+    date: 'The date',
+    startDate: 'The start date',
+    endDate: 'The end date',
+    page: 'The page number',
+    pageSize: 'The number of items per page',
+    sort: 'The sort criteria',
+    order: 'The sort order',
+    format: 'The format',
+    language: 'The language',
+    source: 'The source',
+    target: 'The target'
+  };
+
+  openParamEditor(wf: McpWorkflow): void {
+    this.paramEditorWorkflow = wf;
+    this.paramEditorParams = wf.mcpInputSchema
+      ? wf.mcpInputSchema.map(p => ({ ...p }))
+      : [];
+    this.showParamEditorModal = true;
+    this.mcpWorkflowMenuId = null;
+  }
+
+  addParam(): void {
+    this.paramEditorParams.push({ name: '', type: 'string', description: '', required: true });
+  }
+
+  removeParam(index: number): void {
+    this.paramEditorParams.splice(index, 1);
+  }
+
+  moveParamUp(index: number): void {
+    if (index <= 0) return;
+    const temp = this.paramEditorParams[index];
+    this.paramEditorParams[index] = this.paramEditorParams[index - 1];
+    this.paramEditorParams[index - 1] = temp;
+  }
+
+  moveParamDown(index: number): void {
+    if (index >= this.paramEditorParams.length - 1) return;
+    const temp = this.paramEditorParams[index];
+    this.paramEditorParams[index] = this.paramEditorParams[index + 1];
+    this.paramEditorParams[index + 1] = temp;
+  }
+
+  onParamNameBlur(param: McpParameter): void {
+    if (param.description || !param.name) return;
+    const autoDesc = SettingsComponent.AUTO_DESCRIPTIONS[param.name];
+    if (autoDesc) {
+      param.description = autoDesc;
+    } else {
+      // camelCase to spaced: "firstName" -> "The first name"
+      const spaced = param.name.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+      param.description = 'The ' + spaced;
+    }
+  }
+
+  autoDetectParams(): void {
+    if (!this.paramEditorWorkflow) return;
+    this.paramEditorAutoDetecting = true;
+    this.settingsService.autoDetectMcpParams(this.paramEditorWorkflow.id).subscribe({
+      next: (detected) => {
+        const existingNames = new Set(this.paramEditorParams.map(p => p.name));
+        for (const param of detected) {
+          if (!existingNames.has(param.name)) {
+            this.paramEditorParams.push({ ...param });
+            existingNames.add(param.name);
+          }
+        }
+        this.paramEditorAutoDetecting = false;
+      },
+      error: () => this.paramEditorAutoDetecting = false
+    });
+  }
+
+  saveParams(): void {
+    if (!this.paramEditorWorkflow) return;
+    const validParams = this.paramEditorParams.filter(p => p.name.trim());
+    this.paramEditorSaving = true;
+    this.settingsService.updateMcpWorkflow(this.paramEditorWorkflow.id, { mcpInputSchema: validParams } as any).subscribe({
+      next: () => {
+        if (this.paramEditorWorkflow) {
+          this.paramEditorWorkflow.mcpInputSchema = validParams.length > 0 ? validParams : null;
+        }
+        this.paramEditorSaving = false;
+        this.showParamEditorModal = false;
+      },
+      error: () => this.paramEditorSaving = false
+    });
+  }
+
+  closeParamEditor(): void {
+    this.showParamEditorModal = false;
+    this.paramEditorWorkflow = null;
+    this.paramEditorParams = [];
+  }
+
   onModalBackdropClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('mcp-modal-backdrop')) {
       this.showConnectionDetailsModal = false;
+      this.showParamEditorModal = false;
     }
   }
 }

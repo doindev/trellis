@@ -19,9 +19,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -119,6 +122,7 @@ public class McpSettingsService {
                     map.put("description", wf.getDescription());
                     map.put("mcpEnabled", wf.isMcpEnabled());
                     map.put("mcpDescription", wf.getMcpDescription());
+                    map.put("mcpInputSchema", wf.getMcpInputSchema());
                     map.put("projectId", wf.getProjectId());
                     map.put("published", wf.isPublished());
                     map.put("hasWebhookNode", hasWebhookNode(wf));
@@ -161,6 +165,114 @@ public class McpSettingsService {
         workflow.setMcpDescription(mcpDescription);
         workflowRepository.save(workflow);
         mcpServerManager.refreshTools();
+    }
+
+    @Transactional
+    public void updateWorkflowMcpInputSchema(String workflowId, Object schema) {
+        WorkflowEntity workflow = workflowRepository.findById(workflowId)
+                .orElseThrow(() -> new NotFoundException("Workflow not found: " + workflowId));
+        workflow.setMcpInputSchema(schema);
+        workflowRepository.save(workflow);
+        mcpServerManager.refreshTools();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> autoDetectParameters(String workflowId) {
+        WorkflowEntity workflow = workflowRepository.findById(workflowId)
+                .orElseThrow(() -> new NotFoundException("Workflow not found: " + workflowId));
+
+        Object nodes = workflow.getNodes();
+        if (!(nodes instanceof List<?> nodeList)) {
+            return List.of();
+        }
+
+        // Patterns to find $json.fieldName and $json["fieldName"] references
+        Pattern dotPattern = Pattern.compile("\\$json\\.([a-zA-Z_]\\w*)");
+        Pattern bracketPattern = Pattern.compile("\\$json\\[\"([^\"]+)\"\\]");
+
+        LinkedHashMap<String, Map<String, Object>> found = new LinkedHashMap<>();
+
+        for (Object node : nodeList) {
+            if (!(node instanceof Map<?, ?> nodeMap)) continue;
+            // Skip webhook nodes — those are the trigger, not downstream consumers
+            if ("webhook".equals(nodeMap.get("type"))) continue;
+
+            String nodeJson = nodeMap.toString();
+            extractFieldNames(nodeJson, dotPattern, found);
+            extractFieldNames(nodeJson, bracketPattern, found);
+        }
+
+        return new ArrayList<>(found.values());
+    }
+
+    private void extractFieldNames(String text, Pattern pattern, LinkedHashMap<String, Map<String, Object>> found) {
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            String fieldName = matcher.group(1);
+            if (!found.containsKey(fieldName)) {
+                Map<String, Object> param = new LinkedHashMap<>();
+                param.put("name", fieldName);
+                param.put("type", "string");
+                param.put("description", AUTO_DESCRIPTIONS.getOrDefault(fieldName, generateDescription(fieldName)));
+                param.put("required", true);
+                found.put(fieldName, param);
+            }
+        }
+    }
+
+    private static String generateDescription(String name) {
+        // Convert camelCase to spaced words: "firstName" -> "The first name"
+        String spaced = name.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
+        return "The " + spaced;
+    }
+
+    private static final LinkedHashMap<String, String> AUTO_DESCRIPTIONS = new LinkedHashMap<>();
+    static {
+        AUTO_DESCRIPTIONS.put("query", "The search query to execute");
+        AUTO_DESCRIPTIONS.put("url", "The URL to process");
+        AUTO_DESCRIPTIONS.put("email", "An email address");
+        AUTO_DESCRIPTIONS.put("message", "The message content");
+        AUTO_DESCRIPTIONS.put("name", "The name");
+        AUTO_DESCRIPTIONS.put("id", "The unique identifier");
+        AUTO_DESCRIPTIONS.put("limit", "Maximum number of results to return");
+        AUTO_DESCRIPTIONS.put("offset", "Number of results to skip");
+        AUTO_DESCRIPTIONS.put("filter", "Filter criteria");
+        AUTO_DESCRIPTIONS.put("prompt", "The prompt text");
+        AUTO_DESCRIPTIONS.put("text", "The text content");
+        AUTO_DESCRIPTIONS.put("content", "The content");
+        AUTO_DESCRIPTIONS.put("title", "The title");
+        AUTO_DESCRIPTIONS.put("body", "The body content");
+        AUTO_DESCRIPTIONS.put("subject", "The subject line");
+        AUTO_DESCRIPTIONS.put("description", "A description");
+        AUTO_DESCRIPTIONS.put("input", "The input data");
+        AUTO_DESCRIPTIONS.put("output", "The output data");
+        AUTO_DESCRIPTIONS.put("key", "The key");
+        AUTO_DESCRIPTIONS.put("value", "The value");
+        AUTO_DESCRIPTIONS.put("token", "The authentication token");
+        AUTO_DESCRIPTIONS.put("password", "The password");
+        AUTO_DESCRIPTIONS.put("username", "The username");
+        AUTO_DESCRIPTIONS.put("firstName", "The first name");
+        AUTO_DESCRIPTIONS.put("lastName", "The last name");
+        AUTO_DESCRIPTIONS.put("phone", "The phone number");
+        AUTO_DESCRIPTIONS.put("address", "The address");
+        AUTO_DESCRIPTIONS.put("city", "The city");
+        AUTO_DESCRIPTIONS.put("country", "The country");
+        AUTO_DESCRIPTIONS.put("status", "The status");
+        AUTO_DESCRIPTIONS.put("type", "The type");
+        AUTO_DESCRIPTIONS.put("category", "The category");
+        AUTO_DESCRIPTIONS.put("tag", "The tag");
+        AUTO_DESCRIPTIONS.put("tags", "The tags");
+        AUTO_DESCRIPTIONS.put("date", "The date");
+        AUTO_DESCRIPTIONS.put("startDate", "The start date");
+        AUTO_DESCRIPTIONS.put("endDate", "The end date");
+        AUTO_DESCRIPTIONS.put("page", "The page number");
+        AUTO_DESCRIPTIONS.put("pageSize", "The number of items per page");
+        AUTO_DESCRIPTIONS.put("sort", "The sort criteria");
+        AUTO_DESCRIPTIONS.put("order", "The sort order");
+        AUTO_DESCRIPTIONS.put("format", "The format");
+        AUTO_DESCRIPTIONS.put("language", "The language");
+        AUTO_DESCRIPTIONS.put("source", "The source");
+        AUTO_DESCRIPTIONS.put("target", "The target");
     }
 
     // --- Clients ---

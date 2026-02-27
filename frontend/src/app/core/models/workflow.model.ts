@@ -19,6 +19,9 @@ export interface Workflow {
   settings?: Record<string, any>;
   staticData?: Record<string, any>;
   pinData?: Record<string, any>;
+  mcpEnabled?: boolean;
+  mcpDescription?: string;
+  mcpInputSchema?: any[];
   tags?: Tag[];
   createdAt?: string;
   updatedAt?: string;

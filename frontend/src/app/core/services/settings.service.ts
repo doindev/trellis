@@ -65,12 +65,20 @@ export interface McpSettings {
   endpoints: McpEndpoint[];
 }
 
+export interface McpParameter {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  description: string;
+  required: boolean;
+}
+
 export interface McpWorkflow {
   id: string;
   name: string;
   description: string;
   mcpEnabled: boolean;
   mcpDescription: string;
+  mcpInputSchema: McpParameter[] | null;
   published: boolean;
   hasWebhookNode: boolean;
   projectId?: string;
@@ -154,6 +162,10 @@ export class SettingsService {
 
   revokeMcpWorkflow(workflowId: string): Observable<void> {
     return this.api.delete<void>(`/settings/mcp/workflows/${workflowId}`);
+  }
+
+  autoDetectMcpParams(workflowId: string): Observable<McpParameter[]> {
+    return this.api.get<McpParameter[]>(`/settings/mcp/workflows/${workflowId}/auto-detect-params`);
   }
 
   // MCP Endpoints

@@ -21,6 +21,9 @@ public class WorkflowResponse {
     private Object settings;
     private Object staticData;
     private Object pinData;
+    private boolean mcpEnabled;
+    private String mcpDescription;
+    private Object mcpInputSchema;
     private List<TagResponse> tags;
     private Instant createdAt;
     private Instant updatedAt;

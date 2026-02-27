@@ -830,13 +830,16 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   private onDownload(): void {
     const wf = this.store.workflow();
     if (!wf) return;
-    const exportData = {
+    const exportData: Record<string, any> = {
       name: wf.name,
       description: wf.description,
       nodes: wf.nodes,
       connections: wf.connections,
       settings: wf.settings
     };
+    if (wf.mcpEnabled) exportData['mcpEnabled'] = wf.mcpEnabled;
+    if (wf.mcpDescription) exportData['mcpDescription'] = wf.mcpDescription;
+    if (wf.mcpInputSchema?.length) exportData['mcpInputSchema'] = wf.mcpInputSchema;
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -878,7 +881,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const nodes = data.nodes || [];
     const connections = data.connections || {};
     const settings = data.settings;
-    this.store.importWorkflowData({ nodes, connections, settings });
+    const mcpEnabled = data.mcpEnabled;
+    const mcpDescription = data.mcpDescription;
+    const mcpInputSchema = data.mcpInputSchema;
+    this.store.importWorkflowData({ nodes, connections, settings, mcpEnabled, mcpDescription, mcpInputSchema });
   }
 
   private onPushToGit(): void {

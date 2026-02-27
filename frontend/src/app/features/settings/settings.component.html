@@ -347,6 +347,9 @@
                     } @else {
                       <span class="status-badge disabled">Disabled</span>
                     }
+                    @if (wf.mcpInputSchema?.length) {
+                      <span class="param-count-badge">{{ wf.mcpInputSchema!.length }} params</span>
+                    }
                   </div>
                   <div class="col-actions"
                        (mouseenter)="cancelMcpMenuClose()"
@@ -371,6 +374,7 @@
                 @for (wf of mcpWorkflows; track wf.id) {
                   @if (wf.id === mcpWorkflowMenuId) {
                     <button class="menu-item" (click)="startEditDescription(wf)">Edit description...</button>
+                    <button class="menu-item" (click)="openParamEditor(wf)">Edit parameters...</button>
                     @if (wf.mcpEnabled) {
                       <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Disable MCP access</button>
                     } @else if (wf.published && wf.hasWebhookNode) {
@@ -415,6 +419,89 @@
           }
         }
       </div>
+
+      <!-- Parameter Editor Modal -->
+      @if (showParamEditorModal && paramEditorWorkflow) {
+        <div class="mcp-modal-backdrop" (click)="onModalBackdropClick($event)">
+          <div class="mcp-modal-panel param-editor-modal">
+            <div class="mcp-modal-header">
+              <h2 class="mcp-modal-title">MCP Parameters: {{ paramEditorWorkflow.name }}</h2>
+              <button class="mcp-modal-close" (click)="closeParamEditor()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mcp-modal-body">
+              <p class="param-help-text">Define the input parameters that MCP clients will see when calling this workflow as a tool. Each parameter becomes a named field in the tool's input schema.</p>
+
+              @if (paramEditorParams.length === 0) {
+                <div class="param-empty-state">
+                  <p>No parameters defined. This workflow uses a generic text input.</p>
+                  <p>Add parameters manually or use auto-detect to scan the workflow.</p>
+                </div>
+              }
+
+              @for (param of paramEditorParams; track $index) {
+                <div class="param-row">
+                  <div class="param-row-header">
+                    <span class="param-index">{{ $index + 1 }}</span>
+                    <div class="param-row-actions">
+                      <button class="btn-icon-sm" (click)="moveParamUp($index)" [disabled]="$index === 0" title="Move up">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+                      </button>
+                      <button class="btn-icon-sm" (click)="moveParamDown($index)" [disabled]="$index === paramEditorParams.length - 1" title="Move down">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                      </button>
+                      <button class="btn-icon-sm danger" (click)="removeParam($index)" title="Remove">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="param-row-fields">
+                    <div class="form-group param-name-group">
+                      <label class="form-label">Name</label>
+                      <input class="form-input" type="text" [(ngModel)]="param.name" placeholder="paramName" (blur)="onParamNameBlur(param)">
+                    </div>
+                    <div class="form-group param-type-group">
+                      <label class="form-label">Type</label>
+                      <select class="form-input" [(ngModel)]="param.type">
+                        <option value="string">string</option>
+                        <option value="number">number</option>
+                        <option value="boolean">boolean</option>
+                        <option value="object">object</option>
+                        <option value="array">array</option>
+                      </select>
+                    </div>
+                    <div class="form-group param-desc-group">
+                      <label class="form-label">Description</label>
+                      <input class="form-input" type="text" [(ngModel)]="param.description" placeholder="Describe this parameter">
+                    </div>
+                    <div class="form-group param-required-group">
+                      <label class="form-label">Required</label>
+                      <label class="toggle param-toggle">
+                        <input type="checkbox" [(ngModel)]="param.required">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+            <div class="mcp-modal-footer param-editor-footer">
+              <button class="btn-secondary btn-sm" (click)="autoDetectParams()" [disabled]="paramEditorAutoDetecting">
+                {{ paramEditorAutoDetecting ? 'Detecting...' : 'Auto-detect' }}
+              </button>
+              <button class="btn-secondary btn-sm" (click)="addParam()">Add parameter</button>
+              <span class="footer-spacer"></span>
+              <button class="btn-secondary" (click)="closeParamEditor()">Cancel</button>
+              <button class="btn-primary" (click)="saveParams()" [disabled]="paramEditorSaving">
+                {{ paramEditorSaving ? 'Saving...' : 'Save' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- Connection Details Modal -->
       @if (showConnectionDetailsModal) {

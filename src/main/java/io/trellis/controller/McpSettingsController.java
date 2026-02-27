@@ -73,6 +73,14 @@ public class McpSettingsController {
             String mcpDescription = (String) body.get("mcpDescription");
             mcpSettingsService.updateWorkflowMcpDescription(workflowId, mcpDescription);
         }
+        if (body.containsKey("mcpInputSchema")) {
+            mcpSettingsService.updateWorkflowMcpInputSchema(workflowId, body.get("mcpInputSchema"));
+        }
+    }
+
+    @GetMapping("/workflows/{workflowId}/auto-detect-params")
+    public List<Map<String, Object>> autoDetectParams(@PathVariable String workflowId) {
+        return mcpSettingsService.autoDetectParameters(workflowId);
     }
 
     @DeleteMapping("/workflows/{workflowId}")
