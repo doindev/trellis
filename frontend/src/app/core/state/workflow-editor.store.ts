@@ -257,6 +257,12 @@ export class WorkflowEditorStore {
     this.commitChange({ ...wf, settings: { ...wf.settings, ...settings } }, 'settings');
   }
 
+  updateMcpInputSchema(mcpInputSchema: any[] | undefined): void {
+    const wf = this.workflow();
+    if (!wf) return;
+    this.commitChange({ ...wf, mcpInputSchema }, 'mcpInputSchema');
+  }
+
   importWorkflowData(data: { name?: string; nodes?: any[]; connections?: any; settings?: any; mcpEnabled?: boolean; mcpDescription?: string; mcpInputSchema?: any[] }): void {
     const wf = this.workflow();
     if (!wf) return;

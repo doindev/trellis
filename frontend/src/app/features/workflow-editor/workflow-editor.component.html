@@ -146,6 +146,15 @@
       (cancelled)="showDescriptionModal = false" />
   }
 
+  @if (showMcpParamEditorModal) {
+    <app-mcp-param-editor-modal
+      [workflowId]="store.workflow()?.id || ''"
+      [workflowName]="store.workflow()?.name || ''"
+      [mcpInputSchema]="store.workflow()?.mcpInputSchema || null"
+      (saved)="onMcpParamsSaved($event)"
+      (cancelled)="showMcpParamEditorModal = false" />
+  }
+
   @if (showImportUriModal) {
     <app-import-uri-modal
       (imported)="onImportedFromUri($event)"

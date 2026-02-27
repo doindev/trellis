@@ -18,6 +18,8 @@ import { ImportUriModalComponent } from './components/import-uri-modal/import-ur
 import { SettingsModalComponent, WorkflowSettings } from './components/settings-modal/settings-modal.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { TagSelectorComponent } from '../../shared/components/tag-selector/tag-selector.component';
+import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
+import { McpParameter } from '../../core/services/settings.service';
 import {
   ExecutionFilterModalComponent,
   ExecutionFilters,
@@ -42,7 +44,8 @@ import { NodeTypeDescription, Workflow, WorkflowNode, Execution, Tag } from '../
     ConfirmDialogComponent,
     ExecutionsSidebarComponent,
     ExecutionFilterModalComponent,
-    TagSelectorComponent
+    TagSelectorComponent,
+    McpParamEditorModalComponent
   ],
   templateUrl: './workflow-editor.component.html',
   styleUrl: './workflow-editor.component.scss'
@@ -58,6 +61,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   showImportUriModal = false;
   showSettingsModal = false;
   showArchiveConfirm = false;
+  showMcpParamEditorModal = false;
   availableWorkflows: { id: string; name: string }[] = [];
   drawerExpandedEditor = false;
   drawerExpandedExecutions = false;
@@ -785,6 +789,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       case 'editDescription':
         this.showDescriptionModal = true;
         break;
+      case 'editMcpParams':
+        this.showMcpParamEditorModal = true;
+        break;
       case 'duplicate':
         this.onDuplicate();
         break;
@@ -815,6 +822,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   onDescriptionSaved(description: string): void {
     this.store.updateWorkflowDescription(description);
     this.showDescriptionModal = false;
+  }
+
+  onMcpParamsSaved(params: McpParameter[]): void {
+    const validParams = params.filter(p => p.name.trim());
+    this.store.updateMcpInputSchema(validParams.length > 0 ? validParams : undefined);
+    this.showMcpParamEditorModal = false;
   }
 
   private onDuplicate(): void {

@@ -6,6 +6,7 @@ import { Tag } from '../../../../core/models';
 
 export type ToolbarAction =
   | 'editDescription'
+  | 'editMcpParams'
   | 'duplicate'
   | 'download'
   | 'rename'
