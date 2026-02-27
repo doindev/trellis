@@ -71,6 +71,7 @@ export interface McpWorkflow {
   description: string;
   mcpEnabled: boolean;
   mcpDescription: string;
+  published: boolean;
   projectId?: string;
   projectName?: string;
 }

@@ -640,6 +640,15 @@ select.form-input {
   &:hover {
     background: hsl(0, 0%, 20%);
   }
+
+  &.disabled {
+    color: hsl(0, 0%, 40%);
+    cursor: default;
+
+    &:hover {
+      background: none;
+    }
+  }
 }
 
 /* Inline edit */

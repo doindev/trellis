@@ -9,7 +9,14 @@
       </svg>
     </div>
     <div class="card-info">
-      <div class="card-name">{{ workflow.name }}</div>
+      <div class="card-name-row">
+        <span class="card-name">{{ workflow.name }}</span>
+        @if (workflow.tags && workflow.tags.length > 0) {
+          @for (tag of workflow.tags; track tag.id) {
+            <span class="card-tag" [class.tag-mcp]="tag.name === 'mcp'">{{ tag.name }}</span>
+          }
+        }
+      </div>
       <div class="card-meta">
         @if (timeAgo) {
           <span>Last updated {{ timeAgo }}</span>

@@ -5,11 +5,14 @@ import io.trellis.dto.McpEndpointDto;
 import io.trellis.dto.McpSettingsDto;
 import io.trellis.entity.McpEndpointEntity;
 import io.trellis.entity.McpSettingsEntity;
+import io.trellis.entity.TagEntity;
 import io.trellis.entity.WorkflowEntity;
+import io.trellis.exception.BadRequestException;
 import io.trellis.exception.NotFoundException;
 import io.trellis.repository.McpEndpointRepository;
 import io.trellis.repository.McpSettingsRepository;
 import io.trellis.repository.ProjectRepository;
+import io.trellis.repository.TagRepository;
 import io.trellis.repository.WorkflowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +31,7 @@ public class McpSettingsService {
     private final WorkflowRepository workflowRepository;
     private final McpEndpointRepository endpointRepository;
     private final ProjectRepository projectRepository;
+    private final TagRepository tagRepository;
     private final TrellisMcpServerManager mcpServerManager;
 
     @Value("${server.port:5678}")
@@ -116,6 +120,7 @@ public class McpSettingsService {
                     map.put("mcpEnabled", wf.isMcpEnabled());
                     map.put("mcpDescription", wf.getMcpDescription());
                     map.put("projectId", wf.getProjectId());
+                    map.put("published", wf.isPublished());
                     map.put("projectName", wf.getProjectId() != null
                             ? projectNames.getOrDefault(wf.getProjectId(), null)
                             : null);
@@ -128,7 +133,19 @@ public class McpSettingsService {
     public void setWorkflowMcpEnabled(String workflowId, boolean enabled) {
         WorkflowEntity workflow = workflowRepository.findById(workflowId)
                 .orElseThrow(() -> new NotFoundException("Workflow not found: " + workflowId));
+        if (enabled && !workflow.isPublished()) {
+            throw new BadRequestException("Only published workflows can be enabled for MCP access");
+        }
         workflow.setMcpEnabled(enabled);
+
+        TagEntity mcpTag = tagRepository.findByName("mcp")
+                .orElseGet(() -> tagRepository.save(TagEntity.builder().name("mcp").build()));
+        if (enabled) {
+            workflow.getTags().add(mcpTag);
+        } else {
+            workflow.getTags().remove(mcpTag);
+        }
+
         workflowRepository.save(workflow);
         mcpServerManager.refreshTools();
     }

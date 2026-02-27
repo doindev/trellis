@@ -188,6 +188,10 @@
   font-size: 0.6875rem;
   color: hsl(0, 0%, 46%);
   white-space: nowrap;
+
+  &.tag-mcp {
+    color: var(--bs-primary);
+  }
 }
 
 .workflow-meta {

@@ -69,7 +69,7 @@
                 @if (workflow.tags && workflow.tags.length > 0) {
                   <div class="workflow-tags">
                     @for (tag of workflow.tags; track tag.id) {
-                      <span class="workflow-tag">{{ tag.name }}</span>
+                      <span class="workflow-tag" [class.tag-mcp]="tag.name === 'mcp'">{{ tag.name }}</span>
                     }
                   </div>
                 }

@@ -415,8 +415,10 @@
                     <button class="menu-item" (click)="startEditDescription(wf)">Edit description...</button>
                     @if (wf.mcpEnabled) {
                       <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Disable MCP access</button>
-                    } @else {
+                    } @else if (wf.published) {
                       <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Enable MCP access</button>
+                    } @else {
+                      <button class="menu-item disabled" disabled>Enable MCP access (publish first)</button>
                     }
                   }
                 }

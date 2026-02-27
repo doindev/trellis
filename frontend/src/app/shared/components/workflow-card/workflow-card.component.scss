@@ -39,6 +39,13 @@
   min-width: 0;
 }
 
+.card-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
 .card-name {
   font-size: 0.875rem;
   font-weight: 600;
@@ -46,6 +53,17 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.card-tag {
+  font-size: 0.6875rem;
+  color: var(--trellis-text-secondary);
+  white-space: nowrap;
+
+  &.tag-mcp {
+    color: var(--bs-primary);
+  }
 }
 
 .card-meta {
