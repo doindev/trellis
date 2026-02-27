@@ -180,6 +180,16 @@
       background: hsla(355, 83%, 52%, 0.1);
     }
   }
+
+  &.disabled {
+    color: var(--trellis-text-secondary);
+    opacity: 0.5;
+    cursor: default;
+
+    &:hover {
+      background: none;
+    }
+  }
 }
 
 .dropdown-divider {

@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { WorkflowService, ExecutionService, CredentialService, ProjectService } from '../../core/services';
+import { WorkflowService, ExecutionService, CredentialService, ProjectService, SettingsService } from '../../core/services';
 import { Workflow, Execution, Credential, Project } from '../../core/models';
 import { WorkflowCardComponent } from '../../shared/components/workflow-card/workflow-card.component';
 import { VariableListComponent } from '../variables/variable-list.component';
@@ -204,7 +204,8 @@ export class HomeComponent implements OnInit {
     private workflowService: WorkflowService,
     private executionService: ExecutionService,
     private credentialService: CredentialService,
-    private projectService: ProjectService
+    private projectService: ProjectService,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
@@ -299,6 +300,13 @@ export class HomeComponent implements OnInit {
   openExecution(exec: Execution): void {
     this.router.navigate(['/workflow', exec.workflowId], {
       queryParams: { tab: 'executions', executionId: exec.id }
+    });
+  }
+
+  onEnableMcp(workflow: Workflow): void {
+    if (!workflow.id) return;
+    this.settingsService.updateMcpWorkflow(workflow.id, { mcpEnabled: true } as any).subscribe({
+      next: () => this.loadWorkflows()
     });
   }
 

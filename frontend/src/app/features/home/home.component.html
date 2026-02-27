@@ -128,7 +128,8 @@
                     [workflow]="workflow"
                     [projectName]="getProjectName(workflow.projectId)"
                     (open)="openWorkflow($event)"
-                    (duplicate)="duplicateWorkflow($event)" />
+                    (duplicate)="duplicateWorkflow($event)"
+                    (enableMcp)="onEnableMcp($event)" />
                 }
               </div>
             }

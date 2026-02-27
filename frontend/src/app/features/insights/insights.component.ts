@@ -120,6 +120,7 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
       : this.rangeEnd().getTime() + 86400000 - 1; // include full end day
     return execs.filter(e => {
       if (!e.startedAt) return false;
+      if (e.mode === 'MANUAL') return false;
       const t = new Date(e.startedAt).getTime();
       return t >= start && t <= end;
     });
