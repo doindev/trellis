@@ -28,6 +28,7 @@ public class WorkflowService {
     private final WebhookService webhookService;
     private final TagRepository tagRepository;
 
+    @Transactional(readOnly = true)
     public List<WorkflowResponse> listWorkflows() {
         return workflowRepository.findAll().stream()
                 .filter(w -> !w.isArchived())
@@ -35,6 +36,7 @@ public class WorkflowService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<WorkflowResponse> listWorkflowsByProject(String projectId) {
         return workflowRepository.findByProjectId(projectId).stream()
                 .filter(w -> !w.isArchived())
@@ -42,6 +44,7 @@ public class WorkflowService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public WorkflowResponse getWorkflow(String id) {
         return toResponse(findById(id));
     }
