@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RestController
 @RequiredArgsConstructor
@@ -56,7 +58,9 @@ public class SwaggerSpecController {
 
                 String httpMethod = ((String) parameters.getOrDefault("httpMethod", "GET")).toLowerCase();
                 String normalizedPath = webhookPath.startsWith("/") ? webhookPath : "/" + webhookPath;
-                String pathKey = "/webhook" + normalizedPath;
+                // Strip regex constraints from path params for OpenAPI (e.g. {id:[0-9]+} -> {id})
+                String openApiPath = normalizedPath.replaceAll("\\{([^:}]+):[^}]+\\}", "{$1}");
+                String pathKey = "/webhook" + openApiPath;
 
                 String summary = workflow.getMcpDescription() != null ? workflow.getMcpDescription()
                         : workflow.getDescription() != null ? workflow.getDescription()
@@ -66,6 +70,21 @@ public class SwaggerSpecController {
                 operation.put("summary", summary);
                 operation.put("operationId", workflow.getId() + "_" + node.get("id"));
                 operation.put("tags", List.of("Workflows"));
+
+                // Extract path parameters from template (e.g. {userId} or {userId:[a-z]+})
+                List<Map<String, Object>> pathParams = new ArrayList<>();
+                Matcher pathParamMatcher = Pattern.compile("\\{([^:}]+)(?::[^}]+)?\\}").matcher(pathKey);
+                while (pathParamMatcher.find()) {
+                    Map<String, Object> param = new LinkedHashMap<>();
+                    param.put("name", pathParamMatcher.group(1));
+                    param.put("in", "path");
+                    param.put("required", true);
+                    param.put("schema", Map.of("type", "string"));
+                    pathParams.add(param);
+                }
+                if (!pathParams.isEmpty()) {
+                    operation.put("parameters", pathParams);
+                }
 
                 // Request body only for methods that support it
                 if ("post".equals(httpMethod) || "put".equals(httpMethod) || "patch".equals(httpMethod)) {

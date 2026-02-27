@@ -12,6 +12,7 @@ public interface WebhookRepository extends JpaRepository<WebhookEntity, String> 
     Optional<WebhookEntity> findByMethodAndPathAndIsTest(String method, String path, boolean isTest);
     List<WebhookEntity> findByWorkflowId(String workflowId);
     List<WebhookEntity> findByWorkflowIdAndIsTest(String workflowId, boolean isTest);
+    List<WebhookEntity> findByMethodAndIsTestAndPathContaining(String method, boolean isTest, String substring);
     void deleteByWorkflowId(String workflowId);
     void deleteByWorkflowIdAndIsTest(String workflowId, boolean isTest);
 }

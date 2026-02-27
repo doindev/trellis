@@ -130,14 +130,15 @@ public class WebhookController {
                 ResponseEntity.status(504).body(Map.of("error", "Webhook response timeout"))));
 
         String method = request.getMethod();
-        Optional<WebhookEntity> webhookOpt = webhookService.resolveWebhook(method, path, isTest);
+        Optional<WebhookService.WebhookMatch> matchOpt = webhookService.resolveWebhook(method, path, isTest);
 
-        if (webhookOpt.isEmpty()) {
+        if (matchOpt.isEmpty()) {
             deferredResult.setResult(ResponseEntity.notFound().build());
             return deferredResult;
         }
 
-        WebhookEntity webhook = webhookOpt.get();
+        WebhookService.WebhookMatch match = matchOpt.get();
+        WebhookEntity webhook = match.webhook();
 
         // Parse webhook options
         Map<String, Object> options = parseWebhookOptions(webhook.getWebhookOptions());
@@ -175,6 +176,9 @@ public class WebhookController {
         webhookData.put("params", queryParams);
         webhookData.put("method", method);
         webhookData.put("path", path);
+        if (!match.pathVariables().isEmpty()) {
+            webhookData.put("pathParams", match.pathVariables());
+        }
 
         // rawBody option — store body as JSON string instead of parsed object
         if (Boolean.TRUE.equals(options.get("rawBody"))) {

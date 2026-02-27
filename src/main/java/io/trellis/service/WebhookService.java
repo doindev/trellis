@@ -9,6 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.http.server.PathContainer;
+import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPatternParser;
+
 import java.util.*;
 import java.util.LinkedHashMap;
 
@@ -16,6 +20,8 @@ import java.util.LinkedHashMap;
 @Service
 @RequiredArgsConstructor
 public class WebhookService {
+
+    public record WebhookMatch(WebhookEntity webhook, Map<String, Object> pathVariables) {}
 
     private final WebhookRepository webhookRepository;
     private final ObjectMapper objectMapper;
@@ -119,8 +125,48 @@ public class WebhookService {
         webhookRepository.flush();
     }
 
-    public Optional<WebhookEntity> resolveWebhook(String method, String path, boolean isTest) {
-        return webhookRepository.findByMethodAndPathAndIsTest(method.toUpperCase(), path, isTest);
+    public Optional<WebhookMatch> resolveWebhook(String method, String path, boolean isTest) {
+        String upperMethod = method.toUpperCase();
+
+        // Fast path: exact match
+        Optional<WebhookEntity> exact = webhookRepository.findByMethodAndPathAndIsTest(upperMethod, path, isTest);
+        if (exact.isPresent()) {
+            return Optional.of(new WebhookMatch(exact.get(), Map.of()));
+        }
+
+        // Fallback: pattern matching for parameterized paths
+        List<WebhookEntity> candidates = webhookRepository.findByMethodAndIsTestAndPathContaining(upperMethod, isTest, "{");
+        PathPatternParser parser = new PathPatternParser();
+        PathContainer requestPath = PathContainer.parsePath("/" + path);
+
+        for (WebhookEntity candidate : candidates) {
+            try {
+                PathPattern pattern = parser.parse("/" + candidate.getPath());
+                PathPattern.PathMatchInfo matchInfo = pattern.matchAndExtract(requestPath);
+                if (matchInfo != null) {
+                    Map<String, Object> typedVars = new LinkedHashMap<>();
+                    matchInfo.getUriVariables().forEach((key, value) -> {
+                        typedVars.put(key, convertNumeric(value));
+                    });
+                    return Optional.of(new WebhookMatch(candidate, typedVars));
+                }
+            } catch (Exception e) {
+                log.warn("Failed to parse webhook path pattern '{}': {}", candidate.getPath(), e.getMessage());
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Object convertNumeric(String value) {
+        if (value != null && value.matches("\\d+")) {
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException e) {
+                return value;
+            }
+        }
+        return value;
     }
 
     @Transactional
