@@ -637,13 +637,13 @@ function TrellisCanvasInner({
               return 'hsl(247, 49%, 53%)';
             }}
             maskColor="rgba(0,0,0,0.5)"
-            style={{ background: 'hsl(0, 0%, 13%)' }}
+            style={{ background: 'hsl(0, 0%, 13%)', transition: 'bottom 0.2s ease', bottom: drawerOffset ? drawerOffset + 10 : undefined }}
             position="bottom-left"
             className={isMinimapVisible ? 'minimap-visible' : 'minimap-hidden'}
             onMouseEnter={showMinimap}
             onMouseLeave={hideMinimap}
           />
-          <Panel position="bottom-left" className="canvas-controls-panel">
+          <Panel position="bottom-left" className="canvas-controls-panel" style={drawerOffset ? { bottom: drawerOffset + 10, transition: 'bottom 0.2s ease' } : { transition: 'bottom 0.2s ease' }}>
             <button className="ctrl-btn" onClick={() => zoomOut()} title="Zoom out">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="5" y1="12" x2="19" y2="12" />

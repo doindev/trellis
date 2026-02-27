@@ -2,6 +2,11 @@
   @if (!expanded) {
     <div class="drawer-collapsed-bar">
       <span class="collapsed-label">LOGS</span>
+      @if (executionData) {
+        <div class="logs-summary" [class]="'status-' + (executionStatus || 'success').toLowerCase()">
+          <span>{{ overallSummaryText }}</span>
+        </div>
+      }
       <div class="collapsed-bar-actions">
         @if (showClearExecution) {
           <button class="btn-clear-execution" (click)="onClearExecution()" title="Clear execution">
@@ -31,11 +36,11 @@
         <div class="logs-overview" [style.width.px]="logsOverviewWidth">
           <div class="logs-overview-header">
             <span class="logs-title">Logs</span>
-          </div>
-          <div class="logs-overview-body">
             <div class="logs-summary" [class]="'status-' + (executionStatus || 'success').toLowerCase()">
               <span>{{ overallSummaryText }}</span>
             </div>
+          </div>
+          <div class="logs-overview-body">
             <div class="logs-node-list">
               @for (item of logsNodeList; track item.node.id) {
                 <div class="logs-node-item"
