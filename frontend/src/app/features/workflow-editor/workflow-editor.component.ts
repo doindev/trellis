@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { WorkflowService, WebSocketService, ExecutionService } from '../../core/services';
+import { WorkflowService, WebSocketService, ExecutionService, TagService } from '../../core/services';
 import { WorkflowEditorStore } from '../../core/state/workflow-editor.store';
 import { NodeTypeStore } from '../../core/state/node-type.store';
 import { ExecutionsSidebarComponent } from './components/executions-sidebar/executions-sidebar.component';
@@ -17,12 +17,13 @@ import { DescriptionModalComponent } from './components/description-modal/descri
 import { ImportUriModalComponent } from './components/import-uri-modal/import-uri-modal.component';
 import { SettingsModalComponent, WorkflowSettings } from './components/settings-modal/settings-modal.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { TagSelectorComponent } from '../../shared/components/tag-selector/tag-selector.component';
 import {
   ExecutionFilterModalComponent,
   ExecutionFilters,
   defaultExecutionFilters
 } from '../../shared/components/execution-filter-modal/execution-filter-modal.component';
-import { NodeTypeDescription, Workflow, WorkflowNode, Execution } from '../../core/models';
+import { NodeTypeDescription, Workflow, WorkflowNode, Execution, Tag } from '../../core/models';
 
 @Component({
   selector: 'app-workflow-editor',
@@ -40,7 +41,8 @@ import { NodeTypeDescription, Workflow, WorkflowNode, Execution } from '../../co
     SettingsModalComponent,
     ConfirmDialogComponent,
     ExecutionsSidebarComponent,
-    ExecutionFilterModalComponent
+    ExecutionFilterModalComponent,
+    TagSelectorComponent
   ],
   templateUrl: './workflow-editor.component.html',
   styleUrl: './workflow-editor.component.scss'
@@ -48,6 +50,7 @@ import { NodeTypeDescription, Workflow, WorkflowNode, Execution } from '../../co
 export class WorkflowEditorComponent implements OnInit, OnDestroy {
   @ViewChild(ReactFlowWrapperComponent) canvasWrapper!: ReactFlowWrapperComponent;
   @ViewChild(NodePaletteComponent) nodePalette!: NodePaletteComponent;
+  @ViewChild(EditorDrawerComponent) editorDrawer!: EditorDrawerComponent;
 
   showPalette = false;
   showPublishModal = false;
@@ -63,6 +66,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   pendingEdgeInsertion: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string } | null = null;
   selectedExecutionId: string | null = null;
   showExecFilterModal = false;
+  showTagSelector = false;
   execSidebarFilters: ExecutionFilters = defaultExecutionFilters();
   viewingExecution: Execution | null = null;
   executionWorkflow: Workflow | null = null;
@@ -83,6 +87,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     private workflowService: WorkflowService,
     private executionService: ExecutionService,
     private wsService: WebSocketService,
+    private tagService: TagService,
     public store: WorkflowEditorStore,
     public nodeTypeStore: NodeTypeStore
   ) {}
@@ -226,6 +231,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         this.nodePalette.focusSearch();
       }
     }, 260);
+  }
+
+  get drawerOffset(): number {
+    if (!this.drawerExpanded) return 0;
+    return this.editorDrawer?.drawerHeight || 300;
   }
 
   get drawerExpanded(): boolean {
@@ -494,6 +504,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (!wf?.id) {
       this.store.saveWorkflow(this.replaceUrlOnFirstSave);
       return;
+    }
+    // Open the drawer when execution starts
+    if (!this.drawerExpanded) {
+      this.drawerExpanded = true;
     }
     this.store.setIsExecuting(true);
     this.store.setExecutionData(null);
@@ -911,6 +925,34 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.workflowService.archive(wf.id).subscribe({
       next: () => {
         this.router.navigate(['/home/workflows']);
+      }
+    });
+  }
+
+  // --- Tag management ---
+
+  onOpenTagSelector(): void {
+    const wf = this.store.workflow();
+    if (!wf?.id) {
+      this.store.saveWorkflow((saved) => {
+        this.replaceUrlOnFirstSave(saved);
+        this.showTagSelector = true;
+      });
+      return;
+    }
+    this.showTagSelector = true;
+  }
+
+  onTagsChanged(tags: Tag[]): void {
+    const wf = this.store.workflow();
+    if (!wf?.id) return;
+    const tagIds = tags.map(t => t.id);
+    this.tagService.updateWorkflowTags(wf.id, tagIds).subscribe({
+      next: (updated) => {
+        this.store.workflow.set({ ...this.store.workflow()!, tags: updated.tags || tags });
+      },
+      error: () => {
+        // Optimistically update even on error so UI stays responsive
       }
     });
   }

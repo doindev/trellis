@@ -3,6 +3,7 @@ package io.trellis.dto;
 import lombok.Builder;
 import lombok.Data;
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @Builder
@@ -20,6 +21,7 @@ public class WorkflowResponse {
     private Object settings;
     private Object staticData;
     private Object pinData;
+    private List<TagResponse> tags;
     private Instant createdAt;
     private Instant updatedAt;
 }

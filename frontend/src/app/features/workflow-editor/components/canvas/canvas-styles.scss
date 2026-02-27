@@ -318,6 +318,7 @@
   z-index: 5;
   display: flex;
   gap: 6px;
+  transition: bottom 0.2s ease;
 }
 
 .canvas-execute-btn {

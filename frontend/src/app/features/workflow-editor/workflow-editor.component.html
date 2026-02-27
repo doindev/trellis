@@ -4,6 +4,7 @@
     [published]="store.workflow()?.published || false"
     [currentVersion]="store.workflow()?.currentVersion || 0"
     [versionIsDirty]="store.workflow()?.versionIsDirty || false"
+    [tags]="store.workflow()?.tags || []"
     [isDirty]="store.isDirty()"
     [isSaving]="store.isSaving()"
     [isExecuting]="store.isExecuting()"
@@ -13,6 +14,7 @@
     (execute)="onExecute()"
     (publish)="onPublishClicked()"
     (back)="goBack()"
+    (openTagSelector)="onOpenTagSelector()"
     (showExecutions)="toggleDrawer()"
     (tabChanged)="onTabChanged($event)"
     (menuAction)="onMenuAction($event)" />
@@ -53,6 +55,7 @@
             [selectedNodeId]="store.selectedNodeId()"
             [isExecuting]="store.isExecuting()"
             [readOnly]="activeTab === 'executions'"
+            [drawerOffset]="drawerOffset"
             (nodeSelected)="onNodeSelected($event)"
             (nodeDoubleClicked)="store.selectNode($event)"
             (nodeAdded)="store.addNode($event)"
@@ -165,6 +168,13 @@
     confirmBtnClass="btn-danger"
     (confirmed)="onArchiveConfirmed()"
     (cancelled)="showArchiveConfirm = false" />
+
+  @if (showTagSelector) {
+    <app-tag-selector
+      [selectedTags]="store.workflow()?.tags || []"
+      (tagsChanged)="onTagsChanged($event)"
+      (closed)="showTagSelector = false" />
+  }
 
   @if (toastMessage) {
     <div class="editor-toast">{{ toastMessage }}</div>

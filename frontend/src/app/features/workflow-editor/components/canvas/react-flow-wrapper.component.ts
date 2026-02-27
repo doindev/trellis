@@ -44,6 +44,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   @Input() selectedNodeId: string | null = null;
   @Input() isExecuting = false;
   @Input() readOnly = false;
+  @Input() drawerOffset = 0;
 
   @Output() nodeSelected = new EventEmitter<string | null>();
   @Output() nodeDoubleClicked = new EventEmitter<string>();
@@ -166,6 +167,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       initialEdges: reactEdges,
       isExecuting: this.isExecuting,
       readOnly: this.readOnly,
+      drawerOffset: this.drawerOffset,
       ...this.getCallbacks(),
     };
 

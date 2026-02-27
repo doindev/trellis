@@ -1,9 +1,11 @@
 package io.trellis.service;
 
 import io.trellis.dto.*;
+import io.trellis.entity.TagEntity;
 import io.trellis.entity.WorkflowEntity;
 import io.trellis.entity.WorkflowVersionEntity;
 import io.trellis.exception.NotFoundException;
+import io.trellis.repository.TagRepository;
 import io.trellis.repository.WorkflowRepository;
 import io.trellis.repository.WorkflowVersionRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -22,6 +26,7 @@ public class WorkflowService {
     private final WorkflowRepository workflowRepository;
     private final WorkflowVersionRepository workflowVersionRepository;
     private final WebhookService webhookService;
+    private final TagRepository tagRepository;
 
     public List<WorkflowResponse> listWorkflows() {
         return workflowRepository.findAll().stream()
@@ -179,12 +184,35 @@ public class WorkflowService {
         workflowRepository.save(entity);
     }
 
+    @Transactional
+    public WorkflowResponse updateWorkflowTags(String id, List<String> tagIds) {
+        WorkflowEntity entity = findById(id);
+        Set<TagEntity> tags = new LinkedHashSet<>();
+        for (String tagId : tagIds) {
+            tags.add(tagRepository.findById(tagId)
+                    .orElseThrow(() -> new NotFoundException("Tag not found: " + tagId)));
+        }
+        entity.setTags(tags);
+        return toResponse(workflowRepository.save(entity));
+    }
+
     public WorkflowEntity findById(String id) {
         return workflowRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Workflow not found: " + id));
     }
 
     private WorkflowResponse toResponse(WorkflowEntity entity) {
+        List<TagResponse> tagResponses = entity.getTags() != null
+                ? entity.getTags().stream()
+                    .map(t -> TagResponse.builder()
+                            .id(t.getId())
+                            .name(t.getName())
+                            .createdAt(t.getCreatedAt())
+                            .updatedAt(t.getUpdatedAt())
+                            .build())
+                    .toList()
+                : List.of();
+
         return WorkflowResponse.builder()
                 .id(entity.getId())
                 .projectId(entity.getProjectId())
@@ -199,6 +227,7 @@ public class WorkflowService {
                 .settings(entity.getSettings())
                 .staticData(entity.getStaticData())
                 .pinData(entity.getPinData())
+                .tags(tagResponses)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

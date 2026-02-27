@@ -59,6 +59,7 @@ export interface TrellisCanvasProps {
   initialEdges: Edge[];
   isExecuting?: boolean;
   readOnly?: boolean;
+  drawerOffset?: number;
   onNodeClick?: (nodeId: string) => void;
   onNodeDoubleClick?: (nodeId: string) => void;
   onPaneClick?: () => void;
@@ -96,6 +97,7 @@ function TrellisCanvasInner({
   initialEdges,
   isExecuting,
   readOnly,
+  drawerOffset,
   onNodeClick,
   onNodeDoubleClick,
   onPaneClick,
@@ -668,7 +670,7 @@ function TrellisCanvasInner({
           </Panel>
 
           {triggerNodes.length > 0 && !readOnly && (
-            <div className="canvas-action-bar">
+            <div className="canvas-action-bar" style={drawerOffset ? { bottom: drawerOffset + 16 } : undefined}>
               {triggerNodes.length === 1 ? (
                 <button
                   className="canvas-execute-btn"

@@ -70,4 +70,9 @@ public class WorkflowController {
     public List<WorkflowVersionResponse> getVersions(@PathVariable String id) {
         return workflowService.getWorkflowVersions(id);
     }
+
+    @PutMapping("/{id}/tags")
+    public WorkflowResponse updateTags(@PathVariable String id, @RequestBody List<String> tagIds) {
+        return workflowService.updateWorkflowTags(id, tagIds);
+    }
 }

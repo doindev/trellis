@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, HostListener, ElementRef } from
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, ClockCheck, ClockPlus, ClockFading, Aperture } from 'lucide-angular';
+import { Tag } from '../../../../core/models';
 
 export type ToolbarAction =
   | 'editDescription'
@@ -32,6 +33,7 @@ export class ToolbarComponent {
   @Input() published = false;
   @Input() currentVersion = 0;
   @Input() versionIsDirty = false;
+  @Input() tags: Tag[] = [];
 
   get publishStatus(): 'current' | 'stale' | 'unpublished' {
     if (!this.published) return 'unpublished';
@@ -45,6 +47,7 @@ export class ToolbarComponent {
   @Output() execute = new EventEmitter<void>();
   @Output() publish = new EventEmitter<void>();
   @Output() back = new EventEmitter<void>();
+  @Output() openTagSelector = new EventEmitter<void>();
   @Input() activeTab: 'editor' | 'executions' = 'editor';
   @Output() showExecutions = new EventEmitter<void>();
   @Output() tabChanged = new EventEmitter<'editor' | 'executions'>();

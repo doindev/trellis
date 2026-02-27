@@ -1,3 +1,10 @@
+export interface Tag {
+  id: string;
+  name: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Workflow {
   id?: string;
   projectId?: string;
@@ -12,6 +19,7 @@ export interface Workflow {
   settings?: Record<string, any>;
   staticData?: Record<string, any>;
   pinData?: Record<string, any>;
+  tags?: Tag[];
   createdAt?: string;
   updatedAt?: string;
 }

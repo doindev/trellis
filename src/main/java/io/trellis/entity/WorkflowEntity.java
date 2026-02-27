@@ -5,6 +5,8 @@ import io.trellis.util.NanoId;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "workflows", indexes = {
@@ -75,6 +77,15 @@ public class WorkflowEntity {
 
     @Column(columnDefinition = "TEXT")
     private String mcpDescription;
+
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "workflow_tags",
+        joinColumns = @JoinColumn(name = "workflow_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<TagEntity> tags = new LinkedHashSet<>();
 
     @Builder.Default
     @Column(nullable = false, updatable = false)
