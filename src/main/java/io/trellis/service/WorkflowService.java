@@ -76,6 +76,7 @@ public class WorkflowService {
         if (request.getMcpDescription() != null) entity.setMcpDescription(request.getMcpDescription());
         if (request.getMcpInputSchema() != null) entity.setMcpInputSchema(request.getMcpInputSchema());
         if (request.getMcpOutputSchema() != null) entity.setMcpOutputSchema(request.getMcpOutputSchema());
+        if (request.getSwaggerEnabled() != null) entity.setSwaggerEnabled(request.getSwaggerEnabled());
 
         if (entity.isPublished() && (request.getNodes() != null || request.getConnections() != null
                 || request.getMcpInputSchema() != null || request.getMcpOutputSchema() != null)) {
@@ -166,6 +167,7 @@ public class WorkflowService {
         if (entity.isPublished()) {
             webhookService.deregisterWorkflowWebhooks(id);
             entity.setPublished(false);
+            disableSwaggerAccess(entity);
             entity = workflowRepository.save(entity);
             log.info("Unpublished workflow: {} ({})", entity.getName(), id);
         }
@@ -179,6 +181,7 @@ public class WorkflowService {
             webhookService.deregisterWorkflowWebhooks(id);
             entity.setPublished(false);
         }
+        disableSwaggerAccess(entity);
         entity.setArchived(true);
         entity = workflowRepository.save(entity);
         log.info("Archived workflow: {} ({})", entity.getName(), id);
@@ -202,6 +205,13 @@ public class WorkflowService {
         }
         entity.setTags(tags);
         return toResponse(workflowRepository.save(entity));
+    }
+
+    private void disableSwaggerAccess(WorkflowEntity entity) {
+        if (entity.isSwaggerEnabled()) {
+            entity.setSwaggerEnabled(false);
+            tagRepository.findByName("swagger").ifPresent(tag -> entity.getTags().remove(tag));
+        }
     }
 
     public WorkflowEntity findById(String id) {
@@ -239,6 +249,7 @@ public class WorkflowService {
                 .mcpDescription(entity.getMcpDescription())
                 .mcpInputSchema(entity.getMcpInputSchema())
                 .mcpOutputSchema(entity.getMcpOutputSchema())
+                .swaggerEnabled(entity.isSwaggerEnabled())
                 .tags(tagResponses)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())

@@ -18,6 +18,7 @@ export class WorkflowCardComponent {
   @Output() move = new EventEmitter<Workflow>();
   @Output() archive = new EventEmitter<Workflow>();
   @Output() enableMcp = new EventEmitter<Workflow>();
+  @Output() enableSwagger = new EventEmitter<Workflow>();
   showActions = false;
   dropdownStyle: Record<string, string> = {};
   private actionsCloseTimer: ReturnType<typeof setTimeout> | null = null;
@@ -30,6 +31,10 @@ export class WorkflowCardComponent {
   }
 
   get canEnableMcp(): boolean {
+    return this.workflow.published && (this.workflow.nodes || []).some(n => n.type === 'webhook');
+  }
+
+  get canEnableSwagger(): boolean {
     return this.workflow.published && (this.workflow.nodes || []).some(n => n.type === 'webhook');
   }
 
@@ -105,6 +110,7 @@ export class WorkflowCardComponent {
       case 'move': this.move.emit(this.workflow); break;
       case 'archive': this.archive.emit(this.workflow); break;
       case 'enableMcp': this.enableMcp.emit(this.workflow); break;
+      case 'enableSwagger': this.enableSwagger.emit(this.workflow); break;
     }
   }
 

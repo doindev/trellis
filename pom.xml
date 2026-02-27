@@ -96,6 +96,13 @@
 			<artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
 		</dependency>
 
+		<!-- Swagger UI (OpenAPI 3.0) -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.8.15</version>
+		</dependency>
+
 		<!-- Jakarta Mail (SMTP Email Send) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

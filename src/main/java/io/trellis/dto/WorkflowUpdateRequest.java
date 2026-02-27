@@ -15,4 +15,5 @@ public class WorkflowUpdateRequest {
     private String mcpDescription;
     private Object mcpInputSchema;
     private Object mcpOutputSchema;
+    private Boolean swaggerEnabled;
 }

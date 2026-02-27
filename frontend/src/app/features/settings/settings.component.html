@@ -374,7 +374,7 @@
                 @for (wf of mcpWorkflows; track wf.id) {
                   @if (wf.id === mcpWorkflowMenuId) {
                     <button class="menu-item" (click)="startEditDescription(wf)">Edit description...</button>
-                    <button class="menu-item" (click)="openParamEditor(wf)">Edit parameters...</button>
+                    <button class="menu-item" (click)="openParamEditor(wf)">Edit Schema parameters...</button>
                     @if (wf.mcpEnabled) {
                       <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Disable MCP access</button>
                     } @else if (wf.published && wf.hasWebhookNode) {
@@ -512,6 +512,110 @@
           </div>
         </div>
       }
+    }
+
+    <!-- SWAGGER -->
+    @if (activeSection === 'swagger') {
+      <div class="section-page section-page-full">
+        <div class="section-header-row">
+          <div>
+            <h1 class="section-title">Instance-level Swagger</h1>
+            <p class="section-subtitle">Expose workflow webhooks via interactive Swagger UI documentation</p>
+          </div>
+          <div class="header-actions">
+            @if (swaggerSettings.enabled) {
+              <a class="btn-secondary" href="/swagger-ui.html" target="_blank">Open Swagger UI</a>
+            }
+            <label class="toggle">
+              <input type="checkbox" [checked]="swaggerSettings.enabled" (change)="toggleSwagger()" [disabled]="swaggerSaving">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        @if (swaggerSettings.enabled) {
+          <div class="settings-card">
+            <h3 class="card-title">API Metadata</h3>
+            <div class="form-row">
+              <label class="form-label">API Title</label>
+              <input class="form-input" type="text" [(ngModel)]="swaggerSettings.apiTitle" placeholder="Trellis API">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Description</label>
+              <input class="form-input" type="text" [(ngModel)]="swaggerSettings.apiDescription" placeholder="Workflow webhook endpoints">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Version</label>
+              <input class="form-input" type="text" [(ngModel)]="swaggerSettings.apiVersion" placeholder="1.0.0">
+            </div>
+            <div class="form-actions">
+              <button class="btn-primary" (click)="saveSwaggerSettings()" [disabled]="swaggerSaving">
+                {{ swaggerSaving ? 'Saving...' : 'Save changes' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="data-table tab-table">
+            <div class="table-header">
+              @if (showSwaggerProjectColumn) {
+                <div class="col-wf-project">Project</div>
+              }
+              <div class="col-wf-name">Workflow</div>
+              <div class="col-wf-desc">Description</div>
+              <div class="col-wf-status">Swagger</div>
+              <div class="col-actions"></div>
+            </div>
+            @for (wf of swaggerWorkflows; track wf.id) {
+              <div class="table-row">
+                @if (showSwaggerProjectColumn) {
+                  <div class="col-wf-project">{{ wf.projectName || '' }}</div>
+                }
+                <div class="col-wf-name">{{ wf.name }}</div>
+                <div class="col-wf-desc">
+                  <span class="desc-text">{{ wf.description || '' }}</span>
+                </div>
+                <div class="col-wf-status">
+                  @if (wf.swaggerEnabled) {
+                    <span class="status-badge enabled">Enabled</span>
+                  } @else {
+                    <span class="status-badge disabled">Disabled</span>
+                  }
+                </div>
+                <div class="col-actions"
+                     (mouseenter)="cancelSwaggerMenuClose()"
+                     (mouseleave)="scheduleSwaggerMenuClose()">
+                  <button class="btn-icon-sm" (click)="toggleSwaggerWorkflowMenu(wf.id, $event)">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            }
+            @if (swaggerWorkflows.length === 0) {
+              <div class="empty-row">No workflows found</div>
+            }
+          </div>
+
+          @if (swaggerWorkflowMenuId) {
+            <div class="actions-menu" [ngStyle]="swaggerMenuStyle"
+                 (mouseenter)="cancelSwaggerMenuClose()"
+                 (mouseleave)="scheduleSwaggerMenuClose()">
+              @for (wf of swaggerWorkflows; track wf.id) {
+                @if (wf.id === swaggerWorkflowMenuId) {
+                  @if (wf.swaggerEnabled) {
+                    <button class="menu-item" (click)="toggleWorkflowSwagger(wf); swaggerWorkflowMenuId = null">Disable Swagger access</button>
+                  } @else if (wf.published && wf.hasWebhookNode) {
+                    <button class="menu-item" (click)="toggleWorkflowSwagger(wf); swaggerWorkflowMenuId = null">Enable Swagger access</button>
+                  } @else {
+                    <button class="menu-item disabled" disabled>Enable Swagger access</button>
+                  }
+                }
+              }
+            </div>
+          }
+        }
+      </div>
     }
 
     <!-- LOG STREAMING -->

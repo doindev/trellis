@@ -310,6 +310,13 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  onEnableSwagger(workflow: Workflow): void {
+    if (!workflow.id) return;
+    this.settingsService.updateSwaggerWorkflow(workflow.id, { swaggerEnabled: true } as any).subscribe({
+      next: () => this.loadWorkflows()
+    });
+  }
+
   duplicateWorkflow(workflow: Workflow): void {
     if (!workflow.id) return;
     const copy: Partial<Workflow> = {

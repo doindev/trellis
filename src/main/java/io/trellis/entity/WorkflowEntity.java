@@ -89,6 +89,10 @@ public class WorkflowEntity {
     private Object mcpOutputSchema;
 
     @Builder.Default
+    @Column(name = "swagger_enabled", nullable = false)
+    private boolean swaggerEnabled = false;
+
+    @Builder.Default
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "workflow_tags",

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter, McpOutputSchema } from '../../core/services/settings.service';
+import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter, McpOutputSchema, SwaggerSettings, SwaggerWorkflow } from '../../core/services/settings.service';
 import { NodeTypeService } from '../../core/services/node-type.service';
 import { NodeTypeDescription } from '../../core/models';
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
@@ -69,6 +69,20 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return this.mcpWorkflows.some(wf => !!wf.projectId);
   }
 
+  // Swagger
+  swaggerSettings: SwaggerSettings = { enabled: false, apiTitle: '', apiDescription: '', apiVersion: '' };
+  swaggerWorkflows: SwaggerWorkflow[] = [];
+  swaggerSaving = false;
+  swaggerActiveTab = 'workflows';
+  swaggerWorkflowMenuId: string | null = null;
+  swaggerMenuStyle: Record<string, string> = {};
+  private swaggerMenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private swaggerMenuScrollListener: (() => void) | null = null;
+
+  get showSwaggerProjectColumn(): boolean {
+    return this.swaggerWorkflows.some(wf => !!wf.projectId);
+  }
+
   // Community Nodes
   nodeTypes: NodeTypeDescription[] = [];
 
@@ -115,6 +129,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
         break;
       case 'mcp':
         this.loadMcpSettings();
+        break;
+      case 'swagger':
+        this.loadSwaggerSettings();
         break;
       case 'community-nodes':
         this.nodeTypeService.getAll().subscribe({
@@ -426,6 +443,103 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.paramEditorWorkflow = null;
       }
     });
+  }
+
+  // Swagger Settings
+  private loadSwaggerSettings(): void {
+    this.settingsService.getSwaggerSettings().subscribe({
+      next: settings => this.swaggerSettings = settings,
+      error: () => {}
+    });
+    this.settingsService.getSwaggerWorkflows().subscribe({
+      next: workflows => this.swaggerWorkflows = workflows,
+      error: () => this.swaggerWorkflows = []
+    });
+  }
+
+  toggleSwagger(): void {
+    this.swaggerSaving = true;
+    this.settingsService.updateSwaggerSettings({ enabled: !this.swaggerSettings.enabled }).subscribe({
+      next: settings => {
+        this.swaggerSettings = settings;
+        this.swaggerSaving = false;
+      },
+      error: () => this.swaggerSaving = false
+    });
+  }
+
+  saveSwaggerSettings(): void {
+    this.swaggerSaving = true;
+    this.settingsService.updateSwaggerSettings(this.swaggerSettings).subscribe({
+      next: settings => {
+        this.swaggerSettings = settings;
+        this.swaggerSaving = false;
+      },
+      error: () => this.swaggerSaving = false
+    });
+  }
+
+  toggleWorkflowSwagger(workflow: SwaggerWorkflow): void {
+    this.settingsService.updateSwaggerWorkflow(workflow.id, { swaggerEnabled: !workflow.swaggerEnabled } as any).subscribe({
+      next: () => {
+        workflow.swaggerEnabled = !workflow.swaggerEnabled;
+      }
+    });
+  }
+
+  toggleSwaggerWorkflowMenu(workflowId: string, event: MouseEvent): void {
+    this.cancelSwaggerMenuClose();
+    if (this.swaggerWorkflowMenuId === workflowId) {
+      this.closeSwaggerMenu();
+      return;
+    }
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+    const dropdownHeight = 100;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+    this.swaggerMenuStyle = {
+      position: 'fixed',
+      right: (window.innerWidth - rect.right) + 'px',
+      ...(openUp
+        ? { bottom: (window.innerHeight - rect.top + 4) + 'px' }
+        : { top: (rect.bottom + 4) + 'px' }),
+      'z-index': '9999'
+    };
+    this.swaggerWorkflowMenuId = workflowId;
+    this.addSwaggerMenuScrollListener();
+  }
+
+  scheduleSwaggerMenuClose(): void {
+    this.cancelSwaggerMenuClose();
+    this.swaggerMenuCloseTimer = setTimeout(() => this.closeSwaggerMenu(), 400);
+  }
+
+  cancelSwaggerMenuClose(): void {
+    if (this.swaggerMenuCloseTimer) {
+      clearTimeout(this.swaggerMenuCloseTimer);
+      this.swaggerMenuCloseTimer = null;
+    }
+  }
+
+  private closeSwaggerMenu(): void {
+    this.swaggerWorkflowMenuId = null;
+    this.removeSwaggerMenuScrollListener();
+  }
+
+  private addSwaggerMenuScrollListener(): void {
+    this.removeSwaggerMenuScrollListener();
+    const handler = () => this.closeSwaggerMenu();
+    document.addEventListener('scroll', handler, true);
+    this.swaggerMenuScrollListener = () => document.removeEventListener('scroll', handler, true);
+  }
+
+  private removeSwaggerMenuScrollListener(): void {
+    if (this.swaggerMenuScrollListener) {
+      this.swaggerMenuScrollListener();
+      this.swaggerMenuScrollListener = null;
+    }
   }
 
   onModalBackdropClick(event: MouseEvent): void {

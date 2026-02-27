@@ -98,6 +98,24 @@ export interface McpWorkflow {
   projectName?: string;
 }
 
+export interface SwaggerSettings {
+  enabled: boolean;
+  apiTitle: string;
+  apiDescription: string;
+  apiVersion: string;
+}
+
+export interface SwaggerWorkflow {
+  id: string;
+  name: string;
+  description: string;
+  swaggerEnabled: boolean;
+  published: boolean;
+  hasWebhookNode: boolean;
+  projectId?: string;
+  projectName?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private settings$?: Observable<any>;
@@ -201,5 +219,22 @@ export class SettingsService {
   // MCP Clients
   listMcpClients(): Observable<McpClient[]> {
     return this.api.get<McpClient[]>('/settings/mcp/clients');
+  }
+
+  // Swagger Settings
+  getSwaggerSettings(): Observable<SwaggerSettings> {
+    return this.api.get<SwaggerSettings>('/settings/swagger');
+  }
+
+  updateSwaggerSettings(settings: Partial<SwaggerSettings>): Observable<SwaggerSettings> {
+    return this.api.put<SwaggerSettings>('/settings/swagger', settings);
+  }
+
+  getSwaggerWorkflows(): Observable<SwaggerWorkflow[]> {
+    return this.api.get<SwaggerWorkflow[]>('/settings/swagger/workflows');
+  }
+
+  updateSwaggerWorkflow(workflowId: string, data: Partial<SwaggerWorkflow>): Observable<void> {
+    return this.api.put<void>(`/settings/swagger/workflows/${workflowId}`, data);
   }
 }
