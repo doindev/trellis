@@ -13,8 +13,11 @@ export class WorkflowCardComponent {
   @Input({ required: true }) workflow!: Workflow;
   @Input() projectName?: string;
   @Output() open = new EventEmitter<Workflow>();
+  @Output() share = new EventEmitter<Workflow>();
   @Output() duplicate = new EventEmitter<Workflow>();
-  @Output() delete = new EventEmitter<Workflow>();
+  @Output() move = new EventEmitter<Workflow>();
+  @Output() archive = new EventEmitter<Workflow>();
+  @Output() enableMcp = new EventEmitter<Workflow>();
   showActions = false;
   private actionsCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -70,8 +73,11 @@ export class WorkflowCardComponent {
     this.showActions = false;
     switch (action) {
       case 'open': this.open.emit(this.workflow); break;
+      case 'share': this.share.emit(this.workflow); break;
       case 'duplicate': this.duplicate.emit(this.workflow); break;
-      case 'delete': this.delete.emit(this.workflow); break;
+      case 'move': this.move.emit(this.workflow); break;
+      case 'archive': this.archive.emit(this.workflow); break;
+      case 'enableMcp': this.enableMcp.emit(this.workflow); break;
     }
   }
 

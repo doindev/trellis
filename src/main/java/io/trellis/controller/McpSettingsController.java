@@ -1,11 +1,12 @@
 package io.trellis.controller;
 
+import io.trellis.dto.McpClientSession;
+import io.trellis.dto.McpEndpointDto;
 import io.trellis.dto.McpSettingsDto;
 import io.trellis.service.McpSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,23 +27,52 @@ public class McpSettingsController {
         return mcpSettingsService.setEnabled(dto.isEnabled());
     }
 
+    // --- Endpoints ---
+
+    @GetMapping("/endpoints")
+    public List<McpEndpointDto> listEndpoints() {
+        return mcpSettingsService.listEndpoints();
+    }
+
+    @PostMapping("/endpoints")
+    public McpEndpointDto createEndpoint(@RequestBody McpEndpointDto dto) {
+        return mcpSettingsService.createEndpoint(dto);
+    }
+
+    @PutMapping("/endpoints/{id}")
+    public McpEndpointDto updateEndpoint(@PathVariable String id, @RequestBody McpEndpointDto dto) {
+        return mcpSettingsService.updateEndpoint(id, dto);
+    }
+
+    @DeleteMapping("/endpoints/{id}")
+    public void deleteEndpoint(@PathVariable String id) {
+        mcpSettingsService.deleteEndpoint(id);
+    }
+
+    // --- Clients ---
+
+    @GetMapping("/clients")
+    public List<McpClientSession> listClients() {
+        return mcpSettingsService.getClientSessions();
+    }
+
+    // --- Workflows ---
+
     @GetMapping("/workflows")
     public List<Map<String, Object>> getWorkflows() {
-        return mcpSettingsService.getEnabledWorkflows().stream()
-                .map(wf -> {
-                    Map<String, Object> map = new LinkedHashMap<>();
-                    map.put("id", wf.getId());
-                    map.put("name", wf.getName());
-                    map.put("mcpEnabled", wf.isMcpEnabled());
-                    return map;
-                })
-                .toList();
+        return mcpSettingsService.getAllWorkflowsWithMcpStatus();
     }
 
     @PutMapping("/workflows/{workflowId}")
-    public void enableWorkflow(@PathVariable String workflowId, @RequestBody Map<String, Boolean> body) {
-        boolean enabled = body.getOrDefault("mcpEnabled", true);
-        mcpSettingsService.setWorkflowMcpEnabled(workflowId, enabled);
+    public void updateWorkflow(@PathVariable String workflowId, @RequestBody Map<String, Object> body) {
+        if (body.containsKey("mcpEnabled")) {
+            boolean enabled = (Boolean) body.get("mcpEnabled");
+            mcpSettingsService.setWorkflowMcpEnabled(workflowId, enabled);
+        }
+        if (body.containsKey("mcpDescription")) {
+            String mcpDescription = (String) body.get("mcpDescription");
+            mcpSettingsService.updateWorkflowMcpDescription(workflowId, mcpDescription);
+        }
     }
 
     @DeleteMapping("/workflows/{workflowId}")

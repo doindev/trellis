@@ -387,21 +387,290 @@ select.form-input {
   }
 }
 
-/* MCP specific */
-.mcp-connection-card {
-  margin-bottom: 20px;
+/* MCP Tabs */
+.mcp-tabs {
+  margin-bottom: 0;
+  border-bottom: 1px solid hsl(0, 0%, 22%);
+
+  .nav-item {
+    .nav-link {
+      color: hsl(0, 0%, 52%);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 10px 16px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+
+      &:hover {
+        color: hsl(0, 0%, 76%);
+      }
+
+      &.active {
+        color: hsl(0, 0%, 96%);
+        border-bottom-color: var(--bs-primary);
+      }
+    }
+  }
 }
 
-.mcp-note {
+.tab-table {
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+}
+
+/* Transport badges */
+.transport-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+
+  &.sse {
+    background: hsla(210, 70%, 50%, 0.12);
+    color: hsl(210, 70%, 60%);
+  }
+
+  &.streamable {
+    background: hsla(147, 60%, 40%, 0.12);
+    color: hsl(147, 60%, 50%);
+  }
+}
+
+/* Header actions row */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Connection Details Modal */
+.mcp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.mcp-modal-panel {
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 12px;
+  width: 540px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.mcp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid hsl(0, 0%, 20%);
+}
+
+.mcp-modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 96%);
+  margin: 0;
+}
+
+.mcp-modal-close {
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 50%);
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+    background: hsl(0, 0%, 17%);
+  }
+}
+
+.mcp-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.mcp-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid hsl(0, 0%, 20%);
+}
+
+.modal-empty-state {
+  text-align: center;
+  padding: 24px 0;
+
+  p {
+    font-size: 0.8125rem;
+    color: hsl(0, 0%, 44%);
+    margin: 0;
+  }
+}
+
+/* Endpoint card inside modal */
+.endpoint-card {
+  padding: 14px;
+  background: hsl(0, 0%, 10%);
+  border: 1px solid hsl(0, 0%, 20%);
+  border-radius: 8px;
+}
+
+.endpoint-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.endpoint-card-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.endpoint-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 90%);
+}
+
+.endpoint-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.endpoint-url {
+  flex: 1;
   font-size: 0.75rem;
-  color: hsl(0, 0%, 44%);
-  margin: 12px 0 0;
-  font-style: italic;
+  color: hsl(0, 0%, 52%);
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Add endpoint form inside modal */
+.add-endpoint-card {
+  padding: 14px;
+  background: hsl(0, 0%, 10%);
+  border: 1px dashed hsl(0, 0%, 26%);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Workflow table columns */
+.col-wf-name { flex: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.col-wf-desc { flex: 3; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: hsl(0, 0%, 52%); }
+.col-wf-status { width: 80px; }
+
+/* Client table columns */
+.col-client-name { flex: 2; min-width: 0; }
+.col-client-endpoint { flex: 1.5; min-width: 0; }
+.col-client-transport { width: 120px; }
+.col-client-connected { flex: 1; color: hsl(0, 0%, 52%); }
+.col-client-seen { flex: 1; color: hsl(0, 0%, 52%); }
+
+/* Status badge */
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+
+  &.enabled {
+    background: hsla(147, 60%, 40%, 0.12);
+    color: hsl(147, 60%, 50%);
+  }
+
+  &.disabled {
+    background: hsl(0, 0%, 17%);
+    color: hsl(0, 0%, 52%);
+  }
+}
+
+/* Actions menu dropdown */
+.dropdown-wrapper {
+  position: relative;
+}
+
+.actions-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: hsl(0, 0%, 15%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 180px;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 86%);
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: hsl(0, 0%, 20%);
+  }
+}
+
+/* Inline edit */
+.inline-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .form-input {
+    max-width: none;
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 0.8125rem;
+  }
+}
+
+.desc-text {
+  font-size: 0.8125rem;
 }
 
 .btn-sm {
   padding: 4px 12px;
   font-size: 0.75rem;
+}
+
+.btn-xs {
+  padding: 3px 10px;
+  font-size: 0.6875rem;
 }
 
 /* Community nodes grid */

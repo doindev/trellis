@@ -73,6 +73,9 @@ public class WorkflowEntity {
     @Column(name = "mcp_enabled", nullable = false)
     private boolean mcpEnabled = false;
 
+    @Column(columnDefinition = "TEXT")
+    private String mcpDescription;
+
     @Builder.Default
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();

@@ -16,6 +16,7 @@
 		<spring.boot.version>3.5.11</spring.boot.version>
 		<langchain4j.version>1.11.0</langchain4j.version>
 		<aws.sdk.version>2.25.60</aws.sdk.version>
+		<spring-ai.version>1.0.0</spring-ai.version>
 	</properties>
 
 	<dependencyManagement>
@@ -24,6 +25,13 @@
 				<groupId>dev.langchain4j</groupId>
 				<artifactId>langchain4j-bom</artifactId>
 				<version>${langchain4j.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.ai</groupId>
+				<artifactId>spring-ai-bom</artifactId>
+				<version>${spring-ai.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -80,6 +88,12 @@
 			<groupId>org.doindev</groupId>
     		<artifactId>spring-boot-starter-security-config</artifactId>
     		<version>0.0.1</version>
+		</dependency>
+
+		<!-- Spring AI MCP Server -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
 		</dependency>
 
 		<!-- Jakarta Mail (SMTP Email Send) -->

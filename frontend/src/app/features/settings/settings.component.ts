@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow } from '../../core/services/settings.service';
+import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow, McpEndpoint, McpClient } from '../../core/services/settings.service';
 import { NodeTypeService } from '../../core/services/node-type.service';
 import { NodeTypeDescription } from '../../core/models';
 
@@ -46,9 +46,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // MCP
   mcpSettings: McpSettings | null = null;
   mcpWorkflows: McpWorkflow[] = [];
+  mcpEndpoints: McpEndpoint[] = [];
+  mcpClients: McpClient[] = [];
   mcpSaving = false;
-  showMcpConnectionDetails = false;
-  copiedSseUrl = false;
+  mcpActiveTab = 'workflows';
+  showConnectionDetailsModal = false;
+  showAddEndpoint = false;
+  newEndpoint = { name: '', transport: 'SSE', path: '' };
+  editingWorkflowId: string | null = null;
+  editDescriptionValue = '';
+  mcpWorkflowMenuId: string | null = null;
 
   // Community Nodes
   nodeTypes: NodeTypeDescription[] = [];
@@ -244,7 +251,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // MCP Settings
   private loadMcpSettings(): void {
     this.settingsService.getMcpSettings().subscribe({
-      next: settings => this.mcpSettings = settings,
+      next: settings => {
+        this.mcpSettings = settings;
+        this.mcpEndpoints = settings.endpoints || [];
+      },
       error: () => {}
     });
     this.settingsService.getMcpWorkflows().subscribe({
@@ -259,25 +269,85 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.settingsService.updateMcpSettings({ enabled: !this.mcpSettings.enabled }).subscribe({
       next: settings => {
         this.mcpSettings = settings;
+        this.mcpEndpoints = settings.endpoints || [];
         this.mcpSaving = false;
       },
       error: () => this.mcpSaving = false
     });
   }
 
-  revokeMcpWorkflow(workflowId: string): void {
-    this.settingsService.revokeMcpWorkflow(workflowId).subscribe({
+  onMcpTabChange(tab: string): void {
+    this.mcpActiveTab = tab;
+    if (tab === 'clients') {
+      this.loadMcpClients();
+    }
+  }
+
+  // Endpoint actions
+  createMcpEndpoint(): void {
+    if (!this.newEndpoint.name || !this.newEndpoint.path) return;
+    this.settingsService.createMcpEndpoint(this.newEndpoint).subscribe({
       next: () => {
-        this.mcpWorkflows = this.mcpWorkflows.filter(wf => wf.id !== workflowId);
+        this.showAddEndpoint = false;
+        this.newEndpoint = { name: '', transport: 'SSE', path: '' };
+        this.loadMcpSettings();
       }
     });
   }
 
-  copySseUrl(): void {
-    if (this.mcpSettings?.sseUrl) {
-      navigator.clipboard.writeText(this.mcpSettings.sseUrl);
-      this.copiedSseUrl = true;
-      setTimeout(() => this.copiedSseUrl = false, 2000);
+  deleteEndpoint(id: string): void {
+    this.settingsService.deleteMcpEndpoint(id).subscribe({
+      next: () => this.loadMcpSettings()
+    });
+  }
+
+  copyEndpointUrl(url: string): void {
+    navigator.clipboard.writeText(url);
+  }
+
+  // Client actions
+  loadMcpClients(): void {
+    this.settingsService.listMcpClients().subscribe({
+      next: clients => this.mcpClients = clients,
+      error: () => this.mcpClients = []
+    });
+  }
+
+  // Workflow actions
+  toggleWorkflowMcp(workflow: McpWorkflow): void {
+    this.settingsService.updateMcpWorkflow(workflow.id, { mcpEnabled: !workflow.mcpEnabled } as any).subscribe({
+      next: () => {
+        workflow.mcpEnabled = !workflow.mcpEnabled;
+      }
+    });
+  }
+
+  toggleWorkflowMenu(workflowId: string): void {
+    this.mcpWorkflowMenuId = this.mcpWorkflowMenuId === workflowId ? null : workflowId;
+  }
+
+  startEditDescription(workflow: McpWorkflow): void {
+    this.editingWorkflowId = workflow.id;
+    this.editDescriptionValue = workflow.mcpDescription || workflow.description || '';
+    this.mcpWorkflowMenuId = null;
+  }
+
+  saveDescription(workflow: McpWorkflow): void {
+    this.settingsService.updateMcpWorkflow(workflow.id, { mcpDescription: this.editDescriptionValue } as any).subscribe({
+      next: () => {
+        workflow.mcpDescription = this.editDescriptionValue;
+        this.editingWorkflowId = null;
+      }
+    });
+  }
+
+  cancelEditDescription(): void {
+    this.editingWorkflowId = null;
+  }
+
+  onModalBackdropClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('mcp-modal-backdrop')) {
+      this.showConnectionDetailsModal = false;
     }
   }
 }

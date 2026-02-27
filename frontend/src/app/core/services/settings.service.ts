@@ -40,15 +40,37 @@ export interface AiSettings {
   enabled: boolean;
 }
 
+export interface McpEndpoint {
+  id: string;
+  name: string;
+  transport: string;
+  path: string;
+  url: string;
+  enabled: boolean;
+}
+
+export interface McpClient {
+  sessionId: string;
+  endpointId: string;
+  endpointName: string;
+  transport: string;
+  clientName: string;
+  clientVersion: string;
+  connectedAt: string;
+  lastSeenAt: string;
+}
+
 export interface McpSettings {
   enabled: boolean;
-  sseUrl: string;
+  endpoints: McpEndpoint[];
 }
 
 export interface McpWorkflow {
   id: string;
   name: string;
+  description: string;
   mcpEnabled: boolean;
+  mcpDescription: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -122,7 +144,33 @@ export class SettingsService {
     return this.api.get<McpWorkflow[]>('/settings/mcp/workflows');
   }
 
+  updateMcpWorkflow(workflowId: string, data: Partial<McpWorkflow>): Observable<void> {
+    return this.api.put<void>(`/settings/mcp/workflows/${workflowId}`, data);
+  }
+
   revokeMcpWorkflow(workflowId: string): Observable<void> {
     return this.api.delete<void>(`/settings/mcp/workflows/${workflowId}`);
+  }
+
+  // MCP Endpoints
+  listMcpEndpoints(): Observable<McpEndpoint[]> {
+    return this.api.get<McpEndpoint[]>('/settings/mcp/endpoints');
+  }
+
+  createMcpEndpoint(endpoint: Partial<McpEndpoint>): Observable<McpEndpoint> {
+    return this.api.post<McpEndpoint>('/settings/mcp/endpoints', endpoint);
+  }
+
+  updateMcpEndpoint(id: string, endpoint: Partial<McpEndpoint>): Observable<McpEndpoint> {
+    return this.api.put<McpEndpoint>(`/settings/mcp/endpoints/${id}`, endpoint);
+  }
+
+  deleteMcpEndpoint(id: string): Observable<void> {
+    return this.api.delete<void>(`/settings/mcp/endpoints/${id}`);
+  }
+
+  // MCP Clients
+  listMcpClients(): Observable<McpClient[]> {
+    return this.api.get<McpClient[]>('/settings/mcp/clients');
   }
 }

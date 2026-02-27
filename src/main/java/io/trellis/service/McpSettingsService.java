@@ -1,9 +1,13 @@
 package io.trellis.service;
 
+import io.trellis.dto.McpClientSession;
+import io.trellis.dto.McpEndpointDto;
 import io.trellis.dto.McpSettingsDto;
+import io.trellis.entity.McpEndpointEntity;
 import io.trellis.entity.McpSettingsEntity;
 import io.trellis.entity.WorkflowEntity;
 import io.trellis.exception.NotFoundException;
+import io.trellis.repository.McpEndpointRepository;
 import io.trellis.repository.McpSettingsRepository;
 import io.trellis.repository.WorkflowRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +25,8 @@ public class McpSettingsService {
 
     private final McpSettingsRepository repository;
     private final WorkflowRepository workflowRepository;
+    private final McpEndpointRepository endpointRepository;
+    private final TrellisMcpServerManager mcpServerManager;
 
     @Value("${server.port:5678}")
     private int serverPort;
@@ -27,9 +35,12 @@ public class McpSettingsService {
         boolean enabled = repository.findFirstByOrderByCreatedAtAsc()
                 .map(McpSettingsEntity::isEnabled)
                 .orElse(false);
+        List<McpEndpointDto> endpoints = endpointRepository.findAll().stream()
+                .map(this::toEndpointDto)
+                .toList();
         return McpSettingsDto.builder()
                 .enabled(enabled)
-                .sseUrl("http://localhost:" + serverPort + "/sse")
+                .endpoints(endpoints)
                 .build();
     }
 
@@ -39,14 +50,67 @@ public class McpSettingsService {
                 .orElseGet(McpSettingsEntity::new);
         entity.setEnabled(enabled);
         repository.save(entity);
-        return McpSettingsDto.builder()
-                .enabled(entity.isEnabled())
-                .sseUrl("http://localhost:" + serverPort + "/sse")
-                .build();
+
+        if (enabled) {
+            mcpServerManager.startAll();
+        } else {
+            mcpServerManager.stopAll();
+        }
+
+        return getSettings();
     }
 
-    public List<WorkflowEntity> getEnabledWorkflows() {
-        return workflowRepository.findByMcpEnabledTrue();
+    // --- Endpoint CRUD ---
+
+    public List<McpEndpointDto> listEndpoints() {
+        return endpointRepository.findAll().stream()
+                .map(this::toEndpointDto)
+                .toList();
+    }
+
+    @Transactional
+    public McpEndpointDto createEndpoint(McpEndpointDto dto) {
+        McpEndpointEntity entity = McpEndpointEntity.builder()
+                .name(dto.getName())
+                .transport(dto.getTransport())
+                .path(dto.getPath())
+                .enabled(true)
+                .build();
+        entity = endpointRepository.save(entity);
+        return toEndpointDto(entity);
+    }
+
+    @Transactional
+    public McpEndpointDto updateEndpoint(String id, McpEndpointDto dto) {
+        McpEndpointEntity entity = endpointRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Endpoint not found: " + id));
+        if (dto.getName() != null) entity.setName(dto.getName());
+        if (dto.getTransport() != null) entity.setTransport(dto.getTransport());
+        if (dto.getPath() != null) entity.setPath(dto.getPath());
+        entity.setEnabled(dto.isEnabled());
+        entity = endpointRepository.save(entity);
+        return toEndpointDto(entity);
+    }
+
+    @Transactional
+    public void deleteEndpoint(String id) {
+        endpointRepository.deleteById(id);
+    }
+
+    // --- Workflows ---
+
+    public List<Map<String, Object>> getAllWorkflowsWithMcpStatus() {
+        return workflowRepository.findAll().stream()
+                .map(wf -> {
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("id", wf.getId());
+                    map.put("name", wf.getName());
+                    map.put("description", wf.getDescription());
+                    map.put("mcpEnabled", wf.isMcpEnabled());
+                    map.put("mcpDescription", wf.getMcpDescription());
+                    return map;
+                })
+                .toList();
     }
 
     @Transactional
@@ -55,5 +119,34 @@ public class McpSettingsService {
                 .orElseThrow(() -> new NotFoundException("Workflow not found: " + workflowId));
         workflow.setMcpEnabled(enabled);
         workflowRepository.save(workflow);
+        mcpServerManager.refreshTools();
+    }
+
+    @Transactional
+    public void updateWorkflowMcpDescription(String workflowId, String mcpDescription) {
+        WorkflowEntity workflow = workflowRepository.findById(workflowId)
+                .orElseThrow(() -> new NotFoundException("Workflow not found: " + workflowId));
+        workflow.setMcpDescription(mcpDescription);
+        workflowRepository.save(workflow);
+        mcpServerManager.refreshTools();
+    }
+
+    // --- Clients ---
+
+    public List<McpClientSession> getClientSessions() {
+        return mcpServerManager.getClientSessions();
+    }
+
+    // --- Helpers ---
+
+    private McpEndpointDto toEndpointDto(McpEndpointEntity entity) {
+        return McpEndpointDto.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .transport(entity.getTransport())
+                .path(entity.getPath())
+                .url("http://localhost:" + serverPort + "/mcp/" + entity.getPath())
+                .enabled(entity.isEnabled())
+                .build();
     }
 }

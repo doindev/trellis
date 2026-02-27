@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 
 @SpringBootApplication(exclude = {MongoAutoConfiguration.class, MongoDataAutoConfiguration.class},
     excludeName = {
-        "org.me.springframework.security.config.autoconfigure.SecurityAutoConfiguration"
+        "org.me.springframework.security.config.autoconfigure.SecurityAutoConfiguration",
+        "org.springframework.ai.autoconfigure.mcp.server.McpServerAutoConfiguration",
+        "org.springframework.ai.autoconfigure.mcp.server.McpWebMvcServerAutoConfiguration"
     })
 public class TrellisApplication {
 

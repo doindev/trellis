@@ -1,0 +1,350 @@
+package io.trellis.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.trellis.dto.McpClientSession;
+import io.trellis.entity.McpEndpointEntity;
+import io.trellis.entity.McpSettingsEntity;
+import io.trellis.entity.WorkflowEntity;
+import io.trellis.engine.WorkflowEngine;
+import io.trellis.exception.NotFoundException;
+import io.trellis.repository.McpEndpointRepository;
+import io.trellis.repository.McpSettingsRepository;
+import io.trellis.repository.WorkflowRepository;
+import jakarta.annotation.PostConstruct;
+import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class TrellisMcpServerManager {
+
+    private final WorkflowRepository workflowRepository;
+    private final McpEndpointRepository endpointRepository;
+    private final McpSettingsRepository settingsRepository;
+    private final WorkflowEngine workflowEngine;
+    private final ObjectMapper objectMapper;
+
+    private final Map<String, McpToolDef> tools = new ConcurrentHashMap<>();
+    private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+    private final Map<String, ClientSessionInfo> clientSessions = new ConcurrentHashMap<>();
+
+    private volatile boolean running = false;
+
+    @PostConstruct
+    public void init() {
+        boolean enabled = settingsRepository.findFirstByOrderByCreatedAtAsc()
+                .map(McpSettingsEntity::isEnabled)
+                .orElse(false);
+        if (enabled) {
+            startAll();
+        }
+    }
+
+    public void startAll() {
+        refreshTools();
+        running = true;
+        log.info("MCP server started with {} tools", tools.size());
+    }
+
+    public void stopAll() {
+        running = false;
+        emitters.values().forEach(SseEmitter::complete);
+        emitters.clear();
+        clientSessions.clear();
+        tools.clear();
+        log.info("MCP server stopped");
+    }
+
+    public void refreshTools() {
+        tools.clear();
+        List<WorkflowEntity> workflows = workflowRepository.findByMcpEnabledTrue();
+        for (WorkflowEntity wf : workflows) {
+            String toolName = toSnakeCase(wf.getName());
+            String description = wf.getMcpDescription() != null ? wf.getMcpDescription()
+                    : wf.getDescription() != null ? wf.getDescription()
+                    : "Execute workflow: " + wf.getName();
+            tools.put(toolName, new McpToolDef(toolName, description, wf.getId()));
+        }
+        log.info("Refreshed MCP tools: {}", tools.keySet());
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    // --- SSE Transport ---
+
+    public SseEmitter handleSseConnect(String endpointPath) {
+        if (!running) {
+            throw new IllegalStateException("MCP server is not running");
+        }
+
+        McpEndpointEntity endpoint = endpointRepository.findByPath(endpointPath)
+                .orElseThrow(() -> new NotFoundException("MCP endpoint not found: " + endpointPath));
+
+        if (!endpoint.isEnabled()) {
+            throw new IllegalStateException("MCP endpoint is disabled");
+        }
+
+        String sessionId = UUID.randomUUID().toString();
+        SseEmitter emitter = new SseEmitter(0L); // no timeout
+
+        emitters.put(sessionId, emitter);
+        clientSessions.put(sessionId, new ClientSessionInfo(
+                sessionId, endpoint.getId(), endpoint.getName(), endpoint.getTransport(), Instant.now()));
+
+        emitter.onCompletion(() -> cleanup(sessionId));
+        emitter.onTimeout(() -> cleanup(sessionId));
+        emitter.onError(e -> cleanup(sessionId));
+
+        try {
+            String messageUrl = "/mcp/" + endpointPath + "?sessionId=" + sessionId;
+            emitter.send(SseEmitter.event().name("endpoint").data(messageUrl));
+        } catch (IOException e) {
+            log.error("Failed to send endpoint event", e);
+            cleanup(sessionId);
+        }
+
+        return emitter;
+    }
+
+    public void handleSseMessage(String sessionId, Map<String, Object> message) {
+        SseEmitter emitter = emitters.get(sessionId);
+        if (emitter == null) {
+            throw new NotFoundException("Session not found: " + sessionId);
+        }
+
+        ClientSessionInfo session = clientSessions.get(sessionId);
+        if (session != null) {
+            session.setLastSeenAt(Instant.now());
+        }
+
+        Map<String, Object> response = processMessage(message, session);
+        if (response != null) {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("message")
+                        .data(objectMapper.writeValueAsString(response)));
+            } catch (IOException e) {
+                log.error("Failed to send SSE response", e);
+            }
+        }
+    }
+
+    // --- Streamable HTTP Transport ---
+
+    public McpHandleResult handleStreamableHttpMessage(String endpointPath, String mcpSessionId,
+                                                       Map<String, Object> message) {
+        if (!running) {
+            throw new IllegalStateException("MCP server is not running");
+        }
+
+        String method = (String) message.get("method");
+        ClientSessionInfo session = mcpSessionId != null ? clientSessions.get(mcpSessionId) : null;
+        String returnSessionId = mcpSessionId;
+
+        if ("initialize".equals(method) && session == null) {
+            McpEndpointEntity endpoint = endpointRepository.findByPath(endpointPath)
+                    .orElseThrow(() -> new NotFoundException("MCP endpoint not found: " + endpointPath));
+            returnSessionId = UUID.randomUUID().toString();
+            session = new ClientSessionInfo(
+                    returnSessionId, endpoint.getId(), endpoint.getName(), endpoint.getTransport(), Instant.now());
+            clientSessions.put(returnSessionId, session);
+        }
+
+        if (session != null) {
+            session.setLastSeenAt(Instant.now());
+        }
+
+        Map<String, Object> response = processMessage(message, session);
+        return new McpHandleResult(response, returnSessionId);
+    }
+
+    // --- Protocol Processing ---
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> processMessage(Map<String, Object> message, ClientSessionInfo session) {
+        String method = (String) message.get("method");
+        Object id = message.get("id");
+
+        // Notifications have no id — no response needed
+        if (id == null) {
+            return null;
+        }
+
+        return switch (method) {
+            case "initialize" -> handleInitialize(id, message, session);
+            case "tools/list" -> handleToolsList(id);
+            case "tools/call" -> handleToolsCall(id, message);
+            case "ping" -> jsonRpcResult(id, Map.of());
+            default -> jsonRpcError(id, -32601, "Method not found: " + method);
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> handleInitialize(Object id, Map<String, Object> message,
+                                                  ClientSessionInfo session) {
+        Map<String, Object> params = (Map<String, Object>) message.get("params");
+        if (params != null && session != null) {
+            Map<String, Object> clientInfo = (Map<String, Object>) params.get("clientInfo");
+            if (clientInfo != null) {
+                session.setClientName((String) clientInfo.get("name"));
+                session.setClientVersion((String) clientInfo.get("version"));
+            }
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("protocolVersion", "2025-03-26");
+        result.put("capabilities", Map.of("tools", Map.of()));
+        result.put("serverInfo", Map.of("name", "Trellis", "version", "1.0.0"));
+        return jsonRpcResult(id, result);
+    }
+
+    private Map<String, Object> handleToolsList(Object id) {
+        List<Map<String, Object>> toolList = tools.values().stream()
+                .map(tool -> {
+                    Map<String, Object> t = new LinkedHashMap<>();
+                    t.put("name", tool.name);
+                    t.put("description", tool.description);
+                    t.put("inputSchema", Map.of(
+                            "type", "object",
+                            "properties", Map.of(
+                                    "input", Map.of(
+                                            "type", "string",
+                                            "description", "Input data for the workflow"
+                                    )
+                            )
+                    ));
+                    return t;
+                })
+                .toList();
+        return jsonRpcResult(id, Map.of("tools", toolList));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> handleToolsCall(Object id, Map<String, Object> message) {
+        Map<String, Object> params = (Map<String, Object>) message.get("params");
+        String toolName = (String) params.get("name");
+        Map<String, Object> arguments = (Map<String, Object>) params.get("arguments");
+
+        McpToolDef tool = tools.get(toolName);
+        if (tool == null) {
+            return jsonRpcError(id, -32602, "Unknown tool: " + toolName);
+        }
+
+        try {
+            String input = arguments != null
+                    ? String.valueOf(arguments.getOrDefault("input", ""))
+                    : "";
+            List<Map<String, Object>> inputItems = List.of(
+                    Map.of("json", Map.of("input", input)));
+
+            List<Map<String, Object>> result = workflowEngine.executeSubWorkflow(
+                    tool.workflowId, inputItems);
+
+            String resultText = objectMapper.writeValueAsString(result);
+
+            return jsonRpcResult(id, Map.of(
+                    "content", List.of(Map.of("type", "text", "text", resultText))));
+        } catch (Exception e) {
+            log.error("Error executing MCP tool: {}", toolName, e);
+            return jsonRpcResult(id, Map.of(
+                    "content", List.of(Map.of("type", "text", "text", "Error: " + e.getMessage())),
+                    "isError", true));
+        }
+    }
+
+    // --- JSON-RPC helpers ---
+
+    private Map<String, Object> jsonRpcResult(Object id, Map<String, Object> result) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("jsonrpc", "2.0");
+        response.put("id", id);
+        response.put("result", result);
+        return response;
+    }
+
+    private Map<String, Object> jsonRpcError(Object id, int code, String message) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("jsonrpc", "2.0");
+        response.put("id", id);
+        response.put("error", Map.of("code", code, "message", message));
+        return response;
+    }
+
+    // --- Session management ---
+
+    public List<McpClientSession> getClientSessions() {
+        return clientSessions.values().stream()
+                .map(s -> McpClientSession.builder()
+                        .sessionId(s.sessionId)
+                        .endpointId(s.endpointId)
+                        .endpointName(s.endpointName)
+                        .transport(s.transport)
+                        .clientName(s.clientName)
+                        .clientVersion(s.clientVersion)
+                        .connectedAt(s.connectedAt)
+                        .lastSeenAt(s.lastSeenAt)
+                        .build())
+                .toList();
+    }
+
+    public void closeSession(String sessionId) {
+        SseEmitter emitter = emitters.remove(sessionId);
+        if (emitter != null) {
+            emitter.complete();
+        }
+        clientSessions.remove(sessionId);
+    }
+
+    private void cleanup(String sessionId) {
+        emitters.remove(sessionId);
+        clientSessions.remove(sessionId);
+    }
+
+    private String toSnakeCase(String name) {
+        return name.replaceAll("([a-z])([A-Z])", "$1_$2")
+                .replaceAll("[\\s\\-]+", "_")
+                .replaceAll("[^a-zA-Z0-9_]", "")
+                .toLowerCase();
+    }
+
+    // --- Inner types ---
+
+    public record McpHandleResult(Map<String, Object> body, String sessionId) {}
+
+    private record McpToolDef(String name, String description, String workflowId) {}
+
+    @Data
+    @AllArgsConstructor
+    private static class ClientSessionInfo {
+        private String sessionId;
+        private String endpointId;
+        private String endpointName;
+        private String transport;
+        private Instant connectedAt;
+        private Instant lastSeenAt;
+        private String clientName;
+        private String clientVersion;
+
+        ClientSessionInfo(String sessionId, String endpointId, String endpointName,
+                          String transport, Instant connectedAt) {
+            this.sessionId = sessionId;
+            this.endpointId = endpointId;
+            this.endpointName = endpointName;
+            this.transport = transport;
+            this.connectedAt = connectedAt;
+            this.lastSeenAt = connectedAt;
+        }
+    }
+}
