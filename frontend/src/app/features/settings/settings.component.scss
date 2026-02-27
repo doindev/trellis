@@ -8,6 +8,10 @@
 .section-page {
   padding: 32px 40px;
   max-width: 860px;
+
+  &.section-page-full {
+    max-width: none;
+  }
 }
 
 .section-title {

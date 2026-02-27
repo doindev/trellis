@@ -64,7 +64,16 @@
           <div class="workflow-row-left">
             <div class="workflow-status-dot" [class.active]="workflow.published" [title]="workflow.published ? 'Published' : 'Draft'"></div>
             <div class="workflow-info">
-              <h3 class="workflow-name">{{ workflow.name }}</h3>
+              <div class="workflow-name-row">
+                <h3 class="workflow-name">{{ workflow.name }}</h3>
+                @if (workflow.tags && workflow.tags.length > 0) {
+                  <div class="workflow-tags">
+                    @for (tag of workflow.tags; track tag.id) {
+                      <span class="workflow-tag">{{ tag.name }}</span>
+                    }
+                  </div>
+                }
+              </div>
               <div class="workflow-meta">
                 @if (workflow.updatedAt) {
                   <span class="meta-item">Updated {{ workflow.updatedAt | date:'short' }}</span>
