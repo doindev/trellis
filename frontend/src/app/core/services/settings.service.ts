@@ -71,6 +71,8 @@ export interface McpWorkflow {
   description: string;
   mcpEnabled: boolean;
   mcpDescription: string;
+  projectId?: string;
+  projectName?: string;
 }
 
 @Injectable({ providedIn: 'root' })

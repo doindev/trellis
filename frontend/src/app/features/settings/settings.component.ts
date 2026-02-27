@@ -56,6 +56,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
   editingWorkflowId: string | null = null;
   editDescriptionValue = '';
   mcpWorkflowMenuId: string | null = null;
+  mcpMenuStyle: Record<string, string> = {};
+  private mcpMenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private mcpMenuScrollListener: (() => void) | null = null;
+
+  get showMcpProjectColumn(): boolean {
+    return this.mcpWorkflows.some(wf => !!wf.projectId);
+  }
 
   // Community Nodes
   nodeTypes: NodeTypeDescription[] = [];
@@ -322,8 +329,59 @@ export class SettingsComponent implements OnInit, OnDestroy {
     });
   }
 
-  toggleWorkflowMenu(workflowId: string): void {
-    this.mcpWorkflowMenuId = this.mcpWorkflowMenuId === workflowId ? null : workflowId;
+  toggleWorkflowMenu(workflowId: string, event: MouseEvent): void {
+    this.cancelMcpMenuClose();
+    if (this.mcpWorkflowMenuId === workflowId) {
+      this.closeMcpMenu();
+      return;
+    }
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+    const dropdownHeight = 100;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+    this.mcpMenuStyle = {
+      position: 'fixed',
+      right: (window.innerWidth - rect.right) + 'px',
+      ...(openUp
+        ? { bottom: (window.innerHeight - rect.top + 4) + 'px' }
+        : { top: (rect.bottom + 4) + 'px' }),
+      'z-index': '9999'
+    };
+    this.mcpWorkflowMenuId = workflowId;
+    this.addMcpMenuScrollListener();
+  }
+
+  scheduleMcpMenuClose(): void {
+    this.cancelMcpMenuClose();
+    this.mcpMenuCloseTimer = setTimeout(() => this.closeMcpMenu(), 400);
+  }
+
+  cancelMcpMenuClose(): void {
+    if (this.mcpMenuCloseTimer) {
+      clearTimeout(this.mcpMenuCloseTimer);
+      this.mcpMenuCloseTimer = null;
+    }
+  }
+
+  private closeMcpMenu(): void {
+    this.mcpWorkflowMenuId = null;
+    this.removeMcpMenuScrollListener();
+  }
+
+  private addMcpMenuScrollListener(): void {
+    this.removeMcpMenuScrollListener();
+    const handler = () => this.closeMcpMenu();
+    document.addEventListener('scroll', handler, true);
+    this.mcpMenuScrollListener = () => document.removeEventListener('scroll', handler, true);
+  }
+
+  private removeMcpMenuScrollListener(): void {
+    if (this.mcpMenuScrollListener) {
+      this.mcpMenuScrollListener();
+      this.mcpMenuScrollListener = null;
+    }
   }
 
   startEditDescription(workflow: McpWorkflow): void {

@@ -9,6 +9,7 @@ import io.trellis.entity.WorkflowEntity;
 import io.trellis.exception.NotFoundException;
 import io.trellis.repository.McpEndpointRepository;
 import io.trellis.repository.McpSettingsRepository;
+import io.trellis.repository.ProjectRepository;
 import io.trellis.repository.WorkflowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,7 @@ public class McpSettingsService {
     private final McpSettingsRepository repository;
     private final WorkflowRepository workflowRepository;
     private final McpEndpointRepository endpointRepository;
+    private final ProjectRepository projectRepository;
     private final TrellisMcpServerManager mcpServerManager;
 
     @Value("${server.port:5678}")
@@ -100,6 +102,11 @@ public class McpSettingsService {
     // --- Workflows ---
 
     public List<Map<String, Object>> getAllWorkflowsWithMcpStatus() {
+        Map<String, String> projectNames = projectRepository.findAll().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        io.trellis.entity.ProjectEntity::getId,
+                        io.trellis.entity.ProjectEntity::getName));
+
         return workflowRepository.findAll().stream()
                 .map(wf -> {
                     Map<String, Object> map = new LinkedHashMap<>();
@@ -108,6 +115,10 @@ public class McpSettingsService {
                     map.put("description", wf.getDescription());
                     map.put("mcpEnabled", wf.isMcpEnabled());
                     map.put("mcpDescription", wf.getMcpDescription());
+                    map.put("projectId", wf.getProjectId());
+                    map.put("projectName", wf.getProjectId() != null
+                            ? projectNames.getOrDefault(wf.getProjectId(), null)
+                            : null);
                     return map;
                 })
                 .toList();

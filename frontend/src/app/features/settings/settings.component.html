@@ -357,6 +357,9 @@
           @if (mcpActiveTab === 'workflows') {
             <div class="data-table tab-table">
               <div class="table-header">
+                @if (showMcpProjectColumn) {
+                  <div class="col-wf-project">Project</div>
+                }
                 <div class="col-wf-name">Workflow</div>
                 <div class="col-wf-desc">Description</div>
                 <div class="col-wf-status">MCP</div>
@@ -364,6 +367,9 @@
               </div>
               @for (wf of mcpWorkflows; track wf.id) {
                 <div class="table-row">
+                  @if (showMcpProjectColumn) {
+                    <div class="col-wf-project">{{ wf.projectName || '' }}</div>
+                  }
                   <div class="col-wf-name">{{ wf.name }}</div>
                   <div class="col-wf-desc">
                     @if (editingWorkflowId === wf.id) {
@@ -384,24 +390,14 @@
                       <span class="status-badge disabled">Disabled</span>
                     }
                   </div>
-                  <div class="col-actions">
-                    <div class="dropdown-wrapper">
-                      <button class="btn-icon-sm" (click)="toggleWorkflowMenu(wf.id)">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                          <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-                        </svg>
-                      </button>
-                      @if (mcpWorkflowMenuId === wf.id) {
-                        <div class="actions-menu">
-                          <button class="menu-item" (click)="startEditDescription(wf)">Edit description...</button>
-                          @if (wf.mcpEnabled) {
-                            <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Disable MCP access</button>
-                          } @else {
-                            <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Enable MCP access</button>
-                          }
-                        </div>
-                      }
-                    </div>
+                  <div class="col-actions"
+                       (mouseenter)="cancelMcpMenuClose()"
+                       (mouseleave)="scheduleMcpMenuClose()">
+                    <button class="btn-icon-sm" (click)="toggleWorkflowMenu(wf.id, $event)">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
               }
@@ -409,6 +405,23 @@
                 <div class="empty-row">No workflows found</div>
               }
             </div>
+
+            @if (mcpWorkflowMenuId) {
+              <div class="actions-menu" [ngStyle]="mcpMenuStyle"
+                   (mouseenter)="cancelMcpMenuClose()"
+                   (mouseleave)="scheduleMcpMenuClose()">
+                @for (wf of mcpWorkflows; track wf.id) {
+                  @if (wf.id === mcpWorkflowMenuId) {
+                    <button class="menu-item" (click)="startEditDescription(wf)">Edit description...</button>
+                    @if (wf.mcpEnabled) {
+                      <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Disable MCP access</button>
+                    } @else {
+                      <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Enable MCP access</button>
+                    }
+                  }
+                }
+              </div>
+            }
           }
 
           <!-- Clients tab -->

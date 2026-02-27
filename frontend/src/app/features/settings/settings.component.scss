@@ -585,7 +585,8 @@ select.form-input {
 }
 
 /* Workflow table columns */
-.col-wf-name { flex: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.col-wf-project { width: 150px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: hsl(0, 0%, 52%); }
+.col-wf-name { width: 250px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .col-wf-desc { flex: 3; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: hsl(0, 0%, 52%); }
 .col-wf-status { width: 80px; }
 
@@ -616,20 +617,12 @@ select.form-input {
 }
 
 /* Actions menu dropdown */
-.dropdown-wrapper {
-  position: relative;
-}
-
 .actions-menu {
-  position: absolute;
-  right: 0;
-  top: 100%;
   background: hsl(0, 0%, 15%);
   border: 1px solid hsl(0, 0%, 24%);
   border-radius: 6px;
   padding: 4px 0;
   min-width: 180px;
-  z-index: 10;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
