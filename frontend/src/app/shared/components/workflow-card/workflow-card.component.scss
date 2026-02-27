@@ -129,16 +129,11 @@
 }
 
 .actions-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
   background: hsl(0, 0%, 17%);
   border: 1px solid var(--trellis-border);
   border-radius: 8px;
   min-width: 160px;
   padding: 4px;
-  z-index: 50;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 

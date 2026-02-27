@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Workflow } from '../../../core/models';
 
@@ -19,7 +19,11 @@ export class WorkflowCardComponent {
   @Output() archive = new EventEmitter<Workflow>();
   @Output() enableMcp = new EventEmitter<Workflow>();
   showActions = false;
+  dropdownStyle: Record<string, string> = {};
   private actionsCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private scrollListener: (() => void) | null = null;
+
+  constructor(private elRef: ElementRef) {}
 
   get nodeCount(): number {
     return this.workflow.nodes?.length || 0;
@@ -51,13 +55,32 @@ export class WorkflowCardComponent {
   onToggleActions(event: Event): void {
     event.stopPropagation();
     this.cancelActionsClose();
-    this.showActions = !this.showActions;
+    if (this.showActions) {
+      this.closeDropdown();
+      return;
+    }
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+    const dropdownHeight = 260; // approximate max height of dropdown
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+    this.dropdownStyle = {
+      position: 'fixed',
+      right: (window.innerWidth - rect.right) + 'px',
+      ...(openUp
+        ? { bottom: (window.innerHeight - rect.top + 4) + 'px' }
+        : { top: (rect.bottom + 4) + 'px' }),
+      'z-index': '9999'
+    };
+    this.showActions = true;
+    this.addScrollListener();
   }
 
   scheduleActionsClose(): void {
     this.cancelActionsClose();
     this.actionsCloseTimer = setTimeout(() => {
-      this.showActions = false;
+      this.closeDropdown();
     }, 400);
   }
 
@@ -70,7 +93,7 @@ export class WorkflowCardComponent {
 
   onAction(action: string, event: Event): void {
     event.stopPropagation();
-    this.showActions = false;
+    this.closeDropdown();
     switch (action) {
       case 'open': this.open.emit(this.workflow); break;
       case 'share': this.share.emit(this.workflow); break;
@@ -81,4 +104,30 @@ export class WorkflowCardComponent {
     }
   }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    if (this.showActions && !this.elRef.nativeElement.contains(event.target)) {
+      this.closeDropdown();
+    }
+  }
+
+  private closeDropdown(): void {
+    this.showActions = false;
+    this.removeScrollListener();
+  }
+
+  private addScrollListener(): void {
+    this.removeScrollListener();
+    const handler = () => this.closeDropdown();
+    // Listen on capture phase to catch scroll on any ancestor
+    document.addEventListener('scroll', handler, true);
+    this.scrollListener = () => document.removeEventListener('scroll', handler, true);
+  }
+
+  private removeScrollListener(): void {
+    if (this.scrollListener) {
+      this.scrollListener();
+      this.scrollListener = null;
+    }
+  }
 }
