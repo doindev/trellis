@@ -83,6 +83,11 @@ public class WorkflowEntity {
     @Column(columnDefinition = "TEXT")
     private Object mcpInputSchema;
 
+    @Lob
+    @Convert(converter = JsonObjectConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private Object mcpOutputSchema;
+
     @Builder.Default
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

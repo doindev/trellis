@@ -24,6 +24,7 @@ public class WorkflowResponse {
     private boolean mcpEnabled;
     private String mcpDescription;
     private Object mcpInputSchema;
+    private Object mcpOutputSchema;
     private List<TagResponse> tags;
     private Instant createdAt;
     private Instant updatedAt;

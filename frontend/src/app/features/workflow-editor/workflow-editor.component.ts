@@ -19,7 +19,7 @@ import { SettingsModalComponent, WorkflowSettings } from './components/settings-
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { TagSelectorComponent } from '../../shared/components/tag-selector/tag-selector.component';
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
-import { McpParameter } from '../../core/services/settings.service';
+import { McpParameter, McpOutputSchema } from '../../core/services/settings.service';
 import {
   ExecutionFilterModalComponent,
   ExecutionFilters,
@@ -824,9 +824,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.showDescriptionModal = false;
   }
 
-  onMcpParamsSaved(params: McpParameter[]): void {
-    const validParams = params.filter(p => p.name.trim());
+  onMcpParamsSaved(event: { inputSchema: McpParameter[]; outputSchema: McpOutputSchema | null }): void {
+    const validParams = event.inputSchema.filter(p => p.name.trim());
     this.store.updateMcpInputSchema(validParams.length > 0 ? validParams : undefined);
+    this.store.updateMcpOutputSchema(event.outputSchema || undefined);
     this.showMcpParamEditorModal = false;
   }
 

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter } from '../../core/services/settings.service';
+import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter, McpOutputSchema } from '../../core/services/settings.service';
 import { NodeTypeService } from '../../core/services/node-type.service';
 import { NodeTypeDescription } from '../../core/models';
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
@@ -410,13 +410,17 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.mcpWorkflowMenuId = null;
   }
 
-  onParamEditorSaved(params: McpParameter[]): void {
+  onParamEditorSaved(event: { inputSchema: McpParameter[]; outputSchema: McpOutputSchema | null }): void {
     if (!this.paramEditorWorkflow) return;
-    const validParams = params.filter(p => p.name.trim());
-    this.settingsService.updateMcpWorkflow(this.paramEditorWorkflow.id, { mcpInputSchema: validParams } as any).subscribe({
+    const validParams = event.inputSchema.filter(p => p.name.trim());
+    this.settingsService.updateMcpWorkflow(this.paramEditorWorkflow.id, {
+      mcpInputSchema: validParams,
+      mcpOutputSchema: event.outputSchema
+    } as any).subscribe({
       next: () => {
         if (this.paramEditorWorkflow) {
           this.paramEditorWorkflow.mcpInputSchema = validParams.length > 0 ? validParams : null;
+          this.paramEditorWorkflow.mcpOutputSchema = event.outputSchema;
         }
         this.showParamEditorModal = false;
         this.paramEditorWorkflow = null;

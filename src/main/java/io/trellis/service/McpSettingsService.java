@@ -123,6 +123,7 @@ public class McpSettingsService {
                     map.put("mcpEnabled", wf.isMcpEnabled());
                     map.put("mcpDescription", wf.getMcpDescription());
                     map.put("mcpInputSchema", wf.getMcpInputSchema());
+                    map.put("mcpOutputSchema", wf.getMcpOutputSchema());
                     map.put("projectId", wf.getProjectId());
                     map.put("published", wf.isPublished());
                     map.put("hasWebhookNode", hasWebhookNode(wf));
@@ -172,6 +173,15 @@ public class McpSettingsService {
         WorkflowEntity workflow = workflowRepository.findById(workflowId)
                 .orElseThrow(() -> new NotFoundException("Workflow not found: " + workflowId));
         workflow.setMcpInputSchema(schema);
+        workflowRepository.save(workflow);
+        mcpServerManager.refreshTools();
+    }
+
+    @Transactional
+    public void updateWorkflowMcpOutputSchema(String workflowId, Object schema) {
+        WorkflowEntity workflow = workflowRepository.findById(workflowId)
+                .orElseThrow(() -> new NotFoundException("Workflow not found: " + workflowId));
+        workflow.setMcpOutputSchema(schema);
         workflowRepository.save(workflow);
         mcpServerManager.refreshTools();
     }

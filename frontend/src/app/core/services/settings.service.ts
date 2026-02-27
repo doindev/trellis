@@ -72,6 +72,18 @@ export interface McpParameter {
   required: boolean;
 }
 
+export interface McpOutputProperty {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  description: string;
+}
+
+export interface McpOutputSchema {
+  format: 'json' | 'text' | 'html' | 'xml';
+  description?: string;
+  properties?: McpOutputProperty[];
+}
+
 export interface McpWorkflow {
   id: string;
   name: string;
@@ -79,6 +91,7 @@ export interface McpWorkflow {
   mcpEnabled: boolean;
   mcpDescription: string;
   mcpInputSchema: McpParameter[] | null;
+  mcpOutputSchema: McpOutputSchema | null;
   published: boolean;
   hasWebhookNode: boolean;
   projectId?: string;

@@ -76,7 +76,7 @@ public class TrellisMcpServerManager {
             String description = wf.getMcpDescription() != null ? wf.getMcpDescription()
                     : wf.getDescription() != null ? wf.getDescription()
                     : "Execute workflow: " + wf.getName();
-            tools.put(toolName, new McpToolDef(toolName, description, wf.getId(), wf.getMcpInputSchema()));
+            tools.put(toolName, new McpToolDef(toolName, description, wf.getId(), wf.getMcpInputSchema(), wf.getMcpOutputSchema()));
         }
         log.info("Refreshed MCP tools: {}", tools.keySet());
     }
@@ -236,6 +236,10 @@ public class TrellisMcpServerManager {
                     t.put("name", tool.name);
                     t.put("description", tool.description);
                     t.put("inputSchema", buildInputSchema(tool.mcpInputSchema));
+                    Map<String, Object> outputSchema = buildOutputSchema(tool.mcpOutputSchema);
+                    if (outputSchema != null) {
+                        t.put("outputSchema", outputSchema);
+                    }
                     return t;
                 })
                 .toList();
@@ -286,6 +290,55 @@ public class TrellisMcpServerManager {
     }
 
     @SuppressWarnings("unchecked")
+    private Map<String, Object> buildOutputSchema(Object mcpOutputSchema) {
+        if (!(mcpOutputSchema instanceof Map<?, ?> schemaMap)) return null;
+        String format = (String) schemaMap.get("format");
+        if (!"json".equals(format)) return null;
+
+        List<?> properties = (List<?>) schemaMap.get("properties");
+        if (properties == null || properties.isEmpty()) return null;
+
+        Map<String, Object> schemaProps = new LinkedHashMap<>();
+        for (Object item : properties) {
+            if (item instanceof Map<?, ?> prop) {
+                String name = (String) prop.get("name");
+                String type = (String) prop.get("type");
+                String description = (String) prop.get("description");
+                if (name == null || name.isBlank()) continue;
+                Map<String, Object> propSchema = new LinkedHashMap<>();
+                propSchema.put("type", type != null ? type : "string");
+                if (description != null && !description.isBlank()) {
+                    propSchema.put("description", description);
+                }
+                schemaProps.put(name, propSchema);
+            }
+        }
+
+        if (schemaProps.isEmpty()) return null;
+
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", schemaProps);
+        String schemaDescription = (String) schemaMap.get("description");
+        if (schemaDescription != null && !schemaDescription.isBlank()) {
+            schema.put("description", schemaDescription);
+        }
+        return schema;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object extractStructuredContent(List<Map<String, Object>> result) {
+        // Extract the json data from the first item of the workflow result
+        if (result != null && !result.isEmpty()) {
+            Map<String, Object> firstItem = result.get(0);
+            if (firstItem != null && firstItem.containsKey("json")) {
+                return firstItem.get("json");
+            }
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
     private Map<String, Object> handleToolsCall(Object id, Map<String, Object> message) {
         Map<String, Object> params = (Map<String, Object>) message.get("params");
         String toolName = (String) params.get("name");
@@ -313,6 +366,16 @@ public class TrellisMcpServerManager {
                     tool.workflowId, inputItems);
 
             String resultText = objectMapper.writeValueAsString(result);
+
+            // Format response based on output schema
+            Map<String, Object> outputSchema = buildOutputSchema(tool.mcpOutputSchema);
+            if (outputSchema != null) {
+                // JSON format with structured output: include structuredContent + text fallback
+                Map<String, Object> resultMap = new LinkedHashMap<>();
+                resultMap.put("content", List.of(Map.of("type", "text", "text", resultText)));
+                resultMap.put("structuredContent", extractStructuredContent(result));
+                return jsonRpcResult(id, resultMap);
+            }
 
             return jsonRpcResult(id, Map.of(
                     "content", List.of(Map.of("type", "text", "text", resultText))));
@@ -383,7 +446,7 @@ public class TrellisMcpServerManager {
 
     public record McpHandleResult(Map<String, Object> body, String sessionId) {}
 
-    private record McpToolDef(String name, String description, String workflowId, Object mcpInputSchema) {}
+    private record McpToolDef(String name, String description, String workflowId, Object mcpInputSchema, Object mcpOutputSchema) {}
 
     @Data
     @AllArgsConstructor

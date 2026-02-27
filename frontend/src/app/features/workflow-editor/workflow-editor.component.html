@@ -151,6 +151,7 @@
       [workflowId]="store.workflow()?.id || ''"
       [workflowName]="store.workflow()?.name || ''"
       [mcpInputSchema]="store.workflow()?.mcpInputSchema || null"
+      [mcpOutputSchema]="store.workflow()?.mcpOutputSchema || null"
       (saved)="onMcpParamsSaved($event)"
       (cancelled)="showMcpParamEditorModal = false" />
   }

@@ -22,6 +22,7 @@ export interface Workflow {
   mcpEnabled?: boolean;
   mcpDescription?: string;
   mcpInputSchema?: any[];
+  mcpOutputSchema?: any;
   tags?: Tag[];
   createdAt?: string;
   updatedAt?: string;

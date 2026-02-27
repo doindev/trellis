@@ -14,4 +14,5 @@ public class WorkflowUpdateRequest {
     private Boolean mcpEnabled;
     private String mcpDescription;
     private Object mcpInputSchema;
+    private Object mcpOutputSchema;
 }

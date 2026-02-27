@@ -425,6 +425,7 @@
           [workflowId]="paramEditorWorkflow.id"
           [workflowName]="paramEditorWorkflow.name"
           [mcpInputSchema]="paramEditorWorkflow.mcpInputSchema"
+          [mcpOutputSchema]="paramEditorWorkflow.mcpOutputSchema"
           (saved)="onParamEditorSaved($event)"
           (cancelled)="showParamEditorModal = false" />
       }

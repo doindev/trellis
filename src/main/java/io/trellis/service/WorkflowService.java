@@ -75,8 +75,10 @@ public class WorkflowService {
         if (request.getMcpEnabled() != null) entity.setMcpEnabled(request.getMcpEnabled());
         if (request.getMcpDescription() != null) entity.setMcpDescription(request.getMcpDescription());
         if (request.getMcpInputSchema() != null) entity.setMcpInputSchema(request.getMcpInputSchema());
+        if (request.getMcpOutputSchema() != null) entity.setMcpOutputSchema(request.getMcpOutputSchema());
 
-        if (entity.isPublished() && (request.getNodes() != null || request.getConnections() != null)) {
+        if (entity.isPublished() && (request.getNodes() != null || request.getConnections() != null
+                || request.getMcpInputSchema() != null || request.getMcpOutputSchema() != null)) {
             entity.setVersionIsDirty(true);
         }
 
@@ -236,6 +238,7 @@ public class WorkflowService {
                 .mcpEnabled(entity.isMcpEnabled())
                 .mcpDescription(entity.getMcpDescription())
                 .mcpInputSchema(entity.getMcpInputSchema())
+                .mcpOutputSchema(entity.getMcpOutputSchema())
                 .tags(tagResponses)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())

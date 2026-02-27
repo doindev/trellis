@@ -76,6 +76,9 @@ public class McpSettingsController {
         if (body.containsKey("mcpInputSchema")) {
             mcpSettingsService.updateWorkflowMcpInputSchema(workflowId, body.get("mcpInputSchema"));
         }
+        if (body.containsKey("mcpOutputSchema")) {
+            mcpSettingsService.updateWorkflowMcpOutputSchema(workflowId, body.get("mcpOutputSchema"));
+        }
     }
 
     @GetMapping("/workflows/{workflowId}/auto-detect-params")
