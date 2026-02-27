@@ -44,6 +44,11 @@ public class McpTransportController {
             headers.set("Mcp-Session-Id", result.sessionId());
         }
 
+        // Notifications return null body — respond with 202 Accepted
+        if (result.body() == null) {
+            return ResponseEntity.accepted().headers(headers).build();
+        }
+
         return ResponseEntity.ok().headers(headers).body(result.body());
     }
 

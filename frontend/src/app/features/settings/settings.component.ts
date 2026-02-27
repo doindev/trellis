@@ -15,7 +15,7 @@ import { NodeTypeDescription } from '../../core/models';
   styleUrl: './settings.component.scss'
 })
 export class SettingsComponent implements OnInit, OnDestroy {
-  activeSection = 'usage';
+  activeSection = 'personal';
   private routeSub?: Subscription;
 
   // Usage
@@ -87,12 +87,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   private loadSectionData(): void {
     switch (this.activeSection) {
-      case 'usage':
-        this.settingsService.getUsage().subscribe({
-          next: data => this.usage = data,
-          error: () => this.usage = null
-        });
-        break;
       case 'personal':
         this.settingsService.listUsers().subscribe({
           next: users => {

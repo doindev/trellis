@@ -34,6 +34,9 @@ public class TrellisMcpServerManager {
     private final WorkflowEngine workflowEngine;
     private final ObjectMapper objectMapper;
 
+    private static final List<String> SUPPORTED_VERSIONS = List.of(
+            "2025-03-26", "2024-11-05");
+
     private final Map<String, McpToolDef> tools = new ConcurrentHashMap<>();
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final Map<String, ClientSessionInfo> clientSessions = new ConcurrentHashMap<>();
@@ -129,12 +132,17 @@ public class TrellisMcpServerManager {
             session.setLastSeenAt(Instant.now());
         }
 
+        String method = (String) message.get("method");
+        log.debug("MCP SSE recv [session={}]: method={}, id={}", sessionId, method, message.get("id"));
+
         Map<String, Object> response = processMessage(message, session);
         if (response != null) {
             try {
+                log.debug("MCP SSE send [session={}]: {}", sessionId, response.get("id"));
                 emitter.send(SseEmitter.event()
                         .name("message")
-                        .data(objectMapper.writeValueAsString(response)));
+                        .data(objectMapper.writeValueAsString(response),
+                                org.springframework.http.MediaType.TEXT_PLAIN));
             } catch (IOException e) {
                 log.error("Failed to send SSE response", e);
             }
@@ -150,6 +158,7 @@ public class TrellisMcpServerManager {
         }
 
         String method = (String) message.get("method");
+        log.debug("MCP HTTP recv [path={}, session={}]: method={}, id={}", endpointPath, mcpSessionId, method, message.get("id"));
         ClientSessionInfo session = mcpSessionId != null ? clientSessions.get(mcpSessionId) : null;
         String returnSessionId = mcpSessionId;
 
@@ -195,16 +204,26 @@ public class TrellisMcpServerManager {
     private Map<String, Object> handleInitialize(Object id, Map<String, Object> message,
                                                   ClientSessionInfo session) {
         Map<String, Object> params = (Map<String, Object>) message.get("params");
-        if (params != null && session != null) {
-            Map<String, Object> clientInfo = (Map<String, Object>) params.get("clientInfo");
-            if (clientInfo != null) {
-                session.setClientName((String) clientInfo.get("name"));
-                session.setClientVersion((String) clientInfo.get("version"));
+        String clientVersion = null;
+        if (params != null) {
+            clientVersion = (String) params.get("protocolVersion");
+            if (session != null) {
+                Map<String, Object> clientInfo = (Map<String, Object>) params.get("clientInfo");
+                if (clientInfo != null) {
+                    session.setClientName((String) clientInfo.get("name"));
+                    session.setClientVersion((String) clientInfo.get("version"));
+                }
             }
         }
 
+        // Negotiate protocol version — respond with the client's requested version
+        // if we support it, otherwise fall back to our latest
+        String negotiatedVersion = SUPPORTED_VERSIONS.contains(clientVersion)
+                ? clientVersion : SUPPORTED_VERSIONS.get(0);
+        log.info("MCP initialize: client requested={}, negotiated={}", clientVersion, negotiatedVersion);
+
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("protocolVersion", "2025-03-26");
+        result.put("protocolVersion", negotiatedVersion);
         result.put("capabilities", Map.of("tools", Map.of()));
         result.put("serverInfo", Map.of("name", "Trellis", "version", "1.0.0"));
         return jsonRpcResult(id, result);

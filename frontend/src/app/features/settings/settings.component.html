@@ -1,46 +1,4 @@
 <div class="settings-content">
-  <!-- USAGE -->
-  @if (activeSection === 'usage') {
-      <div class="section-page">
-        <h1 class="section-title">Usage</h1>
-        <p class="section-subtitle">Overview of your Trellis instance activity</p>
-        @if (usage) {
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-value">{{ usage.workflows }}</div>
-              <div class="stat-label">Workflows</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">{{ usage.executions }}</div>
-              <div class="stat-label">Total Executions</div>
-            </div>
-            <div class="stat-card success">
-              <div class="stat-value">{{ usage.executionsSuccess }}</div>
-              <div class="stat-label">Successful</div>
-            </div>
-            <div class="stat-card error">
-              <div class="stat-value">{{ usage.executionsError }}</div>
-              <div class="stat-label">Failed</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">{{ usage.credentials }}</div>
-              <div class="stat-label">Credentials</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">{{ usage.users }}</div>
-              <div class="stat-label">Users</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">{{ usage.activeWebhooks }}</div>
-              <div class="stat-label">Active Webhooks</div>
-            </div>
-          </div>
-        } @else {
-          <div class="empty-state">Loading usage data...</div>
-        }
-      </div>
-    }
-
     <!-- PERSONAL -->
     @if (activeSection === 'personal') {
       <div class="section-page">
