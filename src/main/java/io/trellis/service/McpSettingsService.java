@@ -121,6 +121,7 @@ public class McpSettingsService {
                     map.put("mcpDescription", wf.getMcpDescription());
                     map.put("projectId", wf.getProjectId());
                     map.put("published", wf.isPublished());
+                    map.put("hasWebhookNode", hasWebhookNode(wf));
                     map.put("projectName", wf.getProjectId() != null
                             ? projectNames.getOrDefault(wf.getProjectId(), null)
                             : null);
@@ -135,6 +136,9 @@ public class McpSettingsService {
                 .orElseThrow(() -> new NotFoundException("Workflow not found: " + workflowId));
         if (enabled && !workflow.isPublished()) {
             throw new BadRequestException("Only published workflows can be enabled for MCP access");
+        }
+        if (enabled && !hasWebhookNode(workflow)) {
+            throw new BadRequestException("Workflow must contain at least one Webhook node to enable MCP access");
         }
         workflow.setMcpEnabled(enabled);
 
@@ -166,6 +170,20 @@ public class McpSettingsService {
     }
 
     // --- Helpers ---
+
+    @SuppressWarnings("unchecked")
+    private boolean hasWebhookNode(WorkflowEntity workflow) {
+        Object nodes = workflow.getNodes();
+        if (nodes instanceof List<?> nodeList) {
+            return nodeList.stream().anyMatch(n -> {
+                if (n instanceof Map<?, ?> map) {
+                    return "webhook".equals(map.get("type"));
+                }
+                return false;
+            });
+        }
+        return false;
+    }
 
     private McpEndpointDto toEndpointDto(McpEndpointEntity entity) {
         return McpEndpointDto.builder()

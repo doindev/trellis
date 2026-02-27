@@ -29,6 +29,10 @@ export class WorkflowCardComponent {
     return this.workflow.nodes?.length || 0;
   }
 
+  get canEnableMcp(): boolean {
+    return this.workflow.published && (this.workflow.nodes || []).some(n => n.type === 'webhook');
+  }
+
   get timeAgo(): string {
     const date = this.workflow.updatedAt || this.workflow.createdAt;
     if (!date) return '';

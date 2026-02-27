@@ -72,6 +72,7 @@ export interface McpWorkflow {
   mcpEnabled: boolean;
   mcpDescription: string;
   published: boolean;
+  hasWebhookNode: boolean;
   projectId?: string;
   projectName?: string;
 }
