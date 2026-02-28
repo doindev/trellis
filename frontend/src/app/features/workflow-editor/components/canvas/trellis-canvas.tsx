@@ -21,6 +21,7 @@ import {
 } from '@xyflow/react';
 import TrellisNode from './custom-nodes/trellis-node';
 import TrellisTriggerNode from './custom-nodes/trellis-trigger-node';
+import StickyNoteNode from './custom-nodes/sticky-note-node';
 import TrellisEdge from './custom-edges/trellis-edge';
 import { calculateLayout } from './canvas-layout';
 
@@ -87,6 +88,7 @@ const CONNECTION_RADIUS = 60;
 const nodeTypes: NodeTypes = {
   trellisNode: TrellisNode as any,
   trellisTriggerNode: TrellisTriggerNode as any,
+  stickyNoteNode: StickyNoteNode as any,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -264,7 +266,8 @@ function TrellisCanvasInner({
           || prevData?.itemCount !== newData?.itemCount
           || prevData?.label !== newData?.label
           || prevData?.disabled !== newData?.disabled
-          || prevData?.isPinned !== newData?.isPinned;
+          || prevData?.isPinned !== newData?.isPinned
+          || (newNode.type === 'stickyNoteNode' && prevData?.nodeParameters !== newData?.nodeParameters);
 
         // Reuse previous node object if nothing changed (preserves referential equality for memo)
         if (!dataChanged) return prev;

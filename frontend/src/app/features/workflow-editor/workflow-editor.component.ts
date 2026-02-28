@@ -344,6 +344,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
   }
 
+  addStickyNote(): void {
+    this.canvasWrapper.addNodeAtViewportCenter('stickyNote', 'Sticky Note', 1);
+  }
+
   onPaletteNodeClicked(nodeType: NodeTypeDescription): void {
     const newNodeId = this.canvasWrapper.addNodeAtViewportCenter(nodeType.type, nodeType.displayName, nodeType.version);
     if (this.pendingEdgeInsertion) {

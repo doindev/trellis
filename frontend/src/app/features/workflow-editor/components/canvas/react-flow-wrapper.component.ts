@@ -187,10 +187,14 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       // execData is an array like [{ status, data, ... }] from runData
       const execEntry = Array.isArray(execData) ? execData[0] : execData;
 
+      const isStickyNote = node.type === 'stickyNote';
+      const reactType = isStickyNote ? 'stickyNoteNode' : (isTrigger ? 'trellisTriggerNode' : 'trellisNode');
+
       return {
         id: nodeId,
-        type: isTrigger ? 'trellisTriggerNode' : 'trellisNode',
+        type: reactType,
         position: { x: node.position[0], y: node.position[1] },
+        zIndex: isStickyNote ? -1 : undefined,
         selected: nodeId === this.selectedNodeId,
         data: {
           label: node.name,

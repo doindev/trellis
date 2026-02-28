@@ -19,6 +19,7 @@ import {
   Radio, ArrowLeftRight, Wifi, Monitor, Wrench, RefreshCw, Target, PenTool,
   Smartphone, Coins, AtSign, ThumbsUp, Sparkles, Contact, Settings,
   Workflow, IdCard,
+  Type, FileJson, Gauge, StickyNote, Umbrella, RotateCw, Radar,
   LucideIconData,
 } from 'lucide-angular';
 
@@ -203,8 +204,18 @@ export const NODE_ICON_SET = {
   Terminal,
   Timer,
   Triangle,
+  Type,
   UnfoldVertical,
+  Umbrella,
   Webhook,
+
+  // New node icons
+  Bug,
+  FileJson,
+  Gauge,
+  Radar,
+  RotateCw,
+  StickyNote,
 
   // =======================================================================
   // Custom brand icons (SVG definitions above)
@@ -236,6 +247,7 @@ export const NODE_ICON_SET = {
   Email: Mail,
   EmailSend: Send,
   Envelope: Mail,
+  AlertTriangle: TriangleAlert,
   ErrorTrigger: TriangleAlert,
   ExclamationTriangle: TriangleAlert,
   EditImage: Image,

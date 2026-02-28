@@ -306,7 +306,7 @@
           <button class="tab" [class.active]="activeTab === 'settings'" (click)="activeTab = 'settings'">
             Settings
           </button>
-          @if (!isTriggerNode && !readOnly) {
+          @if (!isTriggerNode && !isStickyNote && !readOnly) {
             <button class="btn btn-sm btn-execute-node" (click)="executeNode()" [disabled]="isNodeExecuting">
               @if (isNodeExecuting) {
                 <span class="execute-spinner"></span>

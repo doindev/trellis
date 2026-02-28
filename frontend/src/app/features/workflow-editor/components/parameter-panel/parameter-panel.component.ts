@@ -887,6 +887,10 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     return this.nodeType?.isTrigger === true;
   }
 
+  get isStickyNote(): boolean {
+    return this.node?.type === 'stickyNote';
+  }
+
   /** Collect input items from upstream nodes in {json: ...} format for the backend */
   private collectInputForExecution(): any[] {
     const items: any[] = [];

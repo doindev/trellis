@@ -124,7 +124,9 @@
       "mcp__trellis-agent__trellis_browser_control",
       "mcp__trellis-agent__trellis_get_workflow",
       "mcp__trellis-agent__trellis_update_workflow",
-      "mcp__trellis-agent__trellis_list_workflows"
+      "mcp__trellis-agent__trellis_list_workflows",
+      "Bash(paste:*)",
+      "Bash(sort:*)"
     ]
   }
 }

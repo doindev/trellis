@@ -7,6 +7,7 @@ import io.trellis.entity.WaitEntity.WaitType;
 import io.trellis.entity.WorkflowEntity;
 import io.trellis.entity.WorkflowVersionEntity;
 import io.trellis.nodes.core.*;
+import io.trellis.repository.WorkflowRepository;
 import io.trellis.repository.WorkflowVersionRepository;
 import io.trellis.service.*;
 import jakarta.annotation.PostConstruct;
@@ -37,6 +38,7 @@ public class WorkflowEngine {
     private final ObjectMapper objectMapper;
     private final WaitService waitService;
     private final WaitPollerService waitPollerService;
+    private final WorkflowRepository workflowRepository;
     private final WorkflowVersionRepository workflowVersionRepository;
 
     @Resource(name = "branchExecutorService")
@@ -617,6 +619,14 @@ public class WorkflowEngine {
                 }
             }
 
+            // Check if execution was already finished with error by a node failure
+            if (state.getExecutionFinished().get()) {
+                // Node error already finalized the execution — trigger error workflows
+                triggerErrorWorkflows(executionId, workflow.getId(), workflow.getName(),
+                        "Node execution failed");
+                return;
+            }
+
             executionService.finish(executionId, ExecutionStatus.SUCCESS,
                     state.buildResultData(), null);
             saveStaticDataIfChanged(workflow, state);
@@ -635,6 +645,8 @@ public class WorkflowEngine {
             if (future != null && !future.isDone()) {
                 future.completeExceptionally(e);
             }
+            // Trigger error workflows
+            triggerErrorWorkflows(executionId, workflow.getId(), workflow.getName(), e.getMessage());
         } finally {
             runningExecutions.remove(executionId);
             // Safety net: complete any remaining future
@@ -1311,6 +1323,70 @@ public class WorkflowEngine {
             workflowService.updateStaticData(workflow.getId(), existing);
         } catch (Exception e) {
             log.warn("Failed to persist staticData for workflow {}: {}", workflow.getId(), e.getMessage());
+        }
+    }
+
+    /**
+     * After a workflow execution fails, find all published workflows that contain
+     * an errorTrigger node and start them with the error details.
+     */
+    @SuppressWarnings("unchecked")
+    private void triggerErrorWorkflows(String failedExecutionId, String failedWorkflowId,
+                                        String failedWorkflowName, String errorMessage) {
+        try {
+            List<WorkflowEntity> publishedWorkflows = workflowRepository.findByPublished(true);
+
+            for (WorkflowEntity wf : publishedWorkflows) {
+                // Skip the workflow that just failed to avoid infinite loops
+                if (wf.getId().equals(failedWorkflowId)) continue;
+
+                Object nodesObj = wf.getNodes();
+                if (!(nodesObj instanceof List)) continue;
+
+                List<?> nodes = (List<?>) nodesObj;
+                String errorTriggerNodeId = null;
+
+                for (Object nodeObj : nodes) {
+                    if (nodeObj instanceof Map) {
+                        Map<String, Object> nodeMap = (Map<String, Object>) nodeObj;
+                        if ("errorTrigger".equals(nodeMap.get("type"))) {
+                            errorTriggerNodeId = (String) nodeMap.get("id");
+                            break;
+                        }
+                    }
+                }
+
+                if (errorTriggerNodeId != null) {
+                    Map<String, Object> errorData = new LinkedHashMap<>();
+                    errorData.put("executionId", failedExecutionId);
+                    errorData.put("workflowId", failedWorkflowId);
+                    errorData.put("workflowName", failedWorkflowName);
+                    errorData.put("error", errorMessage);
+                    errorData.put("timestamp", Instant.now().toString());
+
+                    Map<String, Object> triggerInput = new LinkedHashMap<>();
+                    triggerInput.put("triggerNodeId", errorTriggerNodeId);
+                    triggerInput.put("webhookData", errorData);
+
+                    Map<String, Object> workflowSnapshot = new LinkedHashMap<>();
+                    workflowSnapshot.put("id", wf.getId());
+                    workflowSnapshot.put("name", wf.getName());
+                    workflowSnapshot.put("nodes", wf.getNodes());
+                    workflowSnapshot.put("connections", wf.getConnections());
+
+                    var execution = executionService.createExecution(
+                            wf.getId(), workflowSnapshot, ExecutionMode.TRIGGER);
+
+                    log.info("Triggering error workflow '{}' ({}) for failed execution {}",
+                            wf.getName(), wf.getId(), failedExecutionId);
+
+                    executeAsync(execution.getId(), wf, triggerInput,
+                            NodeExecutionContext.ExecutionMode.TRIGGER);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to trigger error workflows for execution {}: {}",
+                    failedExecutionId, e.getMessage());
         }
     }
 }

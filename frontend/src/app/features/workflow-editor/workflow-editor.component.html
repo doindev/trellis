@@ -34,11 +34,19 @@
       <div class="editor-body">
         <div class="canvas-area">
           @if (activeTab === 'editor') {
-            <button class="canvas-add-node-btn" (click)="togglePalette()" title="Toggle nodes panel (Tab)">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            </button>
+            <div class="canvas-action-btns">
+              <button class="canvas-action-btn" (click)="togglePalette()" title="Toggle nodes panel (Tab)">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+              <button class="canvas-action-btn" (click)="addStickyNote()" title="Add sticky note">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/>
+                  <path d="M15 3v4a2 2 0 0 0 2 2h4"/>
+                </svg>
+              </button>
+            </div>
           }
           @if (activeTab === 'editor' && store.nodes().length === 0) {
             <div class="canvas-empty-prompt" (click)="openPaletteWithTrigger()">
