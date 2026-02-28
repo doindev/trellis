@@ -391,7 +391,62 @@ select.form-input {
   }
 }
 
-/* MCP Tabs */
+/* MCP Top-level Tabs */
+.mcp-top-tabs {
+  margin-bottom: 0;
+  border-bottom: 2px solid hsl(0, 0%, 18%);
+
+  .nav-item {
+    .nav-link {
+      color: hsl(0, 0%, 52%);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      padding: 12px 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover {
+        color: hsl(0, 0%, 76%);
+      }
+
+      &.active {
+        color: hsl(0, 0%, 96%);
+        border-bottom-color: var(--bs-primary);
+      }
+    }
+  }
+}
+
+.mcp-tab-content {
+  padding-top: 24px;
+}
+
+.mcp-tab-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.mcp-tab-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 92%);
+  margin: 0 0 4px;
+}
+
+.mcp-tab-subtitle {
+  color: hsl(0, 0%, 52%);
+  font-size: 0.8125rem;
+  margin: 0;
+  line-height: 1.4;
+  max-width: 600px;
+}
+
+/* MCP Sub-tabs (Workflows / Clients) */
 .mcp-tabs {
   margin-bottom: 0;
   border-bottom: 1px solid hsl(0, 0%, 22%);
@@ -738,4 +793,151 @@ select.form-input {
   background: hsla(247, 30%, 50%, 0.1);
   padding: 1px 6px;
   border-radius: 3px;
+}
+
+// --- Endpoint mode radio options ---
+
+.endpoint-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: hsl(0, 0%, 10%);
+  border: 1px solid hsl(0, 0%, 20%);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    background: hsl(0, 0%, 12%);
+    border-color: hsl(0, 0%, 28%);
+  }
+
+  &.selected {
+    border-color: var(--bs-primary);
+    background: hsla(247, 49%, 53%, 0.06);
+  }
+
+  input[type="radio"] {
+    margin-top: 2px;
+    accent-color: var(--bs-primary);
+  }
+}
+
+.radio-option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.radio-option-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 90%);
+}
+
+.radio-option-desc {
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 52%);
+  line-height: 1.4;
+}
+
+.combined-mode-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  background: hsla(210, 70%, 50%, 0.06);
+  border: 1px solid hsla(210, 70%, 50%, 0.15);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.8125rem;
+  color: hsl(210, 50%, 70%);
+  line-height: 1.4;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: hsl(210, 70%, 60%);
+  }
+
+  a {
+    color: hsl(210, 70%, 65%);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: hsl(210, 70%, 80%);
+    }
+  }
+}
+
+// --- AI Agent Tools ---
+
+.agent-tools-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-subtitle {
+  color: hsl(0, 0%, 52%);
+  font-size: 0.8125rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.agent-tools-info {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid hsl(0, 0%, 18%);
+}
+
+.agent-endpoint-config {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid hsl(0, 0%, 18%);
+}
+
+.agent-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-url {
+  flex: 1;
+  font-size: 0.8125rem;
+  color: hsl(0, 0%, 68%);
+  background: hsl(0, 0%, 12%);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid hsl(0, 0%, 20%);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.agent-tools-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-tool-badge {
+  display: inline-block;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 0.6875rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: hsla(247, 30%, 50%, 0.1);
+  color: hsl(247, 30%, 68%);
+  border: 1px solid hsla(247, 30%, 50%, 0.15);
 }

@@ -76,6 +76,7 @@ export interface TrellisCanvasProps {
   onExecuteFromNode?: (nodeId: string) => void;
   onCopyNode?: (nodeId: string) => void;
   onInsertNodeOnEdge?: (edgeInfo: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }) => void;
+  triggerCleanUp?: number;
 }
 
 const GRID_SIZE = 16;
@@ -114,6 +115,7 @@ function TrellisCanvasInner({
   onExecuteFromNode,
   onCopyNode,
   onInsertNodeOnEdge,
+  triggerCleanUp,
 }: TrellisCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
@@ -545,6 +547,14 @@ function TrellisCanvasInner({
     // Fit viewport after layout settles
     setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
   }, [nodes, edges, setNodes, onNodesPositionChange, fitView]);
+
+  // Allow Angular to trigger clean-up via prop change
+  useEffect(() => {
+    if (triggerCleanUp && triggerCleanUp > 0) {
+      // Delay slightly to ensure nodes/edges are fully synced from props
+      setTimeout(() => onCleanUp(), 100);
+    }
+  }, [triggerCleanUp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {

@@ -22,6 +22,22 @@ public class McpSettingsEntity {
     private boolean enabled = false;
 
     @Builder.Default
+    @Column(nullable = false)
+    private boolean agentToolsEnabled = false;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean agentToolsDedicated = true;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private String agentToolsPath = "agent";
+
+    @Builder.Default
+    @Column(nullable = false)
+    private String agentToolsTransport = "STREAMABLE_HTTP";
+
+    @Builder.Default
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 

@@ -451,6 +451,17 @@
   </main>
 </div>
 
+<!-- Agent Control -->
+<app-agent-consent-modal
+  [request]="agentRequest"
+  (allow)="onAgentAllow()"
+  (deny)="onAgentDeny()">
+</app-agent-consent-modal>
+<app-agent-control-overlay
+  [active]="agentSessionActive"
+  (stop)="onAgentStop()">
+</app-agent-control-overlay>
+
 <!-- Create Project Modal -->
 @if (showCreateProjectModal) {
   <div class="cp-overlay" (click)="onCreateProjectCancel()">

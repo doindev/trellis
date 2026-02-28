@@ -26,6 +26,7 @@ import {
   defaultExecutionFilters
 } from '../../shared/components/execution-filter-modal/execution-filter-modal.component';
 import { NodeTypeDescription, Workflow, WorkflowNode, Execution, Tag } from '../../core/models';
+import { AgentControlService } from '../../core/services/agent-control.service';
 
 @Component({
   selector: 'app-workflow-editor',
@@ -61,7 +62,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   showImportUriModal = false;
   showSettingsModal = false;
   showArchiveConfirm = false;
+  showValidationModal = false;
   showMcpParamEditorModal = false;
+  validationErrors: { nodeName: string; warnings: string[] }[] = [];
   availableWorkflows: { id: string; name: string }[] = [];
   drawerExpandedEditor = false;
   drawerExpandedExecutions = false;
@@ -82,6 +85,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   private executionPollInterval: ReturnType<typeof setInterval> | null = null;
   private readonly AUTO_SAVE_INTERVAL = 2_000;
   private readonly EXECUTION_POLL_INTERVAL = 5_000;
+  private agentCanvasTopic = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -92,6 +96,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     private executionService: ExecutionService,
     private wsService: WebSocketService,
     private tagService: TagService,
+    private agentControlService: AgentControlService,
     public store: WorkflowEditorStore,
     public nodeTypeStore: NodeTypeStore
   ) {}
@@ -127,7 +132,48 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           this.store.workflow.set({ ...wf, projectId });
         }
       }
+
+      // Check for agent-loaded workflow data
+      if (this.agentControlService.hasPendingWorkflowData()) {
+        const agentData = this.agentControlService.consumePendingWorkflowData();
+        if (agentData) {
+          const wf = this.store.workflow();
+          if (wf) {
+            this.store.workflow.set({
+              ...wf,
+              name: agentData.name || wf.name,
+              description: agentData.description || wf.description,
+              nodes: agentData.nodes || wf.nodes,
+              connections: agentData.connections || wf.connections
+            });
+          }
+        }
+      }
     }
+
+    // Listen for agent canvas push events
+    this.agentCanvasTopic = `/topic/agent-canvas/${this.wsService.getBrowserSessionId()}`;
+    this.wsService.subscribe(this.agentCanvasTopic, (message) => {
+      this.ngZone.run(() => {
+        try {
+          const event = JSON.parse(message.body);
+          if (event.event === 'agentCanvasUpdate') {
+            this.store.importWorkflowData({
+              name: event.name,
+              nodes: event.nodes,
+              connections: event.connections,
+            });
+            // Auto-layout the canvas after importing agent data
+            setTimeout(() => this.canvasWrapper?.triggerCleanUp(), 200);
+            if (event.message) {
+              this.showToast('Agent: ' + event.message);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse agent canvas update:', e);
+        }
+      });
+    });
 
     this.startAutoSaveTimer();
   }
@@ -618,6 +664,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (this.currentExecutionId) {
       this.wsService.unsubscribe(`/topic/execution/${this.currentExecutionId}`);
     }
+    if (this.agentCanvasTopic) {
+      this.wsService.unsubscribe(this.agentCanvasTopic);
+    }
     this.executionSub?.unsubscribe();
     this.stopAutoSaveTimer();
     this.stopExecutionPoll();
@@ -732,7 +781,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       // Save first, then show modal
       this.store.saveWorkflow((saved) => {
         this.replaceUrlOnFirstSave(saved);
-        this.showPublishModal = true;
+        this.proceedToPublish();
       });
       return;
     }
@@ -742,11 +791,35 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
     if (this.store.isDirty()) {
       this.store.saveWorkflow(() => {
-        this.showPublishModal = true;
+        this.proceedToPublish();
       });
       return;
     }
+    this.proceedToPublish();
+  }
+
+  private proceedToPublish(): void {
+    const errors = this.validateAllNodes();
+    if (errors.length > 0) {
+      this.validationErrors = errors;
+      this.showValidationModal = true;
+      return;
+    }
     this.showPublishModal = true;
+  }
+
+  private validateAllNodes(): { nodeName: string; warnings: string[] }[] {
+    const nodes = this.store.nodes();
+    const errors: { nodeName: string; warnings: string[] }[] = [];
+    for (const node of nodes) {
+      const typeDesc = this.nodeTypeStore.getByType(node.type);
+      if (!typeDesc) continue;
+      const warnings = this.canvasWrapper.computeNodeWarnings(node, typeDesc);
+      if (warnings.length > 0) {
+        errors.push({ nodeName: node.name, warnings });
+      }
+    }
+    return errors;
   }
 
   getPinnedNodeNames(): string[] {

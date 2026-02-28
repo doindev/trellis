@@ -50,6 +50,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   mcpEndpoints: McpEndpoint[] = [];
   mcpClients: McpClient[] = [];
   mcpSaving = false;
+  mcpTopTab: 'instance' | 'editor' = 'instance';
   mcpActiveTab = 'workflows';
   showConnectionDetailsModal = false;
   showAddEndpoint = false;
@@ -297,6 +298,42 @@ export class SettingsComponent implements OnInit, OnDestroy {
       },
       error: () => this.mcpSaving = false
     });
+  }
+
+  toggleAgentTools(): void {
+    if (!this.mcpSettings) return;
+    this.mcpSaving = true;
+    this.settingsService.updateAgentToolsSettings({
+      agentToolsEnabled: !this.mcpSettings.agentToolsEnabled
+    }).subscribe({
+      next: settings => {
+        this.mcpSettings = settings;
+        this.mcpSaving = false;
+      },
+      error: () => this.mcpSaving = false
+    });
+  }
+
+  saveAgentToolsConfig(): void {
+    if (!this.mcpSettings) return;
+    this.mcpSaving = true;
+    this.settingsService.updateAgentToolsSettings({
+      agentToolsDedicated: this.mcpSettings.agentToolsDedicated,
+      agentToolsPath: this.mcpSettings.agentToolsPath,
+      agentToolsTransport: this.mcpSettings.agentToolsTransport
+    }).subscribe({
+      next: settings => {
+        this.mcpSettings = settings;
+        this.mcpSaving = false;
+      },
+      error: () => this.mcpSaving = false
+    });
+  }
+
+  copyAgentToolsUrl(): void {
+    if (this.mcpSettings?.agentToolsUrl) {
+      navigator.clipboard.writeText(this.mcpSettings.agentToolsUrl);
+    }
   }
 
   onMcpTabChange(tab: string): void {

@@ -77,6 +77,52 @@ public class WebSocketService {
         ));
     }
 
+    public void sendToolConsentRequest(String browserSessionId, String requestId,
+                                        String toolName, String description, Map<String, Object> arguments) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("event", "toolConsentRequest");
+        payload.put("requestId", requestId);
+        payload.put("toolName", toolName);
+        payload.put("description", description);
+        if (arguments != null && !arguments.isEmpty()) {
+            payload.put("arguments", arguments);
+        }
+        send("/topic/agent-control/" + browserSessionId, payload);
+    }
+
+    public void sendBrowserAction(String browserSessionId, String action, String targetUrl,
+                                  Object workflowData, String message) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("event", "browserAction");
+        payload.put("action", action);
+        payload.put("message", message);
+        if (targetUrl != null) {
+            payload.put("targetUrl", targetUrl);
+        }
+        if (workflowData != null) {
+            payload.put("workflowData", workflowData);
+        }
+        send("/topic/agent-control/" + browserSessionId, payload);
+    }
+
+    public void sendAgentCanvasUpdate(String browserSessionId, String name, String description,
+                                      Object nodes, Object connections, String message) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("event", "agentCanvasUpdate");
+        payload.put("nodes", nodes);
+        payload.put("connections", connections);
+        if (name != null) {
+            payload.put("name", name);
+        }
+        if (description != null) {
+            payload.put("description", description);
+        }
+        if (message != null) {
+            payload.put("message", message);
+        }
+        send("/topic/agent-canvas/" + browserSessionId, payload);
+    }
+
     public void sendWebhookTestData(String workflowId, Object data) {
         send("/topic/webhook-test/" + workflowId, Map.of(
                 "event", "testData",

@@ -41,14 +41,22 @@ public class McpSettingsService {
     private int serverPort;
 
     public McpSettingsDto getSettings() {
-        boolean enabled = repository.findFirstByOrderByCreatedAtAsc()
-                .map(McpSettingsEntity::isEnabled)
-                .orElse(false);
+        McpSettingsEntity entity = repository.findFirstByOrderByCreatedAtAsc().orElse(null);
+        boolean enabled = entity != null && entity.isEnabled();
+        boolean agentToolsEnabled = entity != null && entity.isAgentToolsEnabled();
+        boolean agentToolsDedicated = entity == null || entity.isAgentToolsDedicated();
+        String agentToolsPath = entity != null ? entity.getAgentToolsPath() : "agent";
+        String agentToolsTransport = entity != null ? entity.getAgentToolsTransport() : "STREAMABLE_HTTP";
         List<McpEndpointDto> endpoints = endpointRepository.findAll().stream()
                 .map(this::toEndpointDto)
                 .toList();
         return McpSettingsDto.builder()
                 .enabled(enabled)
+                .agentToolsEnabled(agentToolsEnabled)
+                .agentToolsDedicated(agentToolsDedicated)
+                .agentToolsPath(agentToolsPath)
+                .agentToolsTransport(agentToolsTransport)
+                .agentToolsUrl("http://localhost:" + serverPort + "/mcp/" + agentToolsPath)
                 .endpoints(endpoints)
                 .build();
     }
@@ -66,6 +74,26 @@ public class McpSettingsService {
             mcpServerManager.stopAll();
         }
 
+        return getSettings();
+    }
+
+    @Transactional
+    public McpSettingsDto updateAgentToolsSettings(Boolean enabled, Boolean dedicated, String path, String transport) {
+        McpSettingsEntity entity = repository.findFirstByOrderByCreatedAtAsc()
+                .orElseGet(McpSettingsEntity::new);
+        if (enabled != null) {
+            entity.setAgentToolsEnabled(enabled);
+        }
+        if (dedicated != null) {
+            entity.setAgentToolsDedicated(dedicated);
+        }
+        if (path != null && !path.isBlank()) {
+            entity.setAgentToolsPath(path);
+        }
+        if (transport != null && !transport.isBlank()) {
+            entity.setAgentToolsTransport(transport);
+        }
+        repository.save(entity);
         return getSettings();
     }
 

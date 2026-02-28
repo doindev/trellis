@@ -10,6 +10,20 @@ export class WebSocketService implements OnDestroy {
   private connected$ = new Subject<boolean>();
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 10;
+  private readonly browserSessionId: string;
+
+  constructor() {
+    let id = sessionStorage.getItem('browserSessionId');
+    if (!id) {
+      id = crypto.randomUUID();
+      sessionStorage.setItem('browserSessionId', id);
+    }
+    this.browserSessionId = id;
+  }
+
+  getBrowserSessionId(): string {
+    return this.browserSessionId;
+  }
 
   connect(): void {
     if (this.client?.connected) {
@@ -18,13 +32,14 @@ export class WebSocketService implements OnDestroy {
 
     this.client = new Client({
       webSocketFactory: () => new SockJS('/ws'),
+      connectHeaders: { browserSessionId: this.browserSessionId },
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
       onConnect: () => {
         this.reconnectAttempts = 0;
         this.connected$.next(true);
-        console.log('WebSocket connected');
+        console.log('WebSocket connected with session:', this.browserSessionId);
       },
       onDisconnect: () => {
         this.connected$.next(false);

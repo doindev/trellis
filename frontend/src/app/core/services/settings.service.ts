@@ -62,6 +62,11 @@ export interface McpClient {
 
 export interface McpSettings {
   enabled: boolean;
+  agentToolsEnabled: boolean;
+  agentToolsDedicated: boolean;
+  agentToolsPath: string;
+  agentToolsTransport: string;
+  agentToolsUrl: string;
   endpoints: McpEndpoint[];
 }
 
@@ -181,6 +186,10 @@ export class SettingsService {
 
   updateMcpSettings(settings: Partial<McpSettings>): Observable<McpSettings> {
     return this.api.put<McpSettings>('/settings/mcp', settings);
+  }
+
+  updateAgentToolsSettings(data: { agentToolsEnabled?: boolean; agentToolsDedicated?: boolean; agentToolsPath?: string; agentToolsTransport?: string }): Observable<McpSettings> {
+    return this.api.put<McpSettings>('/settings/mcp/agent-tools', data);
   }
 
   getMcpWorkflows(): Observable<McpWorkflow[]> {

@@ -286,137 +286,253 @@
       <div class="section-page section-page-full">
         <div class="section-header-row">
           <div>
-            <h1 class="section-title">Instance-level MCP</h1>
-            <p class="section-subtitle">Expose workflows to AI assistants via Model Context Protocol</p>
-          </div>
-          <div class="header-actions">
-            @if (mcpSettings?.enabled) {
-              <button class="btn-secondary" (click)="showConnectionDetailsModal = true">Connection details</button>
-            }
-            <label class="toggle">
-              <input type="checkbox" [checked]="mcpSettings?.enabled" (change)="toggleMcp()" [disabled]="mcpSaving">
-              <span class="toggle-slider"></span>
-            </label>
+            <h1 class="section-title">MCP</h1>
+            <p class="section-subtitle">Model Context Protocol server configuration</p>
           </div>
         </div>
 
-        @if (mcpSettings?.enabled) {
-          <!-- Tabs -->
-          <ul class="nav nav-tabs mcp-tabs">
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="mcpActiveTab === 'workflows'" (click)="onMcpTabChange('workflows')">Workflows</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="mcpActiveTab === 'clients'" (click)="onMcpTabChange('clients')">Clients</a>
-            </li>
-          </ul>
+        <!-- Top-level MCP tabs -->
+        <ul class="nav nav-tabs mcp-top-tabs">
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="mcpTopTab === 'instance'" (click)="mcpTopTab = 'instance'">Instance-level MCP</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" [class.active]="mcpTopTab === 'editor'" (click)="mcpTopTab = 'editor'">Instance-level Editor MCP</a>
+          </li>
+        </ul>
 
-          <!-- Workflows tab -->
-          @if (mcpActiveTab === 'workflows') {
-            <div class="data-table tab-table">
-              <div class="table-header">
-                @if (showMcpProjectColumn) {
-                  <div class="col-wf-project">Project</div>
-                }
-                <div class="col-wf-name">Workflow</div>
-                <div class="col-wf-desc">Description</div>
-                <div class="col-wf-status">MCP</div>
-                <div class="col-actions"></div>
+        <!-- ===== Tab 1: Instance-level MCP ===== -->
+        @if (mcpTopTab === 'instance') {
+          <div class="mcp-tab-content">
+            <div class="mcp-tab-header">
+              <div>
+                <h2 class="mcp-tab-title">Instance-level MCP</h2>
+                <p class="mcp-tab-subtitle">Expose workflows as MCP tools to AI assistants</p>
               </div>
-              @for (wf of mcpWorkflows; track wf.id) {
-                <div class="table-row">
-                  @if (showMcpProjectColumn) {
-                    <div class="col-wf-project">{{ wf.projectName || '' }}</div>
-                  }
-                  <div class="col-wf-name">{{ wf.name }}</div>
-                  <div class="col-wf-desc">
-                    @if (editingWorkflowId === wf.id) {
-                      <div class="inline-edit">
-                        <input class="form-input" type="text" [(ngModel)]="editDescriptionValue"
-                               (keydown.enter)="saveDescription(wf)" (keydown.escape)="cancelEditDescription()">
-                        <button class="btn-copy btn-xs" (click)="saveDescription(wf)">Save</button>
-                        <button class="btn-copy btn-xs" (click)="cancelEditDescription()">Cancel</button>
+              <div class="header-actions">
+                @if (mcpSettings?.enabled) {
+                  <button class="btn-secondary" (click)="showConnectionDetailsModal = true">Connection details</button>
+                }
+                <label class="toggle">
+                  <input type="checkbox" [checked]="mcpSettings?.enabled" (change)="toggleMcp()" [disabled]="mcpSaving">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            @if (mcpSettings?.enabled) {
+              <!-- Sub-tabs -->
+              <ul class="nav nav-tabs mcp-tabs">
+                <li class="nav-item">
+                  <a class="nav-link" [class.active]="mcpActiveTab === 'workflows'" (click)="onMcpTabChange('workflows')">Workflows</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" [class.active]="mcpActiveTab === 'clients'" (click)="onMcpTabChange('clients')">Clients</a>
+                </li>
+              </ul>
+
+              <!-- Workflows tab -->
+              @if (mcpActiveTab === 'workflows') {
+                <div class="data-table tab-table">
+                  <div class="table-header">
+                    @if (showMcpProjectColumn) {
+                      <div class="col-wf-project">Project</div>
+                    }
+                    <div class="col-wf-name">Workflow</div>
+                    <div class="col-wf-desc">Description</div>
+                    <div class="col-wf-status">MCP</div>
+                    <div class="col-actions"></div>
+                  </div>
+                  @for (wf of mcpWorkflows; track wf.id) {
+                    <div class="table-row">
+                      @if (showMcpProjectColumn) {
+                        <div class="col-wf-project">{{ wf.projectName || '' }}</div>
+                      }
+                      <div class="col-wf-name">{{ wf.name }}</div>
+                      <div class="col-wf-desc">
+                        @if (editingWorkflowId === wf.id) {
+                          <div class="inline-edit">
+                            <input class="form-input" type="text" [(ngModel)]="editDescriptionValue"
+                                   (keydown.enter)="saveDescription(wf)" (keydown.escape)="cancelEditDescription()">
+                            <button class="btn-copy btn-xs" (click)="saveDescription(wf)">Save</button>
+                            <button class="btn-copy btn-xs" (click)="cancelEditDescription()">Cancel</button>
+                          </div>
+                        } @else {
+                          <span class="desc-text">{{ wf.mcpDescription || wf.description || '' }}</span>
+                        }
                       </div>
-                    } @else {
-                      <span class="desc-text">{{ wf.mcpDescription || wf.description || '' }}</span>
-                    }
-                  </div>
-                  <div class="col-wf-status">
-                    @if (wf.mcpEnabled) {
-                      <span class="status-badge enabled">Enabled</span>
-                    } @else {
-                      <span class="status-badge disabled">Disabled</span>
-                    }
-                    @if (wf.mcpInputSchema?.length) {
-                      <span class="param-count-badge">{{ wf.mcpInputSchema!.length }} params</span>
-                    }
-                  </div>
-                  <div class="col-actions"
+                      <div class="col-wf-status">
+                        @if (wf.mcpEnabled) {
+                          <span class="status-badge enabled">Enabled</span>
+                        } @else {
+                          <span class="status-badge disabled">Disabled</span>
+                        }
+                        @if (wf.mcpInputSchema?.length) {
+                          <span class="param-count-badge">{{ wf.mcpInputSchema!.length }} params</span>
+                        }
+                      </div>
+                      <div class="col-actions"
+                           (mouseenter)="cancelMcpMenuClose()"
+                           (mouseleave)="scheduleMcpMenuClose()">
+                        <button class="btn-icon-sm" (click)="toggleWorkflowMenu(wf.id, $event)">
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                  @if (mcpWorkflows.length === 0) {
+                    <div class="empty-row">No workflows found</div>
+                  }
+                </div>
+
+                @if (mcpWorkflowMenuId) {
+                  <div class="actions-menu" [ngStyle]="mcpMenuStyle"
                        (mouseenter)="cancelMcpMenuClose()"
                        (mouseleave)="scheduleMcpMenuClose()">
-                    <button class="btn-icon-sm" (click)="toggleWorkflowMenu(wf.id, $event)">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                        <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-                      </svg>
-                    </button>
+                    @for (wf of mcpWorkflows; track wf.id) {
+                      @if (wf.id === mcpWorkflowMenuId) {
+                        <button class="menu-item" (click)="startEditDescription(wf)">Edit description...</button>
+                        <button class="menu-item" (click)="openParamEditor(wf)">Edit Schema parameters...</button>
+                        @if (wf.mcpEnabled) {
+                          <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Disable MCP access</button>
+                        } @else if (wf.published && wf.hasWebhookNode) {
+                          <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Enable MCP access</button>
+                        } @else {
+                          <button class="menu-item disabled" disabled>Enable MCP access</button>
+                        }
+                      }
+                    }
+                  </div>
+                }
+              }
+
+              <!-- Clients tab -->
+              @if (mcpActiveTab === 'clients') {
+                <div class="data-table tab-table">
+                  <div class="table-header">
+                    <div class="col-client-name">Client</div>
+                    <div class="col-client-endpoint">Endpoint</div>
+                    <div class="col-client-transport">Transport</div>
+                    <div class="col-client-connected">Connected</div>
+                    <div class="col-client-seen">Last seen</div>
+                  </div>
+                  @for (client of mcpClients; track client.sessionId) {
+                    <div class="table-row">
+                      <div class="col-client-name">{{ client.clientName || 'Unknown' }} {{ client.clientVersion ? 'v' + client.clientVersion : '' }}</div>
+                      <div class="col-client-endpoint">{{ client.endpointName }}</div>
+                      <div class="col-client-transport">
+                        <span class="transport-badge" [class.sse]="client.transport === 'SSE'"
+                              [class.streamable]="client.transport === 'STREAMABLE_HTTP'">
+                          {{ client.transport === 'STREAMABLE_HTTP' ? 'Streamable HTTP' : client.transport }}
+                        </span>
+                      </div>
+                      <div class="col-client-connected">{{ client.connectedAt | date:'short' }}</div>
+                      <div class="col-client-seen">{{ client.lastSeenAt | date:'short' }}</div>
+                    </div>
+                  }
+                  @if (mcpClients.length === 0) {
+                    <div class="empty-row">No clients connected</div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+
+        <!-- ===== Tab 2: Instance-level Editor MCP ===== -->
+        @if (mcpTopTab === 'editor') {
+          <div class="mcp-tab-content">
+            <div class="mcp-tab-header">
+              <div>
+                <h2 class="mcp-tab-title">Instance-level Editor MCP</h2>
+                <p class="mcp-tab-subtitle">Serve system tools for AI agents (like Eclipse Copilot) to discover node types, create and manage workflows, and control the browser</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" [checked]="mcpSettings?.agentToolsEnabled" (change)="toggleAgentTools()" [disabled]="mcpSaving">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            @if (mcpSettings?.agentToolsEnabled) {
+              <!-- Endpoint mode -->
+              <div class="settings-card">
+                <h3 class="card-title">Endpoint Mode</h3>
+                <div class="endpoint-mode-options">
+                  <label class="radio-option" [class.selected]="mcpSettings!.agentToolsDedicated">
+                    <input type="radio" name="endpointMode" [value]="true"
+                           [(ngModel)]="mcpSettings!.agentToolsDedicated" (change)="saveAgentToolsConfig()">
+                    <div class="radio-option-content">
+                      <span class="radio-option-label">Dedicated endpoint</span>
+                      <span class="radio-option-desc">Serve agent tools on a separate MCP endpoint with its own path and transport</span>
+                    </div>
+                  </label>
+                  <label class="radio-option" [class.selected]="!mcpSettings!.agentToolsDedicated">
+                    <input type="radio" name="endpointMode" [value]="false"
+                           [(ngModel)]="mcpSettings!.agentToolsDedicated" (change)="saveAgentToolsConfig()">
+                    <div class="radio-option-content">
+                      <span class="radio-option-label">Combined with workflow MCP</span>
+                      <span class="radio-option-desc">Serve agent tools alongside workflow tools on the existing Instance-level MCP endpoints</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Dedicated endpoint configuration (only shown in dedicated mode) -->
+              @if (mcpSettings!.agentToolsDedicated) {
+                <div class="settings-card">
+                  <h3 class="card-title">Endpoint Configuration</h3>
+                  <div class="form-row-inline">
+                    <div class="form-group">
+                      <label class="form-label">Transport</label>
+                      <select class="form-input" [(ngModel)]="mcpSettings!.agentToolsTransport" (change)="saveAgentToolsConfig()">
+                        <option value="SSE">SSE</option>
+                        <option value="STREAMABLE_HTTP">Streamable HTTP</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Path</label>
+                      <input class="form-input" type="text" [(ngModel)]="mcpSettings!.agentToolsPath"
+                             placeholder="agent" (blur)="saveAgentToolsConfig()" (keydown.enter)="saveAgentToolsConfig()">
+                    </div>
+                  </div>
+                  <div class="agent-url-row">
+                    <code class="agent-url">{{ mcpSettings!.agentToolsUrl }}</code>
+                    <button class="btn-copy btn-xs" (click)="copyAgentToolsUrl()">Copy</button>
                   </div>
                 </div>
               }
-              @if (mcpWorkflows.length === 0) {
-                <div class="empty-row">No workflows found</div>
-              }
-            </div>
 
-            @if (mcpWorkflowMenuId) {
-              <div class="actions-menu" [ngStyle]="mcpMenuStyle"
-                   (mouseenter)="cancelMcpMenuClose()"
-                   (mouseleave)="scheduleMcpMenuClose()">
-                @for (wf of mcpWorkflows; track wf.id) {
-                  @if (wf.id === mcpWorkflowMenuId) {
-                    <button class="menu-item" (click)="startEditDescription(wf)">Edit description...</button>
-                    <button class="menu-item" (click)="openParamEditor(wf)">Edit Schema parameters...</button>
-                    @if (wf.mcpEnabled) {
-                      <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Disable MCP access</button>
-                    } @else if (wf.published && wf.hasWebhookNode) {
-                      <button class="menu-item" (click)="toggleWorkflowMcp(wf); mcpWorkflowMenuId = null">Enable MCP access</button>
-                    } @else {
-                      <button class="menu-item disabled" disabled>Enable MCP access</button>
-                    }
-                  }
-                }
+              <!-- Combined mode info -->
+              @if (!mcpSettings!.agentToolsDedicated) {
+                <div class="combined-mode-info">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <span>Agent tools will be served on all Instance-level MCP endpoints configured in the <a (click)="mcpTopTab = 'instance'">Instance-level MCP</a> tab.</span>
+                </div>
+              }
+
+              <!-- Available tools -->
+              <div class="settings-card">
+                <h3 class="card-title">Available Tools</h3>
+                <div class="agent-tools-list">
+                  <span class="agent-tool-badge">trellis_list_node_types</span>
+                  <span class="agent-tool-badge">trellis_get_node_type</span>
+                  <span class="agent-tool-badge">trellis_list_workflows</span>
+                  <span class="agent-tool-badge">trellis_get_workflow</span>
+                  <span class="agent-tool-badge">trellis_create_workflow</span>
+                  <span class="agent-tool-badge">trellis_update_workflow</span>
+                  <span class="agent-tool-badge">trellis_list_executions</span>
+                  <span class="agent-tool-badge">trellis_get_execution</span>
+                  <span class="agent-tool-badge">trellis_workflow_guide</span>
+                  <span class="agent-tool-badge">trellis_browser_control</span>
+                  <span class="agent-tool-badge">trellis_push_to_canvas</span>
+                </div>
               </div>
             }
-          }
-
-          <!-- Clients tab -->
-          @if (mcpActiveTab === 'clients') {
-            <div class="data-table tab-table">
-              <div class="table-header">
-                <div class="col-client-name">Client</div>
-                <div class="col-client-endpoint">Endpoint</div>
-                <div class="col-client-transport">Transport</div>
-                <div class="col-client-connected">Connected</div>
-                <div class="col-client-seen">Last seen</div>
-              </div>
-              @for (client of mcpClients; track client.sessionId) {
-                <div class="table-row">
-                  <div class="col-client-name">{{ client.clientName || 'Unknown' }} {{ client.clientVersion ? 'v' + client.clientVersion : '' }}</div>
-                  <div class="col-client-endpoint">{{ client.endpointName }}</div>
-                  <div class="col-client-transport">
-                    <span class="transport-badge" [class.sse]="client.transport === 'SSE'"
-                          [class.streamable]="client.transport === 'STREAMABLE_HTTP'">
-                      {{ client.transport === 'STREAMABLE_HTTP' ? 'Streamable HTTP' : client.transport }}
-                    </span>
-                  </div>
-                  <div class="col-client-connected">{{ client.connectedAt | date:'short' }}</div>
-                  <div class="col-client-seen">{{ client.lastSeenAt | date:'short' }}</div>
-                </div>
-              }
-              @if (mcpClients.length === 0) {
-                <div class="empty-row">No clients connected</div>
-              }
-            </div>
-          }
+          </div>
         }
       </div>
 

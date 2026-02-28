@@ -15,7 +15,7 @@ import {
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import TrellisCanvas, { type TrellisCanvasProps } from './trellis-canvas';
-import { Workflow, WorkflowNode, NodeTypeDescription } from '../../../../core/models';
+import { Workflow, WorkflowNode, NodeTypeDescription, NodeParameter } from '../../../../core/models';
 
 @Component({
   selector: 'app-react-flow-wrapper',
@@ -64,6 +64,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   private root: Root | null = null;
   private nodeIdCounter = 0;
   private viewportHelper: { getViewportCenter: () => { x: number; y: number } } | null = null;
+  private cleanUpCounter = 0;
 
   // Stable callback references — created once, never recreated
   private callbacks: Partial<TrellisCanvasProps> | null = null;
@@ -168,6 +169,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       isExecuting: this.isExecuting,
       readOnly: this.readOnly,
       drawerOffset: this.drawerOffset,
+      triggerCleanUp: this.cleanUpCounter,
       ...this.getCallbacks(),
     };
 
@@ -206,6 +208,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
           disabled: node.disabled,
           isPinned: !!(this.workflow?.pinData?.[node.id]),
           readOnly: this.readOnly,
+          validationWarnings: typeDesc ? this.computeNodeWarnings(node, typeDesc) : [],
         },
       };
     });
@@ -346,6 +349,61 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       }
     }
     return typeDesc.outputs;
+  }
+
+  /** Compute validation warnings for a node instance against its type description. */
+  computeNodeWarnings(node: WorkflowNode, typeDesc: NodeTypeDescription): string[] {
+    const warnings: string[] = [];
+
+    // 1. Missing credentials
+    if (typeDesc.credentials?.length) {
+      for (const credType of typeDesc.credentials) {
+        if (!node.credentials || !node.credentials[credType]) {
+          warnings.push(`Missing credential: ${credType}`);
+        }
+      }
+    }
+
+    // 2. Missing required parameters (no default, display conditions met)
+    if (typeDesc.parameters?.length) {
+      for (const param of typeDesc.parameters) {
+        if (!param.required) continue;
+        if (param.defaultValue !== null && param.defaultValue !== undefined && param.defaultValue !== '') continue;
+
+        // Check displayOptions.show — skip if conditions not met
+        if (param.displayOptions?.show) {
+          if (!this.displayConditionsMet(param.displayOptions.show, node.parameters || {})) {
+            continue;
+          }
+        }
+
+        const value = node.parameters?.[param.name];
+        if (value === null || value === undefined || value === '') {
+          warnings.push(`Missing required: ${param.displayName}`);
+        }
+      }
+    }
+
+    return warnings;
+  }
+
+  /** Check if displayOptions.show conditions are met for a parameter. */
+  private displayConditionsMet(show: Record<string, any>, params: Record<string, any>): boolean {
+    for (const [key, allowedValues] of Object.entries(show)) {
+      const currentValue = params[key];
+      if (Array.isArray(allowedValues)) {
+        if (!allowedValues.includes(currentValue)) return false;
+      } else {
+        if (currentValue !== allowedValues) return false;
+      }
+    }
+    return true;
+  }
+
+  /** Trigger the canvas auto-layout (clean up). */
+  triggerCleanUp(): void {
+    this.cleanUpCounter++;
+    this.renderReact();
   }
 
   /** Add a node at the center of the visible viewport, offset to avoid overlap. Returns the new node ID. */

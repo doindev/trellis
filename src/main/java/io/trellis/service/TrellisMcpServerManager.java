@@ -33,6 +33,7 @@ public class TrellisMcpServerManager {
     private final McpSettingsRepository settingsRepository;
     private final WorkflowEngine workflowEngine;
     private final ObjectMapper objectMapper;
+    private final McpSystemToolService mcpSystemToolService;
 
     private static final List<String> SUPPORTED_VERSIONS = List.of(
             "2025-03-26", "2024-11-05");
@@ -83,6 +84,16 @@ public class TrellisMcpServerManager {
 
     public boolean isRunning() {
         return running;
+    }
+
+    /**
+     * Returns true when agent tools are enabled but NOT in dedicated mode,
+     * meaning they should be combined with workflow tools on this server.
+     */
+    private boolean shouldIncludeSystemTools() {
+        return settingsRepository.findFirstByOrderByCreatedAtAsc()
+                .map(s -> s.isAgentToolsEnabled() && !s.isAgentToolsDedicated())
+                .orElse(false);
     }
 
     // --- SSE Transport ---
@@ -230,7 +241,7 @@ public class TrellisMcpServerManager {
     }
 
     private Map<String, Object> handleToolsList(Object id) {
-        List<Map<String, Object>> toolList = tools.values().stream()
+        List<Map<String, Object>> toolList = new ArrayList<>(tools.values().stream()
                 .map(tool -> {
                     Map<String, Object> t = new LinkedHashMap<>();
                     t.put("name", tool.name);
@@ -242,7 +253,13 @@ public class TrellisMcpServerManager {
                     }
                     return t;
                 })
-                .toList();
+                .toList());
+
+        // In combined mode, append system tools alongside workflow tools
+        if (shouldIncludeSystemTools()) {
+            toolList.addAll(mcpSystemToolService.getSystemToolDefinitions());
+        }
+
         return jsonRpcResult(id, Map.of("tools", toolList));
     }
 
@@ -343,6 +360,12 @@ public class TrellisMcpServerManager {
         Map<String, Object> params = (Map<String, Object>) message.get("params");
         String toolName = (String) params.get("name");
         Map<String, Object> arguments = (Map<String, Object>) params.get("arguments");
+
+        // In combined mode, delegate system tool calls
+        if (shouldIncludeSystemTools() && mcpSystemToolService.isSystemTool(toolName)) {
+            Map<String, Object> result = mcpSystemToolService.handleToolCall(toolName, arguments);
+            return jsonRpcResult(id, result);
+        }
 
         McpToolDef tool = tools.get(toolName);
         if (tool == null) {

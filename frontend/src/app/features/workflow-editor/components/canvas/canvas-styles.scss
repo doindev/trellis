@@ -690,6 +690,24 @@
   50% { box-shadow: 0 0 8px 2px hsla(7, 100%, 68%, 0.3); }
 }
 
+/* Warning badge — top-left of node (amber) */
+.node-warning-badge {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(38, 92%, 50%);
+  color: #fff;
+  border: 2px solid hsl(0, 0%, 13%);
+  z-index: 1;
+  cursor: default;
+}
+
 /* Pin badge — top-left of node */
 .node-pin-badge {
   position: absolute;
@@ -705,4 +723,9 @@
   color: #fff;
   border: 2px solid hsl(0, 0%, 13%);
   z-index: 1;
+
+  /* Offset pin badge when warning badge is also present */
+  &.has-warning {
+    left: 14px;
+  }
 }

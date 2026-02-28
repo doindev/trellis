@@ -27,6 +27,17 @@ public class McpSettingsController {
         return mcpSettingsService.setEnabled(dto.isEnabled());
     }
 
+    @PutMapping("/agent-tools")
+    public McpSettingsDto updateAgentToolsSettings(@RequestBody Map<String, Object> body) {
+        Boolean enabled = body.containsKey("agentToolsEnabled")
+                ? Boolean.TRUE.equals(body.get("agentToolsEnabled")) : null;
+        Boolean dedicated = body.containsKey("agentToolsDedicated")
+                ? Boolean.TRUE.equals(body.get("agentToolsDedicated")) : null;
+        String path = (String) body.get("agentToolsPath");
+        String transport = (String) body.get("agentToolsTransport");
+        return mcpSettingsService.updateAgentToolsSettings(enabled, dedicated, path, transport);
+    }
+
     // --- Endpoints ---
 
     @GetMapping("/endpoints")

@@ -4,15 +4,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter } from 'rxjs';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Table, Plus, Variable, Workflow } from 'lucide-angular';
+import { AgentConsentModalComponent } from './shared/components/agent-consent-modal/agent-consent-modal.component';
+import { AgentControlOverlayComponent } from './shared/components/agent-control-overlay/agent-control-overlay.component';
 import { ProjectService } from './core/services/project.service';
 import { ChatService } from './core/services/chat.service';
+import { AgentControlService, AgentControlRequest } from './core/services/agent-control.service';
 import { Project } from './core/models/project.model';
 import { ChatSession } from './core/models/chat.model';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, AgentConsentModalComponent, AgentControlOverlayComponent],
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Table, Plus, Variable, Workflow }) }],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
@@ -34,8 +37,12 @@ export class AppComponent implements OnInit, OnDestroy {
   creatingProject = false;
   private addDropdownTimer: ReturnType<typeof setTimeout> | null = null;
   private createMenuTimer: ReturnType<typeof setTimeout> | null = null;
+  agentRequest: AgentControlRequest | null = null;
+  agentSessionActive = false;
   private recentlyFocused = false;
   private routerSub?: Subscription;
+  private agentSub?: Subscription;
+  private agentSessionSub?: Subscription;
 
   @HostListener('window:focus')
   onWindowFocus(): void {
@@ -53,7 +60,12 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  constructor(private router: Router, private projectService: ProjectService, private chatService: ChatService) {}
+  constructor(
+    private router: Router,
+    private projectService: ProjectService,
+    private chatService: ChatService,
+    private agentControlService: AgentControlService
+  ) {}
 
   ngOnInit(): void {
     this.loadProjects();
@@ -62,6 +74,15 @@ export class AppComponent implements OnInit, OnDestroy {
       filter((e): e is NavigationEnd => e instanceof NavigationEnd)
     ).subscribe(e => {
       this.updateModes(e.urlAfterRedirects);
+    });
+
+    // Start listening for agent control requests
+    this.agentControlService.startListening();
+    this.agentSub = this.agentControlService.controlRequest$.subscribe(req => {
+      this.agentRequest = req;
+    });
+    this.agentSessionSub = this.agentControlService.isSessionActive$.subscribe(active => {
+      this.agentSessionActive = active;
     });
   }
 
@@ -76,6 +97,26 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routerSub?.unsubscribe();
+    this.agentSub?.unsubscribe();
+    this.agentSessionSub?.unsubscribe();
+  }
+
+  onAgentAllow(): void {
+    if (this.agentRequest) {
+      this.agentControlService.approveRequest(this.agentRequest);
+      this.agentRequest = null;
+    }
+  }
+
+  onAgentDeny(): void {
+    if (this.agentRequest) {
+      this.agentControlService.denyRequest(this.agentRequest);
+      this.agentRequest = null;
+    }
+  }
+
+  onAgentStop(): void {
+    this.agentControlService.revokeControl();
   }
 
   loadProjects(): void {

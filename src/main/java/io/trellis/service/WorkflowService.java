@@ -4,7 +4,10 @@ import io.trellis.dto.*;
 import io.trellis.entity.TagEntity;
 import io.trellis.entity.WorkflowEntity;
 import io.trellis.entity.WorkflowVersionEntity;
+import io.trellis.exception.BadRequestException;
 import io.trellis.exception.NotFoundException;
+import io.trellis.nodes.core.NodeParameter;
+import io.trellis.nodes.core.NodeRegistry;
 import io.trellis.repository.TagRepository;
 import io.trellis.repository.WorkflowRepository;
 import io.trellis.repository.WorkflowVersionRepository;
@@ -14,8 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -27,6 +32,7 @@ public class WorkflowService {
     private final WorkflowVersionRepository workflowVersionRepository;
     private final WebhookService webhookService;
     private final TagRepository tagRepository;
+    private final NodeRegistry nodeRegistry;
 
     @Transactional(readOnly = true)
     public List<WorkflowResponse> listWorkflows() {
@@ -99,6 +105,7 @@ public class WorkflowService {
     @Transactional
     public WorkflowResponse publishWorkflow(String id, PublishWorkflowRequest request) {
         WorkflowEntity entity = findById(id);
+        validateNodesForPublish(entity);
         int newVersion = entity.getCurrentVersion() + 1;
 
         String versionName = request.getVersionName();
@@ -211,6 +218,73 @@ public class WorkflowService {
         if (entity.isSwaggerEnabled()) {
             entity.setSwaggerEnabled(false);
             tagRepository.findByName("swagger").ifPresent(tag -> entity.getTags().remove(tag));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateNodesForPublish(WorkflowEntity entity) {
+        Object nodesObj = entity.getNodes();
+        if (!(nodesObj instanceof List<?> nodeList) || nodeList.isEmpty()) return;
+
+        List<String> errors = new ArrayList<>();
+        for (Object item : nodeList) {
+            if (!(item instanceof Map<?, ?> nodeMap)) continue;
+            String nodeType = (String) nodeMap.get("type");
+            String nodeName = (String) nodeMap.get("name");
+            if (nodeType == null) continue;
+
+            var reg = nodeRegistry.getNode(nodeType).orElse(null);
+            if (reg == null) continue;
+
+            // Check credentials
+            Map<String, Object> credentials = (Map<String, Object>) nodeMap.get("credentials");
+            for (String credType : reg.getCredentials()) {
+                if (credentials == null || !credentials.containsKey(credType)
+                        || credentials.get(credType) == null || credentials.get(credType).toString().isBlank()) {
+                    errors.add(nodeName + ": missing credential '" + credType + "'");
+                }
+            }
+
+            // Check required parameters
+            Map<String, Object> params = (Map<String, Object>) nodeMap.get("parameters");
+            if (params == null) params = Map.of();
+            for (NodeParameter param : reg.getParameters()) {
+                if (!param.isRequired()) continue;
+                if (param.getDefaultValue() != null && !"".equals(param.getDefaultValue())) continue;
+
+                // Check displayOptions.show conditions
+                if (param.getDisplayOptions() != null) {
+                    Object showObj = param.getDisplayOptions().get("show");
+                    if (showObj instanceof Map<?, ?> showMap) {
+                        boolean conditionsMet = true;
+                        for (Map.Entry<?, ?> entry : showMap.entrySet()) {
+                            Object currentVal = params.get(entry.getKey());
+                            Object allowed = entry.getValue();
+                            if (allowed instanceof List<?> allowedList) {
+                                if (!allowedList.contains(currentVal)) {
+                                    conditionsMet = false;
+                                    break;
+                                }
+                            } else {
+                                if (!java.util.Objects.equals(currentVal, allowed)) {
+                                    conditionsMet = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!conditionsMet) continue;
+                    }
+                }
+
+                Object value = params.get(param.getName());
+                if (value == null || value.toString().isBlank()) {
+                    errors.add(nodeName + ": missing required parameter '" + param.getDisplayName() + "'");
+                }
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            throw new BadRequestException("Workflow has validation errors: " + String.join("; ", errors));
         }
     }
 

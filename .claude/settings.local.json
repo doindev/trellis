@@ -115,7 +115,16 @@
       "Bash(npm run build:*)",
       "Bash(mvn dependency:resolve:*)",
       "Bash(tr:*)",
-      "Bash(jar -tf:*)"
+      "Bash(jar -tf:*)",
+      "mcp__trellis-agent__trellis_workflow_guide",
+      "mcp__trellis-agent__trellis_get_node_type",
+      "mcp__trellis-agent__trellis_push_to_canvas",
+      "mcp__trellis-agent__trellis_list_node_types",
+      "mcp__trellis-agent__trellis_create_workflow",
+      "mcp__trellis-agent__trellis_browser_control",
+      "mcp__trellis-agent__trellis_get_workflow",
+      "mcp__trellis-agent__trellis_update_workflow",
+      "mcp__trellis-agent__trellis_list_workflows"
     ]
   }
 }

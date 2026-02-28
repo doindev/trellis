@@ -13,5 +13,10 @@ import java.util.List;
 @AllArgsConstructor
 public class McpSettingsDto {
     private boolean enabled;
+    private boolean agentToolsEnabled;
+    private boolean agentToolsDedicated;
+    private String agentToolsPath;
+    private String agentToolsTransport;
+    private String agentToolsUrl;
     private List<McpEndpointDto> endpoints;
 }

@@ -19,6 +19,7 @@ interface TrellisNodeData {
   disabled?: boolean;
   isPinned?: boolean;
   readOnly?: boolean;
+  validationWarnings?: string[];
   onOutputHandleDoubleClick?: (handleId: string) => void;
   [key: string]: unknown;
 }
@@ -166,8 +167,16 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
         </div>
       )}
 
+      {!status && data.validationWarnings && data.validationWarnings.length > 0 && (
+        <div className="node-warning-badge" title={data.validationWarnings.join('\n')}>
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+          </svg>
+        </div>
+      )}
+
       {data.isPinned && (
-        <div className="node-pin-badge" title="Output data is pinned">
+        <div className={`node-pin-badge${!status && data.validationWarnings && data.validationWarnings.length > 0 ? ' has-warning' : ''}`} title="Output data is pinned">
           <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" stroke="none">
             <path d="M12 2c-.5 0-1 .19-1.41.59L8.59 4.59 4.59 8.59C4.19 8.99 4 9.5 4 10c0 1.1.9 2 2 2h3l-3 8h2l3-8v6h2v-6l3 8h2l-3-8h3c1.1 0 2-.9 2-2 0-.5-.19-1-.59-1.41L16.41 4.59 14.41 2.59C14 2.19 13.5 2 13 2h-1z"/>
           </svg>
