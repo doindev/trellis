@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgentControlRequest } from '../../../core/services/agent-control.service';
 
@@ -8,7 +8,7 @@ import { AgentControlRequest } from '../../../core/services/agent-control.servic
   imports: [CommonModule],
   template: `
     @if (request) {
-      <div class="acm-overlay" (click)="onDeny()">
+      <div class="acm-overlay">
         <div class="acm-dialog" (click)="$event.stopPropagation()">
           <div class="acm-header">
             <div class="acm-icon">
@@ -36,7 +36,7 @@ import { AgentControlRequest } from '../../../core/services/agent-control.servic
           </div>
           <div class="acm-footer">
             <button class="acm-btn acm-btn-deny" (click)="onDeny()">Deny</button>
-            <button class="acm-btn acm-btn-allow" (click)="onAllow()">Allow</button>
+            <button #allowBtn class="acm-btn acm-btn-allow" (click)="onAllow()">Allow</button>
           </div>
         </div>
       </div>
@@ -158,10 +158,12 @@ import { AgentControlRequest } from '../../../core/services/agent-control.servic
     }
   `]
 })
-export class AgentConsentModalComponent implements OnInit, OnDestroy {
+export class AgentConsentModalComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() request: AgentControlRequest | null = null;
   @Output() allow = new EventEmitter<void>();
   @Output() deny = new EventEmitter<void>();
+
+  @ViewChild('allowBtn') allowBtn!: ElementRef<HTMLButtonElement>;
 
   countdown = 60;
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -184,6 +186,10 @@ export class AgentConsentModalComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.startTimer();
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => this.allowBtn?.nativeElement?.focus(), 0);
   }
 
   ngOnDestroy(): void {
