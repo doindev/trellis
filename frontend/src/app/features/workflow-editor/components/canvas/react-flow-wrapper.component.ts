@@ -180,17 +180,18 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     if (!this.workflow?.nodes) return [];
 
     return this.workflow.nodes.map((node) => {
+      const nodeId = node.id || node.name;
       const typeDesc = this.nodeTypeMap.get(node.type);
       const isTrigger = typeDesc?.isTrigger || false;
-      const execData = this.executionData?.[node.id];
+      const execData = this.executionData?.[nodeId];
       // execData is an array like [{ status, data, ... }] from runData
       const execEntry = Array.isArray(execData) ? execData[0] : execData;
 
       return {
-        id: node.id,
+        id: nodeId,
         type: isTrigger ? 'trellisTriggerNode' : 'trellisNode',
         position: { x: node.position[0], y: node.position[1] },
-        selected: node.id === this.selectedNodeId,
+        selected: nodeId === this.selectedNodeId,
         data: {
           label: node.name,
           nodeType: node.type,
@@ -206,7 +207,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
           executionStatus: execEntry?.status,
           itemCount: execEntry?.itemCount,
           disabled: node.disabled,
-          isPinned: !!(this.workflow?.pinData?.[node.id]),
+          isPinned: !!(this.workflow?.pinData?.[nodeId]),
           readOnly: this.readOnly,
           validationWarnings: typeDesc ? this.computeNodeWarnings(node, typeDesc) : [],
         },
@@ -323,7 +324,9 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     if (node.type === 'switch') {
       const mode = node.parameters?.['mode'] || 'rules';
       if (mode === 'rules') {
-        const rules = (node.parameters?.['rules'] as any[]) || [];
+        const rulesParam = node.parameters?.['rules'];
+        const rules: any[] = Array.isArray(rulesParam) ? rulesParam
+          : (rulesParam as any)?.values || [];
         const outputs = rules.map((rule: any, i: number) => ({
           name: `output${i}`,
           displayName: rule?.outputLabel || `Output ${i}`,

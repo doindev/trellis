@@ -1,0 +1,354 @@
+{
+  "id": "cnLc6kWiJx6dVEKjoWSx6",
+  "name": "AI Company Research & Outreach Pipeline",
+  "description": "Receives a company name/domain via webhook, uses an AI Agent (Claude Sonnet) to research the company, validates output through content guardrails, classifies the company type (Enterprise/SMB/Startup), then routes to specialized AI agents/chains to draft personalized outreach emails. 24 nodes total with 3 AI agents, 6 Anthropic chat models, guardrails, switch routing, and webhook response.",
+  "published": false,
+  "currentVersion": 0,
+  "nodes": [
+    {
+      "name": "Webhook",
+      "type": "webhook",
+      "position": [0, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-research",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "name": "Normalize Input",
+      "type": "set",
+      "position": [300, 300],
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            { "name": "company", "value": "={{$json.company}}", "type": "string" },
+            { "name": "domain", "value": "={{$json.domain}}", "type": "string" },
+            { "name": "notes", "value": "={{$json.notes || ''}}", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Fetch Website",
+      "type": "httpRequest",
+      "position": [600, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{`https://${$json.domain}`}}",
+        "options": {
+          "timeout": 10000,
+          "neverError": true,
+          "responseFormat": "text"
+        }
+      }
+    },
+    {
+      "name": "Research Agent",
+      "type": "aiAgent",
+      "position": [900, 300],
+      "parameters": {
+        "systemMessage": "You are a B2B company research analyst. Given a company name, domain, and optionally their website content, produce a detailed research brief covering:\n- Company overview and what they do\n- Industry and market segment\n- Estimated company size (Enterprise: 1000+, SMB: 50-999, Startup: <50)\n- Key products/services\n- Recent news or developments\n- Potential pain points\n- Decision makers to target\n\nAlways classify the company as one of: enterprise, smb, startup",
+        "prompt": "Research this company:\nCompany: {{company}}\nDomain: {{domain}}\nNotes: {{notes}}\n\nWebsite content (if available):\n{{data}}",
+        "maxIterations": 5
+      }
+    },
+    {
+      "name": "Claude Sonnet (Research)",
+      "type": "anthropicChatModel",
+      "position": [800, 560],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.3,
+        "maxTokens": 2048
+      },
+      "credentials": { "anthropicApi": "" }
+    },
+    {
+      "name": "Think (Research)",
+      "type": "toolThink",
+      "position": [1000, 560],
+      "parameters": {}
+    },
+    {
+      "name": "Parse Research",
+      "type": "code",
+      "position": [1200, 300],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\nconst result = [];\nfor (const item of items) {\n  const text = item.json.output || item.json.text || JSON.stringify(item.json);\n  const sizeMatch = text.match(/\\b(enterprise|smb|startup)\\b/i);\n  const category = sizeMatch ? sizeMatch[1].toLowerCase() : 'smb';\n  result.push({\n    json: {\n      ...item.json,\n      research: text,\n      category: category,\n      timestamp: new Date().toISOString()\n    }\n  });\n}\nreturn result;"
+      }
+    },
+    {
+      "name": "Content Guardrails",
+      "type": "guardrails",
+      "position": [1500, 300],
+      "parameters": {
+        "operation": "classify",
+        "text": "={{$json.research}}",
+        "enablePii": true,
+        "piiType": "all",
+        "enableSecretKeys": true,
+        "enableJailbreak": true,
+        "jailbreakThreshold": 0.8
+      }
+    },
+    {
+      "name": "Claude Haiku (Guardrails)",
+      "type": "anthropicChatModel",
+      "position": [1500, 560],
+      "parameters": {
+        "model": "claude-3-5-haiku-20241022",
+        "temperature": 0.1,
+        "maxTokens": 512
+      },
+      "credentials": { "anthropicApi": "" }
+    },
+    {
+      "name": "Error Response",
+      "type": "set",
+      "position": [1800, 60],
+      "parameters": {
+        "mode": "raw",
+        "rawJson": "{ \"status\": \"error\", \"message\": \"Content guardrails detected issues with the research output. Please review manually.\", \"flagged\": true }"
+      }
+    },
+    {
+      "name": "Error Reply",
+      "type": "respondToWebhook",
+      "position": [2100, 60],
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": { "responseCode": 422 }
+      }
+    },
+    {
+      "name": "Classify Company",
+      "type": "basicLlmChain",
+      "position": [1800, 300],
+      "parameters": {
+        "prompt": "Based on the following company research, classify the company into exactly one category. Respond with ONLY one word: enterprise, smb, or startup.\n\nResearch:\n{{research}}\n\nPrevious classification hint: {{category}}\n\nCategory:",
+        "systemMessage": "You are a company classifier. Respond with exactly one word: enterprise, smb, or startup. Nothing else."
+      }
+    },
+    {
+      "name": "Claude Haiku (Classifier)",
+      "type": "anthropicChatModel",
+      "position": [1800, 560],
+      "parameters": {
+        "model": "claude-3-5-haiku-20241022",
+        "temperature": 0,
+        "maxTokens": 10
+      },
+      "credentials": { "anthropicApi": "" }
+    },
+    {
+      "name": "Route by Type",
+      "type": "switch",
+      "position": [2100, 300],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            { "value1": "json.output", "operation": "contains", "value2": "enterprise", "outputLabel": "Enterprise" },
+            { "value1": "json.output", "operation": "contains", "value2": "smb", "outputLabel": "SMB" },
+            { "value1": "json.output", "operation": "contains", "value2": "startup", "outputLabel": "Startup" }
+          ]
+        },
+        "fallbackOutput": "extra"
+      }
+    },
+    {
+      "name": "Enterprise Outreach",
+      "type": "aiAgent",
+      "position": [2450, 40],
+      "parameters": {
+        "systemMessage": "You are an expert B2B sales copywriter specializing in enterprise accounts. Draft a professional, executive-level outreach email that:\n- References specific company details from the research\n- Highlights enterprise-relevant value propositions (scalability, security, compliance, ROI)\n- Uses a consultative tone appropriate for C-suite/VP-level decision makers\n- Includes a clear call-to-action for a discovery call\n- Keeps the email under 200 words",
+        "prompt": "Draft an enterprise outreach email for:\n\nResearch: {{research}}\nCompany: {{company}}\nDomain: {{domain}}",
+        "maxIterations": 3
+      }
+    },
+    {
+      "name": "Claude Sonnet (Enterprise)",
+      "type": "anthropicChatModel",
+      "position": [2350, -220],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.7,
+        "maxTokens": 1024
+      },
+      "credentials": { "anthropicApi": "" }
+    },
+    {
+      "name": "Think (Enterprise)",
+      "type": "toolThink",
+      "position": [2550, -220],
+      "parameters": {}
+    },
+    {
+      "name": "SMB Outreach",
+      "type": "basicLlmChain",
+      "position": [2450, 300],
+      "parameters": {
+        "prompt": "Draft a friendly, concise outreach email for an SMB company.\n\nResearch: {{research}}\nCompany: {{company}}\nDomain: {{domain}}\n\nThe email should:\n- Be warm and approachable\n- Focus on quick wins and ease of implementation\n- Mention cost-effectiveness\n- Include a soft CTA for a demo\n- Be under 150 words",
+        "systemMessage": "You are a B2B sales copywriter for SMB accounts. Be friendly, concise, and focus on practical value."
+      }
+    },
+    {
+      "name": "Claude Haiku (SMB)",
+      "type": "anthropicChatModel",
+      "position": [2450, 540],
+      "parameters": {
+        "model": "claude-3-5-haiku-20241022",
+        "temperature": 0.7,
+        "maxTokens": 1024
+      },
+      "credentials": { "anthropicApi": "" }
+    },
+    {
+      "name": "Startup Outreach",
+      "type": "basicLlmChain",
+      "position": [2450, 700],
+      "parameters": {
+        "prompt": "Draft a casual, exciting outreach email for a startup.\n\nResearch: {{research}}\nCompany: {{company}}\nDomain: {{domain}}\n\nThe email should:\n- Be energetic and informal\n- Focus on growth, speed, and innovation\n- Mention startup-friendly pricing or free tier\n- Reference their specific product/mission\n- Include a CTA to chat or try the product\n- Be under 120 words",
+        "systemMessage": "You are a B2B outreach specialist for startups. Be casual, energetic, and focus on growth potential."
+      }
+    },
+    {
+      "name": "Claude Haiku (Startup)",
+      "type": "anthropicChatModel",
+      "position": [2450, 940],
+      "parameters": {
+        "model": "claude-3-5-haiku-20241022",
+        "temperature": 0.8,
+        "maxTokens": 1024
+      },
+      "credentials": { "anthropicApi": "" }
+    },
+    {
+      "name": "Quality Check",
+      "type": "filter",
+      "position": [2800, 300],
+      "parameters": {
+        "conditions": {
+          "values": [
+            { "value1": "json.output", "operation": "isNotEmpty" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Format Output",
+      "type": "set",
+      "position": [3100, 300],
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            { "name": "status", "value": "success", "type": "string" },
+            { "name": "email_draft", "value": "={{$json.output || $json.text}}", "type": "string" },
+            { "name": "company", "value": "={{$json.company}}", "type": "string" },
+            { "name": "category", "value": "={{$json.category}}", "type": "string" },
+            { "name": "research_summary", "value": "={{$json.research}}", "type": "string" },
+            { "name": "generated_at", "value": "={{new Date().toISOString()}}", "type": "string" }
+          ]
+        },
+        "includeOtherFields": false
+      }
+    },
+    {
+      "name": "Send Response",
+      "type": "respondToWebhook",
+      "position": [3400, 300],
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": { "responseCode": 200 }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Normalize Input", "type": "main", "index": 0 }]]
+    },
+    "Normalize Input": {
+      "main": [[{ "node": "Fetch Website", "type": "main", "index": 0 }]]
+    },
+    "Fetch Website": {
+      "main": [[{ "node": "Research Agent", "type": "main", "index": 0 }]]
+    },
+    "Claude Sonnet (Research)": {
+      "ai_languageModel": [[{ "node": "Research Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Think (Research)": {
+      "ai_tool": [[{ "node": "Research Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Research Agent": {
+      "main": [[{ "node": "Parse Research", "type": "main", "index": 0 }]]
+    },
+    "Parse Research": {
+      "main": [[{ "node": "Content Guardrails", "type": "main", "index": 0 }]]
+    },
+    "Claude Haiku (Guardrails)": {
+      "ai_languageModel": [[{ "node": "Content Guardrails", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Content Guardrails": {
+      "main": [
+        [{ "node": "Classify Company", "type": "main", "index": 0 }],
+        [{ "node": "Error Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Response": {
+      "main": [[{ "node": "Error Reply", "type": "main", "index": 0 }]]
+    },
+    "Claude Haiku (Classifier)": {
+      "ai_languageModel": [[{ "node": "Classify Company", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Classify Company": {
+      "main": [[{ "node": "Route by Type", "type": "main", "index": 0 }]]
+    },
+    "Route by Type": {
+      "main": [
+        [{ "node": "Enterprise Outreach", "type": "main", "index": 0 }],
+        [{ "node": "SMB Outreach", "type": "main", "index": 0 }],
+        [{ "node": "Startup Outreach", "type": "main", "index": 0 }],
+        [{ "node": "Quality Check", "type": "main", "index": 0 }]
+      ]
+    },
+    "Claude Sonnet (Enterprise)": {
+      "ai_languageModel": [[{ "node": "Enterprise Outreach", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Think (Enterprise)": {
+      "ai_tool": [[{ "node": "Enterprise Outreach", "type": "ai_tool", "index": 0 }]]
+    },
+    "Enterprise Outreach": {
+      "main": [[{ "node": "Quality Check", "type": "main", "index": 0 }]]
+    },
+    "Claude Haiku (SMB)": {
+      "ai_languageModel": [[{ "node": "SMB Outreach", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "SMB Outreach": {
+      "main": [[{ "node": "Quality Check", "type": "main", "index": 0 }]]
+    },
+    "Claude Haiku (Startup)": {
+      "ai_languageModel": [[{ "node": "Startup Outreach", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Startup Outreach": {
+      "main": [[{ "node": "Quality Check", "type": "main", "index": 0 }]]
+    },
+    "Quality Check": {
+      "main": [
+        [{ "node": "Format Output", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Format Output": {
+      "main": [[{ "node": "Send Response", "type": "main", "index": 0 }]]
+    }
+  },
+  "mcpEnabled": false,
+  "swaggerEnabled": false,
+  "createdAt": "2026-02-28T19:44:02.766911Z",
+  "updatedAt": "2026-02-28T19:44:02.766911Z"
+}

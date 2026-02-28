@@ -61,7 +61,7 @@ public class WorkflowService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .projectId(request.getProjectId())
-                .nodes(request.getNodes())
+                .nodes(ensureNodeIds(request.getNodes()))
                 .connections(request.getConnections())
                 .settings(request.getSettings())
                 .build();
@@ -73,7 +73,7 @@ public class WorkflowService {
         WorkflowEntity entity = findById(id);
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
-        if (request.getNodes() != null) entity.setNodes(request.getNodes());
+        if (request.getNodes() != null) entity.setNodes(ensureNodeIds(request.getNodes()));
         if (request.getConnections() != null) entity.setConnections(request.getConnections());
         if (request.getSettings() != null) entity.setSettings(request.getSettings());
         if (request.getStaticData() != null) entity.setStaticData(request.getStaticData());
@@ -212,6 +212,27 @@ public class WorkflowService {
         }
         entity.setTags(tags);
         return toResponse(workflowRepository.save(entity));
+    }
+
+    /**
+     * Ensures every node in the list has an "id" field. If a node is missing "id",
+     * its "name" is used as the id (matching name-based connection references).
+     */
+    @SuppressWarnings("unchecked")
+    private Object ensureNodeIds(Object nodesObj) {
+        if (!(nodesObj instanceof List<?> nodeList)) return nodesObj;
+        for (Object item : nodeList) {
+            if (item instanceof Map<?, ?> nodeMap) {
+                Map<String, Object> mutable = (Map<String, Object>) nodeMap;
+                if (mutable.get("id") == null || mutable.get("id").toString().isBlank()) {
+                    String name = (String) mutable.get("name");
+                    if (name != null) {
+                        mutable.put("id", name);
+                    }
+                }
+            }
+        }
+        return nodesObj;
     }
 
     private void disableSwaggerAccess(WorkflowEntity entity) {

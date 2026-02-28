@@ -49,8 +49,8 @@ public class FilterNode extends AbstractNode {
 	@Override
 	public List<NodeOutput> getOutputs() {
 		return List.of(
-			NodeOutput.builder().name("kept").displayName("Kept").build(),
-			NodeOutput.builder().name("discarded").displayName("Discarded").build()
+			NodeOutput.builder().name("kept").displayName("kept").build(),
+			NodeOutput.builder().name("discarded").displayName("discarded").build()
 		);
 	}
 

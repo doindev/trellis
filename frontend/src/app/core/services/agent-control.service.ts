@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Subject } from 'rxjs';
@@ -24,7 +24,8 @@ export class AgentControlService implements OnDestroy {
   constructor(
     private wsService: WebSocketService,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private ngZone: NgZone
   ) {}
 
   private agentControlTopic = '';
@@ -37,17 +38,19 @@ export class AgentControlService implements OnDestroy {
     const sessionId = this.wsService.getBrowserSessionId();
     this.agentControlTopic = `/topic/agent-control/${sessionId}`;
     this.wsService.subscribe(this.agentControlTopic, (msg) => {
-      const data = JSON.parse(msg.body);
-      if (data.event === 'toolConsentRequest') {
-        this.controlRequests$.next({
-          requestId: data.requestId,
-          toolName: data.toolName,
-          description: data.description,
-          arguments: data.arguments
-        });
-      } else if (data.event === 'browserAction') {
-        this.executeBrowserAction(data);
-      }
+      this.ngZone.run(() => {
+        const data = JSON.parse(msg.body);
+        if (data.event === 'toolConsentRequest') {
+          this.controlRequests$.next({
+            requestId: data.requestId,
+            toolName: data.toolName,
+            description: data.description,
+            arguments: data.arguments
+          });
+        } else if (data.event === 'browserAction') {
+          this.executeBrowserAction(data);
+        }
+      });
     });
   }
 
