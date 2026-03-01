@@ -85,6 +85,13 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   // Analytics
   'datadog': <><circle cx="12" cy="12" r="10" /><circle cx="9" cy="10" r="1.5" /><circle cx="15" cy="10" r="1.5" /><path d="M8 15c1.5 2 6.5 2 8 0" /></>,
 
+  // Brand nodes
+  'jenkins': <><circle cx="12" cy="12" r="10" /><path d="M15 7v6a3 3 0 1 1-6 0" /></>,
+  'currents': <><path d="M2 6c3 0 4 3 7 3s4-3 7-3 4 3 6 3" /><path d="M2 12c3 0 4 3 7 3s4-3 7-3 4 3 6 3" /><path d="M2 18c3 0 4 3 7 3s4-3 7-3 4 3 6 3" /></>,
+  'jira': <><path d="M12 2L2 12l4 4 6-6 6 6 4-4L12 2z" /><path d="M6 16l6 6 6-6" /></>,
+  'taiga': <><path d="M12 2L6 10h4l-4 6h12l-4-6h4L12 2z" /><path d="M12 16v6" /></>,
+  'disqus': <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><path d="M10 7h1a3 3 0 0 1 0 6h-1V7z" /></>,
+
   // --- New standard Lucide icons ---
 
   'mail': <><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></>,
@@ -449,8 +456,6 @@ const ICON_ALIASES: Record<string, string> = {
   'linkedIn': 'share-2',
   'twitter': 'at-sign',
   'reddit': 'message-circle',
-  'disqus': 'message-circle',
-
   // AI → brain
   'cortex': 'brain',
   'jinaAi': 'brain',
@@ -494,8 +499,9 @@ const ICON_ALIASES: Record<string, string> = {
   'uptimeRobot': 'activity',
   'workable': 'briefcase',
   'ghost': 'file-text',
-  'jenkins': 'wrench',
-  'taiga': 'clipboard-list',
+  'currentsTrigger': 'currents',
+  'jiraTrigger': 'jira',
+  'taigaTrigger': 'taiga',
 };
 
 export function NodeIcon({ name, size = 16 }: { name: string; size?: number }) {

@@ -133,6 +133,32 @@ const Signpost: LucideIconData = [
   ['path', { d: 'M12 12H5l-2 2 2 2h7z' }],
 ];
 
+const Jenkins: LucideIconData = [
+  ['circle', { cx: '12', cy: '12', r: '10' }],
+  ['path', { d: 'M15 7v6a3 3 0 1 1-6 0' }],
+];
+
+const Currents: LucideIconData = [
+  ['path', { d: 'M2 6c3 0 4 3 7 3s4-3 7-3 4 3 6 3' }],
+  ['path', { d: 'M2 12c3 0 4 3 7 3s4-3 7-3 4 3 6 3' }],
+  ['path', { d: 'M2 18c3 0 4 3 7 3s4-3 7-3 4 3 6 3' }],
+];
+
+const Jira: LucideIconData = [
+  ['path', { d: 'M12 2L2 12l4 4 6-6 6 6 4-4L12 2z' }],
+  ['path', { d: 'M6 16l6 6 6-6' }],
+];
+
+const Taiga: LucideIconData = [
+  ['path', { d: 'M12 2L6 10h4l-4 6h12l-4-6h4L12 2z' }],
+  ['path', { d: 'M12 16v6' }],
+];
+
+const Disqus: LucideIconData = [
+  ['path', { d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' }],
+  ['path', { d: 'M10 7h1a3 3 0 0 1 0 6h-1V7z' }],
+];
+
 // ---------------------------------------------------------------------------
 // All icons used as node icons across the application.
 // Includes standard Lucide icons, custom brand icons, and brand aliases.
@@ -231,6 +257,11 @@ export const NODE_ICON_SET = {
   BalanceScale,
   Datadog,
   Signpost,
+  Jenkins,
+  Currents,
+  Jira,
+  Taiga,
+  Disqus,
   Postgres,
   Mysql,
   Oracle,
@@ -412,6 +443,9 @@ export const NODE_ICON_SET = {
   // =======================================================================
   CircleCi: RefreshCw,
   TravisCi: RefreshCw,
+  CurrentsTrigger: Currents,
+  JiraTrigger: Jira,
+  TaigaTrigger: Taiga,
 
   // =======================================================================
   // Support / Helpdesk  (→ LifeBuoy)
