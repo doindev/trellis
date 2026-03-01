@@ -372,7 +372,14 @@
               <div class="param-group">
                 @switch (param.type) {
                   @case ('string') {
-                    @if (param.name === 'model' && nodeType?.credentials?.length) {
+                    @if (param.name === 'cacheName' && node.parameters['cacheSource'] !== undefined) {
+                      <app-cache-name-param
+                        [param]="param"
+                        [value]="getParameterValue(param.name, param.defaultValue)"
+                        [readOnly]="readOnly"
+                        [cacheSource]="node.parameters['cacheSource'] ?? 'select'"
+                        (valueChange)="onParameterChange(param.name, $event)" />
+                    } @else if (param.name === 'model' && nodeType?.credentials?.length) {
                       <app-model-param
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
@@ -683,6 +690,17 @@
           <div class="pinned-banner">
             <lucide-icon name="pin" [size]="13"></lucide-icon>
             <span>Output data is pinned. This node will be skipped during execution.</span>
+          </div>
+        }
+        @if (isMultiOutput && hasOutputData) {
+          <div class="output-tabs">
+            @for (name of mainOutputNames; track $index) {
+              <button class="output-tab" [class.active]="selectedOutputIndex === $index"
+                      (click)="selectedOutputIndex = $index">
+                {{ name }}
+                <span class="output-tab-count">{{ outputSlotCounts[$index] || 0 }}</span>
+              </button>
+            }
           </div>
         }
         <div class="column-body">

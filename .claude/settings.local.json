@@ -126,7 +126,10 @@
       "mcp__trellis-agent__trellis_update_workflow",
       "mcp__trellis-agent__trellis_list_workflows",
       "Bash(paste:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(del:*)",
+      "mcp__trellis-agent__trellis_list_executions",
+      "mcp__trellis-agent__trellis_get_execution"
     ]
   }
 }

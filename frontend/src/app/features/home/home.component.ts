@@ -8,7 +8,8 @@ import { WorkflowCardComponent } from '../../shared/components/workflow-card/wor
 import { VariableListComponent } from '../variables/variable-list.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CredentialCreateModalComponent } from '../../shared/components/credential-create-modal/credential-create-modal.component';
-import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Folder, Table } from 'lucide-angular';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Folder, Layers } from 'lucide-angular';
+import { CacheListComponent } from '../cache/cache-list.component';
 import {
   ExecutionFilterModalComponent,
   ExecutionFilters,
@@ -29,16 +30,17 @@ import {
     ConfirmDialogComponent,
     CredentialCreateModalComponent,
     LucideAngularModule,
-    ExecutionFilterModalComponent
+    ExecutionFilterModalComponent,
+    CacheListComponent
   ],
-  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Folder, Table }) }],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Folder, Layers }) }],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit {
   @ViewChild('credModal') credModal!: CredentialCreateModalComponent;
 
-  activeTab = signal<'workflows' | 'credentials' | 'executions' | 'variables' | 'datatables'>('workflows');
+  activeTab = signal<'workflows' | 'credentials' | 'executions' | 'variables' | 'caches'>('workflows');
 
   // Workflow state
   workflows = signal<Workflow[]>([]);
@@ -211,7 +213,7 @@ export class HomeComponent implements OnInit {
   ngOnInit(): void {
     // Set active tab from route param
     const tabFromRoute = this.route.snapshot.paramMap.get('tab');
-    if (tabFromRoute && ['workflows', 'credentials', 'executions', 'variables', 'datatables'].includes(tabFromRoute)) {
+    if (tabFromRoute && ['workflows', 'credentials', 'executions', 'variables', 'caches'].includes(tabFromRoute)) {
       this.activeTab.set(tabFromRoute as any);
     }
 
@@ -229,7 +231,7 @@ export class HomeComponent implements OnInit {
     this.loadProjects();
   }
 
-  setTab(tab: 'workflows' | 'credentials' | 'executions' | 'variables' | 'datatables'): void {
+  setTab(tab: 'workflows' | 'credentials' | 'executions' | 'variables' | 'caches'): void {
     this.activeTab.set(tab);
     this.router.navigate(['/home', tab]);
   }
@@ -404,8 +406,8 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/home/folders']);
   }
 
-  createDataTable(): void {
-    this.router.navigate(['/home/data-tables']);
+  createCache(): void {
+    this.router.navigate(['/home/caches']);
   }
 
   // Credential methods

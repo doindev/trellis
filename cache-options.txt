@@ -1,0 +1,132 @@
+Option A: Cache as a Sub-Node (AI Handle Pattern)
+                                                                                                                                                                How it works: Create a new connection type cache (like the existing ai_* types). Nodes that support caching declare a cache input handle on their bottom
+  edge. A new CacheNode sub-node connects to it and supplies a configured Cache<String, Object> instance via supplyData(). The parent node checks for a
+  supplied cache before making its external call.
+
+  Implementation:
+  - New cache handle type in NodeInput/NodeOutput enums
+  - New CacheNode implements AiSubNodeInterface.supplyData() — returns a Caffeine Cache instance
+  - Parent nodes (HttpRequest, Postgres, etc.) check context.getAiInputData("cache") before calling externally
+  - Cache node parameters: TTL, max size, key strategy (auto/custom expression), eviction policy
+  - Reusable cache definitions stored as entities (like credentials) — selectable in Cache node or inline config
+  - Frontend: new cache handle color/label in AI_HANDLE_STYLES, renders at bottom of supported nodes
+
+  Benefits:
+  - Follows existing sub-node architecture exactly — no engine changes
+  - Visual — you can see which nodes have caching attached on the canvas
+  - Per-node cache configuration (different TTL for HTTP vs DB)
+  - Cache instances persist in a global CacheRegistry Spring bean beyond execution lifetime
+  - Custom cache keys via expression parameter
+
+  Drawbacks:
+  - User must manually attach a Cache node to each node they want cached
+  - Adds visual clutter if many nodes need caching
+
+  ---
+  Option B: Cache as a Built-in Node Parameter
+
+  How it works: Add optional caching parameters directly to nodes that make external calls (HttpRequest, Postgres, MySQL, etc.). Each node gets a "Caching"
+  parameter section with enable/disable toggle, TTL, max entries, key strategy. A global CacheRegistryService manages named Caffeine caches. Nodes call
+  cacheRegistry.get(cacheName) in their execute() methods.
+
+  Implementation:
+  - New CacheRegistryService Spring bean — Map<String, Cache<String, Object>> with create/get/evict/list
+  - Add caching parameters to each cacheable node's getParameters() (enable, cacheName, TTL, maxSize, customKey)
+  - In each node's execute(): check cache before external call, store result after
+  - REST endpoints for managing named caches (/api/caches) — replaces data tables UI
+  - Frontend: cache management page replaces data tables tab
+
+  Benefits:
+  - No visual overhead on canvas — caching is a node setting
+  - Simpler UX — just toggle caching on in the node's parameter panel
+  - No sub-node wiring needed
+
+  Drawbacks:
+  - Must modify every cacheable node's code individually
+  - Less visual — can't see at a glance which nodes are cached
+  - Duplicated caching logic across nodes (unless extracted to base class)
+
+  ---
+  Option C: Cache as an Engine-Level Interceptor
+
+  How it works: The WorkflowEngine itself wraps node.execute() with a caching layer. Nodes opt-in by implementing a CacheableNode interface that provides a
+  cache key strategy. The engine checks a global cache before calling execute() and stores results after. Cache configuration lives in the node's parameters
+  or workflow settings.
+
+  Implementation:
+  - New CacheableNode interface: getCacheKey(NodeExecutionContext), getCacheTTL(), isCacheable()
+  - WorkflowEngine.executeNode() checks if (node instanceof CacheableNode) → lookup cache → skip execute if hit
+  - CacheRegistryService holds all named Caffeine caches
+  - Nodes implement CacheableNode and define their key strategy (URL+method+body hash for HTTP, SQL+params hash for DB)
+  - Custom key override via parameter expression
+
+  Benefits:
+  - Zero code changes inside existing node execute() methods
+  - Centralized caching logic — one place to maintain
+  - Automatic — nodes just implement the interface, engine handles the rest
+  - Clean separation of concerns
+
+  Drawbacks:
+  - Caches entire NodeExecutionResult — can't cache at a finer grain (e.g., individual HTTP calls within a loop)
+  - Less flexible for nodes that make multiple external calls in one execute()
+
+  ---
+  Option D: Hybrid — Sub-Node + Engine Interceptor
+
+  How it works: Combines Options A and C. The CacheNode sub-node attaches to the bottom of nodes and provides cache configuration. The engine detects the
+  attached cache node and automatically wraps the parent node's execute() with cache lookup/store. The parent node code doesn't change at all.
+
+  Implementation:
+  - CacheNode sub-node with cache handle type — supplies cache config (not the cache instance directly)
+  - Engine detects cache sub-node connections, extracts config, wraps execute() with cache check
+  - CacheRegistryService manages global named caches
+  - Reusable cache definitions (entities) selectable in Cache node
+  - Custom key expression parameter on Cache node
+  - Frontend: cache handle on supported nodes, cache management page replaces data tables
+
+  Benefits:
+  - Visual — see caching on the canvas
+  - No changes to existing node code
+  - Engine handles all caching logic centrally
+  - Sub-node provides configuration, engine provides execution
+  - Custom cache keys configurable on the Cache node
+
+  Drawbacks:
+  - More complex implementation (both sub-node and engine changes)
+  - Still requires manual attachment per node
+
+  ---
+  Option E: Cache as Middleware Node (Inline)
+
+  How it works: A standalone Cache node sits inline in the workflow (like a regular node with main input/output). You place it before an HTTP Request or DB
+  node. It caches the output of the downstream node based on configurable keys from the input data. On cache hit, it short-circuits and returns cached data
+  without executing downstream.
+
+  Implementation:
+  - CacheNode with 1 main input, 2 main outputs (hit/miss)
+  - On cache miss → data flows to "miss" output (connected to HTTP/DB node) → result loops back
+  - On cache hit → data flows to "hit" output (skips external call)
+  - Parameters: cache name (select from global registry or inline), TTL, max size, key expression
+  - CacheRegistryService for global cache management
+
+  Benefits:
+  - No changes to any existing nodes
+  - No engine changes
+  - Fully visual — cache logic is explicit in the workflow graph
+  - Most flexible — can cache anything, not just external calls
+
+  Drawbacks:
+  - More complex workflow wiring (need loopback connections)
+  - Adds nodes to the canvas, making workflows busier
+  - User must understand the hit/miss routing pattern
+
+  ---
+  Shared Across All Options
+
+  Regardless of which option you choose:
+  - Caffeine dependency added to pom.xml
+  - CacheRegistryService — global Spring bean managing named Cache<String, Object> instances, survives workflow executions
+  - Cache management UI — replaces the data tables tab on the home page (create/edit/delete/view named caches with TTL, max size, eviction policy, stats)
+  - REST API /api/caches — replaces /api/data-tables
+  - Data table removal — delete DataTableEntity, DataTableRowEntity, repositories, service, controller, DataTableNode, and frontend references
+  - Custom cache keys — expression-based key generation when desired

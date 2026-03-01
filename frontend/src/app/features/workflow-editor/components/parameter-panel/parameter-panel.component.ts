@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, HostListener, OnInit, OnDestroy, Pipe, PipeTransform, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, OnInit, OnDestroy, OnChanges, SimpleChanges, Pipe, PipeTransform, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -15,6 +15,7 @@ import { FixedCollectionParamComponent } from './parameter-renderers/fixed-colle
 import { NoticeParamComponent } from './parameter-renderers/notice-param.component';
 import { CredentialParamComponent } from './parameter-renderers/credential-param.component';
 import { ModelParamComponent } from './parameter-renderers/model-param.component';
+import { CacheNameParamComponent } from './parameter-renderers/cache-name-param.component';
 import { ExpressionEditorModalComponent } from './expression-editor-modal.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
@@ -76,6 +77,7 @@ export class HighlightPipe implements PipeTransform {
     NoticeParamComponent,
     CredentialParamComponent,
     ModelParamComponent,
+    CacheNameParamComponent,
     ExpressionEditorModalComponent,
   ],
   providers: [{
@@ -88,7 +90,7 @@ export class HighlightPipe implements PipeTransform {
   templateUrl: './parameter-panel.component.html',
   styleUrl: './parameter-panel.component.scss'
 })
-export class ParameterPanelComponent implements OnInit, OnDestroy {
+export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Input() node!: WorkflowNode;
   @Input() nodeType?: NodeTypeDescription;
   @Input() workflowId = '';
@@ -136,6 +138,9 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   outputSearchExpanded = false;
   inputSchemaCollapsed = new Set<string>();
   outputSchemaCollapsed = new Set<string>();
+
+  // Multi-output tab state
+  selectedOutputIndex = 0;
 
   // Pin / edit output state
   isEditingOutput = false;
@@ -191,6 +196,34 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
         this.webhookUrlTest = settings.webhookUrlTest || '';
       });
     }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['node'] && changes['node'].currentValue?.id !== changes['node'].previousValue?.id) {
+      this.selectedOutputIndex = 0;
+    }
+  }
+
+  /** Whether the current node has multiple main outputs (e.g. Cache, If, Filter, Switch) */
+  get isMultiOutput(): boolean {
+    const outputs = this.nodeType?.outputs || [];
+    return outputs.filter(o => o.type === 'main').length > 1;
+  }
+
+  /** Display names for each main output (e.g. ['Hit', 'Miss'] for Cache node) */
+  get mainOutputNames(): string[] {
+    return (this.nodeType?.outputs || [])
+      .filter(o => o.type === 'main')
+      .map(o => o.displayName || o.name);
+  }
+
+  /** Item count for each main output slot (for the tab badges) */
+  get outputSlotCounts(): number[] {
+    const data = this.effectiveOutputData;
+    if (!data) return [];
+    const outputs = this.extractOutputArray(data);
+    if (!outputs) return [];
+    return outputs.map(out => Array.isArray(out) ? out.length : 0);
   }
 
   get isWebhookNode(): boolean {
@@ -321,7 +354,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   get outputJson(): string {
     const data = this.effectiveOutputData;
     if (!data) return '';
-    return JSON.stringify(this.extractItems(data), null, 2);
+    return JSON.stringify(this.extractItems(data, this.selectedOutputIndex), null, 2);
   }
 
   getNodeOutputJson(nodeId: string): string {
@@ -330,10 +363,15 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     return JSON.stringify(this.extractItems(data), null, 2);
   }
 
+  /** Resolve the effective output data for a previous node: pinned > execution > webhook */
+  private getPreviousNodeData(nodeId: string): any {
+    return this.pinData?.[nodeId] ?? this.executionData?.[nodeId] ?? this.webhookTestData?.[nodeId];
+  }
+
   get inputItemCount(): number {
     let count = 0;
     for (const prev of this.previousNodes) {
-      const data = this.executionData?.[prev.node.id] ?? this.webhookTestData?.[prev.node.id];
+      const data = this.getPreviousNodeData(prev.node.id);
       if (data) count += this.extractItems(data).length;
     }
     return count;
@@ -342,7 +380,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   get outputItemCount(): number {
     const data = this.effectiveOutputData;
     if (!data) return 0;
-    return this.extractItems(data).length;
+    return this.extractItems(data, this.selectedOutputIndex).length;
   }
 
   isVisible(param: NodeParameter): boolean {
@@ -399,31 +437,55 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   // --- Display mode / table / schema / search helpers ---
 
   /**
-   * Extracts flat row data from execution data.
-   * Execution data shape: [[{json: {...}}, {json: {...}}]]
+   * Extract the multi-output array from any execution data shape.
+   * Returns the array of output slot arrays, or null if the format is flat/unknown.
    */
-  extractItems(rawData: any): Record<string, any>[] {
-    if (!rawData) return [];
+  extractOutputArray(rawData: any): any[][] | null {
+    if (!Array.isArray(rawData) || rawData.length === 0) return null;
+    const first = rawData[0];
 
-    // Handle metadata-wrapped format from buildResultData / execution history:
-    // [{startedAt, finishedAt, status, data: {main: [[{json: ...}]]}}]
-    if (Array.isArray(rawData) && rawData.length > 0 && rawData[0]?.data?.main) {
-      const mainOutputs = rawData[0].data.main;
-      if (Array.isArray(mainOutputs) && mainOutputs.length > 0 && Array.isArray(mainOutputs[0])) {
-        return mainOutputs[0].map((item: any) => item?.json ?? item);
+    // Live execution format: [{ status, data: [[...], [...]], ... }]
+    if (first && typeof first === 'object' && !Array.isArray(first) && 'data' in first) {
+      const data = first.data;
+      // data: {main: [[...], [...]]} — completed execution from buildResultData
+      if (data?.main && Array.isArray(data.main) && data.main.length > 0 && Array.isArray(data.main[0])) {
+        return data.main;
       }
-      return [];
+      // data: [[...], [...]] — live WebSocket execution
+      if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
+        return data;
+      }
     }
 
+    // Direct format: [[{json: ...}], [{json: ...}]]
+    if (Array.isArray(first)) {
+      return rawData;
+    }
+
+    return null;
+  }
+
+  /**
+   * Extracts flat row data from execution data for a specific output index.
+   * For multi-output nodes, pass the output index to select which output to show.
+   */
+  extractItems(rawData: any, outputIndex: number = 0): Record<string, any>[] {
+    if (!rawData) return [];
+
+    const outputs = this.extractOutputArray(rawData);
+    if (outputs) {
+      const selected = outputs[outputIndex] ?? [];
+      return selected.map((item: any) => item?.json ?? item).filter((item: any) => item != null);
+    }
+
+    // Flat array: [{json: ...}] or [plainObjects]
     let items: any[] = [];
-    if (Array.isArray(rawData) && rawData.length > 0 && Array.isArray(rawData[0])) {
-      items = rawData[0];
-    } else if (Array.isArray(rawData)) {
+    if (Array.isArray(rawData)) {
       items = rawData;
     } else if (typeof rawData === 'object') {
       return [rawData];
     }
-    return items.map((item: any) => item?.json ?? item);
+    return items.map((item: any) => item?.json ?? item).filter((item: any) => item != null);
   }
 
   extractHeaders(rows: Record<string, any>[]): string[] {
@@ -582,7 +644,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   get inputSchemaNodes(): SchemaNode[] {
     const items: Record<string, any>[] = [];
     for (const prev of this.previousNodes) {
-      const data = this.executionData?.[prev.node.id] ?? this.webhookTestData?.[prev.node.id];
+      const data = this.getPreviousNodeData(prev.node.id);
       if (data) items.push(...this.extractItems(data));
     }
     if (items.length === 0) return [];
@@ -593,7 +655,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   get outputSchemaNodes(): SchemaNode[] {
     const data = this.effectiveOutputData;
     if (!data) return [];
-    const items = this.extractItems(data);
+    const items = this.extractItems(data, this.selectedOutputIndex);
     if (items.length === 0) return [];
     const tree = this.buildSchema(items);
     return this.flattenSchema(tree, this.outputSchemaCollapsed, this.outputSearch);
@@ -604,7 +666,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   get inputTableRows(): Record<string, any>[] {
     const allRows: Record<string, any>[] = [];
     for (const prev of this.previousNodes) {
-      const data = this.executionData?.[prev.node.id] ?? this.webhookTestData?.[prev.node.id];
+      const data = this.getPreviousNodeData(prev.node.id);
       if (data) allRows.push(...this.extractItems(data));
     }
     return this.filterRows(allRows, this.inputSearch);
@@ -617,7 +679,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   get outputTableRows(): Record<string, any>[] {
     const data = this.effectiveOutputData;
     if (!data) return [];
-    return this.filterRows(this.extractItems(data), this.outputSearch);
+    return this.filterRows(this.extractItems(data, this.selectedOutputIndex), this.outputSearch);
   }
 
   get outputTableHeaders(): string[] {
@@ -627,7 +689,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   // --- JSON helpers ---
 
   getFilteredInputJson(nodeId: string): string {
-    const data = this.executionData?.[nodeId] ?? this.webhookTestData?.[nodeId];
+    const data = this.getPreviousNodeData(nodeId);
     if (!data) return '';
     const items = this.extractItems(data);
     if (!this.inputSearch) return JSON.stringify(items, null, 2);
@@ -637,7 +699,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
 
   /** Get parsed input items for a node (for structured JSON rendering) */
   getInputItems(nodeId: string): Record<string, any>[] {
-    const data = this.executionData?.[nodeId] ?? this.webhookTestData?.[nodeId];
+    const data = this.getPreviousNodeData(nodeId);
     if (!data) return [];
     const items = this.extractItems(data);
     if (!this.inputSearch) return items;
@@ -765,7 +827,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   get filteredOutputJson(): string {
     const data = this.effectiveOutputData;
     if (!data) return '';
-    const items = this.extractItems(data);
+    const items = this.extractItems(data, this.selectedOutputIndex);
     if (!this.outputSearch) return JSON.stringify(items, null, 2);
     const filtered = this.filterRows(items, this.outputSearch);
     return filtered.length > 0 ? JSON.stringify(filtered, null, 2) : '';
@@ -895,7 +957,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
   private collectInputForExecution(): any[] {
     const items: any[] = [];
     for (const prev of this.previousNodes) {
-      const data = this.executionData?.[prev.node.id] ?? this.webhookTestData?.[prev.node.id];
+      const data = this.getPreviousNodeData(prev.node.id);
       items.push(...this.extractRawItems(data));
     }
     return items;
@@ -906,26 +968,20 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
    * Unlike extractItems() which unwraps json, this keeps the {json: ...} wrapper
    * because the backend expression evaluator expects that format.
    */
-  private extractRawItems(rawData: any): any[] {
+  private extractRawItems(rawData: any, outputIndex: number = 0): any[] {
     if (!rawData) return [];
 
-    // Metadata-wrapped format: [{startedAt, finishedAt, status, data: {main: [[{json: ...}]]}}]
-    if (Array.isArray(rawData) && rawData.length > 0 && rawData[0]?.data?.main) {
-      const mainOutputs = rawData[0].data.main;
-      if (Array.isArray(mainOutputs) && mainOutputs.length > 0 && Array.isArray(mainOutputs[0])) {
-        return mainOutputs[0];
-      }
-      return [];
-    }
-
-    // Direct format: [[{json: ...}]]
-    if (Array.isArray(rawData) && rawData.length > 0 && Array.isArray(rawData[0])) {
-      return rawData[0];
+    const outputs = this.extractOutputArray(rawData);
+    if (outputs) {
+      const selected = outputs[outputIndex] ?? [];
+      return selected.map((item: any) => {
+        if (item && typeof item === 'object' && 'json' in item) return item;
+        return { json: item };
+      });
     }
 
     // Flat array: [{json: ...}] or [{key: val}]
     if (Array.isArray(rawData)) {
-      // Ensure items have {json: ...} wrapper
       return rawData.map(item => {
         if (item && typeof item === 'object' && 'json' in item) return item;
         return { json: item };
@@ -999,7 +1055,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
     const data = this.receivedTestData ?? this.nodeExecutionData;
     if (!data) return;
     // Convert to [{json: ...}] format for storage
-    const items = this.extractItems(data);
+    const items = this.extractItems(data, this.selectedOutputIndex);
     const pinItems = items.map(item => ({ json: item }));
     this.pinDataChanged.emit({ nodeId: this.node.id, items: pinItems });
   }
@@ -1012,7 +1068,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
 
   onStartEdit(): void {
     const data = this.effectiveOutputData;
-    const items = data ? this.extractItems(data) : [];
+    const items = data ? this.extractItems(data, this.selectedOutputIndex) : [];
     const pinFormatted = items.map(item => ({ json: item }));
     this.editOutputJson = JSON.stringify(pinFormatted, null, 2);
     this.editOutputError = '';
@@ -1191,7 +1247,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy {
 
   /** Get all unique top-level field names from input items for a given node */
   getInputFieldNames(nodeId: string): string[] {
-    const data = this.executionData?.[nodeId] ?? this.webhookTestData?.[nodeId];
+    const data = this.getPreviousNodeData(nodeId);
     if (!data) return [];
     const items = this.extractItems(data);
     return this.extractHeaders(items);

@@ -15,11 +15,15 @@ export interface AgentControlRequest {
 export class AgentControlService implements OnDestroy {
   private controlRequests$ = new Subject<AgentControlRequest>();
   private activeSession$ = new BehaviorSubject<boolean>(false);
+  private canvasPush$ = new Subject<any>();
   private pendingWorkflowData: any = null;
   private listening = false;
 
   controlRequest$ = this.controlRequests$.asObservable();
   isSessionActive$ = this.activeSession$.asObservable();
+
+  /** Emits when a canvas push arrives while the editor is already open */
+  canvasPushReceived$ = this.canvasPush$.asObservable();
 
   constructor(
     private wsService: WebSocketService,
@@ -60,6 +64,18 @@ export class AgentControlService implements OnDestroy {
     } else if (data.action === 'load_workflow' && data.workflowData) {
       this.pendingWorkflowData = data.workflowData;
       this.router.navigate(['/workflow/new'], { queryParams: { agentLoad: 'true' } });
+    } else if (data.action === 'push_canvas' && data.workflowData) {
+      // Check if user is already on a workflow editor page
+      const url = this.router.url;
+      const isOnEditor = url.startsWith('/workflow/');
+      if (isOnEditor) {
+        // Editor is active — emit directly so it can import the data
+        this.canvasPush$.next(data.workflowData);
+      } else {
+        // Not on editor — store as pending and navigate
+        this.pendingWorkflowData = data.workflowData;
+        this.router.navigate(['/workflow/new'], { queryParams: { agentLoad: 'true' } });
+      }
     }
   }
 

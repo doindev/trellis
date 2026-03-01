@@ -3,7 +3,7 @@
   <div class="project-header">
     <div class="header-text">
       <h2 class="header-title">Overview</h2>
-      <p class="header-subtitle">All the workflows, credentials and data tables you have access to</p>
+      <p class="header-subtitle">All the workflows, credentials and caches you have access to</p>
     </div>
     <div class="header-actions">
       <div class="create-dropdown-wrapper" (mouseenter)="cancelCreateDropdownClose()" (mouseleave)="scheduleCreateDropdownClose()">
@@ -28,9 +28,9 @@
               <lucide-icon name="folder" [size]="14"></lucide-icon>
               Folder
             </button>
-            <button class="dropdown-item" (click)="showCreateDropdown = false; createDataTable()">
-              <lucide-icon name="table" [size]="14"></lucide-icon>
-              Data table
+            <button class="dropdown-item" (click)="showCreateDropdown = false; createCache()">
+              <lucide-icon name="layers" [size]="14"></lucide-icon>
+              Cache
             </button>
           </div>
         }
@@ -67,7 +67,7 @@
     <button class="tab" [class.active]="activeTab() === 'credentials'" (click)="setTab('credentials')">Credentials</button>
     <button class="tab" [class.active]="activeTab() === 'executions'" (click)="setTab('executions')">Executions</button>
     <button class="tab" [class.active]="activeTab() === 'variables'" (click)="setTab('variables')">Variables</button>
-    <button class="tab" [class.active]="activeTab() === 'datatables'" (click)="setTab('datatables')">Data Tables</button>
+    <button class="tab" [class.active]="activeTab() === 'caches'" (click)="setTab('caches')">Caches</button>
   </div>
 
   <!-- Tab Content -->
@@ -356,20 +356,9 @@
           <app-variable-list />
         </div>
       }
-      @case ('datatables') {
+      @case ('caches') {
         <div class="tab-scroll">
-        <div class="empty-action-box">
-          <div class="empty-action-icon">
-            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <line x1="3" y1="9" x2="21" y2="9"/>
-              <line x1="3" y1="15" x2="21" y2="15"/>
-              <line x1="9" y1="3" x2="9" y2="21"/>
-            </svg>
-          </div>
-          <h3 class="empty-action-heading">No data tables yet</h3>
-          <p class="empty-action-description">Data tables let you store and manage structured data for your workflows</p>
-        </div>
+          <app-cache-list />
         </div>
       }
     }

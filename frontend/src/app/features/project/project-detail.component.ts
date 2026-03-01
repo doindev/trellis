@@ -7,7 +7,7 @@ import { Workflow, Credential, Project } from '../../core/models';
 import { WorkflowCardComponent } from '../../shared/components/workflow-card/workflow-card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CredentialCreateModalComponent } from '../../shared/components/credential-create-modal/credential-create-modal.component';
-import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Settings, Workflow as WorkflowIcon, Variable, Table } from 'lucide-angular';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Settings, Workflow as WorkflowIcon, Variable, Layers } from 'lucide-angular';
 
 @Component({
   selector: 'app-project-detail',
@@ -21,7 +21,7 @@ import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Settin
     CredentialCreateModalComponent,
     LucideAngularModule
   ],
-  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Settings, Workflow: WorkflowIcon, Variable, Table }) }],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Settings, Workflow: WorkflowIcon, Variable, Layers }) }],
   templateUrl: './project-detail.component.html',
   styleUrl: './project-detail.component.scss'
 })
@@ -305,8 +305,8 @@ export class ProjectDetailComponent implements OnInit {
     this.router.navigate(['/home/variables']);
   }
 
-  createDataTable(): void {
+  createCache(): void {
     this.showCreateDropdown = false;
-    this.router.navigate(['/home/data-tables']);
+    this.router.navigate(['/home/caches']);
   }
 }

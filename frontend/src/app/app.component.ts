@@ -3,7 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } fro
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter } from 'rxjs';
-import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Table, Plus, Variable, Workflow } from 'lucide-angular';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Layers, Plus, Variable, Workflow } from 'lucide-angular';
 import { AgentConsentModalComponent } from './shared/components/agent-consent-modal/agent-consent-modal.component';
 import { AgentControlOverlayComponent } from './shared/components/agent-control-overlay/agent-control-overlay.component';
 import { ProjectService } from './core/services/project.service';
@@ -16,7 +16,7 @@ import { ChatSession } from './core/models/chat.model';
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, AgentConsentModalComponent, AgentControlOverlayComponent],
-  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Table, Plus, Variable, Workflow }) }],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ PanelLeftClose, PanelLeftOpen, KeyRound, Folder, Layers, Plus, Variable, Workflow }) }],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -226,9 +226,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.router.navigate(['/home/folders']);
   }
 
-  onAddDataTable(): void {
+  onAddCache(): void {
     this.showCreateMenu = false;
-    this.router.navigate(['/home/data-tables']);
+    this.router.navigate(['/home/caches']);
   }
 
   toggleSettingsPopover(): void {

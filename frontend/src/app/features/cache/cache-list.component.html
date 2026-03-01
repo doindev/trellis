@@ -1,0 +1,128 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Caches</h1>
+      <p class="page-subtitle">Manage in-memory caches for your workflows</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreate()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      New Cache
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <span class="spinner-border spinner-border-sm"></span>
+      Loading caches...
+    </div>
+  } @else if (caches().length === 0) {
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+        <path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+      <p>No caches defined yet</p>
+      <button class="btn btn-primary mt-3" (click)="openCreate()">Create Cache</button>
+    </div>
+  } @else {
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Max Size</th>
+            <th>TTL</th>
+            <th>Entries</th>
+            <th>Hit Rate</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (cache of caches(); track cache.id) {
+            <tr class="cache-row" (click)="openEdit(cache)">
+              <td class="cache-name">{{ cache.name }}</td>
+              <td class="cache-desc">{{ cache.description || '-' }}</td>
+              <td>{{ cache.maxSize }}</td>
+              <td>{{ formatTtl(cache.ttlSeconds) }}</td>
+              <td>{{ cache.estimatedSize ?? 0 }}</td>
+              <td>{{ formatHitRate(cache.hitRate) }}</td>
+              <td class="cache-actions">
+                <button class="btn btn-sm btn-ghost" (click)="clearCache(cache, $event)" title="Clear all entries">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.9-9.9c1-1 2.5-1 3.4 0l5.3 5.3c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>
+                  </svg>
+                </button>
+                <button class="btn btn-sm btn-ghost" (click)="confirmDelete(cache, $event)" title="Delete cache">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- Create/Edit Modal -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ isEditing() ? 'Edit' : 'New' }} Cache</h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-control"
+                   [ngModel]="editingCache().name"
+                   (ngModelChange)="updateField('name', $event)"
+                   placeholder="my-cache">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-control"
+                   [ngModel]="editingCache().description"
+                   (ngModelChange)="updateField('description', $event)"
+                   placeholder="Optional description">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Max Size</label>
+            <input type="number" class="form-control"
+                   [ngModel]="editingCache().maxSize"
+                   (ngModelChange)="updateField('maxSize', $event)"
+                   placeholder="1000">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">TTL (seconds)</label>
+            <input type="number" class="form-control"
+                   [ngModel]="editingCache().ttlSeconds"
+                   (ngModelChange)="updateField('ttlSeconds', $event)"
+                   placeholder="3600">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="saveCache()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<app-confirm-dialog
+  [isOpen]="showDeleteConfirm()"
+  title="Delete Cache"
+  [message]="'Delete cache \'' + (deleteTarget()?.name || '') + '\'? All cached data will be lost.'"
+  confirmText="Delete"
+  confirmBtnClass="btn-danger"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()" />

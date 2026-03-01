@@ -687,8 +687,17 @@ public class McpSystemToolService {
         String description = (String) args.get("description");
         String message = (String) args.get("message");
 
-        // Consent already granted by the global gate
-        webSocketService.sendAgentCanvasUpdate(targetSession, name, description, nodes, connections, message);
+        // Build workflow data payload (same shape as browser_control load_workflow)
+        Map<String, Object> workflowData = new LinkedHashMap<>();
+        workflowData.put("nodes", nodes);
+        workflowData.put("connections", connections);
+        if (name != null) workflowData.put("name", name);
+        if (description != null) workflowData.put("description", description);
+
+        // Route through agent-control topic (always subscribed) instead of agent-canvas topic
+        // which is only active when the workflow editor is open
+        webSocketService.sendBrowserAction(targetSession, "push_canvas", null, workflowData,
+                message != null ? message : "Workflow data pushed to canvas");
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("success", true);

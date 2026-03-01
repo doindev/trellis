@@ -265,9 +265,9 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
               && sourceExec !== null && sourceExec !== 'running'
               && (targetExec === null || targetExec === 'running');
 
-            // Show status color when both nodes have completed
+            // Show status color when both nodes have completed AND data flowed through this output
             let edgeStatus: string | undefined;
-            if (sourceExec && sourceExec !== 'running' && targetExec && targetExec !== 'running') {
+            if (isActiveOutput && sourceExec && sourceExec !== 'running' && targetExec && targetExec !== 'running') {
               edgeStatus = (targetExec === 'error' || sourceExec === 'error') ? 'error' : 'success';
             }
 

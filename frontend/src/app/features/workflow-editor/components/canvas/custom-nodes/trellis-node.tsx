@@ -197,7 +197,7 @@ const TrellisNode = memo(({ id, data, selected }: NodeProps & { data: TrellisNod
               data.onOutputHandleDoubleClick?.(encodeHandleId(output.type, index));
             }}
           />
-          {(data.nodeType === 'if' && mainOutputs.length >= 2 || data.nodeType === 'switch' || data.nodeType === 'loopOverItems' || data.nodeType === 'compareDatasets' || data.nodeType === 'removeDuplicates' || data.nodeType === 'guardrails' || data.nodeType === 'filter' || data.nodeType === 'schemaValidator' || data.nodeType === 'tryCatch' || data.nodeType === 'retry') && (
+          {(data.nodeType === 'if' && mainOutputs.length >= 2 || data.nodeType === 'switch' || data.nodeType === 'loopOverItems' || data.nodeType === 'compareDatasets' || data.nodeType === 'removeDuplicates' || data.nodeType === 'guardrails' || data.nodeType === 'filter' || data.nodeType === 'schemaValidator' || data.nodeType === 'tryCatch' || data.nodeType === 'retry' || data.nodeType === 'cache') && (
             <span
               className="output-handle-label"
               style={{ top: `${((index + 1) / (mainOutputs.length + 1)) * 100}%` }}

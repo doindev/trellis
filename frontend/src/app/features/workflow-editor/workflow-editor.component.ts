@@ -85,7 +85,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   private executionPollInterval: ReturnType<typeof setInterval> | null = null;
   private readonly AUTO_SAVE_INTERVAL = 2_000;
   private readonly EXECUTION_POLL_INTERVAL = 5_000;
-  private agentCanvasTopic = '';
+  private agentCanvasSub?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -151,28 +151,14 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Listen for agent canvas push events
-    this.agentCanvasTopic = `/topic/agent-canvas/${this.wsService.getBrowserSessionId()}`;
-    this.wsService.subscribe(this.agentCanvasTopic, (message) => {
-      this.ngZone.run(() => {
-        try {
-          const event = JSON.parse(message.body);
-          if (event.event === 'agentCanvasUpdate') {
-            this.store.importWorkflowData({
-              name: event.name,
-              nodes: event.nodes,
-              connections: event.connections,
-            });
-            // Auto-layout the canvas after importing agent data
-            setTimeout(() => this.canvasWrapper?.triggerCleanUp(), 200);
-            if (event.message) {
-              this.showToast('Agent: ' + event.message);
-            }
-          }
-        } catch (e) {
-          console.error('Failed to parse agent canvas update:', e);
-        }
+    // Listen for agent canvas push events via the always-active agent-control channel
+    this.agentCanvasSub = this.agentControlService.canvasPushReceived$.subscribe((workflowData) => {
+      this.store.importWorkflowData({
+        name: workflowData.name,
+        nodes: workflowData.nodes,
+        connections: workflowData.connections,
       });
+      setTimeout(() => this.canvasWrapper?.triggerCleanUp(), 200);
     });
 
     this.startAutoSaveTimer();
@@ -604,8 +590,13 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
             } else if (event.event === 'nodeFinished') {
               const current = this.store.executionData() || {};
               const outputData = event.data;
-              const mainOutput = Array.isArray(outputData) ? outputData[0] : outputData;
-              const itemCount = Array.isArray(mainOutput) ? mainOutput.length : 0;
+              // Sum items across all outputs for multi-output nodes (Cache, If, Filter, etc.)
+              let itemCount = 0;
+              if (Array.isArray(outputData)) {
+                for (const out of outputData) {
+                  if (Array.isArray(out)) itemCount += out.length;
+                }
+              }
               // Determine which output indices have data (for multi-output nodes like Loop)
               const activeOutputs: number[] = [];
               if (Array.isArray(outputData)) {
@@ -668,9 +659,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (this.currentExecutionId) {
       this.wsService.unsubscribe(`/topic/execution/${this.currentExecutionId}`);
     }
-    if (this.agentCanvasTopic) {
-      this.wsService.unsubscribe(this.agentCanvasTopic);
-    }
+    this.agentCanvasSub?.unsubscribe();
     this.executionSub?.unsubscribe();
     this.stopAutoSaveTimer();
     this.stopExecutionPoll();
@@ -706,7 +695,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           const allKeysAreIds = Object.keys(runData).every(k => nodeIds.has(k));
 
           if (allKeysAreIds) {
-            this.executionDataById = { ...runData };
+            this.executionDataById = this.enrichRunDataWithActiveOutputs(runData);
           } else {
             const nameToId = new Map<string, string>();
             for (const node of (wd.nodes || [])) {
@@ -719,11 +708,35 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
                 dataById[nodeId] = data;
               }
             }
-            this.executionDataById = dataById;
+            this.executionDataById = this.enrichRunDataWithActiveOutputs(dataById);
           }
         }
       }
     });
+  }
+
+  /** Enrich API runData entries with activeOutputs computed from data.main arrays. */
+  private enrichRunDataWithActiveOutputs(runData: Record<string, any>): Record<string, any> {
+    const enriched: Record<string, any> = {};
+    for (const [nodeId, entries] of Object.entries(runData)) {
+      if (!Array.isArray(entries)) {
+        enriched[nodeId] = entries;
+        continue;
+      }
+      enriched[nodeId] = entries.map((entry: any) => {
+        if (entry?.activeOutputs) return entry; // already has it
+        const mainOutputs = entry?.data?.main;
+        if (!Array.isArray(mainOutputs)) return entry;
+        const activeOutputs: number[] = [];
+        for (let i = 0; i < mainOutputs.length; i++) {
+          if (Array.isArray(mainOutputs[i]) && mainOutputs[i].length > 0) {
+            activeOutputs.push(i);
+          }
+        }
+        return { ...entry, activeOutputs };
+      });
+    }
+    return enriched;
   }
 
   /** Returns the selected node from the correct source (execution snapshot or live workflow). */

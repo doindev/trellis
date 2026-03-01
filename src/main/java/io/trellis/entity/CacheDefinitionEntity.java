@@ -1,6 +1,5 @@
 package io.trellis.entity;
 
-import io.trellis.util.JsonObjectConverter;
 import io.trellis.util.NanoId;
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,26 +7,27 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "data_table_rows", indexes = {
-    @Index(name = "idx_dtr_table", columnList = "dataTableId")
-})
+@Table(name = "cache_definitions")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DataTableRowEntity {
+public class CacheDefinitionEntity {
 
     @Id
     @NanoId
     private String id;
 
-    @Column(nullable = false)
-    private String dataTableId;
+    @Column(name = "cache_name", nullable = false, unique = true)
+    private String name;
 
-    @Lob
-    @Column(columnDefinition = "TEXT")
-    @Convert(converter = JsonObjectConverter.class)
-    private Object rowData;
+    private String description;
+
+    @Builder.Default
+    private int maxSize = 1000;
+
+    @Builder.Default
+    private long ttlSeconds = 3600;
 
     private Instant createdAt;
 

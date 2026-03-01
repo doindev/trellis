@@ -120,7 +120,7 @@ function TrellisCanvasInner({
   triggerCleanUp,
 }: TrellisCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
+  const { fitView, getViewport, setViewport, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
   const { zoom } = useViewport();
   const helperExposed = useRef(false);
   const outputHandleDoubleClickRef = useRef(onOutputHandleDoubleClick);
@@ -547,9 +547,19 @@ function TrellisCanvasInner({
     // Notify Angular of the position changes
     onNodesPositionChange?.(positions);
 
-    // Fit viewport after layout settles
-    setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
-  }, [nodes, edges, setNodes, onNodesPositionChange, fitView]);
+    // Fit viewport after layout settles, adjusting for drawer offset
+    setTimeout(() => {
+      fitView({ padding: 0.2, duration: 300 });
+      if (drawerOffset && drawerOffset > 0) {
+        // After fitView centers in the full canvas, shift up by half the drawer height
+        // to center in the visible portion above the drawer
+        setTimeout(() => {
+          const vp = getViewport();
+          setViewport({ x: vp.x, y: vp.y - drawerOffset / 2, zoom: vp.zoom }, { duration: 200 });
+        }, 320);
+      }
+    }, 50);
+  }, [nodes, edges, setNodes, onNodesPositionChange, fitView, drawerOffset, getViewport, setViewport]);
 
   // Allow Angular to trigger clean-up via prop change
   useEffect(() => {
@@ -668,7 +678,15 @@ function TrellisCanvasInner({
                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
               </svg>
             </button>
-            <button className="ctrl-btn" onClick={() => fitView({ padding: 0.2, duration: 200 })} title="Fit view">
+            <button className="ctrl-btn" onClick={() => {
+              fitView({ padding: 0.2, duration: 200 });
+              if (drawerOffset && drawerOffset > 0) {
+                setTimeout(() => {
+                  const vp = getViewport();
+                  setViewport({ x: vp.x, y: vp.y - drawerOffset / 2, zoom: vp.zoom }, { duration: 150 });
+                }, 220);
+              }
+            }} title="Fit view">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
               </svg>
