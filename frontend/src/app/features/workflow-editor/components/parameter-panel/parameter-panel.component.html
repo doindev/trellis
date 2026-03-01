@@ -372,7 +372,7 @@
               <div class="param-group">
                 @switch (param.type) {
                   @case ('string') {
-                    @if (param.name === 'cacheName' && node.parameters['cacheSource'] !== undefined) {
+                    @if (param.name === 'cacheName' && hasParameter('cacheSource')) {
                       <app-cache-name-param
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
@@ -393,8 +393,10 @@
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
+                        [expressionError]="getExpressionError(param.name)"
                         (valueChange)="onParameterChange(param.name, $event)"
                         (blurred)="onParamBlur(param.name)"
+                        (focused)="onParamFocus(param.name)"
                         (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                   }
@@ -403,7 +405,10 @@
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
+                      [expressionError]="getExpressionError(param.name)"
                       (valueChange)="onParameterChange(param.name, $event)"
+                      (blurred)="onParamBlur(param.name)"
+                      (focused)="onParamFocus(param.name)"
                       (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
                   @case ('boolean') {
@@ -411,7 +416,10 @@
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
+                      [expressionError]="getExpressionError(param.name)"
                       (valueChange)="onParameterChange(param.name, $event)"
+                      (blurred)="onParamBlur(param.name)"
+                      (focused)="onParamFocus(param.name)"
                       (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
                   @case ('options') {
@@ -429,7 +437,10 @@
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
+                        [expressionError]="getExpressionError(param.name)"
                         (valueChange)="onParameterChange(param.name, $event)"
+                        (blurred)="onParamBlur(param.name)"
+                        (focused)="onParamFocus(param.name)"
                         (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                   }
@@ -471,8 +482,10 @@
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
+                      [expressionError]="getExpressionError(param.name)"
                       (valueChange)="onParameterChange(param.name, $event)"
                       (blurred)="onParamBlur(param.name)"
+                      (focused)="onParamFocus(param.name)"
                       (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
                 }
@@ -496,29 +509,53 @@
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
-                        (valueChange)="onParameterChange(param.name, $event)" />
+                        [expressionError]="getExpressionError(param.name)"
+                        (valueChange)="onParameterChange(param.name, $event)"
+                        (blurred)="onParamBlur(param.name)"
+                        (focused)="onParamFocus(param.name)"
+                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                     @case ('options') {
                       <app-options-param
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
+                        [expressionError]="getExpressionError(param.name)"
                         (valueChange)="onParameterChange(param.name, $event)"
+                        (blurred)="onParamBlur(param.name)"
+                        (focused)="onParamFocus(param.name)"
                         (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                     @case ('string') {
-                      <app-string-param
-                        [param]="param"
-                        [value]="getParameterValue(param.name, param.defaultValue)"
-                        [readOnly]="readOnly"
-                        (valueChange)="onParameterChange(param.name, $event)" />
+                      @if (param.name === 'cacheName' && hasParameter('cacheSource')) {
+                        <app-cache-name-param
+                          [param]="param"
+                          [value]="getParameterValue(param.name, param.defaultValue)"
+                          [readOnly]="readOnly"
+                          [cacheSource]="node.parameters['cacheSource'] ?? 'select'"
+                          (valueChange)="onParameterChange(param.name, $event)" />
+                      } @else {
+                        <app-string-param
+                          [param]="param"
+                          [value]="getParameterValue(param.name, param.defaultValue)"
+                          [readOnly]="readOnly"
+                          [expressionError]="getExpressionError(param.name)"
+                          (valueChange)="onParameterChange(param.name, $event)"
+                          (blurred)="onParamBlur(param.name)"
+                          (focused)="onParamFocus(param.name)"
+                          (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
+                      }
                     }
                     @case ('number') {
                       <app-number-param
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
-                        (valueChange)="onParameterChange(param.name, $event)" />
+                        [expressionError]="getExpressionError(param.name)"
+                        (valueChange)="onParameterChange(param.name, $event)"
+                        (blurred)="onParamBlur(param.name)"
+                        (focused)="onParamFocus(param.name)"
+                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                     @case ('notice') {
                       <app-notice-param [param]="param" />
@@ -528,7 +565,11 @@
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
-                        (valueChange)="onParameterChange(param.name, $event)" />
+                        [expressionError]="getExpressionError(param.name)"
+                        (valueChange)="onParameterChange(param.name, $event)"
+                        (blurred)="onParamBlur(param.name)"
+                        (focused)="onParamFocus(param.name)"
+                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                   }
                 </div>
@@ -828,6 +869,7 @@
   <app-expression-editor-modal
     [expression]="expressionEditorValue"
     [inputItems]="expressionEditorInputItems"
+    [nodeNames]="allNodeNames"
     (expressionSaved)="onExpressionEditorSave($event)"
     (closed)="onExpressionEditorClose()" />
 }

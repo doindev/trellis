@@ -40,6 +40,7 @@ public class WorkflowEngine {
     private final WaitPollerService waitPollerService;
     private final WorkflowRepository workflowRepository;
     private final WorkflowVersionRepository workflowVersionRepository;
+    private final io.trellis.service.CacheRegistryService cacheRegistryService;
 
     @Resource(name = "branchExecutorService")
     private ExecutorService branchExecutorService;
@@ -404,7 +405,7 @@ public class WorkflowEngine {
         state.storeInput(nodeId, nodeInput);
 
         Map<String, Object> resolvedParams = resolveParameters(
-                graphNode.getParameters(), nodeInput, state, variables, executionId);
+                graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
 
         Map<String, Object> credentials = resolveCredentials(
                 graphNode.getCredentials(), nodeInput, state, variables, executionId);
@@ -453,7 +454,7 @@ public class WorkflowEngine {
             }
 
             nodeInstance.beforeExecute(context);
-            NodeExecutionResult result = nodeInstance.execute(context);
+            NodeExecutionResult result = executeWithCaching(nodeInstance, context, resolvedParams);
             nodeInstance.afterExecute(context, result);
 
             // Handle nested waiting result during resume
@@ -742,7 +743,7 @@ public class WorkflowEngine {
         state.storeInput(nodeId, nodeInput);
 
         Map<String, Object> resolvedParams = resolveParameters(
-                graphNode.getParameters(), nodeInput, state, variables, executionId);
+                graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
 
         Map<String, Object> credentials = resolveCredentials(
                 graphNode.getCredentials(), nodeInput, state, variables, executionId);
@@ -791,7 +792,7 @@ public class WorkflowEngine {
             }
 
             nodeInstance.beforeExecute(context);
-            NodeExecutionResult result = nodeInstance.execute(context);
+            NodeExecutionResult result = executeWithCaching(nodeInstance, context, resolvedParams);
             nodeInstance.afterExecute(context, result);
 
             // Handle waiting result — checkpoint state to DB and release thread
@@ -1086,7 +1087,7 @@ public class WorkflowEngine {
 
         Map<String, String> variables = variableService.getAllVariablesAsMap();
         Map<String, Object> resolvedParams = resolveParameters(
-                parameters, inputData, null, variables, "single-node");
+                parameters, inputData, null, null, variables, "single-node");
         Map<String, Object> credentials = resolveCredentials(
                 credentialRefs, inputData, null, variables, "single-node");
 
@@ -1106,7 +1107,7 @@ public class WorkflowEngine {
 
         try {
             nodeInstance.beforeExecute(context);
-            NodeExecutionResult result = nodeInstance.execute(context);
+            NodeExecutionResult result = executeWithCaching(nodeInstance, context, resolvedParams);
             nodeInstance.afterExecute(context, result);
 
             Map<String, Object> response = new LinkedHashMap<>();
@@ -1217,10 +1218,106 @@ public class WorkflowEngine {
         return result;
     }
 
+    /**
+     * Wraps node execution with cache lookup/store logic for CacheableNode instances.
+     * If caching is not enabled or the node is not a CacheableNode, delegates directly.
+     */
+    @SuppressWarnings("unchecked")
+    private NodeExecutionResult executeWithCaching(
+            NodeInterface nodeInstance, NodeExecutionContext context,
+            Map<String, Object> nodeParameters) {
+
+        boolean cacheEnabled = Boolean.TRUE.equals(nodeParameters.get("cacheEnabled"));
+        if (!cacheEnabled || !(nodeInstance instanceof CacheableNode)) {
+            return nodeInstance.execute(context);
+        }
+
+        String cacheSource = (String) nodeParameters.getOrDefault("cacheSource", "inline");
+        String cacheName = (String) nodeParameters.getOrDefault("cacheName", "");
+        int maxSize = toInt(nodeParameters.getOrDefault("cacheMaxSize", 1000));
+        int ttlSeconds = toInt(nodeParameters.getOrDefault("cacheTtlSeconds", 3600));
+        String keyTemplate = (String) nodeParameters.getOrDefault("cacheKey", "");
+
+        if (cacheName == null || cacheName.isBlank()) {
+            log.warn("CacheableNode [{}]: cacheEnabled but no cacheName, executing without cache",
+                    context.getNodeId());
+            return nodeInstance.execute(context);
+        }
+
+        String key = resolveCacheKey(keyTemplate, context.getInputData());
+        if (key == null || key.isBlank()) {
+            return nodeInstance.execute(context);
+        }
+
+        // Ensure the runtime cache exists
+        if ("select".equals(cacheSource)) {
+            cacheRegistryService.getOrCreateFromDefinition(cacheName);
+        } else {
+            cacheRegistryService.getOrCreateCache(cacheName, maxSize, ttlSeconds);
+        }
+
+        // Lookup
+        Optional<Map<String, Object>> cached = cacheRegistryService.lookup(cacheName, key);
+        if (cached.isPresent()) {
+            List<Map<String, Object>> hitData = List.of(Map.of("json", (Object) cached.get()));
+            return NodeExecutionResult.success(hitData);
+        }
+
+        // Cache miss — execute node, store result, return
+        NodeExecutionResult result = nodeInstance.execute(context);
+        if (result.getOutput() != null && !result.getOutput().isEmpty()) {
+            List<Map<String, Object>> firstSlot = result.getOutput().get(0);
+            if (firstSlot != null && !firstSlot.isEmpty()) {
+                Map<String, Object> firstItem = firstSlot.get(0);
+                Object jsonData = firstItem.getOrDefault("json", firstItem);
+                if (jsonData instanceof Map) {
+                    cacheRegistryService.store(cacheName, key, (Map<String, Object>) jsonData);
+                }
+            }
+        }
+        return result;
+    }
+
+    private String resolveCacheKey(String keyTemplate, List<Map<String, Object>> inputData) {
+        if (keyTemplate == null || keyTemplate.isBlank()) return null;
+        if (inputData != null && !inputData.isEmpty()) {
+            Map<String, Object> firstItem = inputData.get(0);
+            Object json = firstItem.getOrDefault("json", firstItem);
+            if (json instanceof Map) {
+                Object extracted = getNestedValue((Map<String, Object>) json, keyTemplate);
+                if (extracted != null) return String.valueOf(extracted);
+            }
+        }
+        return keyTemplate;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object getNestedValue(Map<String, Object> data, String path) {
+        String[] parts = path.split("\\.");
+        Object current = data;
+        for (String part : parts) {
+            if (current instanceof Map) {
+                current = ((Map<String, Object>) current).get(part);
+            } else {
+                return null;
+            }
+        }
+        return current;
+    }
+
+    private int toInt(Object value) {
+        if (value instanceof Number) return ((Number) value).intValue();
+        if (value instanceof String) {
+            try { return Integer.parseInt((String) value); } catch (NumberFormatException e) { return 0; }
+        }
+        return 0;
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> resolveParameters(Map<String, Object> parameters,
                                                     List<Map<String, Object>> inputItems,
                                                     WorkflowExecutionState state,
+                                                    WorkflowGraph graph,
                                                     Map<String, String> variables,
                                                     String executionId) {
         if (parameters == null) return Map.of();
@@ -1234,9 +1331,31 @@ public class WorkflowEngine {
             }
         }
 
+        // Build $node map so expressions can reference other nodes' output by name
+        Map<String, Object> nodeOutputsForExpr = null;
+        if (state != null && graph != null) {
+            nodeOutputsForExpr = new LinkedHashMap<>();
+            for (Map.Entry<String, List<List<Map<String, Object>>>> entry : state.getNodeOutputs().entrySet()) {
+                String nodeId = entry.getKey();
+                List<List<Map<String, Object>>> outputs = entry.getValue();
+                if (outputs != null && !outputs.isEmpty() && !outputs.get(0).isEmpty()) {
+                    Map<String, Object> firstItem = outputs.get(0).get(0);
+                    Object json = firstItem.getOrDefault("json", firstItem);
+                    // Register by node name (for $node['Node Name'])
+                    WorkflowGraph.WorkflowNode wfNode = graph.getNodes().get(nodeId);
+                    if (wfNode != null && wfNode.getName() != null) {
+                        nodeOutputsForExpr.put(wfNode.getName(), json);
+                    }
+                    // Also register by node ID
+                    nodeOutputsForExpr.put(nodeId, json);
+                }
+            }
+        }
+
         ExpressionEvaluator.ExpressionContext ctx = ExpressionEvaluator.ExpressionContext.builder()
                 .currentItemData(currentItemData)
                 .inputItems(inputItems)
+                .nodeOutputs(nodeOutputsForExpr)
                 .variables(variables)
                 .executionId(executionId)
                 .runIndex(0)

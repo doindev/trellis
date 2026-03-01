@@ -17,6 +17,7 @@ import io.trellis.credentials.CredentialType;
 import io.trellis.credentials.CredentialTypeRegistry;
 import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractApiNode;
+import io.trellis.nodes.core.CacheableNode;
 import io.trellis.nodes.core.NodeExecutionContext;
 import io.trellis.nodes.core.NodeExecutionResult;
 import io.trellis.nodes.core.NodeInput;
@@ -41,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 	credentials = {"httpBasicAuth", "httpBearerAuth", "httpCustomAuth", "httpDigestAuth",
 				"httpHeaderAuth", "httpQueryAuth", "oAuth1Api", "oAuth2Api"}
 )
-public class HttpRequestNode extends AbstractApiNode {
+public class HttpRequestNode extends AbstractApiNode implements CacheableNode {
 
 	@Autowired
 	private CredentialTypeRegistry credentialTypeRegistry;

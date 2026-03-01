@@ -34,6 +34,7 @@ import { NodeParameter } from '../../../../../core/models';
                [ngModel]="value"
                (ngModelChange)="valueChange.emit($event)"
                (blur)="blurred.emit()"
+               (focus)="focused.emit()"
                [placeholder]="'e.g. Hello {{$json.name}}'"
                [disabled]="readOnly"
                (dragover)="onDragOver($event)"
@@ -44,6 +45,9 @@ import { NodeParameter } from '../../../../../core/models';
           </svg>
         </button>
       </div>
+      @if (expressionError) {
+        <div class="expr-error-msg">{{ expressionError }}</div>
+      }
     } @else if (isMultiline) {
       <textarea class="form-control param-input"
                 [ngModel]="value"
@@ -137,14 +141,22 @@ import { NodeParameter } from '../../../../../core/models';
       opacity: 1;
       background: hsla(30,80%,50%,0.15);
     }
+    .expr-error-msg {
+      font-size: 0.6875rem;
+      color: hsl(0,72%,65%);
+      margin-top: 3px;
+      font-family: 'Consolas','Monaco',monospace;
+    }
   `]
 })
 export class StringParamComponent {
   @Input() param!: NodeParameter;
   @Input() value: any = '';
   @Input() readOnly = false;
+  @Input() expressionError = '';
   @Output() valueChange = new EventEmitter<any>();
   @Output() blurred = new EventEmitter<void>();
+  @Output() focused = new EventEmitter<void>();
   @Output() openExpressionEditor = new EventEmitter<void>();
 
   /** Manual toggle — set when user clicks "Expression" on a field that has no {{ }} yet */

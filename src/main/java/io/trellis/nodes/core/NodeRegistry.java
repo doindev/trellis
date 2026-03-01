@@ -55,7 +55,12 @@ public class NodeRegistry {
 		String type = annotation.type();
 		int version = annotation.version();
 		String key = type + "_V" + version;
-		
+
+		List<NodeParameter> params = new ArrayList<>(node.getParameters());
+		if (node instanceof CacheableNode cacheableNode) {
+			params.addAll(getCacheableParameters(cacheableNode.cacheDisplayOptions()));
+		}
+
 		NodeRegistration registration = NodeRegistration.builder()
 				.type(type)
 				.displayName(annotation.displayName())
@@ -70,7 +75,7 @@ public class NodeRegistry {
 				.subtitle(annotation.subtitle())
 				.documentationUrl(annotation.documentationUrl())
 				.nodeInstance(node)
-				.parameters(node.getParameters())
+				.parameters(params)
 				.inputs(node.getInputs())
 				.outputs(node.getOutputs())
 				.build();
@@ -137,6 +142,85 @@ public class NodeRegistry {
 	}
 	
 	
+	// returns cache parameters injected into CacheableNode implementations
+	private List<NodeParameter> getCacheableParameters(Map<String, List<Object>> extraShowConditions) {
+		return List.of(
+			NodeParameter.builder()
+				.name("cacheEnabled")
+				.displayName("Caching Enabled")
+				.description("Enable engine-level caching for this node.")
+				.type(NodeParameter.ParameterType.BOOLEAN)
+				.defaultValue(false)
+				.isNodeSetting(true)
+				.noDataExpression(true)
+				.displayOptions(buildCacheDisplayOptions(Map.of(), extraShowConditions))
+				.build(),
+			NodeParameter.builder()
+				.name("cacheSource")
+				.displayName("Cache Source")
+				.description("Use a pre-defined cache or configure one inline.")
+				.type(NodeParameter.ParameterType.OPTIONS)
+				.defaultValue("inline")
+				.isNodeSetting(true)
+				.noDataExpression(true)
+				.options(List.of(
+					NodeParameter.ParameterOption.builder().name("Inline Configuration").value("inline").build(),
+					NodeParameter.ParameterOption.builder().name("Select Defined Cache").value("select").build()
+				))
+				.displayOptions(buildCacheDisplayOptions(Map.of("cacheEnabled", List.of(true)), extraShowConditions))
+				.build(),
+			NodeParameter.builder()
+				.name("cacheName")
+				.displayName("Cache Name")
+				.description("Name of the cache to use.")
+				.type(NodeParameter.ParameterType.STRING)
+				.defaultValue("")
+				.isNodeSetting(true)
+				.displayOptions(buildCacheDisplayOptions(Map.of("cacheEnabled", List.of(true)), extraShowConditions))
+				.build(),
+			NodeParameter.builder()
+				.name("cacheMaxSize")
+				.displayName("Max Entries")
+				.description("Maximum number of entries in the cache.")
+				.type(NodeParameter.ParameterType.NUMBER)
+				.defaultValue(1000)
+				.isNodeSetting(true)
+				.displayOptions(buildCacheDisplayOptions(Map.of("cacheEnabled", List.of(true), "cacheSource", List.of("inline")), extraShowConditions))
+				.build(),
+			NodeParameter.builder()
+				.name("cacheTtlSeconds")
+				.displayName("TTL (seconds)")
+				.description("Time-to-live for cache entries in seconds.")
+				.type(NodeParameter.ParameterType.NUMBER)
+				.defaultValue(3600)
+				.isNodeSetting(true)
+				.displayOptions(buildCacheDisplayOptions(Map.of("cacheEnabled", List.of(true), "cacheSource", List.of("inline")), extraShowConditions))
+				.build(),
+			NodeParameter.builder()
+				.name("cacheKey")
+				.displayName("Cache Key")
+				.description("The cache key. Use a field path (e.g. 'url') or expression.")
+				.type(NodeParameter.ParameterType.STRING)
+				.defaultValue("")
+				.isNodeSetting(true)
+				.displayOptions(buildCacheDisplayOptions(Map.of("cacheEnabled", List.of(true)), extraShowConditions))
+				.build()
+		);
+	}
+
+	// merges base show-conditions with extra per-node conditions into a displayOptions map
+	private Map<String, Object> buildCacheDisplayOptions(Map<String, Object> baseShow,
+			Map<String, List<Object>> extraShowConditions) {
+		if (baseShow.isEmpty() && (extraShowConditions == null || extraShowConditions.isEmpty())) {
+			return null;
+		}
+		Map<String, Object> merged = new java.util.LinkedHashMap<>(baseShow);
+		if (extraShowConditions != null) {
+			merged.putAll(extraShowConditions);
+		}
+		return Map.of("show", merged);
+	}
+
 	@Data
 	@Builder
 	public static class NodeRegistration {

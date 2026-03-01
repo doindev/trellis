@@ -80,6 +80,21 @@ import { SchemaNode } from './parameter-panel.component';
                         (keydown)="onKeydown($event)"
                         [placeholder]="placeholderText"
                         spellcheck="false"></textarea>
+              <div #textMirror class="expr-textarea-mirror" aria-hidden="true"></div>
+              @if (showAutocomplete && autocompleteSuggestions.length > 0) {
+                <div class="autocomplete-dropdown"
+                     [style.top.px]="autocompleteTop"
+                     [style.left.px]="autocompleteLeft">
+                  @for (suggestion of autocompleteSuggestions; track suggestion; let i = $index) {
+                    <div class="autocomplete-item"
+                         [class.selected]="i === autocompleteSelectedIndex"
+                         (mousedown)="applySuggestion(suggestion); $event.preventDefault()"
+                         (mouseenter)="autocompleteSelectedIndex = i">
+                      {{ suggestion }}
+                    </div>
+                  }
+                </div>
+              }
             </div>
           </div>
 
@@ -309,6 +324,7 @@ import { SchemaNode } from './parameter-panel.component';
       display: flex;
       flex-direction: column;
       padding: 0 !important;
+      position: relative;
     }
     .expr-textarea {
       flex: 1;
@@ -324,6 +340,46 @@ import { SchemaNode } from './parameter-panel.component';
       outline: none;
     }
     .expr-textarea::placeholder { color: hsl(0, 0%, 34%); }
+
+    .expr-textarea-mirror {
+      position: absolute;
+      top: 0;
+      left: 0;
+      visibility: hidden;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      padding: 8px 12px;
+      width: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .autocomplete-dropdown {
+      position: absolute;
+      z-index: 10;
+      background: hsl(0, 0%, 15%);
+      border: 1px solid hsl(0, 0%, 28%);
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      max-height: 200px;
+      overflow-y: auto;
+      min-width: 160px;
+    }
+    .autocomplete-item {
+      padding: 5px 10px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.8125rem;
+      color: hsl(0, 0%, 80%);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .autocomplete-item:hover,
+    .autocomplete-item.selected {
+      background: hsl(247, 49%, 53%, 0.25);
+      color: hsl(0, 0%, 96%);
+    }
 
     /* Result */
     .expr-display-toggle {
@@ -386,11 +442,13 @@ import { SchemaNode } from './parameter-panel.component';
 export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
   @Input() expression = '';
   @Input() inputItems: any[] = [];
+  @Input() nodeNames: string[] = [];
 
   @Output() expressionSaved = new EventEmitter<string>();
   @Output() closed = new EventEmitter<void>();
 
   @ViewChild('exprTextarea') exprTextarea?: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('textMirror') textMirror?: ElementRef<HTMLDivElement>;
 
   currentExpression = '';
   evaluationResult: any = null;
@@ -401,6 +459,14 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
   displayMode: 'text' | 'html' = 'text';
   hintText = 'Use {{ }} for expressions';
   placeholderText = 'e.g. Hello {{$json.name}}';
+
+  // Autocomplete state
+  showAutocomplete = false;
+  autocompleteSuggestions: string[] = [];
+  autocompleteSelectedIndex = 0;
+  autocompleteTop = 0;
+  autocompleteLeft = 0;
+  private autocompleteTokenStart = 0;
 
   private evaluateSubject = new Subject<string>();
   private subscription?: Subscription;
@@ -452,9 +518,30 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
 
   onExpressionChange(value: string): void {
     this.evaluateSubject.next(value);
+    setTimeout(() => this.updateAutocomplete());
   }
 
   onKeydown(event: KeyboardEvent): void {
+    if (this.showAutocomplete && this.autocompleteSuggestions.length > 0) {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        this.autocompleteSelectedIndex = (this.autocompleteSelectedIndex + 1) % this.autocompleteSuggestions.length;
+        return;
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        this.autocompleteSelectedIndex = (this.autocompleteSelectedIndex - 1 + this.autocompleteSuggestions.length) % this.autocompleteSuggestions.length;
+        return;
+      } else if (event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault();
+        this.applySuggestion(this.autocompleteSuggestions[this.autocompleteSelectedIndex]);
+        return;
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        this.showAutocomplete = false;
+        return;
+      }
+    }
+
     if (event.key === 'Enter' && event.ctrlKey) {
       event.preventDefault();
       this.onSave();
@@ -484,6 +571,165 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
       return JSON.stringify(this.evaluationResult, null, 2);
     }
     return String(this.evaluationResult);
+  }
+
+  // --- Autocomplete ---
+
+  private static readonly GLOBAL_VARS = [
+    '$json', '$input', '$node', '$env', '$vars',
+    '$execution', '$now', '$today', '$runIndex'
+  ];
+
+  updateAutocomplete(): void {
+    const ta = this.exprTextarea?.nativeElement;
+    if (!ta) { this.showAutocomplete = false; return; }
+
+    const cursorPos = ta.selectionStart;
+    const textBefore = this.currentExpression.substring(0, cursorPos);
+
+    // Find the innermost {{ before cursor (not yet closed by }})
+    const lastOpen = textBefore.lastIndexOf('{{');
+    if (lastOpen < 0) { this.showAutocomplete = false; return; }
+    const afterOpen = textBefore.substring(lastOpen + 2);
+    if (afterOpen.includes('}}')) { this.showAutocomplete = false; return; }
+
+    // Pattern 1: $node[' or $node[" → suggest node names
+    const nodeMatch = afterOpen.match(/\$node\[['"]([^'"]*)$/);
+    if (nodeMatch) {
+      const partial = nodeMatch[1].toLowerCase();
+      this.autocompleteSuggestions = this.nodeNames
+        .filter(n => n.toLowerCase().startsWith(partial))
+        .slice(0, 15);
+      this.autocompleteTokenStart = cursorPos - nodeMatch[1].length;
+      this.showSuggestionsAt(cursorPos);
+      return;
+    }
+
+    // Pattern 2: $json. or $json.nested. → suggest fields from schema
+    const jsonMatch = afterOpen.match(/\$json\.([a-zA-Z0-9_.]*?)$/);
+    if (jsonMatch) {
+      const pathSoFar = jsonMatch[1];
+      const parts = pathSoFar.split('.');
+      const partial = parts.pop() || '';
+      const parentPath = parts.join('.');
+
+      const fields = this.getFieldsAtPath(this.extractSchemaItems(), parentPath);
+      this.autocompleteSuggestions = fields
+        .filter(f => f.toLowerCase().startsWith(partial.toLowerCase()))
+        .slice(0, 15);
+      this.autocompleteTokenStart = cursorPos - partial.length;
+      this.showSuggestionsAt(cursorPos);
+      return;
+    }
+
+    // Pattern 3: $ at start or after whitespace/operator → suggest global vars
+    const dollarMatch = afterOpen.match(/(?:^|[\s+\-*/%(<>=!&|,])(\$[a-zA-Z]*)$/);
+    if (dollarMatch) {
+      const partial = dollarMatch[1].toLowerCase();
+      this.autocompleteSuggestions = ExpressionEditorModalComponent.GLOBAL_VARS
+        .filter(v => v.toLowerCase().startsWith(partial))
+        .slice(0, 15);
+      this.autocompleteTokenStart = cursorPos - dollarMatch[1].length;
+      this.showSuggestionsAt(cursorPos);
+      return;
+    }
+
+    this.showAutocomplete = false;
+  }
+
+  private showSuggestionsAt(cursorPos: number): void {
+    if (this.autocompleteSuggestions.length === 0) {
+      this.showAutocomplete = false;
+      return;
+    }
+    this.autocompleteSelectedIndex = 0;
+    this.positionAutocomplete(cursorPos);
+    this.showAutocomplete = true;
+  }
+
+  positionAutocomplete(cursorPos: number): void {
+    const mirror = this.textMirror?.nativeElement;
+    const ta = this.exprTextarea?.nativeElement;
+    if (!mirror || !ta) return;
+
+    // Copy text up to cursor into mirror, add a span to measure position
+    const textBefore = this.currentExpression.substring(0, cursorPos);
+    mirror.textContent = '';
+    const textNode = document.createTextNode(textBefore);
+    mirror.appendChild(textNode);
+    const marker = document.createElement('span');
+    marker.textContent = '\u200b'; // zero-width space
+    mirror.appendChild(marker);
+
+    const markerRect = marker.getBoundingClientRect();
+    const taRect = ta.getBoundingClientRect();
+
+    this.autocompleteTop = markerRect.top - taRect.top + ta.scrollTop + 20;
+    this.autocompleteLeft = Math.min(
+      markerRect.left - taRect.left,
+      ta.clientWidth - 180
+    );
+  }
+
+  applySuggestion(suggestion: string): void {
+    const ta = this.exprTextarea?.nativeElement;
+    if (!ta) return;
+
+    const cursorPos = ta.selectionStart;
+    const before = this.currentExpression.substring(0, this.autocompleteTokenStart);
+    const after = this.currentExpression.substring(cursorPos);
+
+    // For node names, add the closing quote+bracket
+    const isNodeSuggestion = /\$node\[['"]$/.test(this.currentExpression.substring(0, this.autocompleteTokenStart));
+    let insertText = suggestion;
+    if (isNodeSuggestion) {
+      const quoteChar = this.currentExpression[this.autocompleteTokenStart - 1] || "'";
+      insertText = suggestion + quoteChar + ']';
+    }
+
+    this.currentExpression = before + insertText + after;
+    this.showAutocomplete = false;
+    this.evaluateSubject.next(this.currentExpression);
+
+    setTimeout(() => {
+      const newPos = this.autocompleteTokenStart + insertText.length;
+      ta.setSelectionRange(newPos, newPos);
+      ta.focus();
+    });
+  }
+
+  /** Walk the input schema tree to get field names at a given dot-notation path */
+  private getFieldsAtPath(items: Record<string, any>[], path: string): string[] {
+    if (!items || items.length === 0) return [];
+
+    // Merge items into one superset object
+    let obj: Record<string, any> = {};
+    for (const item of items) {
+      if (item && typeof item === 'object' && !Array.isArray(item)) {
+        for (const [k, v] of Object.entries(item)) {
+          if (!(k in obj)) obj[k] = v;
+        }
+      }
+    }
+
+    if (!path) {
+      return Object.keys(obj);
+    }
+
+    // Walk the path
+    const segments = path.split('.');
+    for (const seg of segments) {
+      if (obj && typeof obj === 'object' && !Array.isArray(obj) && seg in obj) {
+        obj = obj[seg];
+      } else {
+        return [];
+      }
+    }
+
+    if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+      return Object.keys(obj);
+    }
+    return [];
   }
 
   // --- Schema ---

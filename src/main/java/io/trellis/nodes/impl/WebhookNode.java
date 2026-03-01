@@ -3,6 +3,7 @@ package io.trellis.nodes.impl;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -322,6 +323,12 @@ public class WebhookNode extends AbstractTriggerNode {
 			for (Map<String, Object> item : inputData) {
 				Map<String, Object> enriched = deepClone(item);
 				Map<String, Object> json = unwrapJson(enriched);
+				// Ensure standard webhook fields exist (may be absent in manual execution)
+				json.putIfAbsent("headers", new LinkedHashMap<>());
+				json.putIfAbsent("params", new LinkedHashMap<>());
+				json.putIfAbsent("body", new LinkedHashMap<>());
+				json.putIfAbsent("method", httpMethod);
+				json.putIfAbsent("path", path);
 				json.put("_webhookPath", path);
 				json.put("_webhookMethod", httpMethod);
 				json.put("_webhookTimestamp", Instant.now().toString());
@@ -333,6 +340,11 @@ public class WebhookNode extends AbstractTriggerNode {
 
 		// No incoming data - produce a trigger item with webhook metadata
 		Map<String, Object> webhookData = new HashMap<>();
+		webhookData.put("headers", new LinkedHashMap<>());
+		webhookData.put("params", new LinkedHashMap<>());
+		webhookData.put("body", new LinkedHashMap<>());
+		webhookData.put("method", httpMethod);
+		webhookData.put("path", path);
 		webhookData.put("_webhookPath", path);
 		webhookData.put("_webhookMethod", httpMethod);
 		webhookData.put("_webhookTimestamp", Instant.now().toString());

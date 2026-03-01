@@ -8,6 +8,7 @@ import java.util.Map;
 
 import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractDatabaseNode;
+import io.trellis.nodes.core.CacheableNode;
 import io.trellis.nodes.core.NodeExecutionContext;
 import io.trellis.nodes.core.NodeExecutionResult;
 import io.trellis.nodes.core.NodeInput;
@@ -26,7 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 	icon = "postgres",
 	credentials = {"postgresApi"}
 )
-public class PostgresNode extends AbstractDatabaseNode {
+public class PostgresNode extends AbstractDatabaseNode implements CacheableNode {
+
+	@Override
+	public Map<String, List<Object>> cacheDisplayOptions() {
+		return Map.of("operation", List.of("executeQuery"));
+	}
 
 	@Override
 	public List<NodeInput> getInputs() {

@@ -86,6 +86,10 @@ public class ExpressionEvaluator {
                 }
             }
 
+            // $('Node Name') function — returns { item: { json: ... }, first: fn, all: fn }
+            setup.append("function $(name) { var d = $node[name] || { json: {} }; ");
+            setup.append("return { item: d, first: function() { return d; }, json: d.json }; }\n");
+
             setup.append("var $env = ").append(toJson(ctx.getEnvVars() != null ? ctx.getEnvVars() : Map.of())).append(";\n");
             setup.append("var $vars = ").append(toJson(ctx.getVariables() != null ? ctx.getVariables() : Map.of())).append(";\n");
 
@@ -95,6 +99,10 @@ public class ExpressionEvaluator {
             setup.append("var $runIndex = ").append(ctx.getRunIndex()).append(";\n");
 
             String fullScript = setup + "(" + expression + ")";
+
+            if (log.isDebugEnabled()) {
+                log.debug("Expression script for '{}':\n{}", expression, fullScript);
+            }
 
             Value result = jsContext.eval("js", fullScript);
             return convertValue(result);
@@ -148,6 +156,8 @@ public class ExpressionEvaluator {
         try {
             return objectMapper.writeValueAsString(obj != null ? obj : Map.of());
         } catch (Exception e) {
+            log.warn("toJson serialization failed for {}: {}",
+                    obj != null ? obj.getClass().getSimpleName() : "null", e.getMessage());
             return "{}";
         }
     }

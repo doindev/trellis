@@ -263,6 +263,10 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     return this.nodeType?.parameters || [];
   }
 
+  hasParameter(name: string): boolean {
+    return this.parameters.some(p => p.name === name);
+  }
+
   get visibleParameters(): NodeParameter[] {
     return this.parameters.filter(p => !p.isNodeSetting && this.isVisible(p));
   }
@@ -418,6 +422,18 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
         this._localPath = normalized;
         this.onParameterChange('path', normalized);
       }
+    }
+
+    // Expression validation on blur
+    const value = String(this.node.parameters?.[name] ?? '');
+    if (value.includes('{{')) {
+      const inputData = this.collectInputForExecution();
+      this.workflowService.evaluateExpression(value, inputData).subscribe({
+        next: (res) => { this.expressionErrors[name] = res.error || ''; },
+        error: (err) => { this.expressionErrors[name] = err.message || 'Validation failed'; }
+      });
+    } else {
+      delete this.expressionErrors[name];
     }
   }
 
@@ -1211,6 +1227,18 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     this.editingName = false;
   }
 
+  // --- Expression validation ---
+
+  expressionErrors: Record<string, string> = {};
+
+  onParamFocus(name: string): void {
+    delete this.expressionErrors[name];
+  }
+
+  getExpressionError(name: string): string {
+    return this.expressionErrors[name] || '';
+  }
+
   // --- Expression editor modal ---
 
   expressionEditorOpen = false;
@@ -1243,6 +1271,10 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   onFieldDragStart(event: DragEvent, fieldName: string): void {
     event.dataTransfer?.setData('text/plain', '{{$json.' + fieldName + '}}');
     event.dataTransfer!.effectAllowed = 'copy';
+  }
+
+  get allNodeNames(): string[] {
+    return this.allNodes.map(n => n.name);
   }
 
   /** Get all unique top-level field names from input items for a given node */
