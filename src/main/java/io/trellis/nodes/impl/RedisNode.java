@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractNode;
+import io.trellis.nodes.core.CacheableNode;
 import io.trellis.nodes.core.NodeExecutionContext;
 import io.trellis.nodes.core.NodeExecutionResult;
 import io.trellis.nodes.core.NodeInput;
@@ -31,10 +32,15 @@ import redis.clients.jedis.JedisPool;
 	icon = "redis",
 	credentials = {"redis"}
 )
-public class RedisNode extends AbstractNode {
+public class RedisNode extends AbstractNode implements CacheableNode {
 
 	@Autowired
 	private DatabaseConnectionPoolService poolService;
+
+	@Override
+	public Map<String, List<Object>> cacheDisplayOptions() {
+		return Map.of("operation", List.of("get", "keys", "info"));
+	}
 
 	@Override
 	public List<NodeInput> getInputs() {

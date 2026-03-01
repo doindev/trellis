@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.trellis.nodes.base.AbstractNode;
+import io.trellis.nodes.core.CacheableNode;
 import io.trellis.nodes.core.NodeExecutionContext;
 import io.trellis.nodes.core.NodeExecutionResult;
 import io.trellis.nodes.core.NodeInput;
@@ -39,12 +40,17 @@ import lombok.extern.slf4j.Slf4j;
 	icon = "neo4j",
 	credentials = {"neo4j"}
 )
-public class Neo4jNode extends AbstractNode {
+public class Neo4jNode extends AbstractNode implements CacheableNode {
 
 	@Autowired
 	private DatabaseConnectionPoolService poolService;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
+
+	@Override
+	public Map<String, List<Object>> cacheDisplayOptions() {
+		return Map.of("operation", List.of("executeQuery"));
+	}
 
 	@Override
 	public List<NodeInput> getInputs() {

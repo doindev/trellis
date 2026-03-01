@@ -16,6 +16,7 @@ import com.mongodb.client.result.UpdateResult;
 
 import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractNode;
+import io.trellis.nodes.core.CacheableNode;
 import io.trellis.nodes.core.NodeExecutionContext;
 import io.trellis.nodes.core.NodeExecutionResult;
 import io.trellis.nodes.core.NodeInput;
@@ -35,10 +36,15 @@ import lombok.extern.slf4j.Slf4j;
 	icon = "mongo",
 	credentials = {"mongoDb"}
 )
-public class MongoDbNode extends AbstractNode {
+public class MongoDbNode extends AbstractNode implements CacheableNode {
 
 	@Autowired
 	private DatabaseConnectionPoolService poolService;
+
+	@Override
+	public Map<String, List<Object>> cacheDisplayOptions() {
+		return Map.of("operation", List.of("find", "aggregate", "count"));
+	}
 
 	@Override
 	public List<NodeInput> getInputs() {
