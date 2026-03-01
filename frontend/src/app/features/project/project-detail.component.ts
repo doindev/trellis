@@ -307,6 +307,6 @@ export class ProjectDetailComponent implements OnInit {
 
   createCache(): void {
     this.showCreateDropdown = false;
-    this.router.navigate(['/home/caches']);
+    this.router.navigate(['/home/caches'], { queryParams: { action: 'create-cache' } });
   }
 }

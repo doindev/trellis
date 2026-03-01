@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CacheService, CacheDefinition } from '../../core/services/cache.service';
@@ -12,6 +12,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
   styleUrl: './cache-list.component.scss'
 })
 export class CacheListComponent implements OnInit {
+  @ViewChild('nameInput') nameInput!: ElementRef<HTMLInputElement>;
   caches = signal<CacheDefinition[]>([]);
   loading = signal(true);
   showModal = signal(false);
@@ -41,12 +42,18 @@ export class CacheListComponent implements OnInit {
     this.editingCache.set({ name: '', description: '', maxSize: 1000, ttlSeconds: 3600 });
     this.isEditing.set(false);
     this.showModal.set(true);
+    this.focusNameInput();
   }
 
   openEdit(cache: CacheDefinition): void {
     this.editingCache.set({ ...cache });
     this.isEditing.set(true);
     this.showModal.set(true);
+    this.focusNameInput();
+  }
+
+  private focusNameInput(): void {
+    setTimeout(() => this.nameInput?.nativeElement?.focus(), 50);
   }
 
   saveCache(): void {

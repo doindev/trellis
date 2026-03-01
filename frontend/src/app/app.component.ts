@@ -228,7 +228,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   onAddCache(): void {
     this.showCreateMenu = false;
-    this.router.navigate(['/home/caches']);
+    this.router.navigate(['/home/caches'], { queryParams: { action: 'create-cache' } });
   }
 
   toggleSettingsPopover(): void {

@@ -1,0 +1,359 @@
+{
+  "name": "Kubernetes Cluster Health Monitor",
+  "description": "Comprehensive K8s monitoring workflow that polls the Kubernetes API every 5 minutes, analyzes pod health, node status, deployment rollouts, and warning events. Routes alerts by severity and sends formatted MS Teams MessageCards. Includes cache-based alert deduplication.",
+  "nodes": [
+    {
+      "id": "sched-trigger",
+      "name": "K8s Health Check (5min)",
+      "type": "scheduleTrigger",
+      "position": [0, 500],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "minutes", "minutesInterval": 5 }]
+        }
+      }
+    },
+    {
+      "id": "k8s-config",
+      "name": "K8s & Teams Config",
+      "type": "set",
+      "position": [300, 500],
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            { "name": "k8sApiUrl", "value": "https://your-k8s-cluster.example.com", "type": "string" },
+            { "name": "namespace", "value": "production", "type": "string" },
+            { "name": "k8sToken", "value": "your-service-account-token", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-pods",
+      "name": "GET Pods",
+      "type": "httpRequest",
+      "position": [620, 150],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.k8sApiUrl }}/api/v1/namespaces/{{ $json.namespace }}/pods",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $json.k8sToken }}" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        },
+        "options": { "timeout": 30000, "neverError": true }
+      }
+    },
+    {
+      "id": "http-nodes",
+      "name": "GET Nodes",
+      "type": "httpRequest",
+      "position": [620, 380],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.k8sApiUrl }}/api/v1/nodes",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $json.k8sToken }}" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        },
+        "options": { "timeout": 30000, "neverError": true }
+      }
+    },
+    {
+      "id": "http-deploys",
+      "name": "GET Deployments",
+      "type": "httpRequest",
+      "position": [620, 610],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.k8sApiUrl }}/apis/apps/v1/namespaces/{{ $json.namespace }}/deployments",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $json.k8sToken }}" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        },
+        "options": { "timeout": 30000, "neverError": true }
+      }
+    },
+    {
+      "id": "http-events",
+      "name": "GET Warning Events",
+      "type": "httpRequest",
+      "position": [620, 840],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.k8sApiUrl }}/api/v1/namespaces/{{ $json.namespace }}/events?fieldSelector=type=Warning",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $json.k8sToken }}" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        },
+        "options": { "timeout": 30000, "neverError": true }
+      }
+    },
+    {
+      "id": "analyze-pods",
+      "name": "Analyze Pod Health",
+      "type": "code",
+      "position": [940, 150],
+      "parameters": {
+        "code": "const items = $input.all();\nconst alerts = [];\nconst pods = items[0]?.json?.items || [];\n\nfor (const pod of pods) {\n  const name = pod.metadata?.name || 'unknown';\n  const ns = pod.metadata?.namespace || 'default';\n  const phase = pod.status?.phase;\n\n  if (phase === 'Failed' || phase === 'Unknown') {\n    alerts.push({ severity: 'CRITICAL', category: 'Pod', resource: `${ns}/${name}`,\n      message: `Pod ${name} is in ${phase} state`, ts: new Date().toISOString() });\n  }\n\n  for (const cs of (pod.status?.containerStatuses || [])) {\n    const waiting = cs.state?.waiting?.reason;\n    if (waiting === 'CrashLoopBackOff') {\n      alerts.push({ severity: 'CRITICAL', category: 'Pod', resource: `${ns}/${name}`,\n        message: `Container ${cs.name} in CrashLoopBackOff (${cs.restartCount} restarts)`, ts: new Date().toISOString() });\n    } else if (waiting === 'OOMKilled' || cs.lastState?.terminated?.reason === 'OOMKilled') {\n      alerts.push({ severity: 'CRITICAL', category: 'Pod', resource: `${ns}/${name}`,\n        message: `Container ${cs.name} was OOMKilled`, ts: new Date().toISOString() });\n    } else if (waiting === 'ImagePullBackOff' || waiting === 'ErrImagePull') {\n      alerts.push({ severity: 'WARNING', category: 'Pod', resource: `${ns}/${name}`,\n        message: `Container ${cs.name}: ${waiting}`, ts: new Date().toISOString() });\n    } else if ((cs.restartCount || 0) > 10) {\n      alerts.push({ severity: 'WARNING', category: 'Pod', resource: `${ns}/${name}`,\n        message: `Container ${cs.name} has ${cs.restartCount} restarts`, ts: new Date().toISOString() });\n    }\n  }\n\n  if (phase === 'Pending') {\n    const mins = Math.round((Date.now() - new Date(pod.metadata?.creationTimestamp).getTime()) / 60000);\n    if (mins > 5) {\n      alerts.push({ severity: 'WARNING', category: 'Pod', resource: `${ns}/${name}`,\n        message: `Pod stuck in Pending for ${mins} minutes`, ts: new Date().toISOString() });\n    }\n  }\n}\n\nreturn alerts.length > 0 ? alerts.map(a => ({ json: a })) : [{ json: { severity: 'NONE', category: 'Pod', message: 'All pods healthy' } }];"
+      }
+    },
+    {
+      "id": "analyze-nodes",
+      "name": "Analyze Node Health",
+      "type": "code",
+      "position": [940, 380],
+      "parameters": {
+        "code": "const items = $input.all();\nconst alerts = [];\nconst nodes = items[0]?.json?.items || [];\n\nfor (const node of nodes) {\n  const name = node.metadata?.name || 'unknown';\n  const conditions = node.status?.conditions || [];\n\n  const ready = conditions.find(c => c.type === 'Ready');\n  if (ready?.status !== 'True') {\n    alerts.push({ severity: 'CRITICAL', category: 'Node', resource: name,\n      message: `Node ${name} is NotReady (${ready?.reason || 'unknown'})`, ts: new Date().toISOString() });\n  }\n\n  const memPressure = conditions.find(c => c.type === 'MemoryPressure');\n  if (memPressure?.status === 'True') {\n    alerts.push({ severity: 'CRITICAL', category: 'Node', resource: name,\n      message: `Node ${name} under MemoryPressure`, ts: new Date().toISOString() });\n  }\n\n  const diskPressure = conditions.find(c => c.type === 'DiskPressure');\n  if (diskPressure?.status === 'True') {\n    alerts.push({ severity: 'WARNING', category: 'Node', resource: name,\n      message: `Node ${name} under DiskPressure`, ts: new Date().toISOString() });\n  }\n\n  const pidPressure = conditions.find(c => c.type === 'PIDPressure');\n  if (pidPressure?.status === 'True') {\n    alerts.push({ severity: 'WARNING', category: 'Node', resource: name,\n      message: `Node ${name} under PIDPressure`, ts: new Date().toISOString() });\n  }\n\n  if (node.spec?.unschedulable) {\n    alerts.push({ severity: 'INFO', category: 'Node', resource: name,\n      message: `Node ${name} is cordoned (unschedulable)`, ts: new Date().toISOString() });\n  }\n}\n\nreturn alerts.length > 0 ? alerts.map(a => ({ json: a })) : [{ json: { severity: 'NONE', category: 'Node', message: 'All nodes healthy' } }];"
+      }
+    },
+    {
+      "id": "analyze-deploys",
+      "name": "Analyze Deployments",
+      "type": "code",
+      "position": [940, 610],
+      "parameters": {
+        "code": "const items = $input.all();\nconst alerts = [];\nconst deployments = items[0]?.json?.items || [];\n\nfor (const dep of deployments) {\n  const name = dep.metadata?.name || 'unknown';\n  const ns = dep.metadata?.namespace || 'default';\n  const desired = dep.spec?.replicas || 0;\n  const available = dep.status?.availableReplicas || 0;\n  const ready = dep.status?.readyReplicas || 0;\n  const unavailable = dep.status?.unavailableReplicas || 0;\n\n  if (available === 0 && desired > 0) {\n    alerts.push({ severity: 'CRITICAL', category: 'Deployment', resource: `${ns}/${name}`,\n      message: `${name} has 0/${desired} available replicas`, ts: new Date().toISOString() });\n  } else if (unavailable > 0) {\n    alerts.push({ severity: 'WARNING', category: 'Deployment', resource: `${ns}/${name}`,\n      message: `${name}: ${unavailable} unavailable (${ready}/${desired} ready)`, ts: new Date().toISOString() });\n  }\n\n  const progressing = (dep.status?.conditions || []).find(c => c.type === 'Progressing');\n  if (progressing?.status === 'False' && progressing?.reason === 'ProgressDeadlineExceeded') {\n    alerts.push({ severity: 'CRITICAL', category: 'Deployment', resource: `${ns}/${name}`,\n      message: `${name} rollout stalled: ProgressDeadlineExceeded`, ts: new Date().toISOString() });\n  }\n\n  const replicaFailure = (dep.status?.conditions || []).find(c => c.type === 'ReplicaFailure');\n  if (replicaFailure?.status === 'True') {\n    alerts.push({ severity: 'WARNING', category: 'Deployment', resource: `${ns}/${name}`,\n      message: `${name} replica failure: ${(replicaFailure.message || '').substring(0, 100)}`, ts: new Date().toISOString() });\n  }\n}\n\nreturn alerts.length > 0 ? alerts.map(a => ({ json: a })) : [{ json: { severity: 'NONE', category: 'Deployment', message: 'All deployments healthy' } }];"
+      }
+    },
+    {
+      "id": "analyze-events",
+      "name": "Parse Warning Events",
+      "type": "code",
+      "position": [940, 840],
+      "parameters": {
+        "code": "const items = $input.all();\nconst alerts = [];\nconst events = items[0]?.json?.items || [];\nconst now = Date.now();\nconst recentWindow = 15 * 60 * 1000;\n\nfor (const evt of events) {\n  const lastSeen = new Date(evt.lastTimestamp || evt.metadata?.creationTimestamp).getTime();\n  if (now - lastSeen > recentWindow) continue;\n\n  const name = evt.involvedObject?.name || 'unknown';\n  const kind = evt.involvedObject?.kind || 'Unknown';\n  const ns = evt.involvedObject?.namespace || '';\n  const reason = evt.reason || '';\n  const msg = evt.message || '';\n  const count = evt.count || 1;\n\n  let severity = 'INFO';\n  const criticalReasons = ['OOMKilling', 'SystemOOM', 'NodeNotReady', 'Rebooted', 'EvictionThresholdMet'];\n  const warningReasons = ['FailedScheduling', 'FailedMount', 'FailedAttachVolume', 'Unhealthy', 'BackOff', 'Evicted'];\n\n  if (criticalReasons.includes(reason)) {\n    severity = 'CRITICAL';\n  } else if (warningReasons.includes(reason)) {\n    severity = count > 5 ? 'CRITICAL' : 'WARNING';\n  }\n\n  if (severity !== 'INFO' || count > 3) {\n    alerts.push({\n      severity, category: 'Event', resource: `${kind}/${ns ? ns + '/' : ''}${name}`,\n      message: `[${reason}] ${msg.substring(0, 200)}${count > 1 ? ' (x' + count + ')' : ''}`,\n      ts: new Date().toISOString()\n    });\n  }\n}\n\nreturn alerts.length > 0 ? alerts.map(a => ({ json: a })) : [{ json: { severity: 'NONE', category: 'Event', message: 'No concerning events' } }];"
+      }
+    },
+    {
+      "id": "aggregate",
+      "name": "Aggregate & Fingerprint",
+      "type": "code",
+      "position": [1260, 500],
+      "parameters": {
+        "code": "const items = $input.all();\n\nconst alerts = items.filter(i => i.json.severity !== 'NONE');\n\nif (alerts.length === 0) {\n  return [{ json: { severity: 'NONE', alertCount: 0, message: 'Cluster healthy - no alerts' } }];\n}\n\nconst seen = new Set();\nconst unique = [];\nfor (const item of alerts) {\n  const key = `${item.json.category}:${item.json.resource}:${item.json.severity}`;\n  if (!seen.has(key)) {\n    seen.add(key);\n    item.json.alertKey = key;\n    unique.push(item);\n  }\n}\n\nreturn unique;"
+      }
+    },
+    {
+      "id": "if-alerts",
+      "name": "Has Real Alerts?",
+      "type": "if",
+      "position": [1560, 500],
+      "parameters": {
+        "conditions": {
+          "values": [
+            { "value1": "={{ $json.severity }}", "operation": "notEquals", "value2": "NONE" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cache-lookup",
+      "name": "Deduplicate Alerts",
+      "type": "cache",
+      "position": [1860, 380],
+      "parameters": {
+        "operation": "lookup",
+        "cacheSource": "inline",
+        "cacheName": "k8s-alert-dedup",
+        "maxSize": 500,
+        "ttlSeconds": 900,
+        "key": "alertKey"
+      }
+    },
+    {
+      "id": "noop-healthy",
+      "name": "Cluster Healthy",
+      "type": "noOp",
+      "position": [1860, 680]
+    },
+    {
+      "id": "cache-set",
+      "name": "Record Alert",
+      "type": "cache",
+      "position": [2160, 280],
+      "parameters": {
+        "operation": "set",
+        "cacheSource": "inline",
+        "cacheName": "k8s-alert-dedup",
+        "maxSize": 500,
+        "ttlSeconds": 900,
+        "key": "alertKey"
+      }
+    },
+    {
+      "id": "noop-already",
+      "name": "Already Reported",
+      "type": "noOp",
+      "position": [2160, 530]
+    },
+    {
+      "id": "switch-severity",
+      "name": "Severity Router",
+      "type": "switch",
+      "position": [2460, 280],
+      "parameters": {
+        "rules": {
+          "values": [
+            { "value1": "={{ $json.severity }}", "operation": "equal", "value2": "CRITICAL", "outputLabel": "Critical" },
+            { "value1": "={{ $json.severity }}", "operation": "equal", "value2": "WARNING", "outputLabel": "Warning" },
+            { "value1": "={{ $json.severity }}", "operation": "equal", "value2": "INFO", "outputLabel": "Info" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "format-critical",
+      "name": "Format Critical Card",
+      "type": "code",
+      "position": [2760, 80],
+      "parameters": {
+        "code": "const items = $input.all();\nreturn items.map(item => {\n  const a = item.json;\n  return { json: {\n    '@type': 'MessageCard',\n    '@context': 'http://schema.org/extensions',\n    themeColor: 'FF0000',\n    summary: 'CRITICAL: ' + a.category + ' - ' + a.resource,\n    sections: [{\n      activityTitle: 'CRITICAL Alert - Kubernetes',\n      activitySubtitle: a.category + ' / ' + a.resource,\n      facts: [\n        { name: 'Category', value: a.category },\n        { name: 'Resource', value: a.resource },\n        { name: 'Message', value: a.message },\n        { name: 'Severity', value: 'CRITICAL' },\n        { name: 'Detected', value: a.ts }\n      ],\n      markdown: true\n    }],\n    potentialAction: [{\n      '@type': 'OpenUri',\n      name: 'Open K8s Dashboard',\n      targets: [{ os: 'default', uri: 'https://k8s-dashboard.example.com' }]\n    }]\n  }};\n});"
+      }
+    },
+    {
+      "id": "format-warning",
+      "name": "Format Warning Card",
+      "type": "code",
+      "position": [2760, 320],
+      "parameters": {
+        "code": "const items = $input.all();\nreturn items.map(item => {\n  const a = item.json;\n  return { json: {\n    '@type': 'MessageCard',\n    '@context': 'http://schema.org/extensions',\n    themeColor: 'FFA500',\n    summary: 'WARNING: ' + a.category + ' - ' + a.resource,\n    sections: [{\n      activityTitle: 'WARNING Alert - Kubernetes',\n      activitySubtitle: a.category + ' / ' + a.resource,\n      facts: [\n        { name: 'Category', value: a.category },\n        { name: 'Resource', value: a.resource },\n        { name: 'Message', value: a.message },\n        { name: 'Severity', value: 'WARNING' },\n        { name: 'Detected', value: a.ts }\n      ],\n      markdown: true\n    }]\n  }};\n});"
+      }
+    },
+    {
+      "id": "format-info",
+      "name": "Format Info Digest",
+      "type": "code",
+      "position": [2760, 560],
+      "parameters": {
+        "code": "const items = $input.all();\nconst facts = items.map((item, i) => ({\n  name: item.json.resource || ('Item ' + (i + 1)),\n  value: item.json.message\n}));\n\nreturn [{ json: {\n  '@type': 'MessageCard',\n  '@context': 'http://schema.org/extensions',\n  themeColor: '0078D7',\n  summary: 'K8s Info: ' + items.length + ' item(s)',\n  sections: [{\n    activityTitle: 'Kubernetes Info Summary',\n    activitySubtitle: items.length + ' informational item(s) detected',\n    facts: facts.slice(0, 10),\n    markdown: true\n  }]\n}}];"
+      }
+    },
+    {
+      "id": "http-critical",
+      "name": "Teams: Critical Channel",
+      "type": "httpRequest",
+      "position": [3060, 80],
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-org.webhook.office.com/webhookb2/CRITICAL-CHANNEL-WEBHOOK-ID",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      }
+    },
+    {
+      "id": "http-warning",
+      "name": "Teams: Warning Channel",
+      "type": "httpRequest",
+      "position": [3060, 320],
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-org.webhook.office.com/webhookb2/WARNING-CHANNEL-WEBHOOK-ID",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      }
+    },
+    {
+      "id": "http-info",
+      "name": "Teams: Info Channel",
+      "type": "httpRequest",
+      "position": [3060, 560],
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-org.webhook.office.com/webhookb2/INFO-CHANNEL-WEBHOOK-ID",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": { "timeout": 10000 }
+      }
+    },
+    {
+      "id": "note-monitor",
+      "name": "K8s Cluster Health Monitor",
+      "type": "stickyNote",
+      "position": [-60, 30],
+      "parameters": {
+        "content": "## Kubernetes Cluster Monitor\n\nPolls K8s API every 5 minutes across 4 dimensions:\n- **Pod Health**: CrashLoopBackOff, OOMKilled, ImagePull errors, stuck Pending\n- **Node Status**: NotReady, MemoryPressure, DiskPressure, PIDPressure\n- **Deployments**: Unavailable replicas, stalled rollouts, replica failures\n- **Warning Events**: Recent K8s warning events with severity escalation\n\n**Setup**: Edit the Config node with your K8s API URL and service account token.",
+        "color": "blue",
+        "width": 560,
+        "height": 240
+      }
+    },
+    {
+      "id": "note-routing",
+      "name": "Alert Processing & Routing",
+      "type": "stickyNote",
+      "position": [1200, 30],
+      "parameters": {
+        "content": "## Alert Pipeline\n\n1. **Aggregate**: Combines alerts from all 4 monitors, deduplicates\n2. **Filter**: Drops healthy (NONE) results via If node\n3. **Cache Dedup**: Prevents re-sending same alert within 15min TTL\n4. **Severity Router**: CRITICAL / WARNING / INFO to separate Teams channels\n5. **Format**: Creates MS Teams MessageCards with color-coded severity\n\n**Teams Setup**: Replace webhook URLs in the 3 HTTP POST nodes.",
+        "color": "purple",
+        "width": 560,
+        "height": 220
+      }
+    }
+  ],
+  "connections": {
+    "sched-trigger": { "main": [[{ "node": "k8s-config", "type": "main", "index": 0 }]] },
+    "k8s-config": { "main": [[{ "node": "http-pods", "type": "main", "index": 0 }, { "node": "http-nodes", "type": "main", "index": 0 }, { "node": "http-deploys", "type": "main", "index": 0 }, { "node": "http-events", "type": "main", "index": 0 }]] },
+    "http-pods": { "main": [[{ "node": "analyze-pods", "type": "main", "index": 0 }]] },
+    "http-nodes": { "main": [[{ "node": "analyze-nodes", "type": "main", "index": 0 }]] },
+    "http-deploys": { "main": [[{ "node": "analyze-deploys", "type": "main", "index": 0 }]] },
+    "http-events": { "main": [[{ "node": "analyze-events", "type": "main", "index": 0 }]] },
+    "analyze-pods": { "main": [[{ "node": "aggregate", "type": "main", "index": 0 }]] },
+    "analyze-nodes": { "main": [[{ "node": "aggregate", "type": "main", "index": 0 }]] },
+    "analyze-deploys": { "main": [[{ "node": "aggregate", "type": "main", "index": 0 }]] },
+    "analyze-events": { "main": [[{ "node": "aggregate", "type": "main", "index": 0 }]] },
+    "aggregate": { "main": [[{ "node": "if-alerts", "type": "main", "index": 0 }]] },
+    "if-alerts": { "main": [[{ "node": "cache-lookup", "type": "main", "index": 0 }], [{ "node": "noop-healthy", "type": "main", "index": 0 }]] },
+    "cache-lookup": { "main": [[{ "node": "noop-already", "type": "main", "index": 0 }], [{ "node": "cache-set", "type": "main", "index": 0 }]] },
+    "cache-set": { "main": [[{ "node": "switch-severity", "type": "main", "index": 0 }]] },
+    "switch-severity": { "main": [[{ "node": "format-critical", "type": "main", "index": 0 }], [{ "node": "format-warning", "type": "main", "index": 0 }], [{ "node": "format-info", "type": "main", "index": 0 }]] },
+    "format-critical": { "main": [[{ "node": "http-critical", "type": "main", "index": 0 }]] },
+    "format-warning": { "main": [[{ "node": "http-warning", "type": "main", "index": 0 }]] },
+    "format-info": { "main": [[{ "node": "http-info", "type": "main", "index": 0 }]] }
+  }
+}

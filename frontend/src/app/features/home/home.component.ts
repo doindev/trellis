@@ -39,6 +39,7 @@ import {
 })
 export class HomeComponent implements OnInit {
   @ViewChild('credModal') credModal!: CredentialCreateModalComponent;
+  @ViewChild(CacheListComponent) cacheList!: CacheListComponent;
 
   activeTab = signal<'workflows' | 'credentials' | 'executions' | 'variables' | 'caches'>('workflows');
 
@@ -217,11 +218,14 @@ export class HomeComponent implements OnInit {
       this.activeTab.set(tabFromRoute as any);
     }
 
-    // Auto-open credential create modal from sidebar navigation
+    // Auto-open create modals from sidebar navigation
     this.route.queryParams.subscribe(params => {
       if (params['action'] === 'create-credential') {
         this.activeTab.set('credentials');
         setTimeout(() => this.credModal?.openCreate(), 0);
+      } else if (params['action'] === 'create-cache') {
+        this.activeTab.set('caches');
+        setTimeout(() => this.cacheList?.openCreate(), 0);
       }
     });
 
@@ -407,7 +411,10 @@ export class HomeComponent implements OnInit {
   }
 
   createCache(): void {
-    this.router.navigate(['/home/caches']);
+    this.showCreateDropdown = false;
+    this.activeTab.set('caches');
+    this.router.navigate(['/home', 'caches']);
+    setTimeout(() => this.cacheList?.openCreate(), 0);
   }
 
   // Credential methods
