@@ -154,6 +154,65 @@ function TrellisCanvasInner({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Right-mouse-button + scroll wheel → zoom
+  const rightMouseDown = useRef(false);
+  const scrolledDuringRightHold = useRef(false);
+
+  useEffect(() => {
+    const el = reactFlowWrapper.current;
+    if (!el) return;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button === 2) {
+        rightMouseDown.current = true;
+        scrolledDuringRightHold.current = false;
+      }
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 2) rightMouseDown.current = false;
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (!rightMouseDown.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      scrolledDuringRightHold.current = true;
+      const delta = -e.deltaY;
+      const vp = getViewport();
+      const zoomFactor = 1 + (delta > 0 ? 0.08 : -0.08);
+      const newZoom = Math.min(Math.max(vp.zoom * zoomFactor, MIN_ZOOM), MAX_ZOOM);
+      // Zoom toward cursor position
+      const rect = el.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      const scale = newZoom / vp.zoom;
+      setViewport({
+        x: cx - (cx - vp.x) * scale,
+        y: cy - (cy - vp.y) * scale,
+        zoom: newZoom,
+      });
+    };
+    const onContextMenu = (e: MouseEvent) => {
+      if (scrolledDuringRightHold.current) {
+        e.preventDefault();
+        scrolledDuringRightHold.current = false;
+      }
+    };
+
+    el.addEventListener('mousedown', onMouseDown);
+    el.addEventListener('mouseup', onMouseUp);
+    el.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    el.addEventListener('contextmenu', onContextMenu);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      el.removeEventListener('mousedown', onMouseDown);
+      el.removeEventListener('mouseup', onMouseUp);
+      el.removeEventListener('wheel', onWheel, true);
+      el.removeEventListener('contextmenu', onContextMenu);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [getViewport, setViewport]);
+
   // Minimap: hidden by default, shown while panning or hovering the minimap
   const [isMinimapVisible, setIsMinimapVisible] = useState(false);
   const minimapHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);

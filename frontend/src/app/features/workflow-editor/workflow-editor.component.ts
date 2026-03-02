@@ -66,8 +66,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   showMcpParamEditorModal = false;
   validationErrors: { nodeName: string; warnings: string[] }[] = [];
   availableWorkflows: { id: string; name: string }[] = [];
-  drawerExpandedEditor = false;
-  drawerExpandedExecutions = false;
+  drawerExpandedEditor = localStorage.getItem('trellis.drawer.editor') === 'true';
+  drawerExpandedExecutions = localStorage.getItem('trellis.drawer.executions') === 'true';
   activeTab: 'editor' | 'executions' = 'editor';
   pendingConnection: { sourceNodeId: string; sourceHandleId: string; isTargetHandle?: boolean } | null = null;
   pendingEdgeInsertion: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string } | null = null;
@@ -281,8 +281,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   set drawerExpanded(value: boolean) {
     if (this.activeTab === 'executions') {
       this.drawerExpandedExecutions = value;
+      localStorage.setItem('trellis.drawer.executions', String(value));
     } else {
       this.drawerExpandedEditor = value;
+      localStorage.setItem('trellis.drawer.editor', String(value));
     }
   }
 
@@ -326,6 +328,13 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (event.key === 'l' && !event.ctrlKey && !event.metaKey && !event.altKey) {
       if (!this.isInputFocused(event)) {
         this.toggleDrawer();
+      }
+    }
+
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'o' || event.key === 'O')) {
+      if (this.activeTab === 'editor') {
+        event.preventDefault();
+        this.canvasWrapper?.triggerCleanUp();
       }
     }
   }
@@ -544,10 +553,6 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (!wf?.id) {
       this.store.saveWorkflow(this.replaceUrlOnFirstSave);
       return;
-    }
-    // Open the drawer when execution starts
-    if (!this.drawerExpanded) {
-      this.drawerExpanded = true;
     }
     this.store.setIsExecuting(true);
     this.store.setExecutionData(null);
