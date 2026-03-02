@@ -362,12 +362,12 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   computeNodeWarnings(node: WorkflowNode, typeDesc: NodeTypeDescription): string[] {
     const warnings: string[] = [];
 
-    // 1. Missing credentials
+    // 1. Missing credentials — at least one credential must be set
     if (typeDesc.credentials?.length) {
-      for (const credType of typeDesc.credentials) {
-        if (!node.credentials || !node.credentials[credType]) {
-          warnings.push(`Missing credential: ${credType}`);
-        }
+      const hasAnyCredential = node.credentials &&
+        Object.values(node.credentials).some(v => !!v);
+      if (!hasAnyCredential) {
+        warnings.push('Missing credential');
       }
     }
 

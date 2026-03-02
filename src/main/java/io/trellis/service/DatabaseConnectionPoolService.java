@@ -1,5 +1,6 @@
 package io.trellis.service;
 
+import java.util.List;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
@@ -132,7 +133,7 @@ public class DatabaseConnectionPoolService {
         String password = stringVal(credentials, "password", "");
 
         String jdbcUrl = switch (dbType) {
-            case "postgres" -> "jdbc:postgresql://" + host + ":" + port + "/" + database;
+            case "postgres", "timescaledb" -> "jdbc:postgresql://" + host + ":" + port + "/" + database;
             case "mysql" -> "jdbc:mysql://" + host + ":" + port + "/" + database;
             case "oracle" -> {
                 String connectAs = stringVal(credentials, "connectAs", "serviceName");
@@ -142,6 +143,15 @@ public class DatabaseConnectionPoolService {
                     yield "jdbc:oracle:thin:@//" + host + ":" + port + "/" + database;
                 }
             }
+            case "mssql" -> {
+                StringBuilder url = new StringBuilder("jdbc:sqlserver://");
+                url.append(host).append(":").append(port);
+                if (!database.isEmpty()) url.append(";databaseName=").append(database);
+                url.append(";encrypt=true;trustServerCertificate=true");
+                yield url.toString();
+            }
+            case "cratedb" -> "jdbc:crate://" + host + ":" + port + "/";
+            case "questdb" -> "jdbc:postgresql://" + host + ":" + port + "/" + (database.isEmpty() ? "qdb" : database);
             default -> throw new IllegalArgumentException("Unsupported DB type: " + dbType);
         };
 
@@ -162,8 +172,9 @@ public class DatabaseConnectionPoolService {
             config.setConnectionTestQuery("SELECT 1 FROM DUAL");
         }
 
-        // SSL for postgres
-        if ("postgres".equals(dbType) && Boolean.TRUE.equals(credentials.get("ssl"))) {
+        // SSL for postgres-compatible drivers
+        if (List.of("postgres", "timescaledb", "questdb", "cratedb").contains(dbType)
+                && Boolean.TRUE.equals(credentials.get("ssl"))) {
             config.addDataSourceProperty("ssl", "true");
             config.addDataSourceProperty("sslmode", "require");
         }
@@ -319,9 +330,11 @@ public class DatabaseConnectionPoolService {
 
     private int defaultPort(String dbType) {
         return switch (dbType) {
-            case "postgres" -> 5432;
+            case "postgres", "timescaledb", "questdb" -> 5432;
             case "mysql" -> 3306;
             case "oracle" -> 1521;
+            case "mssql" -> 1433;
+            case "cratedb" -> 5432;
             default -> 0;
         };
     }

@@ -276,16 +276,19 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     const allTypes = this.nodeType?.credentials || [];
     if (allTypes.length <= 1) return allTypes;
 
-    // If node has an 'authentication' parameter, use it to determine the active credential type
-    const authValue = this.node.parameters?.['authentication'];
-    if (authValue === 'none' || !authValue) return [];
-    if (authValue === 'genericCredentialType') {
-      const genericType = this.node.parameters?.['genericAuthType'];
-      return genericType ? [genericType] : [];
-    }
-    if (authValue === 'predefinedCredentialType') {
-      const predefined = this.node.parameters?.['nodeCredentialType'];
-      return predefined ? [predefined] : [];
+    // Only apply authentication-based filtering if the node defines an 'authentication' parameter
+    const hasAuthParam = this.parameters.some(p => p.name === 'authentication');
+    if (hasAuthParam) {
+      const authValue = this.node.parameters?.['authentication'];
+      if (authValue === 'none' || !authValue) return [];
+      if (authValue === 'genericCredentialType') {
+        const genericType = this.node.parameters?.['genericAuthType'];
+        return genericType ? [genericType] : [];
+      }
+      if (authValue === 'predefinedCredentialType') {
+        const predefined = this.node.parameters?.['nodeCredentialType'];
+        return predefined ? [predefined] : [];
+      }
     }
 
     // General fallback: check if any parameter value matches a credential type name

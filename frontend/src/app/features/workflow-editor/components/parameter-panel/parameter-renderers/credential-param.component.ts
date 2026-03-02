@@ -10,23 +10,23 @@ import { CredentialCreateModalComponent } from '../../../../../shared/components
   standalone: true,
   imports: [CommonModule, FormsModule, CredentialCreateModalComponent],
   template: `
-    @for (credType of credentialTypes; track credType) {
-      <div class="param-group">
-        <div class="param-header">
-          <label class="param-label">Credential to connect with</label>
-        </div>
-        <select class="form-select param-input"
-                [ngModel]="selectModel[credType]"
-                (ngModelChange)="onSelectionChange(credType, $event)"
-                [disabled]="readOnly">
-          <option [ngValue]="null">-- Select credential --</option>
-          @for (cred of getCredentialsForType(credType); track cred.id) {
-            <option [ngValue]="cred.id">{{ cred.name }}</option>
-          }
-          <option value="__create__" class="create-option">+ Create new {{ getTypeDisplayName(credType) }}</option>
-        </select>
+    <div class="param-group">
+      <div class="param-header">
+        <label class="param-label">Credential to connect with</label>
       </div>
-    }
+      <select class="form-select param-input"
+              [ngModel]="selectedCredentialId"
+              (ngModelChange)="onSelectionChange($event)"
+              [disabled]="readOnly">
+        <option [ngValue]="null">-- Select credential --</option>
+        @for (cred of matchingCredentials; track cred.id) {
+          <option [ngValue]="cred.id">{{ cred.name }}{{ showTypeLabel ? ' (' + getTypeDisplayName(cred.type) + ')' : '' }}</option>
+        }
+        @for (schema of creatableSchemas; track schema.type) {
+          <option [value]="'__create__:' + schema.type" class="create-option">+ Create new {{ schema.displayName }}</option>
+        }
+      </select>
+    </div>
     <app-credential-create-modal
       (saved)="onCredentialCreated($event)"
       (closed)="onCreateClosed()" />
@@ -57,30 +57,38 @@ export class CredentialParamComponent implements OnInit, OnChanges {
 
   allCredentials: Credential[] = [];
   credentialSchemas: CredentialSchema[] = [];
-
-  /** Explicitly tracked select values — avoids Angular not re-writing the same value */
-  selectModel: Record<string, string | null> = {};
+  selectedCredentialId: string | null = null;
 
   private pendingCreateType: string | null = null;
 
   constructor(private credentialService: CredentialService) {}
 
   ngOnInit(): void {
-    this.syncSelectModel();
     this.loadCredentials();
     this.loadTypes();
+    this.syncSelectedId();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['currentCredentials']) {
-      this.syncSelectModel();
+      this.syncSelectedId();
     }
   }
 
-  private syncSelectModel(): void {
-    for (const type of this.credentialTypes) {
-      this.selectModel[type] = this.currentCredentials?.[type]?.id || null;
+  private syncSelectedId(): void {
+    if (!this.currentCredentials) {
+      this.selectedCredentialId = null;
+      return;
     }
+    // Check all keys in currentCredentials, not just declared types
+    for (const key of Object.keys(this.currentCredentials)) {
+      const id = this.currentCredentials[key]?.id;
+      if (id) {
+        this.selectedCredentialId = id;
+        return;
+      }
+    }
+    this.selectedCredentialId = null;
   }
 
   private loadCredentials(): void {
@@ -97,8 +105,51 @@ export class CredentialParamComponent implements OnInit, OnChanges {
     });
   }
 
-  getCredentialsForType(type: string): Credential[] {
-    return this.allCredentials.filter(c => c.type === type);
+  /** Whether the node accepts multiple credential types — show type label to disambiguate */
+  get showTypeLabel(): boolean {
+    return this.credentialTypes.length > 1;
+  }
+
+  /** The category of the node's declared credential types (e.g. "Databases") */
+  private get credentialCategory(): string | null {
+    for (const type of this.credentialTypes) {
+      const schema = this.credentialSchemas.find(s => s.type === type);
+      if (schema?.category) return schema.category;
+    }
+    return null;
+  }
+
+  /** All credentials matching the same category as the node's credential types */
+  get matchingCredentials(): Credential[] {
+    if (this.credentialTypes.length <= 1) {
+      // Single type: only show credentials of that exact type
+      return this.allCredentials.filter(c => this.credentialTypes.includes(c.type));
+    }
+    // Multi-type: show all credentials in the same category
+    const category = this.credentialCategory;
+    if (!category) {
+      return this.allCredentials.filter(c => this.credentialTypes.includes(c.type));
+    }
+    const typesInCategory = new Set(
+      this.credentialSchemas.filter(s => s.category === category).map(s => s.type)
+    );
+    return this.allCredentials.filter(c => typesInCategory.has(c.type));
+  }
+
+  /** All credential schemas available for "Create new" */
+  get creatableSchemas(): CredentialSchema[] {
+    if (this.credentialTypes.length <= 1) {
+      // Single type: only offer creating that one type
+      return this.credentialSchemas.filter(s => this.credentialTypes.includes(s.type));
+    }
+    // Multi-type: offer creating any credential in the same category
+    const category = this.credentialCategory;
+    if (!category) {
+      return this.credentialSchemas.filter(s => this.credentialTypes.includes(s.type));
+    }
+    return this.credentialSchemas
+      .filter(s => s.category === category)
+      .sort((a, b) => a.displayName.localeCompare(b.displayName));
   }
 
   getTypeDisplayName(type: string): string {
@@ -106,37 +157,41 @@ export class CredentialParamComponent implements OnInit, OnChanges {
     return schema?.displayName || type;
   }
 
-  onSelectionChange(type: string, value: string | null): void {
-    if (value === '__create__') {
-      this.pendingCreateType = type;
-      // Force select back to previous value so it's not stuck on __create__.
-      // Write a sentinel first so Angular detects the subsequent real value as a change.
-      this.selectModel = { ...this.selectModel, [type]: '__resetting__' as any };
-      setTimeout(() => {
-        this.selectModel = { ...this.selectModel, [type]: this.currentCredentials?.[type]?.id || null };
-      });
-      // Open directly to the matching credential type editor, skip type selection
-      this.createModal.openCreateForType(type);
+  /** Find which credential type a given credential id belongs to */
+  private findCredentialType(credId: string): string | null {
+    const cred = this.allCredentials.find(c => c.id === credId);
+    return cred?.type || null;
+  }
+
+  onSelectionChange(value: string | null): void {
+    if (value && value.startsWith('__create__')) {
+      const createType = value.substring('__create__:'.length);
+      this.pendingCreateType = createType;
+      const prev = this.selectedCredentialId;
+      this.selectedCredentialId = '__resetting__' as any;
+      setTimeout(() => { this.selectedCredentialId = prev; });
+      this.createModal.openCreateForType(createType);
       return;
     }
 
-    this.selectModel[type] = value;
-    const updated = { ...this.currentCredentials };
+    this.selectedCredentialId = value;
+
+    const updated: Record<string, any> = {};
     if (value) {
-      updated[type] = { id: value };
-    } else {
-      delete updated[type];
+      const type = this.findCredentialType(value);
+      if (type) {
+        updated[type] = { id: value };
+      }
     }
     this.credentialChanged.emit(updated);
   }
 
   onCredentialCreated(cred: Credential): void {
     this.allCredentials = [...this.allCredentials, cred];
-    if (this.pendingCreateType) {
-      const type = this.pendingCreateType;
-      const updated = { ...this.currentCredentials };
-      updated[type] = { id: cred.id };
-      this.selectModel[type] = cred.id!;
+    if (this.pendingCreateType && cred.id) {
+      const updated: Record<string, any> = {};
+      updated[cred.type] = { id: cred.id };
+      this.selectedCredentialId = cred.id;
       this.credentialChanged.emit(updated);
     }
     this.pendingCreateType = null;

@@ -409,6 +409,7 @@ public class WorkflowEngine {
 
         Map<String, Object> credentials = resolveCredentials(
                 graphNode.getCredentials(), nodeInput, state, variables, executionId);
+        String credentialType = extractCredentialType(graphNode.getCredentials());
 
         // Collect AI inputs from sub-node connections
         Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
@@ -422,6 +423,7 @@ public class WorkflowEngine {
                 .inputData(nodeInput)
                 .parameters(resolvedParams)
                 .credentials(credentials)
+                .credentialType(credentialType)
                 .staticData(new HashMap<>())
                 .workflowStaticData(state.getWorkflowStaticData())
                 .nodeContextData(state.getOrCreateNodeContext(nodeId))
@@ -747,6 +749,7 @@ public class WorkflowEngine {
 
         Map<String, Object> credentials = resolveCredentials(
                 graphNode.getCredentials(), nodeInput, state, variables, executionId);
+        String credentialType = extractCredentialType(graphNode.getCredentials());
 
         // Collect AI inputs from sub-node connections
         Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
@@ -760,6 +763,7 @@ public class WorkflowEngine {
                 .inputData(nodeInput)
                 .parameters(resolvedParams)
                 .credentials(credentials)
+                .credentialType(credentialType)
                 .staticData(new HashMap<>())
                 .workflowStaticData(state.getWorkflowStaticData())
                 .nodeContextData(state.getOrCreateNodeContext(nodeId))
@@ -1090,6 +1094,7 @@ public class WorkflowEngine {
                 parameters, inputData, null, null, variables, "single-node");
         Map<String, Object> credentials = resolveCredentials(
                 credentialRefs, inputData, null, variables, "single-node");
+        String credentialType = extractCredentialType(credentialRefs);
 
         NodeExecutionContext context = NodeExecutionContext.builder()
                 .executionId("single-node-" + System.currentTimeMillis())
@@ -1100,6 +1105,7 @@ public class WorkflowEngine {
                 .inputData(inputData)
                 .parameters(resolvedParams)
                 .credentials(credentials)
+                .credentialType(credentialType)
                 .staticData(new HashMap<>())
                 .workflowStaticData(new HashMap<>())
                 .executionMode(NodeExecutionContext.ExecutionMode.MANUAL)
@@ -1366,6 +1372,11 @@ public class WorkflowEngine {
             return (Map<String, Object>) resolved;
         }
         return parameters;
+    }
+
+    private String extractCredentialType(Map<String, Object> credentialRefs) {
+        if (credentialRefs == null || credentialRefs.isEmpty()) return null;
+        return credentialRefs.keySet().iterator().next();
     }
 
     @SuppressWarnings("unchecked")

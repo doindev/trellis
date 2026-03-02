@@ -74,6 +74,9 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   'rotate-cw': <><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></>,
   'radar': <><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34" /><path d="M4 6h.01" /><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35" /><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67" /><path d="M12 18h.01" /><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67" /><circle cx="12" cy="12" r="2" /></>,
 
+  // Spring Boot nodes
+  'leaf': <><path d="M11 20A7 7 0 0 1 9.8 6.9C15.5 4.9 17 3.5 19 2c1 2 2 4.5 2 8 0 5.5-4.78 10-10 10Z" /><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" /></>,
+
   // Database nodes
   'postgres': <><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v6c0 1.66 4.03 3 9 3s9-1.34 9-3V5" /><path d="M3 11v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6" /></>,
   'mysql': <><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" /><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3" /></>,
@@ -502,6 +505,11 @@ const ICON_ALIASES: Record<string, string> = {
   'currentsTrigger': 'currents',
   'jiraTrigger': 'jira',
   'taigaTrigger': 'taiga',
+
+  // Spring Boot
+  'springSqlQuery': 'leaf',
+  'springSqlStatement': 'leaf',
+  'springBatchSql': 'layers',
 };
 
 export function NodeIcon({ name, size = 16 }: { name: string; size?: number }) {

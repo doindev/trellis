@@ -20,6 +20,7 @@ import {
   Smartphone, Coins, AtSign, ThumbsUp, Sparkles, Contact, Settings,
   Workflow, IdCard,
   Type, FileJson, Gauge, StickyNote, Umbrella, RotateCw, Radar,
+  Leaf,
   LucideIconData,
 } from 'lucide-angular';
 
@@ -239,6 +240,7 @@ export const NODE_ICON_SET = {
   Bug,
   FileJson,
   Gauge,
+  Leaf,
   Radar,
   RotateCw,
   StickyNote,
@@ -667,6 +669,13 @@ export const NODE_ICON_SET = {
   UptimeRobot: Activity,
   Workable: Briefcase,
   Ghost: FileText,
+
+  // =======================================================================
+  // Spring Boot  (→ Leaf)
+  // =======================================================================
+  SpringSqlQuery: Leaf,
+  SpringSqlStatement: Leaf,
+  SpringBatchSql: Layers,
 
   // =======================================================================
   // Utility — extra standard Lucide icons used elsewhere

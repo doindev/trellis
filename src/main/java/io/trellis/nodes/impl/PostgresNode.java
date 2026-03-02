@@ -82,8 +82,46 @@ public class PostgresNode extends AbstractDatabaseNode implements CacheableNode 
 				.name("where").displayName("WHERE Clause")
 				.type(ParameterType.STRING)
 				.placeHolder("id = 1")
+				.description("Raw WHERE clause. Prefer 'WHERE Conditions' for parameterized queries.")
 				.displayOptions(Map.of("show", Map.of("operation", List.of("update", "delete"))))
 				.build(),
+			NodeParameter.builder()
+				.name("whereConditions").displayName("WHERE Conditions")
+				.type(ParameterType.FIXED_COLLECTION)
+				.description("Parameterized WHERE conditions (safe from SQL injection). Overrides raw WHERE clause if provided.")
+				.displayOptions(Map.of("show", Map.of("operation", List.of("update", "delete"))))
+				.nestedParameters(List.of(
+					NodeParameter.builder().name("column").displayName("Column").type(ParameterType.STRING).build(),
+					NodeParameter.builder().name("operator").displayName("Operator").type(ParameterType.OPTIONS)
+						.defaultValue("=")
+						.options(List.of(
+							ParameterOption.builder().name("Equals").value("=").build(),
+							ParameterOption.builder().name("Not Equals").value("!=").build(),
+							ParameterOption.builder().name("Greater Than").value(">").build(),
+							ParameterOption.builder().name("Less Than").value("<").build(),
+							ParameterOption.builder().name(">=").value(">=").build(),
+							ParameterOption.builder().name("<=").value("<=").build(),
+							ParameterOption.builder().name("LIKE").value("LIKE").build(),
+							ParameterOption.builder().name("IS NULL").value("IS NULL").build(),
+							ParameterOption.builder().name("IS NOT NULL").value("IS NOT NULL").build()
+						)).build(),
+					NodeParameter.builder().name("value").displayName("Value").type(ParameterType.STRING).build()
+				)).build(),
+			NodeParameter.builder()
+				.name("queryParameters").displayName("Query Parameters")
+				.type(ParameterType.FIXED_COLLECTION)
+				.description("Bind values to ? placeholders in your query (safe from SQL injection).")
+				.displayOptions(Map.of("show", Map.of("operation", List.of("executeQuery", "executeSql"))))
+				.nestedParameters(List.of(
+					NodeParameter.builder().name("value").displayName("Value").type(ParameterType.STRING).build(),
+					NodeParameter.builder().name("type").displayName("Type").type(ParameterType.OPTIONS)
+						.defaultValue("string")
+						.options(List.of(
+							ParameterOption.builder().name("String").value("string").build(),
+							ParameterOption.builder().name("Number").value("number").build(),
+							ParameterOption.builder().name("Boolean").value("boolean").build()
+						)).build()
+				)).build(),
 			NodeParameter.builder()
 				.name("options").displayName("Options")
 				.type(ParameterType.COLLECTION)
@@ -137,7 +175,8 @@ public class PostgresNode extends AbstractDatabaseNode implements CacheableNode 
 
 	private NodeExecutionResult executeSelectQuery(Connection conn, NodeExecutionContext context) throws Exception {
 		String query = context.getParameter("query", "");
-		List<Map<String, Object>> results = executeQuery(conn, query, null);
+		List<Object> params = extractQueryParams(context);
+		List<Map<String, Object>> results = executeQuery(conn, query, params.isEmpty() ? null : params);
 		return results.isEmpty() ? NodeExecutionResult.empty() : NodeExecutionResult.success(results);
 	}
 
@@ -159,7 +198,6 @@ public class PostgresNode extends AbstractDatabaseNode implements CacheableNode 
 
 	private NodeExecutionResult executeUpdateOp(Connection conn, NodeExecutionContext context) throws Exception {
 		String table = context.getParameter("table", "");
-		String where = context.getParameter("where", "");
 		List<Map<String, Object>> columnDefs = context.getParameter("columns", List.of());
 		Map<String, Object> values = new LinkedHashMap<>();
 		for (Map<String, Object> col : columnDefs) {
@@ -168,31 +206,55 @@ public class PostgresNode extends AbstractDatabaseNode implements CacheableNode 
 		if (values.isEmpty()) {
 			return NodeExecutionResult.error("No columns specified for update");
 		}
-		String sql = buildUpdateSql(table, values, where);
+
+		List<Map<String, Object>> whereConditions = context.getParameter("whereConditions", List.of());
 		List<Object> params = new ArrayList<>(values.values());
+		String whereClause;
+		if (!whereConditions.isEmpty()) {
+			WhereResult wr = buildWhereClause(whereConditions);
+			whereClause = wr.sql();
+			params.addAll(wr.params());
+		} else {
+			whereClause = context.getParameter("where", "");
+		}
+
+		String sql = buildUpdateSql(table, values, whereClause);
 		int affected = executeUpdate(conn, sql, params);
 		return NodeExecutionResult.success(List.of(wrapInJson(Map.of("affectedRows", affected))));
 	}
 
 	private NodeExecutionResult executeDelete(Connection conn, NodeExecutionContext context) throws Exception {
 		String table = context.getParameter("table", "");
-		String where = context.getParameter("where", "");
 		String sql = "DELETE FROM " + quoteIdentifier(table);
-		if (where != null && !where.isEmpty()) {
-			sql += " WHERE " + where;
+
+		List<Map<String, Object>> whereConditions = context.getParameter("whereConditions", List.of());
+		List<Object> params;
+		if (!whereConditions.isEmpty()) {
+			WhereResult wr = buildWhereClause(whereConditions);
+			sql += " WHERE " + wr.sql();
+			params = wr.params();
+		} else {
+			String where = context.getParameter("where", "");
+			if (where != null && !where.isEmpty()) {
+				sql += " WHERE " + where;
+			}
+			params = null;
 		}
-		int affected = executeUpdate(conn, sql, null);
+
+		int affected = executeUpdate(conn, sql, params);
 		return NodeExecutionResult.success(List.of(wrapInJson(Map.of("affectedRows", affected))));
 	}
 
 	private NodeExecutionResult executeRawSql(Connection conn, NodeExecutionContext context) throws Exception {
 		String query = context.getParameter("query", "");
+		List<Object> params = extractQueryParams(context);
+		List<Object> effectiveParams = params.isEmpty() ? null : params;
 		String trimmed = query.trim().toUpperCase();
 		if (trimmed.startsWith("SELECT") || trimmed.startsWith("WITH") || trimmed.startsWith("SHOW") || trimmed.startsWith("EXPLAIN")) {
-			List<Map<String, Object>> results = executeQuery(conn, query, null);
+			List<Map<String, Object>> results = executeQuery(conn, query, effectiveParams);
 			return results.isEmpty() ? NodeExecutionResult.empty() : NodeExecutionResult.success(results);
 		} else {
-			int affected = executeUpdate(conn, query, null);
+			int affected = executeUpdate(conn, query, effectiveParams);
 			return NodeExecutionResult.success(List.of(wrapInJson(Map.of("affectedRows", affected))));
 		}
 	}

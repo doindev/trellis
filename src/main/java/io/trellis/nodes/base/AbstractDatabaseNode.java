@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import io.trellis.nodes.core.NodeExecutionContext;
 import io.trellis.service.DatabaseConnectionPoolService;
 
 public abstract class AbstractDatabaseNode extends AbstractNode {
@@ -280,5 +281,47 @@ public abstract class AbstractDatabaseNode extends AbstractNode {
 	protected String quoteIdentifier(String identifier) {
 		return "\"" + identifier.replace("\"", "\"\"") + "\"";
 	}
-	
+
+	// extracts query parameters from a FIXED_COLLECTION "queryParameters" param
+	protected List<Object> extractQueryParams(NodeExecutionContext context) {
+		List<Map<String, Object>> paramDefs = context.getParameter("queryParameters", List.of());
+		List<Object> params = new ArrayList<>();
+		for (Map<String, Object> p : paramDefs) {
+			String type = (String) p.getOrDefault("type", "string");
+			Object value = p.get("value");
+			params.add(coerceParamType(value, type));
+		}
+		return params;
+	}
+
+	private Object coerceParamType(Object value, String type) {
+		if (value == null) return null;
+		String str = String.valueOf(value);
+		return switch (type) {
+			case "number" -> str.contains(".") ? Double.parseDouble(str) : Long.parseLong(str);
+			case "boolean" -> Boolean.parseBoolean(str);
+			default -> str;
+		};
+	}
+
+	// builds a parameterized WHERE clause from structured conditions
+	protected record WhereResult(String sql, List<Object> params) {}
+
+	protected WhereResult buildWhereClause(List<Map<String, Object>> conditions) {
+		StringBuilder sql = new StringBuilder();
+		List<Object> params = new ArrayList<>();
+		for (int i = 0; i < conditions.size(); i++) {
+			if (i > 0) sql.append(" AND ");
+			Map<String, Object> cond = conditions.get(i);
+			String column = (String) cond.get("column");
+			String operator = (String) cond.getOrDefault("operator", "=");
+			sql.append(quoteIdentifier(column)).append(" ").append(operator);
+			if (!"IS NULL".equals(operator) && !"IS NOT NULL".equals(operator)) {
+				sql.append(" ?");
+				params.add(cond.get("value"));
+			}
+		}
+		return new WhereResult(sql.toString(), params);
+	}
+
 }
