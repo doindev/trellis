@@ -214,7 +214,6 @@ public class McpSettingsService {
         mcpServerManager.refreshTools();
     }
 
-    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> autoDetectParameters(String workflowId) {
         WorkflowEntity workflow = workflowRepository.findById(workflowId)
                 .orElseThrow(() -> new NotFoundException("Workflow not found: " + workflowId));
@@ -321,7 +320,6 @@ public class McpSettingsService {
 
     // --- Helpers ---
 
-    @SuppressWarnings("unchecked")
     private boolean hasWebhookNode(WorkflowEntity workflow) {
         Object nodes = workflow.getNodes();
         if (nodes instanceof List<?> nodeList) {

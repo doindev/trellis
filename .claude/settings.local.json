@@ -129,7 +129,8 @@
       "Bash(sort:*)",
       "Bash(del:*)",
       "mcp__trellis-agent__trellis_list_executions",
-      "mcp__trellis-agent__trellis_get_execution"
+      "mcp__trellis-agent__trellis_get_execution",
+      "Bash(timeout:*)"
     ]
   }
 }

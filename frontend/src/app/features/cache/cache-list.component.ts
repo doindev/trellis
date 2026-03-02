@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CacheService, CacheDefinition } from '../../core/services/cache.service';
@@ -15,11 +15,26 @@ export class CacheListComponent implements OnInit {
   @ViewChild('nameInput') nameInput!: ElementRef<HTMLInputElement>;
   caches = signal<CacheDefinition[]>([]);
   loading = signal(true);
+  filterTerm = signal('');
   showModal = signal(false);
   editingCache = signal<Partial<CacheDefinition>>({});
   isEditing = signal(false);
   showDeleteConfirm = signal(false);
   deleteTarget = signal<CacheDefinition | null>(null);
+
+  filteredCaches = computed(() => {
+    const term = this.filterTerm().toLowerCase().trim();
+    const all = this.caches();
+    if (!term) return all;
+    return all.filter(c =>
+      (c.name && c.name.toLowerCase().includes(term)) ||
+      (c.description && c.description.toLowerCase().includes(term)) ||
+      String(c.maxSize).includes(term) ||
+      this.formatTtl(c.ttlSeconds).toLowerCase().includes(term) ||
+      String(c.estimatedSize ?? 0).includes(term) ||
+      this.formatHitRate(c.hitRate).toLowerCase().includes(term)
+    );
+  });
 
   constructor(private cacheService: CacheService) {}
 

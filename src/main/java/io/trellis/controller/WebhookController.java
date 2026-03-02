@@ -174,6 +174,7 @@ public class WebhookController {
         Map<String, Object> webhookData = new LinkedHashMap<>();
         webhookData.put("headers", extractHeaders(request));
         webhookData.put("params", queryParams);
+        webhookData.put("query", queryParams);
         webhookData.put("method", method);
         webhookData.put("path", path);
         if (!match.pathVariables().isEmpty()) {

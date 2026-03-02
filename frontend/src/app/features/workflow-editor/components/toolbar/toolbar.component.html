@@ -48,8 +48,8 @@
               [class.saving]="isSaving"
               [class.dirty]="isDirty && !isSaving"
               [class.saved]="!isDirty && !isSaving"
-              (click)="isDirty && !isSaving ? save.emit() : null"
-              [title]="isSaving ? 'Saving...' : isDirty ? 'Save workflow' : 'All changes saved'">
+              (click)="isSaving ? null : isDirty ? save.emit() : toggleVersions.emit()"
+              [title]="isSaving ? 'Saving...' : isDirty ? 'Save workflow' : 'View version history'">
         @if (isSaving) {
           <lucide-icon name="clock-fading" [size]="18"></lucide-icon>
         } @else if (isDirty) {

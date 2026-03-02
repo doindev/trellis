@@ -97,7 +97,6 @@ public class SwaggerSettingsService {
         workflowRepository.save(workflow);
     }
 
-    @SuppressWarnings("unchecked")
     private boolean hasWebhookNode(WorkflowEntity workflow) {
         Object nodes = workflow.getNodes();
         if (nodes instanceof List<?> nodeList) {

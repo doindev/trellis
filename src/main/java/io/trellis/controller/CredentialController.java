@@ -57,6 +57,11 @@ public class CredentialController {
         credentialService.deleteCredential(id);
     }
 
+    @GetMapping("/{id}/data")
+    public Map<String, Object> getData(@PathVariable String id) {
+        return credentialService.getDecryptedData(id);
+    }
+
     @PostMapping("/test")
     public CredentialTestResult testCredentials(@RequestBody CredentialTestRequest request) {
         return modelListService.testCredentials(request.getType(), request.getData());

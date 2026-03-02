@@ -11,7 +11,7 @@ import { OptionsParamComponent } from './parameter-renderers/options-param.compo
 import { MultiOptionsParamComponent } from './parameter-renderers/multi-options-param.component';
 import { JsonParamComponent } from './parameter-renderers/json-param.component';
 import { CollectionParamComponent } from './parameter-renderers/collection-param.component';
-import { FixedCollectionParamComponent } from './parameter-renderers/fixed-collection-param.component';
+import { FixedCollectionParamComponent, FixedCollectionExpressionEvent } from './parameter-renderers/fixed-collection-param.component';
 import { NoticeParamComponent } from './parameter-renderers/notice-param.component';
 import { CredentialParamComponent } from './parameter-renderers/credential-param.component';
 import { ModelParamComponent } from './parameter-renderers/model-param.component';
@@ -1249,15 +1249,39 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   expressionEditorValue = '';
   expressionEditorInputItems: any[] = [];
 
+  // For fixedCollection nested expression editing
+  private fcExpressionContext: { paramName: string; index: number; fieldName: string } | null = null;
+
   openExpressionEditor(paramName: string, currentValue: any): void {
+    this.fcExpressionContext = null;
     this.expressionEditorParam = paramName;
     this.expressionEditorValue = String(currentValue ?? '');
     this.expressionEditorInputItems = this.collectInputForExecution();
     this.expressionEditorOpen = true;
   }
 
+  openFixedCollectionExpressionEditor(paramName: string, event: FixedCollectionExpressionEvent): void {
+    this.fcExpressionContext = { paramName, index: event.index, fieldName: event.fieldName };
+    this.expressionEditorParam = paramName + '[' + event.index + '].' + event.fieldName;
+    this.expressionEditorValue = event.value;
+    this.expressionEditorInputItems = this.collectInputForExecution();
+    this.expressionEditorOpen = true;
+  }
+
   onExpressionEditorSave(expression: string): void {
-    this.onParameterChange(this.expressionEditorParam, expression);
+    if (this.fcExpressionContext) {
+      const { paramName, index, fieldName } = this.fcExpressionContext;
+      const currentItems = Array.isArray(this.node.parameters[paramName])
+        ? [...this.node.parameters[paramName].map((item: any) => ({ ...item }))]
+        : [];
+      if (currentItems[index]) {
+        currentItems[index][fieldName] = expression;
+        this.onParameterChange(paramName, currentItems);
+      }
+      this.fcExpressionContext = null;
+    } else {
+      this.onParameterChange(this.expressionEditorParam, expression);
+    }
     this.expressionEditorOpen = false;
   }
 

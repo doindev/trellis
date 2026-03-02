@@ -404,34 +404,6 @@ public class WorkflowEngine {
         List<Map<String, Object>> nodeInput = state.collectInputForNode(nodeId);
         state.storeInput(nodeId, nodeInput);
 
-        Map<String, Object> resolvedParams = resolveParameters(
-                graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
-
-        Map<String, Object> credentials = resolveCredentials(
-                graphNode.getCredentials(), nodeInput, state, variables, executionId);
-        String credentialType = extractCredentialType(graphNode.getCredentials());
-
-        // Collect AI inputs from sub-node connections
-        Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
-
-        NodeExecutionContext context = NodeExecutionContext.builder()
-                .executionId(executionId)
-                .workflowId(workflowId)
-                .nodeId(nodeId)
-                .nodeType(graphNode.getType())
-                .nodeVersion(graphNode.getTypeVersion())
-                .inputData(nodeInput)
-                .parameters(resolvedParams)
-                .credentials(credentials)
-                .credentialType(credentialType)
-                .staticData(new HashMap<>())
-                .workflowStaticData(state.getWorkflowStaticData())
-                .nodeContextData(state.getOrCreateNodeContext(nodeId))
-                .aiInputData(aiInputData)
-                .executionMode(NodeExecutionContext.ExecutionMode.MANUAL)
-                .continueOnFail(graphNode.isContinueOnFail())
-                .build();
-
         WorkflowExecutionState.NodeExecutionMetadata meta = new WorkflowExecutionState.NodeExecutionMetadata();
         meta.setNodeId(nodeId);
         meta.setNodeName(graphNode.getName());
@@ -442,6 +414,33 @@ public class WorkflowEngine {
         webSocketService.sendNodeStarted(executionId, nodeId, graphNode.getName());
 
         try {
+            Map<String, Object> resolvedParams = resolveParameters(
+                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
+
+            Map<String, Object> credentials = resolveCredentials(
+                    graphNode.getCredentials(), nodeInput, state, variables, executionId);
+            String credentialType = extractCredentialType(graphNode.getCredentials());
+
+            // Collect AI inputs from sub-node connections
+            Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
+
+            NodeExecutionContext context = NodeExecutionContext.builder()
+                    .executionId(executionId)
+                    .workflowId(workflowId)
+                    .nodeId(nodeId)
+                    .nodeType(graphNode.getType())
+                    .nodeVersion(graphNode.getTypeVersion())
+                    .inputData(nodeInput)
+                    .parameters(resolvedParams)
+                    .credentials(credentials)
+                    .credentialType(credentialType)
+                    .staticData(new HashMap<>())
+                    .workflowStaticData(state.getWorkflowStaticData())
+                    .nodeContextData(state.getOrCreateNodeContext(nodeId))
+                    .aiInputData(aiInputData)
+                    .executionMode(NodeExecutionContext.ExecutionMode.MANUAL)
+                    .continueOnFail(graphNode.isContinueOnFail())
+                    .build();
             // AI sub-node: call supplyData() and store result, skip normal execute()
             if (nodeInstance instanceof AiSubNodeInterface aiSubNode && aiSubNode.shouldSupplyData(context)) {
                 Object aiData = aiSubNode.supplyData(context);
@@ -744,34 +743,6 @@ public class WorkflowEngine {
 
         state.storeInput(nodeId, nodeInput);
 
-        Map<String, Object> resolvedParams = resolveParameters(
-                graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
-
-        Map<String, Object> credentials = resolveCredentials(
-                graphNode.getCredentials(), nodeInput, state, variables, executionId);
-        String credentialType = extractCredentialType(graphNode.getCredentials());
-
-        // Collect AI inputs from sub-node connections
-        Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
-
-        NodeExecutionContext context = NodeExecutionContext.builder()
-                .executionId(executionId)
-                .workflowId(workflow.getId())
-                .nodeId(nodeId)
-                .nodeType(graphNode.getType())
-                .nodeVersion(graphNode.getTypeVersion())
-                .inputData(nodeInput)
-                .parameters(resolvedParams)
-                .credentials(credentials)
-                .credentialType(credentialType)
-                .staticData(new HashMap<>())
-                .workflowStaticData(state.getWorkflowStaticData())
-                .nodeContextData(state.getOrCreateNodeContext(nodeId))
-                .aiInputData(aiInputData)
-                .executionMode(mode)
-                .continueOnFail(graphNode.isContinueOnFail())
-                .build();
-
         WorkflowExecutionState.NodeExecutionMetadata meta = new WorkflowExecutionState.NodeExecutionMetadata();
         meta.setNodeId(nodeId);
         meta.setNodeName(graphNode.getName());
@@ -782,6 +753,33 @@ public class WorkflowEngine {
         webSocketService.sendNodeStarted(executionId, nodeId, graphNode.getName());
 
         try {
+            Map<String, Object> resolvedParams = resolveParameters(
+                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
+
+            Map<String, Object> credentials = resolveCredentials(
+                    graphNode.getCredentials(), nodeInput, state, variables, executionId);
+            String credentialType = extractCredentialType(graphNode.getCredentials());
+
+            // Collect AI inputs from sub-node connections
+            Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
+
+            NodeExecutionContext context = NodeExecutionContext.builder()
+                    .executionId(executionId)
+                    .workflowId(workflow.getId())
+                    .nodeId(nodeId)
+                    .nodeType(graphNode.getType())
+                    .nodeVersion(graphNode.getTypeVersion())
+                    .inputData(nodeInput)
+                    .parameters(resolvedParams)
+                    .credentials(credentials)
+                    .credentialType(credentialType)
+                    .staticData(new HashMap<>())
+                    .workflowStaticData(state.getWorkflowStaticData())
+                    .nodeContextData(state.getOrCreateNodeContext(nodeId))
+                    .aiInputData(aiInputData)
+                    .executionMode(mode)
+                    .continueOnFail(graphNode.isContinueOnFail())
+                    .build();
             // AI sub-node: call supplyData() and store result, skip normal execute()
             if (nodeInstance instanceof AiSubNodeInterface aiSubNode && aiSubNode.shouldSupplyData(context)) {
                 Object aiData = aiSubNode.supplyData(context);
@@ -1089,29 +1087,28 @@ public class WorkflowEngine {
 
         if (inputData == null) inputData = List.of();
 
-        Map<String, String> variables = variableService.getAllVariablesAsMap();
-        Map<String, Object> resolvedParams = resolveParameters(
-                parameters, inputData, null, null, variables, "single-node");
-        Map<String, Object> credentials = resolveCredentials(
-                credentialRefs, inputData, null, variables, "single-node");
-        String credentialType = extractCredentialType(credentialRefs);
-
-        NodeExecutionContext context = NodeExecutionContext.builder()
-                .executionId("single-node-" + System.currentTimeMillis())
-                .workflowId(workflowId != null ? workflowId : "")
-                .nodeId(nodeId != null ? nodeId : "")
-                .nodeType(nodeType)
-                .nodeVersion(typeVersion)
-                .inputData(inputData)
-                .parameters(resolvedParams)
-                .credentials(credentials)
-                .credentialType(credentialType)
-                .staticData(new HashMap<>())
-                .workflowStaticData(new HashMap<>())
-                .executionMode(NodeExecutionContext.ExecutionMode.MANUAL)
-                .build();
-
         try {
+            Map<String, String> variables = variableService.getAllVariablesAsMap();
+            Map<String, Object> resolvedParams = resolveParameters(
+                    parameters, inputData, null, null, variables, "single-node");
+            Map<String, Object> credentials = resolveCredentials(
+                    credentialRefs, inputData, null, variables, "single-node");
+            String credentialType = extractCredentialType(credentialRefs);
+
+            NodeExecutionContext context = NodeExecutionContext.builder()
+                    .executionId("single-node-" + System.currentTimeMillis())
+                    .workflowId(workflowId != null ? workflowId : "")
+                    .nodeId(nodeId != null ? nodeId : "")
+                    .nodeType(nodeType)
+                    .nodeVersion(typeVersion)
+                    .inputData(inputData)
+                    .parameters(resolvedParams)
+                    .credentials(credentials)
+                    .credentialType(credentialType)
+                    .staticData(new HashMap<>())
+                    .workflowStaticData(new HashMap<>())
+                    .executionMode(NodeExecutionContext.ExecutionMode.MANUAL)
+                    .build();
             nodeInstance.beforeExecute(context);
             NodeExecutionResult result = executeWithCaching(nodeInstance, context, resolvedParams);
             nodeInstance.afterExecute(context, result);
@@ -1242,7 +1239,6 @@ public class WorkflowEngine {
         String cacheName = (String) nodeParameters.getOrDefault("cacheName", "");
         int maxSize = toInt(nodeParameters.getOrDefault("cacheMaxSize", 1000));
         int ttlSeconds = toInt(nodeParameters.getOrDefault("cacheTtlSeconds", 3600));
-        String keyTemplate = (String) nodeParameters.getOrDefault("cacheKey", "");
 
         if (cacheName == null || cacheName.isBlank()) {
             log.warn("CacheableNode [{}]: cacheEnabled but no cacheName, executing without cache",
@@ -1250,8 +1246,12 @@ public class WorkflowEngine {
             return nodeInstance.execute(context);
         }
 
-        String key = resolveCacheKey(keyTemplate, context.getInputData());
-        if (key == null || key.isBlank()) {
+        // cacheKey expression is already resolved by resolveParameters() — use it directly
+        Object cacheKeyObj = nodeParameters.get("cacheKey");
+        String key = cacheKeyObj != null ? String.valueOf(cacheKeyObj).trim() : "";
+        if (key.isBlank()) {
+            log.warn("CacheableNode [{}]: cacheEnabled but cacheKey resolved to blank, executing without cache",
+                    context.getNodeId());
             return nodeInstance.execute(context);
         }
 
@@ -1262,53 +1262,23 @@ public class WorkflowEngine {
             cacheRegistryService.getOrCreateCache(cacheName, maxSize, ttlSeconds);
         }
 
-        // Lookup
-        Optional<Map<String, Object>> cached = cacheRegistryService.lookup(cacheName, key);
+        // Lookup — cache stores the full output item list, not just a single item
+        Optional<List<Map<String, Object>>> cached = cacheRegistryService.lookupItems(cacheName, key);
         if (cached.isPresent()) {
-            List<Map<String, Object>> hitData = List.of(Map.of("json", (Object) cached.get()));
-            return NodeExecutionResult.success(hitData);
+            log.debug("Cache HIT [{}] cache='{}' key='{}'", context.getNodeId(), cacheName, key);
+            return NodeExecutionResult.success(cached.get());
         }
 
-        // Cache miss — execute node, store result, return
+        // Cache miss — execute node, store full output items, return
+        log.debug("Cache MISS [{}] cache='{}' key='{}'", context.getNodeId(), cacheName, key);
         NodeExecutionResult result = nodeInstance.execute(context);
         if (result.getOutput() != null && !result.getOutput().isEmpty()) {
             List<Map<String, Object>> firstSlot = result.getOutput().get(0);
             if (firstSlot != null && !firstSlot.isEmpty()) {
-                Map<String, Object> firstItem = firstSlot.get(0);
-                Object jsonData = firstItem.getOrDefault("json", firstItem);
-                if (jsonData instanceof Map) {
-                    cacheRegistryService.store(cacheName, key, (Map<String, Object>) jsonData);
-                }
+                cacheRegistryService.storeItems(cacheName, key, firstSlot);
             }
         }
         return result;
-    }
-
-    private String resolveCacheKey(String keyTemplate, List<Map<String, Object>> inputData) {
-        if (keyTemplate == null || keyTemplate.isBlank()) return null;
-        if (inputData != null && !inputData.isEmpty()) {
-            Map<String, Object> firstItem = inputData.get(0);
-            Object json = firstItem.getOrDefault("json", firstItem);
-            if (json instanceof Map) {
-                Object extracted = getNestedValue((Map<String, Object>) json, keyTemplate);
-                if (extracted != null) return String.valueOf(extracted);
-            }
-        }
-        return keyTemplate;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Object getNestedValue(Map<String, Object> data, String path) {
-        String[] parts = path.split("\\.");
-        Object current = data;
-        for (String part : parts) {
-            if (current instanceof Map) {
-                current = ((Map<String, Object>) current).get(part);
-            } else {
-                return null;
-            }
-        }
-        return current;
     }
 
     private int toInt(Object value) {
@@ -1398,12 +1368,8 @@ public class WorkflowEngine {
             }
 
             if (credentialId != null) {
-                try {
-                    Map<String, Object> data = credentialService.getDecryptedData(credentialId);
-                    resolved.putAll(data);
-                } catch (Exception e) {
-                    log.warn("Failed to resolve credential {}: {}", credentialId, e.getMessage());
-                }
+                Map<String, Object> data = credentialService.getDecryptedData(credentialId);
+                resolved.putAll(data);
             }
         }
 

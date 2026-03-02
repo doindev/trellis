@@ -3,6 +3,7 @@ package io.trellis.controller;
 import io.trellis.dto.*;
 import io.trellis.service.WorkflowService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,8 +68,28 @@ public class WorkflowController {
     }
 
     @GetMapping("/{id}/versions")
-    public List<WorkflowVersionResponse> getVersions(@PathVariable String id) {
-        return workflowService.getWorkflowVersions(id);
+    public Page<WorkflowVersionResponse> getVersions(
+            @PathVariable String id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "all") String filter) {
+        return workflowService.getWorkflowVersionsPaged(id, page, size, filter);
+    }
+
+    @GetMapping("/{id}/versions/{versionId}")
+    public WorkflowVersionResponse getVersion(@PathVariable String id, @PathVariable String versionId) {
+        return workflowService.getWorkflowVersion(id, versionId);
+    }
+
+    @PostMapping("/{id}/versions/{versionId}/publish")
+    public WorkflowResponse publishFromVersion(@PathVariable String id, @PathVariable String versionId) {
+        return workflowService.publishFromVersion(id, versionId);
+    }
+
+    @PostMapping("/{id}/versions/{versionId}/clone")
+    @ResponseStatus(HttpStatus.CREATED)
+    public WorkflowResponse cloneFromVersion(@PathVariable String id, @PathVariable String versionId) {
+        return workflowService.cloneFromVersion(id, versionId);
     }
 
     @PutMapping("/{id}/tags")

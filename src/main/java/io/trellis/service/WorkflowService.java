@@ -13,9 +13,12 @@ import io.trellis.repository.WorkflowRepository;
 import io.trellis.repository.WorkflowVersionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -68,9 +71,13 @@ public class WorkflowService {
         return toResponse(workflowRepository.save(entity));
     }
 
+    private static final Duration SAVE_REVISION_THROTTLE = Duration.ofSeconds(30);
+
     @Transactional
     public WorkflowResponse updateWorkflow(String id, WorkflowUpdateRequest request) {
         WorkflowEntity entity = findById(id);
+        boolean dataChanged = request.getNodes() != null || request.getConnections() != null;
+
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
         if (request.getNodes() != null) entity.setNodes(ensureNodeIds(request.getNodes()));
@@ -89,7 +96,36 @@ public class WorkflowService {
             entity.setVersionIsDirty(true);
         }
 
-        return toResponse(workflowRepository.save(entity));
+        WorkflowEntity saved = workflowRepository.save(entity);
+
+        // Create throttled save revision when nodes or connections change
+        if (dataChanged) {
+            createThrottledSaveRevision(saved);
+        }
+
+        return toResponse(saved);
+    }
+
+    private void createThrottledSaveRevision(WorkflowEntity entity) {
+        var lastSave = workflowVersionRepository.findFirstByWorkflowIdAndPublishedFalseOrderByPublishedAtDesc(entity.getId());
+        if (lastSave.isPresent()) {
+            Duration elapsed = Duration.between(lastSave.get().getPublishedAt(), Instant.now());
+            if (elapsed.compareTo(SAVE_REVISION_THROTTLE) < 0) {
+                return; // too recent, skip
+            }
+        }
+
+        WorkflowVersionEntity saveVersion = WorkflowVersionEntity.builder()
+                .workflowId(entity.getId())
+                .versionNumber(0)
+                .versionName(null)
+                .published(false)
+                .nodes(entity.getNodes())
+                .connections(entity.getConnections())
+                .settings(entity.getSettings())
+                .publishedAt(Instant.now())
+                .build();
+        workflowVersionRepository.save(saveVersion);
     }
 
     @Transactional
@@ -118,6 +154,7 @@ public class WorkflowService {
                 .versionNumber(newVersion)
                 .versionName(versionName)
                 .description(request.getDescription())
+                .published(true)
                 .nodes(entity.getNodes())
                 .connections(entity.getConnections())
                 .settings(entity.getSettings())
@@ -143,15 +180,109 @@ public class WorkflowService {
     public List<WorkflowVersionResponse> getWorkflowVersions(String id) {
         findById(id); // verify workflow exists
         return workflowVersionRepository.findByWorkflowIdOrderByVersionNumberDesc(id).stream()
-                .map(v -> WorkflowVersionResponse.builder()
-                        .id(v.getId())
-                        .workflowId(v.getWorkflowId())
-                        .versionNumber(v.getVersionNumber())
-                        .versionName(v.getVersionName())
-                        .description(v.getDescription())
-                        .publishedAt(v.getPublishedAt())
-                        .build())
+                .map(this::toVersionResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<WorkflowVersionResponse> getWorkflowVersionsPaged(String id, int page, int size, String filter) {
+        findById(id);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<WorkflowVersionEntity> result;
+        if ("published".equals(filter)) {
+            result = workflowVersionRepository.findByWorkflowIdAndPublishedOrderByPublishedAtDesc(id, true, pageRequest);
+        } else if ("saves".equals(filter)) {
+            result = workflowVersionRepository.findByWorkflowIdAndPublishedOrderByPublishedAtDesc(id, false, pageRequest);
+        } else {
+            result = workflowVersionRepository.findByWorkflowIdOrderByPublishedAtDesc(id, pageRequest);
+        }
+        return result.map(this::toVersionResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public WorkflowVersionResponse getWorkflowVersion(String workflowId, String versionId) {
+        findById(workflowId);
+        WorkflowVersionEntity v = workflowVersionRepository.findById(versionId)
+                .orElseThrow(() -> new NotFoundException("Version not found: " + versionId));
+        if (!v.getWorkflowId().equals(workflowId)) {
+            throw new NotFoundException("Version " + versionId + " does not belong to workflow " + workflowId);
+        }
+        return WorkflowVersionResponse.builder()
+                .id(v.getId())
+                .workflowId(v.getWorkflowId())
+                .versionNumber(v.getVersionNumber())
+                .versionName(v.getVersionName())
+                .description(v.getDescription())
+                .published(v.isPublished())
+                .publishedAt(v.getPublishedAt())
+                .nodes(v.getNodes())
+                .connections(v.getConnections())
+                .settings(v.getSettings())
+                .build();
+    }
+
+    @Transactional
+    public WorkflowResponse publishFromVersion(String workflowId, String versionId) {
+        WorkflowEntity entity = findById(workflowId);
+        WorkflowVersionEntity version = workflowVersionRepository.findById(versionId)
+                .orElseThrow(() -> new NotFoundException("Version not found: " + versionId));
+        if (!version.getWorkflowId().equals(workflowId)) {
+            throw new NotFoundException("Version " + versionId + " does not belong to workflow " + workflowId);
+        }
+
+        // Update workflow entity with version's data
+        entity.setNodes(version.getNodes());
+        entity.setConnections(version.getConnections());
+        if (version.getSettings() != null) {
+            entity.setSettings(version.getSettings());
+        }
+
+        // Validate and publish
+        validateNodesForPublish(entity);
+        int newVersion = entity.getCurrentVersion() + 1;
+        String versionName = "Version " + newVersion;
+
+        WorkflowVersionEntity newVersionEntity = WorkflowVersionEntity.builder()
+                .workflowId(workflowId)
+                .versionNumber(newVersion)
+                .versionName(versionName)
+                .description("Published from version " + (version.isPublished() ? version.getVersionName() : "save revision"))
+                .published(true)
+                .nodes(version.getNodes())
+                .connections(version.getConnections())
+                .settings(version.getSettings())
+                .publishedAt(Instant.now())
+                .build();
+        workflowVersionRepository.save(newVersionEntity);
+
+        entity.setCurrentVersion(newVersion);
+        entity.setPublished(true);
+        entity.setVersionIsDirty(false);
+        entity = workflowRepository.save(entity);
+
+        webhookService.registerWorkflowWebhooks(entity);
+        log.info("Published workflow {} ({}) from version {} as {}", entity.getName(), workflowId, versionId, versionName);
+        return toResponse(entity);
+    }
+
+    @Transactional
+    public WorkflowResponse cloneFromVersion(String workflowId, String versionId) {
+        WorkflowEntity original = findById(workflowId);
+        WorkflowVersionEntity version = workflowVersionRepository.findById(versionId)
+                .orElseThrow(() -> new NotFoundException("Version not found: " + versionId));
+        if (!version.getWorkflowId().equals(workflowId)) {
+            throw new NotFoundException("Version " + versionId + " does not belong to workflow " + workflowId);
+        }
+
+        WorkflowEntity clone = WorkflowEntity.builder()
+                .name("Copy of " + original.getName())
+                .description(original.getDescription())
+                .projectId(original.getProjectId())
+                .nodes(version.getNodes())
+                .connections(version.getConnections())
+                .settings(version.getSettings())
+                .build();
+        return toResponse(workflowRepository.save(clone));
     }
 
     @Transactional
@@ -307,6 +438,18 @@ public class WorkflowService {
         if (!errors.isEmpty()) {
             throw new BadRequestException("Workflow has validation errors: " + String.join("; ", errors));
         }
+    }
+
+    private WorkflowVersionResponse toVersionResponse(WorkflowVersionEntity v) {
+        return WorkflowVersionResponse.builder()
+                .id(v.getId())
+                .workflowId(v.getWorkflowId())
+                .versionNumber(v.getVersionNumber())
+                .versionName(v.getVersionName())
+                .description(v.getDescription())
+                .published(v.isPublished())
+                .publishedAt(v.getPublishedAt())
+                .build();
     }
 
     public WorkflowEntity findById(String id) {

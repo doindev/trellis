@@ -91,11 +91,19 @@ export class CredentialListComponent implements OnInit {
     const type = this.selectedType();
     if (!type) return;
 
+    // Pre-populate all fields that have default values
+    const data: Record<string, any> = {};
+    for (const prop of type.properties) {
+      if (prop.defaultValue != null) {
+        data[prop.name] = prop.defaultValue;
+      }
+    }
+
     this.showTypeSelectModal.set(false);
     this.editorCredential.set({
       name: type.displayName + ' account',
       type: type.type,
-      data: {}
+      data
     });
     this.editorSchema.set(type);
     this.editorTab.set('connection');
@@ -113,6 +121,7 @@ export class CredentialListComponent implements OnInit {
     this.editorCredential.set({ ...cred });
     this.isEditing.set(true);
     this.editorTab.set('connection');
+    this.editorSchema.set(null);
     this.showEditorModal.set(true);
 
     // Load schema for the credential type
@@ -120,6 +129,17 @@ export class CredentialListComponent implements OnInit {
       this.credentialService.getSchema(cred.type).subscribe({
         next: (s) => this.editorSchema.set(s),
         error: () => this.editorSchema.set(null)
+      });
+    }
+
+    // Load decrypted data so fields are populated for editing
+    if (cred.id) {
+      this.credentialService.getDecryptedData(cred.id).subscribe({
+        next: (data) => {
+          const current = this.editorCredential();
+          this.editorCredential.set({ ...current, data });
+        },
+        error: () => {}
       });
     }
   }
@@ -160,6 +180,18 @@ export class CredentialListComponent implements OnInit {
 
   isPasswordField(prop: any): boolean {
     return prop.typeOptions?.password === true || prop.type === 'password';
+  }
+
+  isPropertyVisible(prop: any): boolean {
+    if (!prop.displayOptions?.show) return true;
+    const data = this.editorCredential().data || {};
+    for (const [field, allowedValues] of Object.entries(prop.displayOptions.show) as [string, any[]][]) {
+      const currentValue = data[field];
+      if (!allowedValues.includes(currentValue)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // --- Delete ---

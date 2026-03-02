@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, signal, computed } from '@angular/core';
+import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CredentialService } from '../../../core/services';
@@ -14,6 +14,8 @@ import { Credential, CredentialProperty, CredentialSchema } from '../../../core/
 export class CredentialCreateModalComponent implements OnInit {
   @Output() saved = new EventEmitter<Credential>();
   @Output() closed = new EventEmitter<void>();
+  @ViewChild('typeSearchInput') typeSearchInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('editorMainArea') editorMainArea!: ElementRef<HTMLDivElement>;
 
   // All available credential types (loaded once)
   credentialTypes = signal<CredentialSchema[]>([]);
@@ -78,6 +80,7 @@ export class CredentialCreateModalComponent implements OnInit {
     this.typeSearchTerm.set('');
     this.selectedType.set(null);
     this.showTypeSelectModal.set(true);
+    setTimeout(() => this.typeSearchInput?.nativeElement?.focus(), 50);
   }
 
   /**
@@ -108,6 +111,7 @@ export class CredentialCreateModalComponent implements OnInit {
     this.isEditing.set(false);
     this.validationError.set(null);
     this.showEditorModal.set(true);
+    this.focusFirstEditorInput();
   }
 
   openEdit(cred: Credential): void {
@@ -115,12 +119,28 @@ export class CredentialCreateModalComponent implements OnInit {
     this.isEditing.set(true);
     this.editorTab.set('connection');
     this.validationError.set(null);
+    this.editorSchema.set(null);
     this.showEditorModal.set(true);
+    this.focusFirstEditorInput();
 
     if (cred.type) {
       this.credentialService.getSchema(cred.type).subscribe({
-        next: (s) => this.editorSchema.set(s),
+        next: (s) => {
+          this.editorSchema.set(s);
+          this.focusFirstEditorInput();
+        },
         error: () => this.editorSchema.set(null)
+      });
+    }
+
+    // Load decrypted data so fields are populated for editing
+    if (cred.id) {
+      this.credentialService.getDecryptedData(cred.id).subscribe({
+        next: (data) => {
+          const current = this.editorCredential();
+          this.editorCredential.set({ ...current, data });
+        },
+        error: () => {}
       });
     }
   }
@@ -158,6 +178,7 @@ export class CredentialCreateModalComponent implements OnInit {
     this.isEditing.set(false);
     this.validationError.set(null);
     this.showEditorModal.set(true);
+    this.focusFirstEditorInput();
   }
 
   closeTypeSelectModal(): void {
@@ -259,6 +280,18 @@ export class CredentialCreateModalComponent implements OnInit {
         : (prop.defaultValue ?? '');
       this.onDataFieldChange(fieldName, defaultVal);
     }
+  }
+
+  private focusFirstEditorInput(): void {
+    // Wait for Angular to render the editor fields, then focus the first enabled input/select
+    setTimeout(() => {
+      const container = this.editorMainArea?.nativeElement;
+      if (!container) return;
+      const firstInput = container.querySelector<HTMLElement>(
+        'input:not([disabled]):not([type="hidden"]):not([type="checkbox"]), select:not([disabled])'
+      );
+      firstInput?.focus();
+    }, 100);
   }
 
   // Keep original insertion order for KeyValuePipe

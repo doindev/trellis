@@ -19,6 +19,10 @@ public abstract class AbstractSpringDbNode extends AbstractNode {
 
 	protected NamedParameterJdbcTemplate getTemplate(NodeExecutionContext context) {
 		Map<String, Object> credentials = context.getCredentials();
+		if (credentials == null || credentials.isEmpty()) {
+			throw new IllegalStateException(
+				"No database credentials configured. Please select a credential in the node settings.");
+		}
 		String dbType = resolveDbType(context.getCredentialType());
 		DataSource ds = poolService.getJdbcPool(credentials, dbType);
 		return new NamedParameterJdbcTemplate(ds);

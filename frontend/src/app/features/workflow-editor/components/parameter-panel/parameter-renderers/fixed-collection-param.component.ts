@@ -3,6 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NodeParameter } from '../../../../../core/models';
 
+export interface FixedCollectionExpressionEvent {
+  index: number;
+  fieldName: string;
+  value: string;
+}
+
 @Component({
   selector: 'app-fixed-collection-param',
   standalone: true,
@@ -15,7 +21,27 @@ import { NodeParameter } from '../../../../../core/models';
       }
 
       @for (item of items; track $index) {
-        <div class="collection-row">
+        <div class="collection-row"
+             [class.drag-over]="dragOverIndex === $index"
+             [attr.draggable]="dragSourceIndex === $index ? 'true' : 'false'"
+             (dragstart)="onDragStart($event, $index)"
+             (dragover)="onDragOver($event, $index)"
+             (dragleave)="onDragLeave($index)"
+             (drop)="onDrop($event, $index)"
+             (dragend)="onDragEnd()">
+          @if (!readOnly && items.length > 1) {
+            <div class="drag-handle"
+                 (mousedown)="onHandleMouseDown($index)"
+                 (mouseup)="onHandleMouseUp()"
+                 title="Drag to reorder">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
+                <circle cx="9" cy="10" r="1.5"/><circle cx="15" cy="10" r="1.5"/>
+                <circle cx="9" cy="15" r="1.5"/><circle cx="15" cy="15" r="1.5"/>
+                <circle cx="9" cy="20" r="1.5"/><circle cx="15" cy="20" r="1.5"/>
+              </svg>
+            </div>
+          }
           @if (param.nestedParameters) {
             @for (nested of param.nestedParameters; track nested.name) {
               <div class="row-field">
@@ -30,12 +56,27 @@ import { NodeParameter } from '../../../../../core/models';
                     }
                   </select>
                 } @else {
-                  <input type="text" class="form-control param-input"
-                         [value]="item[nested.name] ?? ''"
-                         (input)="onTextInput($index, nested.name, $event)"
-                         (blur)="emitItems()"
-                         [placeholder]="nested.placeHolder || ''"
-                         [disabled]="readOnly">
+                  <div class="text-input-wrapper" [class.has-expression]="isExpression(item[nested.name])">
+                    <input type="text"
+                           class="form-control param-input"
+                           [class.expr-input]="isExpression(item[nested.name])"
+                           [value]="item[nested.name] ?? ''"
+                           (input)="onTextInput($index, nested.name, $event)"
+                           (blur)="emitItems()"
+                           [placeholder]="nested.placeHolder || ''"
+                           [disabled]="readOnly"
+                           (dragover)="onFieldDragOver($event)"
+                           (drop)="onFieldDrop($event, $index, nested.name)">
+                    @if (!readOnly) {
+                      <button class="expr-editor-btn"
+                              (click)="onOpenExpressionEditor($index, nested.name, item[nested.name])"
+                              title="Open expression editor">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/>
+                        </svg>
+                      </button>
+                    }
+                  </div>
                 }
               </div>
             }
@@ -74,12 +115,74 @@ import { NodeParameter } from '../../../../../core/models';
       background: hsl(0,0%,15%);
       border: 1px solid hsl(0,0%,22%);
       border-radius: 6px;
+      transition: border-color 0.15s ease;
+    }
+    .collection-row.drag-over {
+      border-color: hsl(247,49%,53%);
+      border-style: dashed;
+    }
+    .collection-row[draggable="true"] {
+      opacity: 0.5;
+    }
+    .drag-handle {
+      flex-shrink: 0;
+      width: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: hsl(0,0%,32%);
+      cursor: grab;
+      margin-bottom: 1px;
+      padding: 4px 0;
+      border-radius: 4px;
+      align-self: center;
+    }
+    .drag-handle:hover {
+      color: hsl(0,0%,58%);
+      background: hsl(0,0%,20%);
+    }
+    .drag-handle:active {
+      cursor: grabbing;
     }
     .row-field { flex: 1; min-width: 0; }
     .nested-label { display: block; font-size: 0.6875rem; color: hsl(0,0%,58%); margin-bottom: 3px; }
-    .param-input { background: hsl(0,0%,9%); border: 1px solid hsl(0,0%,24%); color: hsl(0,0%,96%); font-size: 0.8125rem; border-radius: 6px; }
+    .text-input-wrapper {
+      position: relative;
+    }
+    .text-input-wrapper .param-input {
+      padding-right: 28px;
+    }
+    .param-input { background: hsl(0,0%,9%); border: 1px solid hsl(0,0%,24%); color: hsl(0,0%,96%); font-size: 0.8125rem; border-radius: 6px; width: 100%; box-sizing: border-box; }
     .param-input:focus { background: hsl(0,0%,9%); border-color: hsl(247,49%,53%); box-shadow: 0 0 0 2px hsla(247,49%,53%,0.15); color: hsl(0,0%,96%); }
+    .param-input.expr-input { border-color: hsl(30,80%,50%); font-family: 'Consolas','Monaco',monospace; }
     .param-input option { background: hsl(0,0%,13%); }
+    .expr-editor-btn {
+      position: absolute;
+      right: 3px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: hsl(0,0%,38%);
+      cursor: pointer;
+      opacity: 0.6;
+      transition: all 0.15s;
+    }
+    .has-expression .expr-editor-btn {
+      color: hsl(30,80%,50%);
+      opacity: 0.8;
+    }
+    .expr-editor-btn:hover {
+      opacity: 1;
+      background: hsla(30,80%,50%,0.15);
+      color: hsl(30,80%,50%);
+    }
     .btn-row-delete {
       flex-shrink: 0;
       width: 32px;
@@ -124,9 +227,12 @@ export class FixedCollectionParamComponent implements OnDestroy {
     }
   }
   @Output() valueChange = new EventEmitter<any>();
+  @Output() openExpressionEditor = new EventEmitter<FixedCollectionExpressionEvent>();
 
   items: any[] = [];
   private _dirty = false;
+  dragSourceIndex: number | null = null;
+  dragOverIndex: number | null = null;
 
   ngOnDestroy(): void {
     // Flush any pending text edits before the component is destroyed
@@ -140,6 +246,10 @@ export class FixedCollectionParamComponent implements OnDestroy {
   get addButtonLabel(): string {
     const name = this.param.displayName || 'Item';
     return name.replace('Parameters', 'Parameter').replace('Fields', 'Field');
+  }
+
+  isExpression(value: any): boolean {
+    return typeof value === 'string' && value.includes('{{');
   }
 
   addItem(): void {
@@ -158,12 +268,13 @@ export class FixedCollectionParamComponent implements OnDestroy {
     this.valueChange.emit(this.cloneItems());
   }
 
-  /** Handle text input — mutate in place, defer emit to blur. */
+  /** Handle text input — mutate in place and emit immediately. */
   onTextInput(index: number, name: string, event: Event): void {
     if (!this.items[index]) return;
     const val = (event.target as HTMLInputElement).value;
     this.items[index][name] = val;
     this._dirty = true;
+    this.valueChange.emit(this.cloneItems());
   }
 
   /** Handle select change — mutate in place and emit immediately. */
@@ -180,6 +291,103 @@ export class FixedCollectionParamComponent implements OnDestroy {
       this._dirty = false;
       this.valueChange.emit(this.cloneItems());
     }
+  }
+
+  // --- Expression editor ---
+
+  onOpenExpressionEditor(index: number, fieldName: string, currentValue: any): void {
+    this.openExpressionEditor.emit({
+      index,
+      fieldName,
+      value: String(currentValue ?? '')
+    });
+  }
+
+  /** Called by the parent after the expression editor saves a value. */
+  applyExpressionResult(index: number, fieldName: string, expression: string): void {
+    if (!this.items[index]) return;
+    this.items[index][fieldName] = expression;
+    this.valueChange.emit(this.cloneItems());
+  }
+
+  // --- Drag-and-drop on text fields ---
+
+  onFieldDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  onFieldDrop(event: DragEvent, index: number, fieldName: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const data = event.dataTransfer?.getData('text/plain');
+    if (!data || !data.includes('$json.')) return;
+
+    const currentVal = String(this.items[index]?.[fieldName] ?? '');
+    const input = event.target as HTMLInputElement;
+    const pos = input?.selectionStart ?? currentVal.length;
+    const before = currentVal.substring(0, pos);
+    const after = currentVal.substring(pos);
+    const newVal = before + data + after;
+    this.items[index][fieldName] = newVal;
+    this.valueChange.emit(this.cloneItems());
+  }
+
+  // --- Drag-and-drop reordering ---
+
+  onHandleMouseDown(index: number): void {
+    this.dragSourceIndex = index;
+  }
+
+  onHandleMouseUp(): void {
+    // If drag didn't actually start, clear the source
+    this.dragSourceIndex = null;
+  }
+
+  onDragStart(event: DragEvent, index: number): void {
+    if (this.dragSourceIndex !== index) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer!.effectAllowed = 'move';
+    event.dataTransfer!.setData('text/plain', String(index));
+  }
+
+  onDragOver(event: DragEvent, index: number): void {
+    if (this.dragSourceIndex === null || this.dragSourceIndex === index) {
+      this.dragOverIndex = null;
+      return;
+    }
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
+    this.dragOverIndex = index;
+  }
+
+  onDragLeave(index: number): void {
+    if (this.dragOverIndex === index) {
+      this.dragOverIndex = null;
+    }
+  }
+
+  onDrop(event: DragEvent, targetIndex: number): void {
+    event.preventDefault();
+    const sourceIndex = this.dragSourceIndex;
+    this.dragSourceIndex = null;
+    this.dragOverIndex = null;
+    if (sourceIndex === null || sourceIndex === targetIndex) return;
+
+    const reordered = [...this.items];
+    const [moved] = reordered.splice(sourceIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+    this.items = reordered;
+    this.valueChange.emit(this.cloneItems());
+  }
+
+  onDragEnd(): void {
+    this.dragSourceIndex = null;
+    this.dragOverIndex = null;
   }
 
   /** Deep-copy items so the store gets its own objects. */

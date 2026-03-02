@@ -24,7 +24,7 @@ public class WorkflowVersionEntity {
     @Column(nullable = false)
     private int versionNumber;
 
-    @Column(nullable = false)
+    @Column
     private String versionName;
 
     @Column
@@ -49,6 +49,10 @@ public class WorkflowVersionEntity {
     @Convert(converter = JsonObjectConverter.class)
     @Column(columnDefinition = "TEXT")
     private Object pinData;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean published = false;
 
     @Builder.Default
     @Column(nullable = false)

@@ -342,6 +342,7 @@ public class WebhookNode extends AbstractTriggerNode {
 		Map<String, Object> webhookData = new HashMap<>();
 		webhookData.put("headers", new LinkedHashMap<>());
 		webhookData.put("params", new LinkedHashMap<>());
+		webhookData.put("query", new LinkedHashMap<>());
 		webhookData.put("body", new LinkedHashMap<>());
 		webhookData.put("method", httpMethod);
 		webhookData.put("path", path);

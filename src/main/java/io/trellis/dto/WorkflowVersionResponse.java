@@ -12,5 +12,9 @@ public class WorkflowVersionResponse {
     private int versionNumber;
     private String versionName;
     private String description;
+    private boolean published;
     private Instant publishedAt;
+    private Object nodes;
+    private Object connections;
+    private Object settings;
 }

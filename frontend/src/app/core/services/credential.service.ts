@@ -33,6 +33,10 @@ export class CredentialService {
     return this.api.delete<void>(`${this.path}/${id}`);
   }
 
+  getDecryptedData(id: string): Observable<Record<string, any>> {
+    return this.api.get<Record<string, any>>(`${this.path}/${id}/data`);
+  }
+
   getSchema(type: string): Observable<CredentialSchema> {
     return this.api.get<CredentialSchema>(`${this.path}/schema/${type}`);
   }

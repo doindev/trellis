@@ -10,7 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -200,7 +199,6 @@ public class McpSystemToolService {
         return CONSENT_REQUIRED_TOOLS.contains(toolName);
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> handleToolCall(String name, Map<String, Object> arguments) {
         if (arguments == null) arguments = Map.of();
 
@@ -444,7 +442,6 @@ public class McpSystemToolService {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     private Object handleCreateWorkflow(Map<String, Object> args) {
         String name = (String) args.get("name");
         if (name == null || name.isBlank()) {
@@ -469,7 +466,6 @@ public class McpSystemToolService {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     private Object handleUpdateWorkflow(Map<String, Object> args) {
         String id = (String) args.get("id");
         if (id == null || id.isBlank()) {
@@ -639,7 +635,6 @@ public class McpSystemToolService {
         return browserSessionRegistry.getActiveSessions().get(0).getBrowserSessionId();
     }
 
-    @SuppressWarnings("unchecked")
     private Object handleBrowserControl(Map<String, Object> args, String targetSession) {
         String action = (String) args.get("action");
         String message = (String) args.get("message");

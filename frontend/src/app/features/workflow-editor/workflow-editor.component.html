@@ -17,6 +17,7 @@
     (openTagSelector)="onOpenTagSelector()"
     (showExecutions)="toggleDrawer()"
     (tabChanged)="onTabChanged($event)"
+    (toggleVersions)="toggleVersionsPanel()"
     (menuAction)="onMenuAction($event)" />
 
   <div class="editor-content">
@@ -64,6 +65,7 @@
             [isExecuting]="store.isExecuting()"
             [readOnly]="activeTab === 'executions'"
             [drawerOffset]="drawerOffset"
+            [knownCredentialIds]="knownCredentialIds"
             (nodeSelected)="onNodeSelected($event)"
             (nodeDoubleClicked)="store.selectNode($event)"
             (nodeAdded)="store.addNode($event)"
@@ -88,6 +90,16 @@
               (nodeClicked)="onPaletteNodeClicked($event)"
               (nodeClickedWithAction)="onPaletteNodeClickedWithAction($event)" />
           </div>
+
+          <div class="versions-slide" [class.versions-open]="showVersionsPanel">
+            <app-version-history-panel
+              [workflowId]="store.workflow()?.id || ''"
+              [visible]="showVersionsPanel"
+              (close)="showVersionsPanel = false"
+              (versionSelected)="onVersionSelected($event)"
+              (publishVersion)="onPublishFromVersion($event)"
+              (cloneVersion)="onCloneFromVersion($event)" />
+          </div>
         }
 
         @if (activeSelectedNode) {
@@ -104,7 +116,7 @@
             [readOnly]="activeTab === 'executions'"
             (pinDataChanged)="onPinDataChanged($event)"
             (parameterChanged)="store.updateNode(store.selectedNodeId()!, { parameters: $event })"
-            (credentialChanged)="store.updateNode(store.selectedNodeId()!, { credentials: $event })"
+            (credentialChanged)="store.updateNode(store.selectedNodeId()!, { credentials: $event }); loadCredentialIds()"
             (webhookTestDataReceived)="onWebhookTestData($event)"
             (nodeExecuted)="onNodeExecuted($event)"
             (close)="store.selectNode(null)"

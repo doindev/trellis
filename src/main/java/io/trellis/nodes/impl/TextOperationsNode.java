@@ -213,7 +213,6 @@ public class TextOperationsNode extends AbstractNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		List<Map<String, Object>> inputData = context.getInputData();
 		if (inputData == null || inputData.isEmpty()) {
@@ -252,7 +251,6 @@ public class TextOperationsNode extends AbstractNode {
 		return NodeExecutionResult.success(result);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Object applyOperation(String operation, Object rawValue, Map<String, Object> json,
 			NodeExecutionContext context) {
 		String text = rawValue != null ? String.valueOf(rawValue) : "";

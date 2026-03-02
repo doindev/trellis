@@ -45,6 +45,7 @@ export class ToolbarComponent {
   @Input() isSaving = false;
   @Output() nameChanged = new EventEmitter<string>();
   @Output() save = new EventEmitter<void>();
+  @Output() toggleVersions = new EventEmitter<void>();
   @Output() execute = new EventEmitter<void>();
   @Output() publish = new EventEmitter<void>();
   @Output() back = new EventEmitter<void>();

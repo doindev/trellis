@@ -161,6 +161,7 @@ export class WorkflowEditorStore {
     if (!wf.id && wf.nodes.length === 0) return;
 
     this.isSaving.set(true);
+    const snapshotAtSaveTime = wf;
     const isNew = !wf.id;
     const operation = wf.id
       ? this.workflowService.update(wf.id, wf)
@@ -168,8 +169,22 @@ export class WorkflowEditorStore {
 
     operation.subscribe({
       next: (saved) => {
-        this.workflow.set(saved);
-        this.isDirty.set(false);
+        const current = this.workflow();
+        if (current === snapshotAtSaveTime || isNew) {
+          // No local changes since save started — safe to replace with backend response
+          this.workflow.set(saved);
+          this.isDirty.set(false);
+        } else {
+          // Local changes were made during save — only merge backend-managed fields
+          // so we don't overwrite the user's edits with stale data
+          this.workflow.set({
+            ...current!,
+            id: saved.id,
+            currentVersion: saved.currentVersion,
+            versionIsDirty: saved.versionIsDirty,
+          });
+          // isDirty stays true → auto-save will fire again with local changes
+        }
         this.isSaving.set(false);
         onSaved?.(saved);
       },

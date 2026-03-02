@@ -1,46 +1,11 @@
 .page-container {
-  padding: 32px;
-  max-width: 1200px;
+  padding: 0 0 32px;
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-.page-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: hsl(0, 0%, 96%);
-  margin: 0;
-}
-
-.page-subtitle {
-  color: hsl(0, 0%, 68%);
-  margin: 4px 0 0;
-  font-size: 0.875rem;
-}
-
-.btn-primary {
-  background: var(--bs-primary);
-  border-color: var(--bs-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #fff;
-
-  &:hover {
-    filter: brightness(0.9);
-  }
-}
 
 .loading-state {
   display: flex;
@@ -51,16 +16,61 @@
   font-size: 0.875rem;
 }
 
+.filter-bar {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.filter-input-wrapper {
+  position: relative;
+  width: 320px;
+}
+
+.filter-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: hsl(0, 0%, 46%);
+  pointer-events: none;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 8px;
+  color: hsl(0, 0%, 96%);
+  font-size: 0.8125rem;
+  outline: none;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: hsl(0, 0%, 46%);
+  }
+
+  &:focus {
+    border-color: hsl(247, 49%, 53%);
+    box-shadow: 0 0 0 2px hsla(247, 49%, 53%, 0.15);
+  }
+}
+
 .table-container {
   background: hsl(0, 0%, 13%);
   border: 1px solid hsl(0, 0%, 24%);
   border-radius: 12px;
-  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .table {
   color: hsl(0, 0%, 96%);
   margin: 0;
+  width: 100%;
 
   thead th {
     background: hsl(0, 0%, 9%);
@@ -71,6 +81,9 @@
     letter-spacing: 0.5px;
     border-bottom-color: hsl(0, 0%, 24%);
     padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
   tbody td {
@@ -79,6 +92,12 @@
     vertical-align: middle;
     font-size: 0.8125rem;
   }
+}
+
+.no-results {
+  text-align: center;
+  color: hsl(0, 0%, 46%);
+  padding: 24px 16px !important;
 }
 
 .cache-row {
@@ -127,7 +146,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 20px 0;
+  padding: 0 20px 0;
   text-align: center;
   flex: 1;
   min-height: 0;

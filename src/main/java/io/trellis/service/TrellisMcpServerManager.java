@@ -192,7 +192,6 @@ public class TrellisMcpServerManager {
 
     // --- Protocol Processing ---
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> processMessage(Map<String, Object> message, ClientSessionInfo session) {
         String method = (String) message.get("method");
         Object id = message.get("id");
@@ -263,7 +262,6 @@ public class TrellisMcpServerManager {
         return jsonRpcResult(id, Map.of("tools", toolList));
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> buildInputSchema(Object mcpInputSchema) {
         if (mcpInputSchema instanceof List<?> paramList && !paramList.isEmpty()) {
             Map<String, Object> properties = new LinkedHashMap<>();
@@ -306,7 +304,6 @@ public class TrellisMcpServerManager {
         );
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> buildOutputSchema(Object mcpOutputSchema) {
         if (!(mcpOutputSchema instanceof Map<?, ?> schemaMap)) return null;
         String format = (String) schemaMap.get("format");
@@ -343,7 +340,6 @@ public class TrellisMcpServerManager {
         return schema;
     }
 
-    @SuppressWarnings("unchecked")
     private Object extractStructuredContent(List<Map<String, Object>> result) {
         // Extract the json data from the first item of the workflow result
         if (result != null && !result.isEmpty()) {

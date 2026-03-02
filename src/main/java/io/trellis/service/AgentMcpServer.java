@@ -152,7 +152,6 @@ public class AgentMcpServer {
 
     // --- Protocol Processing ---
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> processMessage(Map<String, Object> message, ClientSessionInfo session) {
         String method = (String) message.get("method");
         Object id = message.get("id");

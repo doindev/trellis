@@ -326,6 +326,7 @@ function TrellisCanvasInner({
           || prevData?.label !== newData?.label
           || prevData?.disabled !== newData?.disabled
           || prevData?.isPinned !== newData?.isPinned
+          || (prevData?.validationWarnings?.join() ?? '') !== (newData?.validationWarnings?.join() ?? '')
           || (newNode.type === 'stickyNoteNode' && prevData?.nodeParameters !== newData?.nodeParameters);
 
         // Reuse previous node object if nothing changed (preserves referential equality for memo)

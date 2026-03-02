@@ -62,6 +62,22 @@ public class CacheRegistryService {
         }
     }
 
+    public Optional<List<Map<String, Object>>> lookupItems(String cacheName, String key) {
+        Cache<String, String> cache = caches.get(cacheName);
+        if (cache == null) return Optional.empty();
+
+        String json = cache.getIfPresent(key);
+        if (json == null) return Optional.empty();
+
+        try {
+            List<Map<String, Object>> items = objectMapper.readValue(json, new TypeReference<>() {});
+            return Optional.of(items);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to deserialize cached items for key '{}' in cache '{}'", key, cacheName, e);
+            return Optional.empty();
+        }
+    }
+
     public void store(String cacheName, String key, Map<String, Object> value) {
         Cache<String, String> cache = caches.get(cacheName);
         if (cache == null) return;
@@ -70,6 +86,17 @@ public class CacheRegistryService {
             cache.put(key, objectMapper.writeValueAsString(value));
         } catch (JsonProcessingException e) {
             log.warn("Failed to serialize value for key '{}' in cache '{}'", key, cacheName, e);
+        }
+    }
+
+    public void storeItems(String cacheName, String key, List<Map<String, Object>> items) {
+        Cache<String, String> cache = caches.get(cacheName);
+        if (cache == null) return;
+
+        try {
+            cache.put(key, objectMapper.writeValueAsString(items));
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize items for key '{}' in cache '{}'", key, cacheName, e);
         }
     }
 

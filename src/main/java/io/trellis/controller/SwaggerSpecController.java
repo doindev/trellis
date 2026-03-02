@@ -115,7 +115,6 @@ public class SwaggerSpecController {
         return paths;
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> buildInputSchema(Object mcpInputSchema) {
         if (mcpInputSchema instanceof List<?> paramList && !paramList.isEmpty()) {
             Map<String, Object> properties = new LinkedHashMap<>();
@@ -157,7 +156,6 @@ public class SwaggerSpecController {
         );
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> buildOutputSchema(Object mcpOutputSchema) {
         if (!(mcpOutputSchema instanceof Map<?, ?> schemaMap)) return null;
         String format = (String) schemaMap.get("format");

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Workflow, WorkflowVersion } from '../models';
+import { Workflow, WorkflowVersion, Page } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class WorkflowService {
@@ -45,8 +45,24 @@ export class WorkflowService {
     return this.api.post<Workflow>(`${this.path}/${id}/archive`);
   }
 
-  getVersions(id: string): Observable<WorkflowVersion[]> {
-    return this.api.get<WorkflowVersion[]>(`${this.path}/${id}/versions`);
+  getVersions(id: string, page = 0, size = 20, filter = 'all'): Observable<Page<WorkflowVersion>> {
+    return this.api.get<Page<WorkflowVersion>>(`${this.path}/${id}/versions`, {
+      page: String(page),
+      size: String(size),
+      filter
+    });
+  }
+
+  getVersion(workflowId: string, versionId: string): Observable<WorkflowVersion> {
+    return this.api.get<WorkflowVersion>(`${this.path}/${workflowId}/versions/${versionId}`);
+  }
+
+  publishFromVersion(workflowId: string, versionId: string): Observable<Workflow> {
+    return this.api.post<Workflow>(`${this.path}/${workflowId}/versions/${versionId}/publish`);
+  }
+
+  cloneFromVersion(workflowId: string, versionId: string): Observable<Workflow> {
+    return this.api.post<Workflow>(`${this.path}/${workflowId}/versions/${versionId}/clone`);
   }
 
   run(id: string, inputData?: any): Observable<any> {

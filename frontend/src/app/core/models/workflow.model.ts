@@ -55,5 +55,17 @@ export interface WorkflowVersion {
   versionNumber: number;
   versionName: string;
   description?: string;
+  published?: boolean;
   publishedAt: string;
+  nodes?: WorkflowNode[];
+  connections?: Record<string, any>;
+  settings?: Record<string, any>;
+}
+
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  last: boolean;
 }

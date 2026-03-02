@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { WorkflowService, WebSocketService, ExecutionService, TagService } from '../../core/services';
+import { WorkflowService, WebSocketService, ExecutionService, TagService, CredentialService } from '../../core/services';
 import { WorkflowEditorStore } from '../../core/state/workflow-editor.store';
 import { NodeTypeStore } from '../../core/state/node-type.store';
 import { ExecutionsSidebarComponent } from './components/executions-sidebar/executions-sidebar.component';
@@ -19,13 +19,14 @@ import { SettingsModalComponent, WorkflowSettings } from './components/settings-
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { TagSelectorComponent } from '../../shared/components/tag-selector/tag-selector.component';
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
+import { VersionHistoryPanelComponent } from './components/version-history-panel/version-history-panel.component';
 import { McpParameter, McpOutputSchema } from '../../core/services/settings.service';
 import {
   ExecutionFilterModalComponent,
   ExecutionFilters,
   defaultExecutionFilters
 } from '../../shared/components/execution-filter-modal/execution-filter-modal.component';
-import { NodeTypeDescription, Workflow, WorkflowNode, Execution, Tag } from '../../core/models';
+import { NodeTypeDescription, Workflow, WorkflowNode, WorkflowVersion, Execution, Tag } from '../../core/models';
 import { AgentControlService } from '../../core/services/agent-control.service';
 
 @Component({
@@ -46,7 +47,8 @@ import { AgentControlService } from '../../core/services/agent-control.service';
     ExecutionsSidebarComponent,
     ExecutionFilterModalComponent,
     TagSelectorComponent,
-    McpParamEditorModalComponent
+    McpParamEditorModalComponent,
+    VersionHistoryPanelComponent
   ],
   templateUrl: './workflow-editor.component.html',
   styleUrl: './workflow-editor.component.scss'
@@ -57,6 +59,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   @ViewChild(EditorDrawerComponent) editorDrawer!: EditorDrawerComponent;
 
   showPalette = false;
+  showVersionsPanel = false;
   showPublishModal = false;
   showDescriptionModal = false;
   showImportUriModal = false;
@@ -79,6 +82,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   executionWorkflow: Workflow | null = null;
   executionDataById: Record<string, any> | null = null;
   webhookTestData: Record<string, any> = {};
+  knownCredentialIds = new Set<string>();
   private executionSub?: Subscription;
   private currentExecutionId: string | null = null;
   private autoSaveInterval: ReturnType<typeof setInterval> | null = null;
@@ -97,12 +101,14 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     private wsService: WebSocketService,
     private tagService: TagService,
     private agentControlService: AgentControlService,
+    private credentialService: CredentialService,
     public store: WorkflowEditorStore,
     public nodeTypeStore: NodeTypeStore
   ) {}
 
   ngOnInit(): void {
     this.nodeTypeStore.loadNodeTypes();
+    this.loadCredentialIds();
     this.wsService.connect();
 
     const id = this.route.snapshot.paramMap.get('id');
@@ -119,6 +125,22 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
             if (qp['executionId']) {
               this.onExecutionSelected(qp['executionId']);
             }
+          }
+
+          // If navigated with loadVersionId=..., load that version onto canvas
+          if (qp['loadVersionId'] && workflow.id) {
+            this.workflowService.getVersion(workflow.id, qp['loadVersionId']).subscribe({
+              next: (version) => {
+                this.store.importWorkflowData({
+                  nodes: version.nodes || [],
+                  connections: version.connections || {},
+                  settings: version.settings,
+                });
+                setTimeout(() => this.canvasWrapper?.triggerCleanUp(), 200);
+                // Clean up the URL
+                this.location.replaceState('/workflow/' + workflow.id);
+              }
+            });
           }
         },
         error: () => this.router.navigate(['/home/workflows'])
@@ -231,6 +253,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   togglePalette(): void {
+    this.showVersionsPanel = false;
     this.showPalette = !this.showPalette;
     if (this.showPalette) {
       setTimeout(() => {
@@ -243,6 +266,53 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     } else {
       this.pendingConnection = null;
     }
+  }
+
+  toggleVersionsPanel(): void {
+    this.showPalette = false;
+    this.pendingConnection = null;
+    this.showVersionsPanel = !this.showVersionsPanel;
+  }
+
+  onVersionSelected(version: WorkflowVersion): void {
+    this.showVersionsPanel = false;
+    this.store.importWorkflowData({
+      nodes: version.nodes || [],
+      connections: version.connections || {},
+      settings: version.settings,
+    });
+    setTimeout(() => this.canvasWrapper?.triggerCleanUp(), 200);
+  }
+
+  onPublishFromVersion(versionId: string): void {
+    const wf = this.store.workflow();
+    if (!wf?.id) return;
+    this.workflowService.publishFromVersion(wf.id, versionId).subscribe({
+      next: (updated) => {
+        if (wf.pinData && Object.keys(wf.pinData).length > 0) {
+          updated = { ...updated, pinData: wf.pinData };
+        }
+        this.store.workflow.set(updated);
+        this.showToast('Version published successfully');
+      },
+      error: (err) => {
+        const msg = err?.error?.message || 'Failed to publish version';
+        this.showToast(msg);
+      }
+    });
+  }
+
+  onCloneFromVersion(versionId: string): void {
+    const wf = this.store.workflow();
+    if (!wf?.id) return;
+    this.workflowService.cloneFromVersion(wf.id, versionId).subscribe({
+      next: (cloned) => {
+        this.router.navigate(['/workflow', cloned.id]);
+      },
+      error: () => {
+        this.showToast('Failed to clone workflow');
+      }
+    });
   }
 
   onInsertNodeOnEdge(edgeInfo: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }): void {
@@ -828,6 +898,13 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       return;
     }
     this.showPublishModal = true;
+  }
+
+  loadCredentialIds(): void {
+    this.credentialService.list().subscribe({
+      next: (creds) => this.knownCredentialIds = new Set(creds.map(c => c.id!)),
+      error: () => {}
+    });
   }
 
   private validateAllNodes(): { nodeName: string; warnings: string[] }[] {

@@ -107,7 +107,12 @@ public class ExpressionEvaluator {
             Value result = jsContext.eval("js", fullScript);
             return convertValue(result);
         } catch (Exception e) {
-            log.warn("Expression evaluation failed for '{}': {}", expression, e.getMessage());
+            String jsonKeys = ctx.getCurrentItemData() != null
+                    ? ctx.getCurrentItemData().keySet().toString() : "null";
+            String nodeNames = ctx.getNodeOutputs() != null
+                    ? ctx.getNodeOutputs().keySet().toString() : "null";
+            log.warn("Expression evaluation failed for '{}': {} | $json keys={}, $node names={}",
+                    expression, e.getMessage(), jsonKeys, nodeNames);
             return "{{" + expression + "}}";
         }
     }

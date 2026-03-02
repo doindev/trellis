@@ -45,6 +45,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   @Input() isExecuting = false;
   @Input() readOnly = false;
   @Input() drawerOffset = 0;
+  @Input() knownCredentialIds: Set<string> = new Set();
 
   @Output() nodeSelected = new EventEmitter<string | null>();
   @Output() nodeDoubleClicked = new EventEmitter<string>();
@@ -362,11 +363,19 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   computeNodeWarnings(node: WorkflowNode, typeDesc: NodeTypeDescription): string[] {
     const warnings: string[] = [];
 
-    // 1. Missing credentials — at least one credential must be set
+    // 1. Missing credentials — at least one credential must be set and reference a valid credential
     if (typeDesc.credentials?.length) {
-      const hasAnyCredential = node.credentials &&
-        Object.values(node.credentials).some(v => !!v);
-      if (!hasAnyCredential) {
+      let hasValidCredential = false;
+      if (node.credentials) {
+        for (const val of Object.values(node.credentials)) {
+          const id = val?.id;
+          if (id && this.knownCredentialIds.has(id)) {
+            hasValidCredential = true;
+            break;
+          }
+        }
+      }
+      if (!hasValidCredential) {
         warnings.push('Missing credential');
       }
     }
