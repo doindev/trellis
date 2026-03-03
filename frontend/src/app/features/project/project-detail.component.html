@@ -141,6 +141,8 @@
                   <app-workflow-card
                     [workflow]="workflow"
                     (open)="openWorkflow($event)"
+                    (move)="onMoveWorkflow($event)"
+                    (share)="onShareWorkflow($event)"
                     (duplicate)="duplicateWorkflow($event)"
                     (enableMcp)="onEnableMcp($event)"
                     (enableSwagger)="onEnableSwagger($event)" />
@@ -468,3 +470,16 @@
   confirmBtnClass="btn btn-danger"
   (confirmed)="onCredDeleteConfirmed()"
   (cancelled)="onCredDeleteCancelled()" />
+
+<app-workflow-move-modal
+  [isOpen]="showMoveModal()"
+  [workflowName]="moveTarget()?.name || ''"
+  [currentProjectId]="projectId"
+  (confirmed)="onMoveConfirmed($event)"
+  (cancelled)="onMoveCancelled()" />
+
+<app-workflow-share-modal
+  [isOpen]="showShareModal()"
+  [workflowId]="shareTarget()?.id || ''"
+  [workflowName]="shareTarget()?.name || ''"
+  (closed)="onShareClosed()" />

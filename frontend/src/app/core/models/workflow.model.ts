@@ -62,6 +62,17 @@ export interface WorkflowVersion {
   settings?: Record<string, any>;
 }
 
+export interface WorkflowShare {
+  id: string;
+  workflowId: string;
+  userId: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  permission: 'VIEW' | 'EDIT';
+  createdAt?: string;
+}
+
 export interface Page<T> {
   content: T[];
   totalElements: number;

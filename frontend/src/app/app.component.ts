@@ -30,6 +30,7 @@ export class AppComponent implements OnInit, OnDestroy {
   showSettingsPopover = false;
   chatSessions: ChatSession[] = [];
   projects: Project[] = [];
+  personalProjectId = '';
   showCreateProjectModal = false;
   newProjectName = '';
   newProjectDescription = '';
@@ -121,7 +122,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   loadProjects(): void {
     this.projectService.list().subscribe({
-      next: (projects) => this.projects = projects.filter(p => p.type === 'TEAM'),
+      next: (projects) => {
+        const personal = projects.find(p => p.type === 'PERSONAL');
+        this.personalProjectId = personal?.id || '';
+        this.projects = projects.filter(p => p.type === 'TEAM');
+      },
       error: () => this.projects = []
     });
   }

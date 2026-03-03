@@ -6,8 +6,11 @@
 
   <!-- Controls Row -->
   <div class="insights-controls">
-    <select class="control-select">
-      <option>All projects</option>
+    <select class="control-select" [ngModel]="selectedProjectId()" (ngModelChange)="onProjectChange($event)">
+      <option value="all">All projects</option>
+      @for (project of projects(); track project.id) {
+        <option [value]="project.id">{{ project.type === 'PERSONAL' ? 'Personal' : project.name }}</option>
+      }
     </select>
     <div class="date-picker-wrapper">
       <button class="control-btn-date" [class.active]="showDatePicker()" (click)="toggleDatePicker($event)">

@@ -76,7 +76,7 @@ public class ExecutionService {
         return toResponse(findEntityById(id));
     }
 
-    public Page<ExecutionListResponse> listExecutions(String workflowId, String status, int page, int size) {
+    public Page<ExecutionListResponse> listExecutions(String workflowId, String projectId, String status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startedAt"));
 
         Page<ExecutionEntity> entities;
@@ -85,6 +85,11 @@ public class ExecutionService {
                     workflowId, ExecutionStatus.valueOf(status), pageable);
         } else if (workflowId != null) {
             entities = executionRepository.findByWorkflowId(workflowId, pageable);
+        } else if (projectId != null && status != null) {
+            entities = executionRepository.findByProjectIdAndStatus(
+                    projectId, ExecutionStatus.valueOf(status), pageable);
+        } else if (projectId != null) {
+            entities = executionRepository.findByProjectId(projectId, pageable);
         } else if (status != null) {
             entities = executionRepository.findByStatus(ExecutionStatus.valueOf(status), pageable);
         } else {

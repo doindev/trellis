@@ -15,11 +15,56 @@
   margin-bottom: 24px;
 }
 
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .header-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--trellis-text-primary);
   margin: 0;
+}
+
+.scope-select {
+  padding: 6px 12px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid var(--trellis-border);
+  border-radius: 6px;
+  color: var(--trellis-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: var(--trellis-primary);
+  }
+
+  option {
+    background: hsl(0, 0%, 13%);
+  }
+}
+
+.btn-project-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: 1px solid var(--trellis-border);
+  border-radius: 6px;
+  color: var(--trellis-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--trellis-hover-bg);
+    color: var(--trellis-text-primary);
+  }
 }
 
 .header-subtitle {

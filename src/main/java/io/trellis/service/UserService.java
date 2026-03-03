@@ -29,6 +29,11 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    public List<UserEntity> searchUsers(String term) {
+        return userRepository.findByEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+                term, term, term);
+    }
+
     @Transactional
     public UserEntity createUser(UserEntity user) {
         return userRepository.save(user);

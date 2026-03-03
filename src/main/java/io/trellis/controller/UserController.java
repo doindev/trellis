@@ -19,8 +19,11 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public List<UserResponse> list() {
-        return userService.listUsers().stream()
+    public List<UserResponse> list(@RequestParam(required = false) String search) {
+        var users = (search != null && !search.isBlank())
+                ? userService.searchUsers(search)
+                : userService.listUsers();
+        return users.stream()
                 .map(this::toResponse)
                 .toList();
     }

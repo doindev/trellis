@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnInit, ViewChild, signal, computed } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, OnChanges, SimpleChanges, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CacheService, CacheDefinition } from '../../core/services/cache.service';
@@ -11,7 +11,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
   templateUrl: './cache-list.component.html',
   styleUrl: './cache-list.component.scss'
 })
-export class CacheListComponent implements OnInit {
+export class CacheListComponent implements OnInit, OnChanges {
   @Input() projectId?: string;
   @ViewChild('nameInput') nameInput!: ElementRef<HTMLInputElement>;
   caches = signal<CacheDefinition[]>([]);
@@ -57,6 +57,12 @@ export class CacheListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCaches();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['projectId'] && !changes['projectId'].firstChange) {
+      this.loadCaches();
+    }
   }
 
   loadCaches(): void {

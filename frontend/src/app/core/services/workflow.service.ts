@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { Workflow, WorkflowVersion, Page } from '../models';
+import { Workflow, WorkflowVersion, WorkflowShare, Page } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class WorkflowService {
@@ -63,6 +63,26 @@ export class WorkflowService {
 
   cloneFromVersion(workflowId: string, versionId: string): Observable<Workflow> {
     return this.api.post<Workflow>(`${this.path}/${workflowId}/versions/${versionId}/clone`);
+  }
+
+  move(id: string, projectId: string): Observable<Workflow> {
+    return this.api.post<Workflow>(`${this.path}/${id}/move`, { projectId });
+  }
+
+  getShares(id: string): Observable<WorkflowShare[]> {
+    return this.api.get<WorkflowShare[]>(`${this.path}/${id}/shares`);
+  }
+
+  addShare(id: string, userId: string, permission: string): Observable<WorkflowShare> {
+    return this.api.post<WorkflowShare>(`${this.path}/${id}/shares`, { userId, permission });
+  }
+
+  updateShare(workflowId: string, shareId: string, permission: string): Observable<WorkflowShare> {
+    return this.api.patch<WorkflowShare>(`${this.path}/${workflowId}/shares/${shareId}`, { permission });
+  }
+
+  removeShare(workflowId: string, shareId: string): Observable<void> {
+    return this.api.delete<void>(`${this.path}/${workflowId}/shares/${shareId}`);
   }
 
   run(id: string, inputData?: any): Observable<any> {

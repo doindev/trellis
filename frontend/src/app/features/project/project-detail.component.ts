@@ -10,6 +10,8 @@ import { CredentialCreateModalComponent } from '../../shared/components/credenti
 import { VariableListComponent } from '../variables/variable-list.component';
 import { CacheListComponent } from '../cache/cache-list.component';
 import { ProjectSettingsComponent } from './project-settings.component';
+import { WorkflowMoveModalComponent } from '../../shared/components/workflow-move-modal/workflow-move-modal.component';
+import { WorkflowShareModalComponent } from '../../shared/components/workflow-share-modal/workflow-share-modal.component';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Settings, Workflow as WorkflowIcon, Variable, Layers } from 'lucide-angular';
 import {
   ExecutionFilterModalComponent,
@@ -31,7 +33,9 @@ import {
     CacheListComponent,
     ProjectSettingsComponent,
     LucideAngularModule,
-    ExecutionFilterModalComponent
+    ExecutionFilterModalComponent,
+    WorkflowMoveModalComponent,
+    WorkflowShareModalComponent
   ],
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Settings, Workflow: WorkflowIcon, Variable, Layers }) }],
   templateUrl: './project-detail.component.html',
@@ -123,6 +127,14 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     });
     return creds;
   });
+
+  // Move
+  moveTarget = signal<Workflow | null>(null);
+  showMoveModal = signal(false);
+
+  // Share
+  shareTarget = signal<Workflow | null>(null);
+  showShareModal = signal(false);
 
   // Delete
   deleteTarget = signal<Workflow | null>(null);
@@ -302,6 +314,39 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     this.settingsService.updateSwaggerWorkflow(workflow.id, { swaggerEnabled: true } as any).subscribe({
       next: () => this.loadWorkflows()
     });
+  }
+
+  onMoveWorkflow(workflow: Workflow): void {
+    this.moveTarget.set(workflow);
+    this.showMoveModal.set(true);
+  }
+
+  onMoveConfirmed(projectId: string): void {
+    const target = this.moveTarget();
+    if (!target?.id) return;
+    this.workflowService.move(target.id, projectId).subscribe({
+      next: () => {
+        this.showMoveModal.set(false);
+        this.moveTarget.set(null);
+        this.loadWorkflows();
+      }
+    });
+  }
+
+  onMoveCancelled(): void {
+    this.showMoveModal.set(false);
+    this.moveTarget.set(null);
+  }
+
+  onShareWorkflow(workflow: Workflow): void {
+    if (workflow.published) return;
+    this.shareTarget.set(workflow);
+    this.showShareModal.set(true);
+  }
+
+  onShareClosed(): void {
+    this.showShareModal.set(false);
+    this.shareTarget.set(null);
   }
 
   resetWfFilters(): void {

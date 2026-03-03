@@ -3,13 +3,16 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { WorkflowService, ExecutionService, CredentialService, ProjectService, SettingsService } from '../../core/services';
-import { Workflow, Execution, Credential, Project } from '../../core/models';
+import { Workflow, Execution, Credential } from '../../core/models';
 import { WorkflowCardComponent } from '../../shared/components/workflow-card/workflow-card.component';
 import { VariableListComponent } from '../variables/variable-list.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CredentialCreateModalComponent } from '../../shared/components/credential-create-modal/credential-create-modal.component';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Folder, Layers } from 'lucide-angular';
 import { CacheListComponent } from '../cache/cache-list.component';
+import { ProjectSettingsComponent } from '../project/project-settings.component';
+import { WorkflowMoveModalComponent } from '../../shared/components/workflow-move-modal/workflow-move-modal.component';
+import { WorkflowShareModalComponent } from '../../shared/components/workflow-share-modal/workflow-share-modal.component';
 import {
   ExecutionFilterModalComponent,
   ExecutionFilters,
@@ -31,7 +34,10 @@ import {
     CredentialCreateModalComponent,
     LucideAngularModule,
     ExecutionFilterModalComponent,
-    CacheListComponent
+    CacheListComponent,
+    WorkflowMoveModalComponent,
+    WorkflowShareModalComponent,
+    ProjectSettingsComponent
   ],
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Folder, Layers }) }],
   templateUrl: './home.component.html',
@@ -40,6 +46,7 @@ import {
 export class HomeComponent implements OnInit {
   @ViewChild('credModal') credModal!: CredentialCreateModalComponent;
   @ViewChild(CacheListComponent) cacheList!: CacheListComponent;
+  @ViewChild('projectSettings') projectSettings!: ProjectSettingsComponent;
 
   activeTab = signal<'workflows' | 'credentials' | 'executions' | 'variables' | 'caches'>('workflows');
 
@@ -153,6 +160,14 @@ export class HomeComponent implements OnInit {
   credDeleteTarget = signal<Credential | null>(null);
   showCredDeleteConfirm = signal(false);
 
+  // Move
+  moveTarget = signal<Workflow | null>(null);
+  showMoveModal = signal(false);
+
+  // Share
+  shareTarget = signal<Workflow | null>(null);
+  showShareModal = signal(false);
+
   // Credential actions dropdown
   credActionsOpenId = signal<string | null>(null);
 
@@ -196,6 +211,8 @@ export class HomeComponent implements OnInit {
 
   // Projects
   projectMap = new Map<string, string>();
+  allProjects = signal<{ id: string; name: string }[]>([]);
+  selectedProjectId = signal<string>('');
 
   // Create dropdown
   showCreateDropdown = false;
@@ -229,9 +246,7 @@ export class HomeComponent implements OnInit {
       }
     });
 
-    this.loadWorkflows();
-    this.loadExecutions();
-    this.loadCredentials();
+    // loadProjects sets selectedProjectId and then triggers reloadAllData
     this.loadProjects();
   }
 
@@ -242,7 +257,9 @@ export class HomeComponent implements OnInit {
 
   loadWorkflows(): void {
     this.loadingWorkflows.set(true);
-    this.workflowService.list().subscribe({
+    const projectId = this.selectedProjectId();
+    const params = projectId ? { projectId } : undefined;
+    this.workflowService.list(params).subscribe({
       next: (data) => {
         this.workflows.set(data);
         this.loadingWorkflows.set(false);
@@ -255,7 +272,13 @@ export class HomeComponent implements OnInit {
     this.loadingExecutions.set(true);
     this.executionService.list().subscribe({
       next: (data) => {
-        this.executions.set(Array.isArray(data) ? data : []);
+        let execs = Array.isArray(data) ? data : [];
+        // Filter to only executions belonging to this project's workflows
+        const projectWfIds = new Set(this.workflows().map(w => w.id));
+        if (projectWfIds.size > 0) {
+          execs = execs.filter(e => projectWfIds.has(e.workflowId));
+        }
+        this.executions.set(execs);
         this.loadingExecutions.set(false);
       },
       error: () => this.loadingExecutions.set(false)
@@ -269,8 +292,55 @@ export class HomeComponent implements OnInit {
         projects.forEach(p => {
           if (p.id) this.projectMap.set(p.id, p.name);
         });
+
+        // Build dropdown list: Personal first, then team projects alphabetically
+        const personal = projects.find(p => p.type === 'PERSONAL');
+        const team = projects
+          .filter(p => p.type === 'TEAM' && p.id)
+          .sort((a, b) => a.name.localeCompare(b.name));
+        const list: { id: string; name: string }[] = [];
+        if (personal?.id) {
+          list.push({ id: personal.id, name: 'Personal' });
+        }
+        team.forEach(p => list.push({ id: p.id!, name: p.name }));
+        this.allProjects.set(list);
+
+        // Default to personal project
+        if (!this.selectedProjectId() && personal?.id) {
+          this.selectedProjectId.set(personal.id);
+          this.reloadAllData();
+        }
       }
     });
+  }
+
+  onProjectScopeChange(projectId: string): void {
+    this.selectedProjectId.set(projectId);
+    this.reloadAllData();
+  }
+
+  openProjectSettings(): void {
+    if (this.selectedProjectId()) {
+      this.projectSettings.projectId = this.selectedProjectId();
+      this.projectSettings.open();
+    }
+  }
+
+  onProjectSettingsSaved(): void {
+    // Refresh the dropdown list in case name/icon changed
+    this.loadProjects();
+  }
+
+  onProjectDeleted(): void {
+    // Project was deleted — reload projects and select the first available
+    this.selectedProjectId.set('');
+    this.loadProjects();
+  }
+
+  private reloadAllData(): void {
+    this.loadWorkflows();
+    this.loadCredentials();
+    this.loadExecutions();
   }
 
   getProjectName(projectId?: string): string {
@@ -294,7 +364,8 @@ export class HomeComponent implements OnInit {
 
   createWorkflow(): void {
     this.showCreateDropdown = false;
-    this.router.navigate(['/workflow/new']);
+    const projectId = this.selectedProjectId();
+    this.router.navigate(['/workflow/new'], projectId ? { queryParams: { projectId } } : {});
   }
 
   openWorkflow(workflow: Workflow): void {
@@ -321,6 +392,39 @@ export class HomeComponent implements OnInit {
     this.settingsService.updateSwaggerWorkflow(workflow.id, { swaggerEnabled: true } as any).subscribe({
       next: () => this.loadWorkflows()
     });
+  }
+
+  onMoveWorkflow(workflow: Workflow): void {
+    this.moveTarget.set(workflow);
+    this.showMoveModal.set(true);
+  }
+
+  onMoveConfirmed(projectId: string): void {
+    const target = this.moveTarget();
+    if (!target?.id) return;
+    this.workflowService.move(target.id, projectId).subscribe({
+      next: () => {
+        this.showMoveModal.set(false);
+        this.moveTarget.set(null);
+        this.loadWorkflows();
+      }
+    });
+  }
+
+  onMoveCancelled(): void {
+    this.showMoveModal.set(false);
+    this.moveTarget.set(null);
+  }
+
+  onShareWorkflow(workflow: Workflow): void {
+    if (workflow.published) return;
+    this.shareTarget.set(workflow);
+    this.showShareModal.set(true);
+  }
+
+  onShareClosed(): void {
+    this.showShareModal.set(false);
+    this.shareTarget.set(null);
   }
 
   duplicateWorkflow(workflow: Workflow): void {
@@ -420,7 +524,11 @@ export class HomeComponent implements OnInit {
   // Credential methods
   loadCredentials(): void {
     this.loadingCredentials.set(true);
-    this.credentialService.list().subscribe({
+    const projectId = this.selectedProjectId();
+    const source = projectId
+      ? this.credentialService.listByProject(projectId)
+      : this.credentialService.list();
+    source.subscribe({
       next: (data) => {
         this.credentials.set(data);
         this.loadingCredentials.set(false);

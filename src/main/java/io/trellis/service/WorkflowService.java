@@ -1,16 +1,26 @@
 package io.trellis.service;
 
 import io.trellis.dto.*;
+import io.trellis.entity.ProjectRelationEntity;
+import io.trellis.entity.ProjectRelationEntity.ProjectRole;
 import io.trellis.entity.TagEntity;
+import io.trellis.entity.UserEntity;
 import io.trellis.entity.WorkflowEntity;
+import io.trellis.entity.WorkflowShareEntity;
+import io.trellis.entity.WorkflowShareEntity.SharePermission;
 import io.trellis.entity.WorkflowVersionEntity;
 import io.trellis.exception.BadRequestException;
+import io.trellis.exception.ForbiddenException;
 import io.trellis.exception.NotFoundException;
 import io.trellis.nodes.core.NodeParameter;
 import io.trellis.nodes.core.NodeRegistry;
+import io.trellis.repository.ProjectRelationRepository;
 import io.trellis.repository.TagRepository;
+import io.trellis.repository.UserRepository;
 import io.trellis.repository.WorkflowRepository;
+import io.trellis.repository.WorkflowShareRepository;
 import io.trellis.repository.WorkflowVersionRepository;
+import io.trellis.util.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,6 +46,59 @@ public class WorkflowService {
     private final WebhookService webhookService;
     private final TagRepository tagRepository;
     private final NodeRegistry nodeRegistry;
+    private final WorkflowShareRepository workflowShareRepository;
+    private final ProjectRelationRepository projectRelationRepository;
+    private final UserRepository userRepository;
+    private final SecurityContextHelper securityContextHelper;
+
+    // --- Access control helpers ---
+
+    private ProjectRole getProjectRole(String projectId, String userId) {
+        if (projectId == null) return null;
+        return projectRelationRepository.findByProjectIdAndUserId(projectId, userId)
+                .map(ProjectRelationEntity::getRole)
+                .orElse(null);
+    }
+
+    private void checkAccess(WorkflowEntity workflow) {
+        String userId = securityContextHelper.getCurrentUserId();
+        // Project member?
+        if (workflow.getProjectId() != null
+                && projectRelationRepository.existsByProjectIdAndUserId(workflow.getProjectId(), userId)) {
+            return;
+        }
+        // Direct share?
+        if (workflowShareRepository.existsByWorkflowIdAndUserId(workflow.getId(), userId)) {
+            return;
+        }
+        throw new ForbiddenException("You do not have access to this workflow");
+    }
+
+    private void checkEditAccess(WorkflowEntity workflow) {
+        String userId = securityContextHelper.getCurrentUserId();
+        // Project owner/admin/editor?
+        ProjectRole role = getProjectRole(workflow.getProjectId(), userId);
+        if (role == ProjectRole.PROJECT_PERSONAL_OWNER || role == ProjectRole.PROJECT_ADMIN || role == ProjectRole.PROJECT_EDITOR) {
+            return;
+        }
+        // Direct EDIT share?
+        var share = workflowShareRepository.findByWorkflowIdAndUserId(workflow.getId(), userId);
+        if (share.isPresent() && share.get().getPermission() == SharePermission.EDIT) {
+            return;
+        }
+        throw new ForbiddenException("You do not have edit access to this workflow");
+    }
+
+    private void checkPublishAccess(WorkflowEntity workflow) {
+        String userId = securityContextHelper.getCurrentUserId();
+        ProjectRole role = getProjectRole(workflow.getProjectId(), userId);
+        if (role == ProjectRole.PROJECT_PERSONAL_OWNER || role == ProjectRole.PROJECT_ADMIN || role == ProjectRole.PROJECT_EDITOR) {
+            return;
+        }
+        throw new ForbiddenException("You do not have permission to publish this workflow");
+    }
+
+    // --- Core workflow methods ---
 
     @Transactional(readOnly = true)
     public List<WorkflowResponse> listWorkflows() {
@@ -55,15 +118,22 @@ public class WorkflowService {
 
     @Transactional(readOnly = true)
     public WorkflowResponse getWorkflow(String id) {
-        return toResponse(findById(id));
+        WorkflowEntity entity = findById(id);
+        checkAccess(entity);
+        return toResponse(entity);
     }
 
     @Transactional
     public WorkflowResponse createWorkflow(WorkflowCreateRequest request) {
+        String projectId = request.getProjectId();
+        if (projectId == null || projectId.isBlank()) {
+            projectId = resolvePersonalProjectId();
+        }
+
         WorkflowEntity entity = WorkflowEntity.builder()
                 .name(request.getName())
                 .description(request.getDescription())
-                .projectId(request.getProjectId())
+                .projectId(projectId)
                 .nodes(ensureNodeIds(request.getNodes()))
                 .connections(request.getConnections())
                 .settings(request.getSettings())
@@ -71,11 +141,21 @@ public class WorkflowService {
         return toResponse(workflowRepository.save(entity));
     }
 
+    private String resolvePersonalProjectId() {
+        String userId = securityContextHelper.getCurrentUserId();
+        return projectRelationRepository.findByUserId(userId).stream()
+                .filter(r -> r.getRole() == ProjectRole.PROJECT_PERSONAL_OWNER)
+                .map(ProjectRelationEntity::getProjectId)
+                .findFirst()
+                .orElse(null);
+    }
+
     private static final Duration SAVE_REVISION_THROTTLE = Duration.ofSeconds(30);
 
     @Transactional
     public WorkflowResponse updateWorkflow(String id, WorkflowUpdateRequest request) {
         WorkflowEntity entity = findById(id);
+        checkEditAccess(entity);
         boolean dataChanged = request.getNodes() != null || request.getConnections() != null;
 
         if (request.getName() != null) entity.setName(request.getName());
@@ -131,9 +211,11 @@ public class WorkflowService {
     @Transactional
     public void deleteWorkflow(String id) {
         WorkflowEntity entity = findById(id);
+        checkEditAccess(entity);
         if (entity.isPublished()) {
             webhookService.deregisterWorkflowWebhooks(id);
         }
+        workflowShareRepository.deleteByWorkflowId(id);
         workflowVersionRepository.deleteByWorkflowId(id);
         workflowRepository.delete(entity);
     }
@@ -141,6 +223,7 @@ public class WorkflowService {
     @Transactional
     public WorkflowResponse publishWorkflow(String id, PublishWorkflowRequest request) {
         WorkflowEntity entity = findById(id);
+        checkPublishAccess(entity);
         validateNodesForPublish(entity);
         int newVersion = entity.getCurrentVersion() + 1;
 
@@ -344,6 +427,131 @@ public class WorkflowService {
         entity.setTags(tags);
         return toResponse(workflowRepository.save(entity));
     }
+
+    // --- Move workflow ---
+
+    @Transactional
+    public WorkflowResponse moveWorkflow(String id, WorkflowMoveRequest request) {
+        WorkflowEntity entity = findById(id);
+        checkEditAccess(entity);
+
+        String targetProjectId = request.getProjectId();
+        if (targetProjectId == null || targetProjectId.isBlank()) {
+            throw new BadRequestException("Target project ID is required");
+        }
+
+        String userId = securityContextHelper.getCurrentUserId();
+        if (!projectRelationRepository.existsByProjectIdAndUserId(targetProjectId, userId)) {
+            throw new ForbiddenException("You do not have access to the target project");
+        }
+
+        entity.setProjectId(targetProjectId);
+        return toResponse(workflowRepository.save(entity));
+    }
+
+    // --- Share methods ---
+
+    @Transactional(readOnly = true)
+    public List<WorkflowShareResponse> getShares(String workflowId) {
+        WorkflowEntity entity = findById(workflowId);
+        checkAccess(entity);
+
+        return workflowShareRepository.findByWorkflowId(workflowId).stream()
+                .map(share -> {
+                    UserEntity user = userRepository.findById(share.getUserId()).orElse(null);
+                    return WorkflowShareResponse.builder()
+                            .id(share.getId())
+                            .workflowId(share.getWorkflowId())
+                            .userId(share.getUserId())
+                            .email(user != null ? user.getEmail() : null)
+                            .firstName(user != null ? user.getFirstName() : null)
+                            .lastName(user != null ? user.getLastName() : null)
+                            .permission(share.getPermission().name())
+                            .createdAt(share.getCreatedAt())
+                            .build();
+                })
+                .toList();
+    }
+
+    @Transactional
+    public WorkflowShareResponse addShare(String workflowId, WorkflowShareRequest request) {
+        WorkflowEntity entity = findById(workflowId);
+        checkEditAccess(entity);
+
+        if (entity.isPublished()) {
+            throw new BadRequestException("Published workflows cannot be shared");
+        }
+
+        UserEntity targetUser = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new NotFoundException("User not found: " + request.getUserId()));
+
+        if (workflowShareRepository.existsByWorkflowIdAndUserId(workflowId, request.getUserId())) {
+            throw new BadRequestException("Workflow is already shared with this user");
+        }
+
+        SharePermission permission = SharePermission.valueOf(request.getPermission().toUpperCase());
+
+        WorkflowShareEntity share = WorkflowShareEntity.builder()
+                .workflowId(workflowId)
+                .userId(request.getUserId())
+                .permission(permission)
+                .build();
+        share = workflowShareRepository.save(share);
+
+        return WorkflowShareResponse.builder()
+                .id(share.getId())
+                .workflowId(share.getWorkflowId())
+                .userId(share.getUserId())
+                .email(targetUser.getEmail())
+                .firstName(targetUser.getFirstName())
+                .lastName(targetUser.getLastName())
+                .permission(share.getPermission().name())
+                .createdAt(share.getCreatedAt())
+                .build();
+    }
+
+    @Transactional
+    public WorkflowShareResponse updateShare(String workflowId, String shareId, WorkflowShareRequest request) {
+        WorkflowEntity entity = findById(workflowId);
+        checkEditAccess(entity);
+
+        WorkflowShareEntity share = workflowShareRepository.findById(shareId)
+                .orElseThrow(() -> new NotFoundException("Share not found: " + shareId));
+        if (!share.getWorkflowId().equals(workflowId)) {
+            throw new NotFoundException("Share " + shareId + " does not belong to workflow " + workflowId);
+        }
+
+        SharePermission permission = SharePermission.valueOf(request.getPermission().toUpperCase());
+        share.setPermission(permission);
+        share = workflowShareRepository.save(share);
+
+        UserEntity user = userRepository.findById(share.getUserId()).orElse(null);
+        return WorkflowShareResponse.builder()
+                .id(share.getId())
+                .workflowId(share.getWorkflowId())
+                .userId(share.getUserId())
+                .email(user != null ? user.getEmail() : null)
+                .firstName(user != null ? user.getFirstName() : null)
+                .lastName(user != null ? user.getLastName() : null)
+                .permission(share.getPermission().name())
+                .createdAt(share.getCreatedAt())
+                .build();
+    }
+
+    @Transactional
+    public void removeShare(String workflowId, String shareId) {
+        WorkflowEntity entity = findById(workflowId);
+        checkEditAccess(entity);
+
+        WorkflowShareEntity share = workflowShareRepository.findById(shareId)
+                .orElseThrow(() -> new NotFoundException("Share not found: " + shareId));
+        if (!share.getWorkflowId().equals(workflowId)) {
+            throw new NotFoundException("Share " + shareId + " does not belong to workflow " + workflowId);
+        }
+        workflowShareRepository.delete(share);
+    }
+
+    // --- Helpers ---
 
     /**
      * Ensures every node in the list has an "id" field. If a node is missing "id",

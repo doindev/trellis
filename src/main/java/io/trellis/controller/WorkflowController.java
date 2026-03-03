@@ -96,4 +96,32 @@ public class WorkflowController {
     public WorkflowResponse updateTags(@PathVariable String id, @RequestBody List<String> tagIds) {
         return workflowService.updateWorkflowTags(id, tagIds);
     }
+
+    @PostMapping("/{id}/move")
+    public WorkflowResponse move(@PathVariable String id, @RequestBody WorkflowMoveRequest request) {
+        return workflowService.moveWorkflow(id, request);
+    }
+
+    @GetMapping("/{id}/shares")
+    public List<WorkflowShareResponse> getShares(@PathVariable String id) {
+        return workflowService.getShares(id);
+    }
+
+    @PostMapping("/{id}/shares")
+    @ResponseStatus(HttpStatus.CREATED)
+    public WorkflowShareResponse addShare(@PathVariable String id, @RequestBody WorkflowShareRequest request) {
+        return workflowService.addShare(id, request);
+    }
+
+    @PatchMapping("/{id}/shares/{shareId}")
+    public WorkflowShareResponse updateShare(@PathVariable String id, @PathVariable String shareId,
+                                             @RequestBody WorkflowShareRequest request) {
+        return workflowService.updateShare(id, shareId, request);
+    }
+
+    @DeleteMapping("/{id}/shares/{shareId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeShare(@PathVariable String id, @PathVariable String shareId) {
+        workflowService.removeShare(id, shareId);
+    }
 }

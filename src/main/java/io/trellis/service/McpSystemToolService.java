@@ -527,7 +527,7 @@ public class McpSystemToolService {
         }
 
         Page<ExecutionListResponse> page = executionService.listExecutions(
-                workflowId, status, 0, limit);
+                workflowId, null, status, 0, limit);
 
         List<Map<String, Object>> result = page.getContent().stream()
                 .map(ex -> {

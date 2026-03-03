@@ -2,8 +2,22 @@
   <!-- Project Header -->
   <div class="project-header">
     <div class="header-text">
-      <h2 class="header-title">Overview</h2>
-      <p class="header-subtitle">All the workflows, credentials and caches you have access to</p>
+      <div class="header-title-row">
+        <h2 class="header-title">Overview</h2>
+        <select class="scope-select" [value]="selectedProjectId()"
+                (change)="onProjectScopeChange($any($event.target).value)">
+          @for (p of allProjects(); track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
+        <button class="btn-project-settings" (click)="openProjectSettings()" title="Project settings">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+      <p class="header-subtitle">Workflows, credentials and caches for the selected project</p>
     </div>
     <div class="header-actions">
       <div class="create-dropdown-wrapper" (mouseenter)="cancelCreateDropdownClose()" (mouseleave)="scheduleCreateDropdownClose()">
@@ -132,6 +146,8 @@
                     [workflow]="workflow"
                     [projectName]="getProjectName(workflow.projectId)"
                     (open)="openWorkflow($event)"
+                    (move)="onMoveWorkflow($event)"
+                    (share)="onShareWorkflow($event)"
                     (duplicate)="duplicateWorkflow($event)"
                     (enableMcp)="onEnableMcp($event)"
                     (enableSwagger)="onEnableSwagger($event)" />
@@ -356,12 +372,12 @@
       }
       @case ('variables') {
         <div class="tab-scroll">
-          <app-variable-list />
+          <app-variable-list [projectId]="selectedProjectId()" />
         </div>
       }
       @case ('caches') {
         <div class="tab-scroll">
-          <app-cache-list />
+          <app-cache-list [projectId]="selectedProjectId()" />
         </div>
       }
     }
@@ -433,6 +449,7 @@
 }
 
 <app-credential-create-modal #credModal
+  [projectId]="selectedProjectId()"
   (saved)="onCredentialSaved()"
   (closed)="null" />
 
@@ -453,3 +470,21 @@
   confirmBtnClass="btn btn-danger"
   (confirmed)="onCredDeleteConfirmed()"
   (cancelled)="onCredDeleteCancelled()" />
+
+<app-workflow-move-modal
+  [isOpen]="showMoveModal()"
+  [workflowName]="moveTarget()?.name || ''"
+  [currentProjectId]="moveTarget()?.projectId || selectedProjectId()"
+  (confirmed)="onMoveConfirmed($event)"
+  (cancelled)="onMoveCancelled()" />
+
+<app-workflow-share-modal
+  [isOpen]="showShareModal()"
+  [workflowId]="shareTarget()?.id || ''"
+  [workflowName]="shareTarget()?.name || ''"
+  (closed)="onShareClosed()" />
+
+<app-project-settings #projectSettings
+  [projectId]="selectedProjectId()"
+  (saved)="onProjectSettingsSaved()"
+  (deleted)="onProjectDeleted()" />

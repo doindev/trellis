@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy, signal, computed, HostListener, ViewChild, ElementRef, AfterViewInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
-import { ExecutionService } from '../../core/services';
-import { Execution } from '../../core/models';
+import { ExecutionService, ProjectService } from '../../core/services';
+import { Execution, Project } from '../../core/models';
 import {
   Chart,
   BarController,
@@ -66,7 +67,7 @@ interface TimeBucket {
 @Component({
   selector: 'app-insights',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
   templateUrl: './insights.component.html',
   styleUrl: './insights.component.scss'
 })
@@ -76,6 +77,8 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   activeMetric = signal('total');
   executions = signal<Execution[]>([]);
   showDatePicker = signal(false);
+  selectedProjectId = signal('all');
+  projects = signal<Project[]>([]);
 
   selectedPreset = signal('Last 30 minutes');
   rangeStart = signal(new Date(Date.now() - 30 * 60000));
@@ -264,7 +267,8 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private executionService: ExecutionService
+    private executionService: ExecutionService,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
@@ -272,6 +276,25 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
       const metric = params.get('metric') || 'total';
       this.activeMetric.set(metric);
     });
+    this.loadProjects();
+  }
+
+  loadProjects(): void {
+    this.projectService.list().subscribe({
+      next: (projects) => {
+        const personal = projects.filter(p => p.type === 'PERSONAL');
+        const team = projects
+          .filter(p => p.type === 'TEAM')
+          .sort((a, b) => a.name.localeCompare(b.name));
+        this.projects.set([...personal, ...team]);
+      },
+      error: () => this.projects.set([])
+    });
+  }
+
+  onProjectChange(projectId: string): void {
+    this.selectedProjectId.set(projectId);
+    this.loadExecutions();
   }
 
   ngAfterViewInit(): void {
@@ -284,7 +307,12 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadExecutions(): void {
-    this.executionService.list({ size: '10000' }).subscribe({
+    const params: Record<string, string> = { size: '10000' };
+    const projectId = this.selectedProjectId();
+    if (projectId !== 'all') {
+      params['projectId'] = projectId;
+    }
+    this.executionService.list(params).subscribe({
       next: (data) => this.executions.set(Array.isArray(data) ? data : [])
     });
   }

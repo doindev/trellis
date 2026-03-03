@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, signal, computed } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { VariableService } from '../../core/services';
@@ -13,7 +13,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
   templateUrl: './variable-list.component.html',
   styleUrl: './variable-list.component.scss'
 })
-export class VariableListComponent implements OnInit {
+export class VariableListComponent implements OnInit, OnChanges {
   @Input() projectId?: string;
 
   variables = signal<Variable[]>([]);
@@ -40,6 +40,12 @@ export class VariableListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadVariables();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['projectId'] && !changes['projectId'].firstChange) {
+      this.loadVariables();
+    }
   }
 
   loadVariables(): void {

@@ -22,10 +22,11 @@ public class ExecutionController {
     @GetMapping("/api/executions")
     public Page<ExecutionListResponse> list(
             @RequestParam(required = false) String workflowId,
+            @RequestParam(required = false) String projectId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return executionService.listExecutions(workflowId, status, page, size);
+        return executionService.listExecutions(workflowId, projectId, status, page, size);
     }
 
     @GetMapping("/api/executions/{id}")
