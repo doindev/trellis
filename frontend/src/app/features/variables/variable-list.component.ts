@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { VariableService } from '../../core/services';
@@ -16,11 +16,23 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
 export class VariableListComponent implements OnInit {
   variables = signal<Variable[]>([]);
   loading = signal(true);
+  filterTerm = signal('');
   showModal = signal(false);
   editingVariable = signal<Partial<Variable>>({});
   isEditing = signal(false);
   showDeleteConfirm = signal(false);
   deleteTarget = signal<Variable | null>(null);
+
+  filteredVariables = computed(() => {
+    const term = this.filterTerm().toLowerCase().trim();
+    const all = this.variables();
+    if (!term) return all;
+    return all.filter(v =>
+      v.key.toLowerCase().includes(term) ||
+      v.value.toLowerCase().includes(term) ||
+      (v.type || 'string').toLowerCase().includes(term)
+    );
+  });
 
   constructor(private variableService: VariableService) {}
 
