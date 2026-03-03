@@ -25,6 +25,7 @@ export class ProjectSettingsComponent {
   // Form fields
   name = '';
   description = '';
+  contextPath = '';
   iconEmoji = '';
 
   // Add member form
@@ -58,6 +59,7 @@ export class ProjectSettingsComponent {
         this.project.set(project);
         this.name = project.name;
         this.description = project.description || '';
+        this.contextPath = project.contextPath || '';
         this.iconEmoji = project.icon?.value || '';
       }
     });
@@ -81,6 +83,7 @@ export class ProjectSettingsComponent {
     this.projectService.update(this.projectId, {
       name: this.name,
       description: this.description,
+      contextPath: this.contextPath || undefined,
       icon: icon as any
     }).subscribe({
       next: (updated) => {

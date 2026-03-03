@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { WorkflowService, WebSocketService, ExecutionService, TagService, CredentialService } from '../../core/services';
+import { WorkflowService, WebSocketService, ExecutionService, TagService, CredentialService, ProjectService } from '../../core/services';
 import { WorkflowEditorStore } from '../../core/state/workflow-editor.store';
 import { NodeTypeStore } from '../../core/state/node-type.store';
 import { ExecutionsSidebarComponent } from './components/executions-sidebar/executions-sidebar.component';
@@ -82,6 +82,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   executionWorkflow: Workflow | null = null;
   executionDataById: Record<string, any> | null = null;
   webhookTestData: Record<string, any> = {};
+  projectContextPath = '';
   knownCredentialIds = new Set<string>();
   private executionSub?: Subscription;
   private currentExecutionId: string | null = null;
@@ -102,6 +103,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     private tagService: TagService,
     private agentControlService: AgentControlService,
     private credentialService: CredentialService,
+    private projectService: ProjectService,
     public store: WorkflowEditorStore,
     public nodeTypeStore: NodeTypeStore
   ) {}
@@ -118,6 +120,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       this.workflowService.get(id).subscribe({
         next: (workflow) => {
           this.store.loadWorkflow(workflow);
+          this.loadProjectContextPath(workflow.projectId);
 
           // If navigated with tab=executions&executionId=..., open that execution
           if (qp['tab'] === 'executions') {
@@ -898,6 +901,17 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       return;
     }
     this.showPublishModal = true;
+  }
+
+  private loadProjectContextPath(projectId?: string): void {
+    if (!projectId) {
+      this.projectContextPath = '';
+      return;
+    }
+    this.projectService.get(projectId).subscribe({
+      next: (project) => this.projectContextPath = project.contextPath || '',
+      error: () => this.projectContextPath = ''
+    });
   }
 
   loadCredentialIds(): void {

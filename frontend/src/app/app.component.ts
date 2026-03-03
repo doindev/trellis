@@ -9,7 +9,6 @@ import { AgentControlOverlayComponent } from './shared/components/agent-control-
 import { ProjectService } from './core/services/project.service';
 import { ChatService } from './core/services/chat.service';
 import { AgentControlService, AgentControlRequest } from './core/services/agent-control.service';
-import { Project } from './core/models/project.model';
 import { ChatSession } from './core/models/chat.model';
 
 @Component({
@@ -29,8 +28,6 @@ export class AppComponent implements OnInit, OnDestroy {
   chatMode = false;
   showSettingsPopover = false;
   chatSessions: ChatSession[] = [];
-  projects: Project[] = [];
-  personalProjectId = '';
   showCreateProjectModal = false;
   newProjectName = '';
   newProjectDescription = '';
@@ -69,7 +66,6 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadProjects();
     this.updateModes(this.router.url);
     this.routerSub = this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd)
@@ -118,24 +114,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   onAgentStop(): void {
     this.agentControlService.revokeControl();
-  }
-
-  loadProjects(): void {
-    this.projectService.list().subscribe({
-      next: (projects) => {
-        const personal = projects.find(p => p.type === 'PERSONAL');
-        this.personalProjectId = personal?.id || '';
-        this.projects = projects.filter(p => p.type === 'TEAM');
-      },
-      error: () => this.projects = []
-    });
-  }
-
-  getProjectIcon(project: Project): string {
-    if (project.icon?.type === 'emoji' && project.icon.value) {
-      return project.icon.value;
-    }
-    return '';
   }
 
   toggleSidebar(): void {
@@ -206,8 +184,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (project) => {
         this.creatingProject = false;
         this.showCreateProjectModal = false;
-        this.loadProjects();
-        this.router.navigate(['/projects', project.id, 'workflows']);
+        this.router.navigate(['/home/workflows'], { queryParams: { projectId: project.id } });
       },
       error: () => this.creatingProject = false
     });
@@ -224,11 +201,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   onSearch(): void {
     this.router.navigate(['/home/search']);
-  }
-
-  onAddFolder(): void {
-    this.showCreateMenu = false;
-    this.router.navigate(['/home/folders']);
   }
 
   onAddCache(): void {

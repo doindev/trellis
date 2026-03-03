@@ -40,15 +40,5 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/settings/settings.component').then(m => m.SettingsComponent)
   },
-  {
-    path: 'projects/:projectId',
-    redirectTo: 'projects/:projectId/workflows',
-    pathMatch: 'full'
-  },
-  {
-    path: 'projects/:projectId/:tab',
-    loadComponent: () =>
-      import('./features/project/project-detail.component').then(m => m.ProjectDetailComponent)
-  },
   { path: '**', redirectTo: '/home/workflows' }
 ];

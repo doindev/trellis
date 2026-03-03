@@ -11,4 +11,6 @@ import java.util.Optional;
 public interface ProjectRepository extends JpaRepository<ProjectEntity, String> {
     List<ProjectEntity> findByType(ProjectType type);
     Optional<ProjectEntity> findByNameAndType(String name, ProjectType type);
+    Optional<ProjectEntity> findByContextPath(String contextPath);
+    List<ProjectEntity> findByContextPathIsNotNull();
 }

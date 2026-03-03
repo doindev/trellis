@@ -1,8 +1,10 @@
 package io.trellis.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.trellis.entity.ProjectEntity;
 import io.trellis.entity.WebhookEntity;
 import io.trellis.entity.WorkflowEntity;
+import io.trellis.repository.ProjectRepository;
 import io.trellis.repository.WebhookRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ public class WebhookService {
     public record WebhookMatch(WebhookEntity webhook, Map<String, Object> pathVariables) {}
 
     private final WebhookRepository webhookRepository;
+    private final ProjectRepository projectRepository;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -62,6 +65,12 @@ public class WebhookService {
             if (path.isEmpty()) continue;
 
             String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+
+            // Prepend project context path if configured
+            String contextPath = resolveContextPath(workflow.getProjectId());
+            if (contextPath != null) {
+                normalizedPath = contextPath + "/" + normalizedPath;
+            }
 
             if ("formTrigger".equals(type)) {
                 // Register both GET (serve form) and POST (submit) for form triggers
@@ -170,12 +179,16 @@ public class WebhookService {
     }
 
     @Transactional
-    public WebhookEntity registerTestWebhook(String workflowId, String nodeId, String method, String path) {
+    public WebhookEntity registerTestWebhook(String workflowId, String nodeId, String method, String path, String contextPath) {
+        String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+        if (contextPath != null && !contextPath.isBlank()) {
+            normalizedPath = contextPath + "/" + normalizedPath;
+        }
         WebhookEntity webhook = WebhookEntity.builder()
                 .workflowId(workflowId)
                 .nodeId(nodeId)
                 .method(method.toUpperCase())
-                .path(path.startsWith("/") ? path.substring(1) : path)
+                .path(normalizedPath)
                 .securityChain("none")
                 .isTest(true)
                 .build();
@@ -185,6 +198,13 @@ public class WebhookService {
     @Transactional
     public void deregisterTestWebhooks(String workflowId) {
         webhookRepository.deleteByWorkflowIdAndIsTest(workflowId, true);
+    }
+
+    public String resolveContextPath(String projectId) {
+        if (projectId == null) return null;
+        return projectRepository.findById(projectId)
+                .map(ProjectEntity::getContextPath)
+                .orElse(null);
     }
 
     public List<WebhookEntity> getWorkflowWebhooks(String workflowId) {

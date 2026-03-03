@@ -29,6 +29,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.trellis.engine.WorkflowEngine;
 import io.trellis.entity.WebhookEntity;
+import io.trellis.entity.WorkflowEntity;
+import io.trellis.repository.WorkflowRepository;
 import io.trellis.service.WebSocketService;
 import io.trellis.service.WebhookService;
 import io.trellis.util.FormHtmlGenerator;
@@ -46,6 +48,7 @@ public class WebhookController {
     private final WebhookService webhookService;
     private final WorkflowEngine workflowEngine;
     private final WebSocketService webSocketService;
+    private final WorkflowRepository workflowRepository;
     private final ObjectMapper objectMapper;
 
     private static final long TEST_WEBHOOK_TIMEOUT_MS = 120_000; // 2 minutes
@@ -84,8 +87,13 @@ public class WebhookController {
         cancelTimeout(workflowId);
         webhookService.deregisterTestWebhooks(workflowId);
 
+        // Look up project context path for this workflow
+        String contextPath = workflowRepository.findById(workflowId)
+                .map(wf -> webhookService.resolveContextPath(wf.getProjectId()))
+                .orElse(null);
+
         // Register the test webhook
-        WebhookEntity webhook = webhookService.registerTestWebhook(workflowId, nodeId, method, path);
+        WebhookEntity webhook = webhookService.registerTestWebhook(workflowId, nodeId, method, path, contextPath);
 
         // Schedule a 2-minute timeout
         ScheduledFuture<?> timeout = scheduler.schedule(() -> {
@@ -100,7 +108,12 @@ public class WebhookController {
         timeoutHandles.put(workflowId, timeout);
 
         String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
-        String testUrl = "/webhook-test/" + normalizedPath;
+        String testUrl;
+        if (contextPath != null && !contextPath.isBlank()) {
+            testUrl = "/" + contextPath + "-test/" + normalizedPath;
+        } else {
+            testUrl = "/webhook-test/" + normalizedPath;
+        }
 
         log.info("Started listening for test webhook: {} {} for workflow {}", method, path, workflowId);
         return ResponseEntity.ok(Map.of(

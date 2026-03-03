@@ -14,6 +14,7 @@ public class ProjectResponse {
     private String type;
     private Map<String, String> icon;
     private String description;
+    private String contextPath;
     private List<ProjectMemberResponse> members;
     private long workflowCount;
     private long credentialCount;

@@ -17,17 +17,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
 
+    private static final Pattern CONTEXT_PATH_PATTERN = Pattern.compile("^[a-z0-9-]+$");
+    private static final Set<String> RESERVED_CONTEXT_PATHS = Set.of(
+            "api", "webhook", "webhook-test", "h2-console", "home", "workflow",
+            "projects", "settings", "insights", "executions", "credentials",
+            "variables", "templates"
+    );
+
     private final ProjectRepository projectRepository;
     private final ProjectRelationRepository projectRelationRepository;
     private final WorkflowRepository workflowRepository;
     private final CredentialRepository credentialRepository;
     private final UserRepository userRepository;
+    private final WebhookService webhookService;
     private final ObjectMapper objectMapper;
 
     public List<ProjectResponse> listProjects() {
@@ -42,11 +52,16 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse createProject(ProjectCreateRequest request) {
+        if (request.getContextPath() != null && !request.getContextPath().isBlank()) {
+            validateContextPath(request.getContextPath(), null);
+        }
         ProjectEntity entity = ProjectEntity.builder()
                 .name(request.getName())
                 .type(ProjectType.TEAM)
                 .icon(serializeIcon(request.getIcon()))
                 .description(request.getDescription())
+                .contextPath(request.getContextPath() != null && !request.getContextPath().isBlank()
+                        ? request.getContextPath() : null)
                 .build();
         entity = projectRepository.save(entity);
         log.info("Created team project: {} ({})", entity.getName(), entity.getId());
@@ -62,9 +77,36 @@ public class ProjectService {
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
         if (request.getIcon() != null) entity.setIcon(serializeIcon(request.getIcon()));
+
+        // Handle contextPath update
+        if (request.getContextPath() != null) {
+            String oldContextPath = entity.getContextPath();
+            String newContextPath = request.getContextPath().isBlank() ? null : request.getContextPath();
+            if (newContextPath != null) {
+                validateContextPath(newContextPath, id);
+            }
+            entity.setContextPath(newContextPath);
+            boolean contextPathChanged = (oldContextPath == null && newContextPath != null)
+                    || (oldContextPath != null && !oldContextPath.equals(newContextPath));
+            if (contextPathChanged) {
+                entity = projectRepository.save(entity);
+                // Re-register webhooks for all published workflows in this project
+                reRegisterProjectWebhooks(id);
+                log.info("Updated project: {} ({}) — context path changed to '{}'", entity.getName(), id, newContextPath);
+                return toDetailResponse(entity);
+            }
+        }
+
         entity = projectRepository.save(entity);
         log.info("Updated project: {} ({})", entity.getName(), id);
         return toDetailResponse(entity);
+    }
+
+    private void reRegisterProjectWebhooks(String projectId) {
+        List<WorkflowEntity> publishedWorkflows = workflowRepository.findByProjectIdAndPublished(projectId, true);
+        for (WorkflowEntity workflow : publishedWorkflows) {
+            webhookService.registerWorkflowWebhooks(workflow);
+        }
     }
 
     @Transactional
@@ -187,6 +229,23 @@ public class ProjectService {
         return toResponse(entity);
     }
 
+    private void validateContextPath(String contextPath, String excludeProjectId) {
+        if (!CONTEXT_PATH_PATTERN.matcher(contextPath).matches()) {
+            throw new BadRequestException("Context path must contain only lowercase letters, numbers, and hyphens");
+        }
+        if (RESERVED_CONTEXT_PATHS.contains(contextPath)) {
+            throw new BadRequestException("Context path '" + contextPath + "' is reserved");
+        }
+        if (contextPath.endsWith("-test")) {
+            throw new BadRequestException("Context path cannot end with '-test'");
+        }
+        projectRepository.findByContextPath(contextPath).ifPresent(existing -> {
+            if (!existing.getId().equals(excludeProjectId)) {
+                throw new BadRequestException("Context path '" + contextPath + "' is already in use");
+            }
+        });
+    }
+
     public ProjectEntity findById(String id) {
         return projectRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Project not found: " + id));
@@ -199,6 +258,7 @@ public class ProjectService {
                 .type(entity.getType().name())
                 .icon(parseIcon(entity.getIcon()))
                 .description(entity.getDescription())
+                .contextPath(entity.getContextPath())
                 .workflowCount(workflowRepository.findByProjectId(entity.getId()).size())
                 .credentialCount(credentialRepository.findByProjectId(entity.getId()).size())
                 .createdAt(entity.getCreatedAt())
@@ -216,6 +276,7 @@ public class ProjectService {
                 .type(entity.getType().name())
                 .icon(parseIcon(entity.getIcon()))
                 .description(entity.getDescription())
+                .contextPath(entity.getContextPath())
                 .members(members)
                 .workflowCount(workflowRepository.findByProjectId(entity.getId()).size())
                 .credentialCount(credentialRepository.findByProjectId(entity.getId()).size())

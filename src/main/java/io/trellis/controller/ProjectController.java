@@ -1,5 +1,6 @@
 package io.trellis.controller;
 
+import io.trellis.config.ProjectContextPathFilter;
 import io.trellis.dto.*;
 import io.trellis.service.ProjectService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.List;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final ProjectContextPathFilter contextPathFilter;
 
     @GetMapping
     public List<ProjectResponse> list() {
@@ -28,18 +30,23 @@ public class ProjectController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProjectResponse create(@RequestBody ProjectCreateRequest request) {
-        return projectService.createProject(request);
+        ProjectResponse response = projectService.createProject(request);
+        contextPathFilter.refreshCache();
+        return response;
     }
 
     @PatchMapping("/{id}")
     public ProjectResponse update(@PathVariable String id, @RequestBody ProjectUpdateRequest request) {
-        return projectService.updateProject(id, request);
+        ProjectResponse response = projectService.updateProject(id, request);
+        contextPathFilter.refreshCache();
+        return response;
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String id, @RequestBody(required = false) ProjectDeleteRequest request) {
         projectService.deleteProject(id, request);
+        contextPathFilter.refreshCache();
     }
 
     @GetMapping("/{id}/members")

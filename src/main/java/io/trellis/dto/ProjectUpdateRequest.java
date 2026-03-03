@@ -8,4 +8,5 @@ public class ProjectUpdateRequest {
     private String name;
     private String description;
     private Map<String, String> icon;
+    private String contextPath;
 }

@@ -4,6 +4,7 @@ export interface Project {
   type: 'PERSONAL' | 'TEAM';
   icon?: ProjectIcon;
   description?: string;
+  contextPath?: string;
   members?: ProjectMember[];
   workflowCount?: number;
   credentialCount?: number;

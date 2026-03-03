@@ -8,7 +8,7 @@ import { WorkflowCardComponent } from '../../shared/components/workflow-card/wor
 import { VariableListComponent } from '../variables/variable-list.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CredentialCreateModalComponent } from '../../shared/components/credential-create-modal/credential-create-modal.component';
-import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Folder, Layers } from 'lucide-angular';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Layers } from 'lucide-angular';
 import { CacheListComponent } from '../cache/cache-list.component';
 import { ProjectSettingsComponent } from '../project/project-settings.component';
 import { WorkflowMoveModalComponent } from '../../shared/components/workflow-move-modal/workflow-move-modal.component';
@@ -39,7 +39,7 @@ import {
     WorkflowShareModalComponent,
     ProjectSettingsComponent
   ],
-  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Folder, Layers }) }],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Layers }) }],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
@@ -235,7 +235,7 @@ export class HomeComponent implements OnInit {
       this.activeTab.set(tabFromRoute as any);
     }
 
-    // Auto-open create modals from sidebar navigation
+    // Auto-open create modals from sidebar navigation, and handle projectId query param
     this.route.queryParams.subscribe(params => {
       if (params['action'] === 'create-credential') {
         this.activeTab.set('credentials');
@@ -243,6 +243,14 @@ export class HomeComponent implements OnInit {
       } else if (params['action'] === 'create-cache') {
         this.activeTab.set('caches');
         setTimeout(() => this.cacheList?.openCreate(), 0);
+      }
+
+      // Select project from query param (e.g. after creating a project or clicking sidebar link)
+      if (params['projectId'] && params['projectId'] !== this.selectedProjectId()) {
+        this.selectedProjectId.set(params['projectId']);
+        if (this.allProjects().length > 0) {
+          this.reloadAllData();
+        }
       }
     });
 
@@ -305,8 +313,11 @@ export class HomeComponent implements OnInit {
         team.forEach(p => list.push({ id: p.id!, name: p.name }));
         this.allProjects.set(list);
 
-        // Default to personal project
-        if (!this.selectedProjectId() && personal?.id) {
+        // If a project is already selected (e.g. from query param), validate it exists; otherwise default to personal
+        const current = this.selectedProjectId();
+        if (current && list.some(p => p.id === current)) {
+          this.reloadAllData();
+        } else if (personal?.id) {
           this.selectedProjectId.set(personal.id);
           this.reloadAllData();
         }
@@ -508,10 +519,6 @@ export class HomeComponent implements OnInit {
 
   navigateToCredentials(): void {
     this.router.navigate(['/home/credentials']);
-  }
-
-  createFolder(): void {
-    this.router.navigate(['/home/folders']);
   }
 
   createCache(): void {

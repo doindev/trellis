@@ -99,6 +99,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Input() executionData: Record<string, any> | null = null;
   @Input() nodeTypeMap: Map<string, NodeTypeDescription> = new Map();
   @Input() readOnly = false;
+  @Input() projectContextPath = '';
   @Input() webhookTestData: Record<string, any> = {};
   @Input() pinData: Record<string, any> = {};
   @Output() parameterChanged = new EventEmitter<Record<string, any>>();
@@ -192,9 +193,28 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   ngOnInit(): void {
     if (this.isWebhookNode) {
       this.settingsService.getSettings().subscribe(settings => {
-        this.webhookUrlProduction = settings.webhookUrlProduction || '';
-        this.webhookUrlTest = settings.webhookUrlTest || '';
+        if (this.projectContextPath) {
+          // Extract base URL (scheme+host+port) and use context path prefix
+          const prodUrl = settings.webhookUrlProduction || '';
+          const baseUrl = this.extractBaseUrl(prodUrl);
+          this.webhookUrlProduction = baseUrl + '/' + this.projectContextPath + '/';
+          this.webhookUrlTest = baseUrl + '/' + this.projectContextPath + '-test/';
+        } else {
+          this.webhookUrlProduction = settings.webhookUrlProduction || '';
+          this.webhookUrlTest = settings.webhookUrlTest || '';
+        }
       });
+    }
+  }
+
+  private extractBaseUrl(url: string): string {
+    try {
+      const parsed = new URL(url);
+      return parsed.origin;
+    } catch {
+      // Fallback: strip everything after scheme+host+port
+      const match = url.match(/^(https?:\/\/[^/]+)/);
+      return match ? match[1] : url.replace(/\/+$/, '');
     }
   }
 

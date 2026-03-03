@@ -32,6 +32,9 @@ public class ProjectEntity {
     @Column(length = 512)
     private String description;
 
+    @Column(unique = true, length = 100)
+    private String contextPath;
+
     @Builder.Default
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
