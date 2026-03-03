@@ -49,7 +49,7 @@ export interface FixedCollectionExpressionEvent {
                 @if (nested.type === 'options' && nested.options) {
                   <select class="form-select param-input"
                           [ngModel]="item[nested.name]"
-                          (ngModelChange)="onSelectChange($index, nested.name, $event)"
+                          (ngModelChange)="onSelectChange(items.indexOf(item), nested.name, $event)"
                           [disabled]="readOnly">
                     @for (opt of nested.options; track opt.value) {
                       <option [ngValue]="opt.value">{{ opt.name }}</option>
@@ -61,15 +61,15 @@ export interface FixedCollectionExpressionEvent {
                            class="form-control param-input"
                            [class.expr-input]="isExpression(item[nested.name])"
                            [value]="item[nested.name] ?? ''"
-                           (input)="onTextInput($index, nested.name, $event)"
+                           (input)="onTextInput(items.indexOf(item), nested.name, $event)"
                            (blur)="emitItems()"
                            [placeholder]="nested.placeHolder || ''"
                            [disabled]="readOnly"
                            (dragover)="onFieldDragOver($event)"
-                           (drop)="onFieldDrop($event, $index, nested.name)">
+                           (drop)="onFieldDrop($event, items.indexOf(item), nested.name)">
                     @if (!readOnly) {
                       <button class="expr-editor-btn"
-                              (click)="onOpenExpressionEditor($index, nested.name, item[nested.name])"
+                              (click)="onOpenExpressionEditor(items.indexOf(item), nested.name, item[nested.name])"
                               title="Open expression editor">
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/>

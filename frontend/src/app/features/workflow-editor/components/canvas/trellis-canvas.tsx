@@ -460,9 +460,7 @@ function TrellisCanvasInner({
     executeFromNode: (nodeId) => onExecuteFromNodeRef.current?.(nodeId),
     toggleDisabled: (nodeId) => onToggleNodeDisabledRef.current?.(nodeId),
     deleteNode: (nodeId) => {
-      if (window.confirm('Are you sure you want to delete this node?')) {
-        onNodeDeleteRef.current?.(nodeId);
-      }
+      onNodeDeleteRef.current?.(nodeId);
     },
     openNode: (nodeId) => onNodeDoubleClickRef.current?.(nodeId),
     duplicateNode: (nodeId) => onDuplicateNodeRef.current?.(nodeId),
