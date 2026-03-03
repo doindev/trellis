@@ -4,13 +4,6 @@
       <span class="spinner-border spinner-border-sm"></span>
       Loading caches...
     </div>
-  } @else if (caches().length === 0) {
-    <div class="empty-state">
-      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
-        <path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-      </svg>
-      <p>No caches defined yet</p>
-    </div>
   } @else {
     <div class="filter-bar">
       <div class="filter-input-wrapper">
@@ -22,17 +15,30 @@
                [ngModel]="filterTerm()"
                (ngModelChange)="filterTerm.set($event)">
       </div>
+      <button class="btn-create" (click)="openCreate()" title="Create new cache">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
     </div>
+    @if (caches().length === 0) {
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+        <path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+      <p>No caches defined yet</p>
+    </div>
+    } @else {
     <div class="table-container">
       <table class="table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Max Size</th>
-            <th>TTL</th>
-            <th>Entries</th>
-            <th>Hit Rate</th>
+            <th class="sortable" (click)="toggleSort('name')">Name <span class="sort-icon">{{ sortColumn() === 'name' ? (sortDirection() === 'asc' ? '▲' : '▼') : '' }}</span></th>
+            <th class="sortable" (click)="toggleSort('description')">Description <span class="sort-icon">{{ sortColumn() === 'description' ? (sortDirection() === 'asc' ? '▲' : '▼') : '' }}</span></th>
+            <th class="sortable" (click)="toggleSort('maxSize')">Max Size <span class="sort-icon">{{ sortColumn() === 'maxSize' ? (sortDirection() === 'asc' ? '▲' : '▼') : '' }}</span></th>
+            <th class="sortable" (click)="toggleSort('ttlSeconds')">TTL <span class="sort-icon">{{ sortColumn() === 'ttlSeconds' ? (sortDirection() === 'asc' ? '▲' : '▼') : '' }}</span></th>
+            <th class="sortable" (click)="toggleSort('estimatedSize')">Entries <span class="sort-icon">{{ sortColumn() === 'estimatedSize' ? (sortDirection() === 'asc' ? '▲' : '▼') : '' }}</span></th>
+            <th class="sortable" (click)="toggleSort('hitRate')">Hit Rate <span class="sort-icon">{{ sortColumn() === 'hitRate' ? (sortDirection() === 'asc' ? '▲' : '▼') : '' }}</span></th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -68,6 +74,7 @@
         </tbody>
       </table>
     </div>
+    }
   }
 </div>
 

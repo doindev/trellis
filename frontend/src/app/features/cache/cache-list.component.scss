@@ -1,5 +1,5 @@
 .page-container {
-  padding: 0 0 32px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -21,6 +21,27 @@
   flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bs-primary);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.85;
+  }
 }
 
 .filter-input-wrapper {
@@ -94,6 +115,21 @@
   }
 }
 
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: hsl(0, 0%, 96%);
+  }
+}
+
+.sort-icon {
+  font-size: 0.625rem;
+  margin-left: 2px;
+  opacity: 0.7;
+}
+
 .no-results {
   text-align: center;
   color: hsl(0, 0%, 46%);
@@ -145,8 +181,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 0 20px 0;
+  padding: 30px 20px 0;
   text-align: center;
   flex: 1;
   min-height: 0;
@@ -159,6 +194,8 @@
   p {
     color: hsl(0, 0%, 46%);
     font-size: 1rem;
+    margin-bottom: 0;
+    padding-bottom: 0;
   }
 }
 

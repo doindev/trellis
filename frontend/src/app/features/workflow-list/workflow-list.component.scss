@@ -3,35 +3,6 @@
   max-width: 1200px;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: hsl(0, 0%, 96%);
-  margin: 0;
-}
-
-.btn-primary {
-  background: var(--bs-primary);
-  border-color: var(--bs-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  font-size: 0.8125rem;
-  color: #fff;
-
-  &:hover {
-    filter: brightness(0.9);
-  }
-}
-
 .filters-bar {
   display: flex;
   align-items: center;
@@ -77,6 +48,25 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.btn-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--bs-primary);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.85;
+  }
 }
 
 .filter-select {
@@ -271,9 +261,4 @@
     margin: 0;
   }
 
-  .empty-hint {
-    color: hsl(0, 0%, 46%);
-    font-size: 0.875rem;
-    margin-top: 4px;
-  }
 }

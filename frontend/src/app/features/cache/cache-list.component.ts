@@ -21,19 +21,35 @@ export class CacheListComponent implements OnInit {
   isEditing = signal(false);
   showDeleteConfirm = signal(false);
   deleteTarget = signal<CacheDefinition | null>(null);
+  sortColumn = signal<string>('name');
+  sortDirection = signal<'asc' | 'desc'>('asc');
 
   filteredCaches = computed(() => {
     const term = this.filterTerm().toLowerCase().trim();
     const all = this.caches();
-    if (!term) return all;
-    return all.filter(c =>
-      (c.name && c.name.toLowerCase().includes(term)) ||
-      (c.description && c.description.toLowerCase().includes(term)) ||
-      String(c.maxSize).includes(term) ||
-      this.formatTtl(c.ttlSeconds).toLowerCase().includes(term) ||
-      String(c.estimatedSize ?? 0).includes(term) ||
-      this.formatHitRate(c.hitRate).toLowerCase().includes(term)
-    );
+    let result = term
+      ? all.filter(c =>
+          (c.name && c.name.toLowerCase().includes(term)) ||
+          (c.description && c.description.toLowerCase().includes(term)) ||
+          String(c.maxSize).includes(term) ||
+          this.formatTtl(c.ttlSeconds).toLowerCase().includes(term) ||
+          String(c.estimatedSize ?? 0).includes(term) ||
+          this.formatHitRate(c.hitRate).toLowerCase().includes(term)
+        )
+      : [...all];
+
+    const col = this.sortColumn();
+    const dir = this.sortDirection() === 'asc' ? 1 : -1;
+    result.sort((a: any, b: any) => {
+      let va = a[col] ?? '';
+      let vb = b[col] ?? '';
+      if (typeof va === 'string') va = va.toLowerCase();
+      if (typeof vb === 'string') vb = vb.toLowerCase();
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+    return result;
   });
 
   constructor(private cacheService: CacheService) {}
@@ -124,6 +140,15 @@ export class CacheListComponent implements OnInit {
 
   closeModal(): void {
     this.showModal.set(false);
+  }
+
+  toggleSort(column: string): void {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(column);
+      this.sortDirection.set('asc');
+    }
   }
 
   formatTtl(seconds: number): string {

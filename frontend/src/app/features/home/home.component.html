@@ -98,6 +98,11 @@
                 <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
               </svg>
             </button>
+            <button class="btn-exec-filter" style="background-color: var(--bs-primary); color: #fff;" (click)="createWorkflow()" title="Create new workflow">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
           </div>
 
           <!-- Scrollable workflow cards -->
@@ -118,7 +123,6 @@
                   <p>No workflows match "{{ searchTerm() }}"</p>
                 } @else {
                   <p>No workflows yet</p>
-                  <button class="btn-create-inline" (click)="createWorkflow()">Create your first workflow</button>
                 }
               </div>
             } @else {
@@ -181,9 +185,7 @@
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
               </div>
-              <h3 class="empty-action-heading">Let's set up a credential</h3>
-              <p class="empty-action-description">Credentials let workflows interact with your apps and services</p>
-              <button class="btn-secondary-action" (click)="openCreateCredential()">Add first credential</button>
+              <p class="empty-action-description">No credentials defined yet</p>
             </div>
           } @else {
             <!-- Credential filters -->
@@ -204,11 +206,10 @@
                 <option value="name">Name A-Z</option>
                 <option value="nameDesc">Name Z-A</option>
               </select>
-              <button class="btn-create-inline" (click)="openCreateCredential()">
+              <button class="btn-exec-filter" style="background-color: var(--bs-primary); color: #fff;" (click)="openCreateCredential()" title="New Credential">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
-                New Credential
               </button>
             </div>
 
