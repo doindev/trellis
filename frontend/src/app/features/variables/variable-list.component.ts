@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, Input, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { VariableService } from '../../core/services';
@@ -14,6 +14,8 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
   styleUrl: './variable-list.component.scss'
 })
 export class VariableListComponent implements OnInit {
+  @Input() projectId?: string;
+
   variables = signal<Variable[]>([]);
   loading = signal(true);
   filterTerm = signal('');
@@ -42,7 +44,10 @@ export class VariableListComponent implements OnInit {
 
   loadVariables(): void {
     this.loading.set(true);
-    this.variableService.list().subscribe({
+    const source = this.projectId
+      ? this.variableService.listByProject(this.projectId)
+      : this.variableService.list();
+    source.subscribe({
       next: (data) => {
         this.variables.set(data);
         this.loading.set(false);
@@ -52,7 +57,7 @@ export class VariableListComponent implements OnInit {
   }
 
   openCreate(): void {
-    this.editingVariable.set({ key: '', value: '', type: 'string' });
+    this.editingVariable.set({ key: '', value: '', type: 'string', projectId: this.projectId });
     this.isEditing.set(false);
     this.showModal.set(true);
   }

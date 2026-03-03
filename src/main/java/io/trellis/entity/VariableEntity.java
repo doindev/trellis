@@ -25,4 +25,6 @@ public class VariableEntity {
     @Builder.Default
     @Column(nullable = false)
     private String type = "string";
+
+    private String projectId;
 }

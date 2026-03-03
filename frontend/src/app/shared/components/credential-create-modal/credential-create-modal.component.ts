@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, OnInit, Output, ViewChild, signal, computed } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CredentialService } from '../../../core/services';
@@ -12,6 +12,7 @@ import { Credential, CredentialProperty, CredentialSchema } from '../../../core/
   styleUrl: './credential-create-modal.component.scss'
 })
 export class CredentialCreateModalComponent implements OnInit {
+  @Input() projectId?: string;
   @Output() saved = new EventEmitter<Credential>();
   @Output() closed = new EventEmitter<void>();
   @ViewChild('typeSearchInput') typeSearchInput!: ElementRef<HTMLInputElement>;
@@ -104,6 +105,7 @@ export class CredentialCreateModalComponent implements OnInit {
     this.editorCredential.set({
       name: type.displayName + ' account',
       type: type.type,
+      projectId: this.projectId,
       data
     });
     this.editorSchema.set(type);
@@ -171,6 +173,7 @@ export class CredentialCreateModalComponent implements OnInit {
     this.editorCredential.set({
       name: type.displayName + ' account',
       type: type.type,
+      projectId: this.projectId,
       data
     });
     this.editorSchema.set(type);

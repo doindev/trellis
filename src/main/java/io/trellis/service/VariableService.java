@@ -25,6 +25,12 @@ public class VariableService {
                 .toList();
     }
 
+    public List<VariableResponse> listVariablesByProject(String projectId) {
+        return variableRepository.findByProjectId(projectId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     public VariableResponse getVariable(String id) {
         return toResponse(findById(id));
     }
@@ -35,6 +41,7 @@ public class VariableService {
                 .key(request.getKey())
                 .value(request.getValue())
                 .type(request.getType() != null ? request.getType() : "string")
+                .projectId(request.getProjectId())
                 .build();
         return toResponse(variableRepository.save(entity));
     }
@@ -70,6 +77,7 @@ public class VariableService {
                 .key(entity.getKey())
                 .value(entity.getValue())
                 .type(entity.getType())
+                .projectId(entity.getProjectId())
                 .build();
     }
 }

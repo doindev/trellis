@@ -17,7 +17,10 @@ public class VariableController {
     private final VariableService variableService;
 
     @GetMapping
-    public List<VariableResponse> list() {
+    public List<VariableResponse> list(@RequestParam(required = false) String projectId) {
+        if (projectId != null) {
+            return variableService.listVariablesByProject(projectId);
+        }
         return variableService.listVariables();
     }
 

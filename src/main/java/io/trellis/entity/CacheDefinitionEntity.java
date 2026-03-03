@@ -29,6 +29,8 @@ public class CacheDefinitionEntity {
     @Builder.Default
     private long ttlSeconds = 3600;
 
+    private String projectId;
+
     private Instant createdAt;
 
     private Instant updatedAt;

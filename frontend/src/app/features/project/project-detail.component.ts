@@ -1,13 +1,22 @@
-import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { WorkflowService, CredentialService, ProjectService } from '../../core/services';
-import { Workflow, Credential, Project } from '../../core/models';
+import { WorkflowService, ExecutionService, CredentialService, ProjectService, SettingsService } from '../../core/services';
+import { Workflow, Execution, Credential, Project } from '../../core/models';
 import { WorkflowCardComponent } from '../../shared/components/workflow-card/workflow-card.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CredentialCreateModalComponent } from '../../shared/components/credential-create-modal/credential-create-modal.component';
+import { VariableListComponent } from '../variables/variable-list.component';
+import { CacheListComponent } from '../cache/cache-list.component';
+import { ProjectSettingsComponent } from './project-settings.component';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Settings, Workflow as WorkflowIcon, Variable, Layers } from 'lucide-angular';
+import {
+  ExecutionFilterModalComponent,
+  ExecutionFilters,
+  defaultExecutionFilters,
+  isFilterActive
+} from '../../shared/components/execution-filter-modal/execution-filter-modal.component';
 
 @Component({
   selector: 'app-project-detail',
@@ -15,26 +24,42 @@ import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Settin
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     WorkflowCardComponent,
     ConfirmDialogComponent,
     CredentialCreateModalComponent,
-    LucideAngularModule
+    VariableListComponent,
+    CacheListComponent,
+    ProjectSettingsComponent,
+    LucideAngularModule,
+    ExecutionFilterModalComponent
   ],
   providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Settings, Workflow: WorkflowIcon, Variable, Layers }) }],
   templateUrl: './project-detail.component.html',
   styleUrl: './project-detail.component.scss'
 })
-export class ProjectDetailComponent implements OnInit {
+export class ProjectDetailComponent implements OnInit, OnDestroy {
   @ViewChild('credModal') credModal!: CredentialCreateModalComponent;
+  @ViewChild('settingsModal') settingsModal!: ProjectSettingsComponent;
+  @ViewChild(CacheListComponent) cacheList!: CacheListComponent;
 
   projectId = '';
   project = signal<Project | null>(null);
-  activeTab = signal<'workflows' | 'credentials'>('workflows');
+  activeTab = signal<'workflows' | 'credentials' | 'executions' | 'variables' | 'caches'>('workflows');
 
   // Create dropdown
   showCreateDropdown = false;
   private createDropdownTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Workflow filter
+  showWfFilterModal = signal(false);
+  wfTagsFilter = signal('');
+  wfStatusFilter = signal('all');
+  wfShowArchived = signal(false);
+  wfFilterActive = computed(() =>
+    this.wfTagsFilter() !== '' ||
+    this.wfStatusFilter() !== 'all' ||
+    this.wfShowArchived()
+  );
 
   // Workflow state
   workflows = signal<Workflow[]>([]);
@@ -45,9 +70,15 @@ export class ProjectDetailComponent implements OnInit {
   filteredWorkflows = computed(() => {
     const term = this.searchTerm().toLowerCase();
     const sort = this.sortBy();
+    const statusFilter = this.wfStatusFilter();
     let wfs = this.workflows();
     if (term) {
       wfs = wfs.filter(w => w.name.toLowerCase().includes(term));
+    }
+    if (statusFilter === 'published') {
+      wfs = wfs.filter(w => w.published);
+    } else if (statusFilter === 'unpublished') {
+      wfs = wfs.filter(w => !w.published);
     }
     wfs = [...wfs].sort((a, b) => {
       switch (sort) {
@@ -100,24 +131,93 @@ export class ProjectDetailComponent implements OnInit {
   showCredDeleteConfirm = signal(false);
   credActionsOpenId = signal<string | null>(null);
 
+  // Execution tab state / Insights
+  executions = signal<Execution[]>([]);
+  totalExecutions = computed(() => {
+    const execs = this.executions();
+    return Array.isArray(execs) ? execs.filter(e => e.mode?.toUpperCase() !== 'MANUAL').length : 0;
+  });
+  failedExecutions = computed(() => {
+    const execs = this.executions();
+    return Array.isArray(execs) ? execs.filter(e => e.status?.toUpperCase() === 'ERROR' && e.mode?.toUpperCase() !== 'MANUAL').length : 0;
+  });
+  failureRate = computed(() => {
+    const total = this.totalExecutions();
+    if (total === 0) return 0;
+    return Math.round((this.failedExecutions() / total) * 100);
+  });
+  avgRunTimeMs = computed(() => {
+    const execs = this.executions();
+    if (!Array.isArray(execs)) return 0;
+    const finished = execs.filter(e => e.startedAt && e.finishedAt);
+    if (finished.length === 0) return 0;
+    const totalMs = finished.reduce((sum, e) => {
+      return sum + (new Date(e.finishedAt!).getTime() - new Date(e.startedAt!).getTime());
+    }, 0);
+    return Math.round(totalMs / finished.length);
+  });
+  execAutoRefresh = signal(true);
+  execFilters = signal<ExecutionFilters>(defaultExecutionFilters());
+  showExecFilterModal = signal(false);
+  loadingExecutions = signal(true);
+  filteredExecutions = computed(() => {
+    const execs = this.executions();
+    if (!Array.isArray(execs)) return [];
+    const f = this.execFilters();
+    let result = execs;
+    if (f.status !== 'all') {
+      result = result.filter(e => e.status === f.status);
+    }
+    if (f.workflowId !== 'all') {
+      result = result.filter(e => e.workflowId === f.workflowId);
+    }
+    if (f.startDateFrom) {
+      const from = new Date(f.startDateFrom).getTime();
+      result = result.filter(e => e.startedAt && new Date(e.startedAt).getTime() >= from);
+    }
+    if (f.startDateTo) {
+      const to = new Date(f.startDateTo).getTime();
+      result = result.filter(e => e.startedAt && new Date(e.startedAt).getTime() <= to);
+    }
+    if (f.runTimeOp !== 'any' && f.runTimeMs !== null) {
+      const threshold = f.runTimeMs;
+      const op = f.runTimeOp;
+      result = result.filter(e => {
+        if (!e.startedAt || !e.finishedAt) return false;
+        const duration = new Date(e.finishedAt).getTime() - new Date(e.startedAt).getTime();
+        return op === '>' ? duration > threshold : duration < threshold;
+      });
+    }
+    return result;
+  });
+  execFilterActive = computed(() => isFilterActive(this.execFilters()));
+  private execRefreshInterval: any = null;
+
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private workflowService: WorkflowService,
+    private executionService: ExecutionService,
     private credentialService: CredentialService,
-    private projectService: ProjectService
+    private projectService: ProjectService,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.paramMap.get('projectId') || '';
     const tab = this.route.snapshot.paramMap.get('tab');
-    if (tab === 'credentials') {
-      this.activeTab.set('credentials');
+    if (tab && ['workflows', 'credentials', 'executions', 'variables', 'caches'].includes(tab)) {
+      this.activeTab.set(tab as any);
     }
 
     this.loadProject();
     this.loadWorkflows();
     this.loadCredentials();
+    this.loadExecutions();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoRefresh();
   }
 
   loadProject(): void {
@@ -148,7 +248,21 @@ export class ProjectDetailComponent implements OnInit {
     });
   }
 
-  setTab(tab: 'workflows' | 'credentials'): void {
+  loadExecutions(): void {
+    this.loadingExecutions.set(true);
+    // Load all executions, then filter to only those belonging to this project's workflows
+    this.executionService.list().subscribe({
+      next: (data) => {
+        const projectWfIds = new Set(this.workflows().map(w => w.id));
+        const filtered = Array.isArray(data) ? data.filter(e => projectWfIds.has(e.workflowId)) : [];
+        this.executions.set(filtered);
+        this.loadingExecutions.set(false);
+      },
+      error: () => this.loadingExecutions.set(false)
+    });
+  }
+
+  setTab(tab: 'workflows' | 'credentials' | 'executions' | 'variables' | 'caches'): void {
     this.activeTab.set(tab);
     this.router.navigate(['/projects', this.projectId, tab]);
   }
@@ -163,11 +277,37 @@ export class ProjectDetailComponent implements OnInit {
     }
   }
 
+  openExecution(exec: Execution): void {
+    this.router.navigate(['/workflow', exec.workflowId], {
+      queryParams: { tab: 'executions', executionId: exec.id }
+    });
+  }
+
   duplicateWorkflow(workflow: Workflow): void {
     if (!workflow.id) return;
     this.workflowService.duplicate(workflow.id).subscribe({
       next: () => this.loadWorkflows()
     });
+  }
+
+  onEnableMcp(workflow: Workflow): void {
+    if (!workflow.id) return;
+    this.settingsService.updateMcpWorkflow(workflow.id, { mcpEnabled: true } as any).subscribe({
+      next: () => this.loadWorkflows()
+    });
+  }
+
+  onEnableSwagger(workflow: Workflow): void {
+    if (!workflow.id) return;
+    this.settingsService.updateSwaggerWorkflow(workflow.id, { swaggerEnabled: true } as any).subscribe({
+      next: () => this.loadWorkflows()
+    });
+  }
+
+  resetWfFilters(): void {
+    this.wfTagsFilter.set('');
+    this.wfStatusFilter.set('all');
+    this.wfShowArchived.set(false);
   }
 
   confirmDelete(workflow: Workflow): void {
@@ -266,10 +406,27 @@ export class ProjectDetailComponent implements OnInit {
     return new Date(date).toLocaleDateString();
   }
 
+  credCreatedDate(cred: Credential): string {
+    if (!cred.createdAt) return '';
+    return new Date(cred.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long' });
+  }
+
   getProjectIcon(): string {
     const p = this.project();
     if (p?.icon?.type === 'emoji' && p.icon.value) return p.icon.value;
     return '';
+  }
+
+  openSettings(): void {
+    this.settingsModal?.open();
+  }
+
+  onSettingsSaved(updated: Project): void {
+    this.project.set(updated);
+  }
+
+  onProjectDeleted(): void {
+    this.router.navigate(['/home/workflows']);
   }
 
   // Create dropdown
@@ -302,11 +459,78 @@ export class ProjectDetailComponent implements OnInit {
 
   createVariable(): void {
     this.showCreateDropdown = false;
-    this.router.navigate(['/home/variables']);
+    this.setTab('variables');
   }
 
   createCache(): void {
     this.showCreateDropdown = false;
-    this.router.navigate(['/home/caches'], { queryParams: { action: 'create-cache' } });
+    this.setTab('caches');
+    setTimeout(() => this.cacheList?.openCreate(), 0);
+  }
+
+  // Execution tab methods
+  toggleAutoRefresh(): void {
+    this.execAutoRefresh.update(v => !v);
+    if (this.execAutoRefresh()) {
+      this.startAutoRefresh();
+    } else {
+      this.stopAutoRefresh();
+    }
+  }
+
+  startAutoRefresh(): void {
+    this.stopAutoRefresh();
+    this.execRefreshInterval = setInterval(() => this.loadExecutions(), 5000);
+  }
+
+  stopAutoRefresh(): void {
+    if (this.execRefreshInterval) {
+      clearInterval(this.execRefreshInterval);
+      this.execRefreshInterval = null;
+    }
+  }
+
+  onExecFiltersChange(filters: ExecutionFilters): void {
+    this.execFilters.set(filters);
+  }
+
+  deleteExecution(id: string, event: Event): void {
+    event.stopPropagation();
+    this.executionService.delete(id).subscribe({
+      next: () => {
+        this.executions.update(list => Array.isArray(list) ? list.filter(e => e.id !== id) : []);
+      }
+    });
+  }
+
+  retryExecution(id: string, event: Event): void {
+    event.stopPropagation();
+    this.executionService.retry(id).subscribe({
+      next: () => this.loadExecutions()
+    });
+  }
+
+  getWorkflowName(workflowId: string): string {
+    const wf = this.workflows().find(w => w.id === workflowId);
+    return wf?.name || workflowId;
+  }
+
+  execRunTime(exec: Execution): string {
+    if (!exec.startedAt || !exec.finishedAt) return '-';
+    const ms = new Date(exec.finishedAt).getTime() - new Date(exec.startedAt).getTime();
+    return this.formatDuration(ms);
+  }
+
+  execStartedAt(exec: Execution): string {
+    if (!exec.startedAt) return '-';
+    return new Date(exec.startedAt).toLocaleString();
+  }
+
+  formatDuration(ms: number): string {
+    if (ms < 1000) return `${ms}ms`;
+    const s = Math.round(ms / 1000);
+    if (s < 60) return `${s}s`;
+    if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
+    return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
   }
 }

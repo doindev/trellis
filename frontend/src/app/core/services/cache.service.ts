@@ -8,6 +8,7 @@ export interface CacheDefinition {
   description?: string;
   maxSize: number;
   ttlSeconds: number;
+  projectId?: string;
   estimatedSize?: number;
   hitCount?: number;
   missCount?: number;
@@ -24,6 +25,10 @@ export class CacheService {
 
   list(): Observable<CacheDefinition[]> {
     return this.api.get<CacheDefinition[]>(this.path);
+  }
+
+  listByProject(projectId: string): Observable<CacheDefinition[]> {
+    return this.api.get<CacheDefinition[]>(this.path, { projectId });
   }
 
   get(id: string): Observable<CacheDefinition> {

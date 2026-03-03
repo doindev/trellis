@@ -11,4 +11,8 @@ public interface CacheDefinitionRepository extends JpaRepository<CacheDefinition
     List<CacheDefinitionEntity> findAllByOrderByCreatedAtDesc();
 
     Optional<CacheDefinitionEntity> findByName(String name);
+
+    List<CacheDefinitionEntity> findByProjectIdOrderByCreatedAtDesc(String projectId);
+
+    List<CacheDefinitionEntity> findByProjectIdIsNull();
 }

@@ -20,8 +20,10 @@ public class CacheDefinitionController {
     private final CacheRegistryService cacheRegistryService;
 
     @GetMapping
-    public List<Map<String, Object>> list() {
-        List<CacheDefinitionEntity> defs = repository.findAllByOrderByCreatedAtDesc();
+    public List<Map<String, Object>> list(@RequestParam(required = false) String projectId) {
+        List<CacheDefinitionEntity> defs = projectId != null
+                ? repository.findByProjectIdOrderByCreatedAtDesc(projectId)
+                : repository.findAllByOrderByCreatedAtDesc();
         List<Map<String, Object>> result = new ArrayList<>();
         for (CacheDefinitionEntity def : defs) {
             result.add(toResponse(def));
@@ -45,6 +47,7 @@ public class CacheDefinitionController {
                 .description((String) body.get("description"))
                 .maxSize(toInt(body.get("maxSize"), 1000))
                 .ttlSeconds(toLong(body.get("ttlSeconds"), 3600))
+                .projectId((String) body.get("projectId"))
                 .build();
 
         entity = repository.save(entity);
@@ -124,6 +127,7 @@ public class CacheDefinitionController {
         map.put("description", entity.getDescription());
         map.put("maxSize", entity.getMaxSize());
         map.put("ttlSeconds", entity.getTtlSeconds());
+        map.put("projectId", entity.getProjectId());
         map.put("createdAt", entity.getCreatedAt());
         map.put("updatedAt", entity.getUpdatedAt());
         map.putAll(cacheRegistryService.getCacheStats(entity.getName()));

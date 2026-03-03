@@ -46,11 +46,6 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'projects/:projectId/settings',
-    loadComponent: () =>
-      import('./features/project/project-settings.component').then(m => m.ProjectSettingsComponent)
-  },
-  {
     path: 'projects/:projectId/:tab',
     loadComponent: () =>
       import('./features/project/project-detail.component').then(m => m.ProjectDetailComponent)

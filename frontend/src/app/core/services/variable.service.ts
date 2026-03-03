@@ -13,6 +13,10 @@ export class VariableService {
     return this.api.get<Variable[]>(this.path);
   }
 
+  listByProject(projectId: string): Observable<Variable[]> {
+    return this.api.get<Variable[]>(this.path, { projectId });
+  }
+
   get(id: string): Observable<Variable> {
     return this.api.get<Variable>(`${this.path}/${id}`);
   }

@@ -1,108 +1,111 @@
-<div class="settings-container">
-  <div class="settings-header">
-    <a class="back-link" [routerLink]="['/projects', projectId, 'workflows']">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      Back to project
-    </a>
-    <h2 class="settings-title">Project Settings</h2>
+@if (visible()) {
+  <div class="modal-backdrop" (click)="close()"></div>
+  <div class="modal d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content settings-modal">
+        <div class="modal-header">
+          <h5 class="modal-title">Project Settings</h5>
+          <button type="button" class="btn-close" (click)="close()"></button>
+        </div>
+        <div class="modal-body">
+          @if (project()) {
+            <!-- General Section -->
+            <section class="settings-section">
+              <h3 class="section-title">General</h3>
+
+              <div class="form-group">
+                <label class="form-label" for="projectName">Name</label>
+                <input id="projectName" class="form-input" type="text" [(ngModel)]="name" [disabled]="isReadOnly()">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="projectDescription">Description</label>
+                <textarea id="projectDescription" class="form-textarea" rows="3" [(ngModel)]="description" [disabled]="isReadOnly()" placeholder="Describe this project..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="projectIcon">Icon (emoji)</label>
+                <input id="projectIcon" class="form-input form-input-small" type="text" [(ngModel)]="iconEmoji" [disabled]="isReadOnly()" placeholder="e.g. &#x1F4C1;">
+              </div>
+
+              @if (!isReadOnly()) {
+                <button class="btn-save" (click)="saveGeneral()" [disabled]="saving">
+                  {{ saving ? 'Saving...' : 'Save' }}
+                </button>
+              }
+            </section>
+
+            <!-- Members Section -->
+            @if (!isReadOnly()) {
+              <section class="settings-section">
+                <h3 class="section-title">Members</h3>
+
+                @if (members().length > 0) {
+                  <div class="members-table">
+                    <div class="member-row member-header">
+                      <span class="member-email">User</span>
+                      <span class="member-role">Role</span>
+                      <span class="member-actions"></span>
+                    </div>
+                    @for (member of members(); track member.userId) {
+                      <div class="member-row">
+                        <span class="member-email">
+                          {{ member.email || member.userId }}
+                          @if (member.firstName || member.lastName) {
+                            <span class="member-name">{{ member.firstName }} {{ member.lastName }}</span>
+                          }
+                        </span>
+                        <span class="member-role">
+                          @if (member.role === 'PROJECT_PERSONAL_OWNER') {
+                            <span class="role-badge">{{ getRoleLabel(member.role) }}</span>
+                          } @else {
+                            <select class="role-select" [value]="member.role" (change)="updateMemberRole(member, $any($event.target).value)">
+                              <option value="PROJECT_ADMIN">Admin</option>
+                              <option value="PROJECT_EDITOR">Editor</option>
+                              <option value="PROJECT_VIEWER">Viewer</option>
+                            </select>
+                          }
+                        </span>
+                        <span class="member-actions">
+                          @if (member.role !== 'PROJECT_PERSONAL_OWNER') {
+                            <button class="btn-remove" (click)="removeMember(member)">Remove</button>
+                          }
+                        </span>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <div class="add-member-form">
+                  <input class="form-input" type="text" [(ngModel)]="newMemberEmail" placeholder="User ID or email">
+                  <select class="role-select" [(ngModel)]="newMemberRole">
+                    <option value="PROJECT_ADMIN">Admin</option>
+                    <option value="PROJECT_EDITOR">Editor</option>
+                    <option value="PROJECT_VIEWER">Viewer</option>
+                  </select>
+                  <button class="btn-add-member" (click)="addMember()" [disabled]="!newMemberEmail.trim()">Add</button>
+                </div>
+              </section>
+
+              <!-- Danger Zone -->
+              <section class="settings-section danger-zone">
+                <h3 class="section-title danger">Danger Zone</h3>
+                <p class="danger-description">Deleting this project will permanently remove it and optionally transfer its resources.</p>
+                <button class="btn-danger" (click)="confirmDeleteProject()">Delete Project</button>
+              </section>
+            }
+          }
+        </div>
+      </div>
+    </div>
   </div>
 
-  @if (project()) {
-    <!-- General Section -->
-    <section class="settings-section">
-      <h3 class="section-title">General</h3>
-
-      <div class="form-group">
-        <label class="form-label" for="projectName">Name</label>
-        <input id="projectName" class="form-input" type="text" [(ngModel)]="name" [disabled]="isReadOnly()">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="projectDescription">Description</label>
-        <textarea id="projectDescription" class="form-textarea" rows="3" [(ngModel)]="description" [disabled]="isReadOnly()" placeholder="Describe this project..."></textarea>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="projectIcon">Icon (emoji)</label>
-        <input id="projectIcon" class="form-input form-input-small" type="text" [(ngModel)]="iconEmoji" [disabled]="isReadOnly()" placeholder="e.g. \uD83D\uDCC1">
-      </div>
-
-      @if (!isReadOnly()) {
-        <button class="btn-save" (click)="saveGeneral()" [disabled]="saving">
-          {{ saving ? 'Saving...' : 'Save' }}
-        </button>
-      }
-    </section>
-
-    <!-- Members Section -->
-    @if (!isReadOnly()) {
-      <section class="settings-section">
-        <h3 class="section-title">Members</h3>
-
-        @if (members().length > 0) {
-          <div class="members-table">
-            <div class="member-row member-header">
-              <span class="member-email">User</span>
-              <span class="member-role">Role</span>
-              <span class="member-actions"></span>
-            </div>
-            @for (member of members(); track member.userId) {
-              <div class="member-row">
-                <span class="member-email">
-                  {{ member.email || member.userId }}
-                  @if (member.firstName || member.lastName) {
-                    <span class="member-name">{{ member.firstName }} {{ member.lastName }}</span>
-                  }
-                </span>
-                <span class="member-role">
-                  @if (member.role === 'PROJECT_PERSONAL_OWNER') {
-                    <span class="role-badge">{{ getRoleLabel(member.role) }}</span>
-                  } @else {
-                    <select class="role-select" [value]="member.role" (change)="updateMemberRole(member, $any($event.target).value)">
-                      <option value="PROJECT_ADMIN">Admin</option>
-                      <option value="PROJECT_EDITOR">Editor</option>
-                      <option value="PROJECT_VIEWER">Viewer</option>
-                    </select>
-                  }
-                </span>
-                <span class="member-actions">
-                  @if (member.role !== 'PROJECT_PERSONAL_OWNER') {
-                    <button class="btn-remove" (click)="removeMember(member)">Remove</button>
-                  }
-                </span>
-              </div>
-            }
-          </div>
-        }
-
-        <div class="add-member-form">
-          <input class="form-input" type="text" [(ngModel)]="newMemberEmail" placeholder="User ID or email">
-          <select class="role-select" [(ngModel)]="newMemberRole">
-            <option value="PROJECT_ADMIN">Admin</option>
-            <option value="PROJECT_EDITOR">Editor</option>
-            <option value="PROJECT_VIEWER">Viewer</option>
-          </select>
-          <button class="btn-add-member" (click)="addMember()" [disabled]="!newMemberEmail.trim()">Add</button>
-        </div>
-      </section>
-
-      <!-- Danger Zone -->
-      <section class="settings-section danger-zone">
-        <h3 class="section-title danger">Danger Zone</h3>
-        <p class="danger-description">Deleting this project will permanently remove it and optionally transfer its resources.</p>
-        <button class="btn-danger" (click)="confirmDeleteProject()">Delete Project</button>
-      </section>
-    }
-  }
-</div>
-
-<app-confirm-dialog
-  [isOpen]="showDeleteConfirm()"
-  title="Delete Project"
-  [message]="'Are you sure you want to delete \'' + (project()?.name || '') + '\'? This action cannot be undone.'"
-  confirmText="Delete"
-  confirmBtnClass="btn btn-danger"
-  (confirmed)="onDeleteConfirmed()"
-  (cancelled)="onDeleteCancelled()" />
+  <app-confirm-dialog
+    [isOpen]="showDeleteConfirm()"
+    title="Delete Project"
+    [message]="'Are you sure you want to delete \'' + (project()?.name || '') + '\'? This action cannot be undone.'"
+    confirmText="Delete"
+    confirmBtnClass="btn btn-danger"
+    (confirmed)="onDeleteConfirmed()"
+    (cancelled)="onDeleteCancelled()" />
+}

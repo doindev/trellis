@@ -1,6 +1,5 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../../core/services';
 import { Project, ProjectMember } from '../../core/models';
@@ -9,12 +8,17 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 @Component({
   selector: 'app-project-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent],
+  imports: [CommonModule, FormsModule, ConfirmDialogComponent],
   templateUrl: './project-settings.component.html',
   styleUrl: './project-settings.component.scss'
 })
-export class ProjectSettingsComponent implements OnInit {
-  projectId = '';
+export class ProjectSettingsComponent {
+  @Input() projectId = '';
+  @Output() closed = new EventEmitter<void>();
+  @Output() saved = new EventEmitter<Project>();
+  @Output() deleted = new EventEmitter<void>();
+
+  visible = signal(false);
   project = signal<Project | null>(null);
   members = signal<ProjectMember[]>([]);
 
@@ -34,17 +38,18 @@ export class ProjectSettingsComponent implements OnInit {
 
   saving = false;
 
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute,
-    private projectService: ProjectService
-  ) {}
+  constructor(private projectService: ProjectService) {}
 
-  ngOnInit(): void {
-    this.projectId = this.route.snapshot.paramMap.get('projectId') || '';
+  open(): void {
+    this.visible.set(true);
     this.loadProject();
     this.loadMembers();
     this.loadProjects();
+  }
+
+  close(): void {
+    this.visible.set(false);
+    this.closed.emit();
   }
 
   loadProject(): void {
@@ -81,6 +86,7 @@ export class ProjectSettingsComponent implements OnInit {
       next: (updated) => {
         this.project.set(updated);
         this.saving = false;
+        this.saved.emit(updated);
       },
       error: () => this.saving = false
     });
@@ -88,8 +94,6 @@ export class ProjectSettingsComponent implements OnInit {
 
   addMember(): void {
     if (!this.newMemberEmail.trim()) return;
-    // The backend expects userId; for now we pass the email as userId
-    // In a full implementation, we'd look up the user first
     this.projectService.addMember(this.projectId, this.newMemberEmail.trim(), this.newMemberRole).subscribe({
       next: () => {
         this.newMemberEmail = '';
@@ -117,7 +121,10 @@ export class ProjectSettingsComponent implements OnInit {
   onDeleteConfirmed(): void {
     this.showDeleteConfirm.set(false);
     this.projectService.delete(this.projectId, this.transferProjectId || undefined).subscribe({
-      next: () => this.router.navigate(['/home/workflows'])
+      next: () => {
+        this.visible.set(false);
+        this.deleted.emit();
+      }
     });
   }
 

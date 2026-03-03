@@ -3,6 +3,7 @@ export interface Variable {
   key: string;
   value: string;
   type?: string;
+  projectId?: string;
   createdAt?: string;
   updatedAt?: string;
 }
