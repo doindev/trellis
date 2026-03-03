@@ -5,7 +5,7 @@ import {
   CalendarClock, ListFilter, GitCompare, Lock, CopyMinus, FileText,
   Layers, Repeat, FileCode, ListEnd, ArrowUpNarrowWide, Replace, Sigma,
   Table2, Timer, ClipboardList, FileInput,
-  Bot, Brain, Link, ScanText, Calculator, Search, BookOpen,
+  Bot, BotMessageSquare, Brain, Link, ScanText, Calculator, Search, BookOpen,
   Database, HardDriveUpload, ShieldCheck, Tag,
   // New imports
   Mail, Send, MessageSquare, MessageCircle, Users, Cloud, Bell, Bolt, Book,
@@ -181,6 +181,7 @@ export const NODE_ICON_SET = {
   Book,
   BookOpen,
   Bot,
+  BotMessageSquare,
   Brain,
   Calculator,
   CalendarClock,

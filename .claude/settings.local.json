@@ -130,7 +130,10 @@
       "Bash(del:*)",
       "mcp__trellis-agent__trellis_list_executions",
       "mcp__trellis-agent__trellis_get_execution",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "WebFetch(domain:mohankumarsagadevan.medium.com)",
+      "Bash(mvn dependency:build-classpath:*)",
+      "WebFetch(domain:search.maven.org)"
     ]
   }
 }

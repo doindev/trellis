@@ -424,6 +424,12 @@ public class WorkflowEngine {
             // Collect AI inputs from sub-node connections
             Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
 
+            // For sub-agent nodes, collect the parent agent's AI inputs for model inheritance
+            Map<String, List<Object>> parentAiInputData = null;
+            if (nodeInstance instanceof AiSubNodeInterface) {
+                parentAiInputData = collectParentAiInputs(nodeId, graph, state);
+            }
+
             NodeExecutionContext context = NodeExecutionContext.builder()
                     .executionId(executionId)
                     .workflowId(workflowId)
@@ -438,6 +444,7 @@ public class WorkflowEngine {
                     .workflowStaticData(state.getWorkflowStaticData())
                     .nodeContextData(state.getOrCreateNodeContext(nodeId))
                     .aiInputData(aiInputData)
+                    .parentAiInputData(parentAiInputData)
                     .executionMode(NodeExecutionContext.ExecutionMode.MANUAL)
                     .continueOnFail(graphNode.isContinueOnFail())
                     .build();
@@ -763,6 +770,12 @@ public class WorkflowEngine {
             // Collect AI inputs from sub-node connections
             Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
 
+            // For sub-agent nodes, collect the parent agent's AI inputs for model inheritance
+            Map<String, List<Object>> parentAiInputData = null;
+            if (nodeInstance instanceof AiSubNodeInterface) {
+                parentAiInputData = collectParentAiInputs(nodeId, graph, state);
+            }
+
             NodeExecutionContext context = NodeExecutionContext.builder()
                     .executionId(executionId)
                     .workflowId(workflow.getId())
@@ -777,6 +790,7 @@ public class WorkflowEngine {
                     .workflowStaticData(state.getWorkflowStaticData())
                     .nodeContextData(state.getOrCreateNodeContext(nodeId))
                     .aiInputData(aiInputData)
+                    .parentAiInputData(parentAiInputData)
                     .executionMode(mode)
                     .continueOnFail(graphNode.isContinueOnFail())
                     .build();
@@ -1182,6 +1196,24 @@ public class WorkflowEngine {
             }
         }
         return aiInputs;
+    }
+
+    /**
+     * For sub-agent nodes: find the downstream parent node (via ai_tool output)
+     * and collect that parent's AI inputs. This allows sub-agents to inherit the
+     * parent agent's chat model when they don't have their own.
+     */
+    private Map<String, List<Object>> collectParentAiInputs(String nodeId, WorkflowGraph graph,
+                                                              WorkflowExecutionState state) {
+        List<WorkflowGraph.Connection> outgoing = graph.getOutgoingConnections()
+                .getOrDefault(nodeId, List.of());
+        for (WorkflowGraph.Connection conn : outgoing) {
+            if ("ai_tool".equals(conn.getType())) {
+                // Found the parent agent node — collect its other AI inputs (model, memory)
+                return collectAllAiInputs(conn.getTargetNodeId(), graph, state);
+            }
+        }
+        return null;
     }
 
     /**

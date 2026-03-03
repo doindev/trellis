@@ -1,23 +1,21 @@
 package io.trellis.nodes.impl.ai;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolSpecification;
-import dev.langchain4j.agent.tool.ToolSpecifications;
+import dev.langchain4j.agentic.AgenticServices;
+import dev.langchain4j.agentic.supervisor.SupervisorAgent;
+import dev.langchain4j.agentic.supervisor.SupervisorResponseStrategy;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.tool.DefaultToolExecutor;
 import dev.langchain4j.service.tool.ToolExecutor;
 import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractNode;
-import io.trellis.nodes.core.DynamicTool;
 import io.trellis.nodes.core.NodeExecutionContext;
 import io.trellis.nodes.core.NodeExecutionResult;
 import io.trellis.nodes.core.NodeInput;
@@ -45,13 +43,81 @@ public class AiAgentNode extends AbstractNode {
 		}
 
 		ChatMemory memory = context.getAiInput("ai_memory", ChatMemory.class);
-		List<Object> tools = context.getAiInputs("ai_tool", Object.class);
 
 		String systemMessageText = context.getParameter("systemMessage", "You are a helpful assistant.");
 		String promptTemplate = context.getParameter("prompt", "{{input}}");
 		int maxIterations = toInt(context.getParameters().get("maxIterations"), 10);
 
-		// Build AiServices agent
+		// Separate tool inputs into real tools and sub-agents
+		List<Object> toolInputs = context.getAiInputs("ai_tool", Object.class);
+		Map<ToolSpecification, ToolExecutor> toolMap = new LinkedHashMap<>();
+		List<Object> subAgents = new ArrayList<>();
+		AiSubAgentNode.separateToolsAndAgents(toolInputs, toolMap, subAgents);
+
+		if (!subAgents.isEmpty()) {
+			// --- Supervisor path: delegate to sub-agents ---
+			return executeSupervisor(context, model, memory, toolMap, subAgents,
+					systemMessageText, promptTemplate, maxIterations);
+		} else {
+			// --- Existing AiServices path (backwards compatible) ---
+			return executeAiServices(context, model, memory, toolMap,
+					systemMessageText, promptTemplate, maxIterations);
+		}
+	}
+
+	private NodeExecutionResult executeSupervisor(NodeExecutionContext context, ChatModel model,
+			ChatMemory memory, Map<ToolSpecification, ToolExecutor> toolMap,
+			List<Object> subAgents, String systemMessageText,
+			String promptTemplate, int maxIterations) {
+
+		var supervisorBuilder = AgenticServices.supervisorBuilder()
+				.chatModel(model)
+				.maxAgentsInvocations(maxIterations)
+				.responseStrategy(SupervisorResponseStrategy.SUMMARY);
+
+		// Add sub-agents
+		supervisorBuilder.subAgents(subAgents.toArray());
+
+		if (systemMessageText != null && !systemMessageText.isBlank()) {
+			supervisorBuilder.supervisorContext(systemMessageText);
+		}
+
+		SupervisorAgent supervisor = supervisorBuilder.build();
+
+		List<Map<String, Object>> inputData = context.getInputData();
+		List<Map<String, Object>> results = new ArrayList<>();
+
+		if (inputData == null || inputData.isEmpty()) {
+			try {
+				String response = supervisor.invoke(promptTemplate);
+				results.add(wrapInJson(Map.of("output", response)));
+			} catch (Exception e) {
+				return handleError(context, "AI Agent (Supervisor) failed: " + e.getMessage(), e);
+			}
+		} else {
+			for (Map<String, Object> item : inputData) {
+				try {
+					Map<String, Object> json = unwrapJson(item);
+					String resolvedPrompt = resolvePrompt(promptTemplate, json);
+					String response = supervisor.invoke(resolvedPrompt);
+					results.add(wrapInJson(Map.of("output", response)));
+				} catch (Exception e) {
+					if (context.isContinueOnFail()) {
+						results.add(wrapInJson(Map.of("error", e.getMessage())));
+					} else {
+						return handleError(context, "AI Agent (Supervisor) failed: " + e.getMessage(), e);
+					}
+				}
+			}
+		}
+
+		return NodeExecutionResult.success(results);
+	}
+
+	private NodeExecutionResult executeAiServices(NodeExecutionContext context, ChatModel model,
+			ChatMemory memory, Map<ToolSpecification, ToolExecutor> toolMap,
+			String systemMessageText, String promptTemplate, int maxIterations) {
+
 		var builder = AiServices.builder(AgentService.class)
 				.chatModel(model);
 
@@ -61,31 +127,8 @@ public class AiAgentNode extends AbstractNode {
 			builder.chatMemory(MessageWindowChatMemory.withMaxMessages(maxIterations));
 		}
 
-		if (!tools.isEmpty()) {
-			Map<ToolSpecification, ToolExecutor> toolMap = new LinkedHashMap<>();
-			for (Object toolObj : tools) {
-				if (toolObj instanceof DynamicTool dt) {
-					toolMap.put(dt.specification(), dt.executor());
-				} else if (toolObj instanceof List<?> toolList) {
-					// List of DynamicTools (e.g. from MCP Client Tool)
-					for (Object item : toolList) {
-						if (item instanceof DynamicTool dt) {
-							toolMap.put(dt.specification(), dt.executor());
-						}
-					}
-				} else {
-					// @Tool-annotated object — extract specs and build executors
-					for (Method method : toolObj.getClass().getDeclaredMethods()) {
-						if (method.isAnnotationPresent(Tool.class)) {
-							ToolSpecification spec = ToolSpecifications.toolSpecificationFrom(method);
-							toolMap.put(spec, new DefaultToolExecutor(toolObj, method));
-						}
-					}
-				}
-			}
-			if (!toolMap.isEmpty()) {
-				builder.tools(toolMap);
-			}
+		if (!toolMap.isEmpty()) {
+			builder.tools(toolMap);
 		}
 
 		if (systemMessageText != null && !systemMessageText.isBlank()) {
@@ -98,7 +141,6 @@ public class AiAgentNode extends AbstractNode {
 		List<Map<String, Object>> results = new ArrayList<>();
 
 		if (inputData == null || inputData.isEmpty()) {
-			// No input data — use the prompt directly
 			try {
 				String response = agent.chat(promptTemplate);
 				results.add(wrapInJson(Map.of("output", response)));
@@ -109,18 +151,7 @@ public class AiAgentNode extends AbstractNode {
 			for (Map<String, Object> item : inputData) {
 				try {
 					Map<String, Object> json = unwrapJson(item);
-
-					// Resolve prompt with input data
-					String resolvedPrompt = promptTemplate;
-					for (Map.Entry<String, Object> entry : json.entrySet()) {
-						resolvedPrompt = resolvedPrompt.replace(
-								"{{ " + entry.getKey() + " }}",
-								String.valueOf(entry.getValue()));
-						resolvedPrompt = resolvedPrompt.replace(
-								"{{" + entry.getKey() + "}}",
-								String.valueOf(entry.getValue()));
-					}
-
+					String resolvedPrompt = resolvePrompt(promptTemplate, json);
 					String response = agent.chat(resolvedPrompt);
 					results.add(wrapInJson(Map.of("output", response)));
 				} catch (Exception e) {
@@ -134,6 +165,19 @@ public class AiAgentNode extends AbstractNode {
 		}
 
 		return NodeExecutionResult.success(results);
+	}
+
+	private String resolvePrompt(String promptTemplate, Map<String, Object> json) {
+		String resolvedPrompt = promptTemplate;
+		for (Map.Entry<String, Object> entry : json.entrySet()) {
+			resolvedPrompt = resolvedPrompt.replace(
+					"{{ " + entry.getKey() + " }}",
+					String.valueOf(entry.getValue()));
+			resolvedPrompt = resolvedPrompt.replace(
+					"{{" + entry.getKey() + "}}",
+					String.valueOf(entry.getValue()));
+		}
+		return resolvedPrompt;
 	}
 
 	@Override

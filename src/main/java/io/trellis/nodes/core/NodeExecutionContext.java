@@ -26,6 +26,7 @@ public class NodeExecutionContext {
 	private Map<String, Object> nodeContextData;
 	
 	private Map<String, List<Object>> aiInputData;
+	private Map<String, List<Object>> parentAiInputData;
 
 	private ExecutionMode executionMode;
 	private boolean continueOnFail;
@@ -110,6 +111,16 @@ public class NodeExecutionContext {
 	public <T> T getAiInput(String connectionType, Class<T> type) {
 		if (aiInputData == null) return null;
 		List<Object> items = aiInputData.get(connectionType);
+		if (items == null || items.isEmpty()) return null;
+		Object first = items.get(0);
+		if (type.isInstance(first)) return (T) first;
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> T getParentAiInput(String connectionType, Class<T> type) {
+		if (parentAiInputData == null) return null;
+		List<Object> items = parentAiInputData.get(connectionType);
 		if (items == null || items.isEmpty()) return null;
 		Object first = items.get(0);
 		if (type.isInstance(first)) return (T) first;
