@@ -41,6 +41,7 @@ export class ToolbarComponent {
     return this.versionIsDirty ? 'stale' : 'current';
   }
   @Input() isPersonalProject = false;
+  @Input() projectName = 'Personal';
   @Input() isDirty = false;
   @Input() isExecuting = false;
   @Input() isSaving = false;

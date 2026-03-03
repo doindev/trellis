@@ -84,6 +84,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   webhookTestData: Record<string, any> = {};
   projectContextPath = '';
   isPersonalProject = false;
+  projectName = 'Personal';
   knownCredentialIds = new Set<string>();
   private executionSub?: Subscription;
   private currentExecutionId: string | null = null;
@@ -157,6 +158,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         if (wf) {
           this.store.workflow.set({ ...wf, projectId });
         }
+        this.loadProjectContextPath(projectId);
       }
 
       // Check for agent-loaded workflow data
@@ -908,16 +910,19 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     if (!projectId) {
       this.projectContextPath = '';
       this.isPersonalProject = false;
+      this.projectName = 'Personal';
       return;
     }
     this.projectService.get(projectId).subscribe({
       next: (project) => {
         this.projectContextPath = project.contextPath || '';
         this.isPersonalProject = project.type === 'PERSONAL';
+        this.projectName = project.name;
       },
       error: () => {
         this.projectContextPath = '';
         this.isPersonalProject = false;
+        this.projectName = 'Personal';
       }
     });
   }
@@ -973,7 +978,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/home/workflows']);
+    const projectId = this.store.workflow()?.projectId;
+    if (projectId) {
+      this.router.navigate(['/home/workflows'], { queryParams: { projectId } });
+    } else {
+      this.router.navigate(['/home/workflows']);
+    }
   }
 
   // --- Menu actions ---

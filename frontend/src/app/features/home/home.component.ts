@@ -248,8 +248,13 @@ export class HomeComponent implements OnInit {
       // Select project from query param (e.g. after creating a project or clicking sidebar link)
       if (params['projectId'] && params['projectId'] !== this.selectedProjectId()) {
         this.selectedProjectId.set(params['projectId']);
-        if (this.allProjects().length > 0) {
+        localStorage.setItem('trellis.selectedProjectId', params['projectId']);
+        const knownProject = this.allProjects().some(p => p.id === params['projectId']);
+        if (knownProject) {
           this.reloadAllData();
+        } else {
+          // New project not yet in the list — reload projects (which triggers reloadAllData)
+          this.loadProjects();
         }
       }
     });
@@ -313,13 +318,22 @@ export class HomeComponent implements OnInit {
         team.forEach(p => list.push({ id: p.id!, name: p.name }));
         this.allProjects.set(list);
 
-        // If a project is already selected (e.g. from query param), validate it exists; otherwise default to personal
+        // If a project is already selected (e.g. from query param), validate it exists
         const current = this.selectedProjectId();
         if (current && list.some(p => p.id === current)) {
+          localStorage.setItem('trellis.selectedProjectId', current);
           this.reloadAllData();
-        } else if (personal?.id) {
-          this.selectedProjectId.set(personal.id);
-          this.reloadAllData();
+        } else {
+          // Try restoring from localStorage
+          const stored = localStorage.getItem('trellis.selectedProjectId');
+          if (stored && list.some(p => p.id === stored)) {
+            this.selectedProjectId.set(stored);
+            this.reloadAllData();
+          } else if (personal?.id) {
+            this.selectedProjectId.set(personal.id);
+            localStorage.setItem('trellis.selectedProjectId', personal.id);
+            this.reloadAllData();
+          }
         }
       }
     });
@@ -327,6 +341,7 @@ export class HomeComponent implements OnInit {
 
   onProjectScopeChange(projectId: string): void {
     this.selectedProjectId.set(projectId);
+    localStorage.setItem('trellis.selectedProjectId', projectId);
     this.reloadAllData();
   }
 
@@ -345,6 +360,7 @@ export class HomeComponent implements OnInit {
   onProjectDeleted(): void {
     // Project was deleted — reload projects and select the first available
     this.selectedProjectId.set('');
+    localStorage.removeItem('trellis.selectedProjectId');
     this.loadProjects();
   }
 
