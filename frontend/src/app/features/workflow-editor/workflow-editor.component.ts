@@ -83,6 +83,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   executionDataById: Record<string, any> | null = null;
   webhookTestData: Record<string, any> = {};
   projectContextPath = '';
+  isPersonalProject = false;
   knownCredentialIds = new Set<string>();
   private executionSub?: Subscription;
   private currentExecutionId: string | null = null;
@@ -906,11 +907,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   private loadProjectContextPath(projectId?: string): void {
     if (!projectId) {
       this.projectContextPath = '';
+      this.isPersonalProject = false;
       return;
     }
     this.projectService.get(projectId).subscribe({
-      next: (project) => this.projectContextPath = project.contextPath || '',
-      error: () => this.projectContextPath = ''
+      next: (project) => {
+        this.projectContextPath = project.contextPath || '';
+        this.isPersonalProject = project.type === 'PERSONAL';
+      },
+      error: () => {
+        this.projectContextPath = '';
+        this.isPersonalProject = false;
+      }
     });
   }
 

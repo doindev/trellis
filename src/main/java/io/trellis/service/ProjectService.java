@@ -10,6 +10,7 @@ import io.trellis.entity.ProjectRelationEntity.ProjectRole;
 import io.trellis.exception.BadRequestException;
 import io.trellis.exception.NotFoundException;
 import io.trellis.repository.*;
+import io.trellis.util.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class ProjectService {
     private final CredentialRepository credentialRepository;
     private final UserRepository userRepository;
     private final WebhookService webhookService;
+    private final SecurityContextHelper securityContextHelper;
     private final ObjectMapper objectMapper;
 
     public List<ProjectResponse> listProjects() {
@@ -64,6 +66,16 @@ public class ProjectService {
                         ? request.getContextPath() : null)
                 .build();
         entity = projectRepository.save(entity);
+
+        // Add the creator as project admin
+        String userId = securityContextHelper.getCurrentUserId();
+        ProjectRelationEntity relation = ProjectRelationEntity.builder()
+                .projectId(entity.getId())
+                .userId(userId)
+                .role(ProjectRole.PROJECT_ADMIN)
+                .build();
+        projectRelationRepository.save(relation);
+
         log.info("Created team project: {} ({})", entity.getName(), entity.getId());
         return toResponse(entity);
     }
@@ -215,6 +227,7 @@ public class ProjectService {
         ProjectEntity entity = ProjectEntity.builder()
                 .name("Personal")
                 .type(ProjectType.PERSONAL)
+                .contextPath(userId)
                 .build();
         entity = projectRepository.save(entity);
 

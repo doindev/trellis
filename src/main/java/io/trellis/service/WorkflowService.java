@@ -1,6 +1,7 @@
 package io.trellis.service;
 
 import io.trellis.dto.*;
+import io.trellis.entity.ProjectEntity.ProjectType;
 import io.trellis.entity.ProjectRelationEntity;
 import io.trellis.entity.ProjectRelationEntity.ProjectRole;
 import io.trellis.entity.TagEntity;
@@ -15,6 +16,7 @@ import io.trellis.exception.NotFoundException;
 import io.trellis.nodes.core.NodeParameter;
 import io.trellis.nodes.core.NodeRegistry;
 import io.trellis.repository.ProjectRelationRepository;
+import io.trellis.repository.ProjectRepository;
 import io.trellis.repository.TagRepository;
 import io.trellis.repository.UserRepository;
 import io.trellis.repository.WorkflowRepository;
@@ -48,6 +50,7 @@ public class WorkflowService {
     private final NodeRegistry nodeRegistry;
     private final WorkflowShareRepository workflowShareRepository;
     private final ProjectRelationRepository projectRelationRepository;
+    private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final SecurityContextHelper securityContextHelper;
 
@@ -96,6 +99,16 @@ public class WorkflowService {
             return;
         }
         throw new ForbiddenException("You do not have permission to publish this workflow");
+    }
+
+    private void checkNotPersonalProject(WorkflowEntity workflow) {
+        if (workflow.getProjectId() != null) {
+            projectRepository.findById(workflow.getProjectId()).ifPresent(project -> {
+                if (project.getType() == ProjectType.PERSONAL) {
+                    throw new BadRequestException("Workflows in personal projects cannot be published");
+                }
+            });
+        }
     }
 
     // --- Core workflow methods ---
@@ -223,6 +236,7 @@ public class WorkflowService {
     @Transactional
     public WorkflowResponse publishWorkflow(String id, PublishWorkflowRequest request) {
         WorkflowEntity entity = findById(id);
+        checkNotPersonalProject(entity);
         checkPublishAccess(entity);
         validateNodesForPublish(entity);
         int newVersion = entity.getCurrentVersion() + 1;
@@ -307,6 +321,7 @@ public class WorkflowService {
     @Transactional
     public WorkflowResponse publishFromVersion(String workflowId, String versionId) {
         WorkflowEntity entity = findById(workflowId);
+        checkNotPersonalProject(entity);
         WorkflowVersionEntity version = workflowVersionRepository.findById(versionId)
                 .orElseThrow(() -> new NotFoundException("Version not found: " + versionId));
         if (!version.getWorkflowId().equals(workflowId)) {
