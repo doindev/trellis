@@ -135,22 +135,27 @@ public class TrellisMcpServerManager {
     }
 
     /**
-     * Polls for MCP tool configuration changes. Detects both:
-     * - Changes made by other cluster instances (via DB hash comparison)
-     * - Local changes from workflow publish/unpublish (by recomputing the hash)
+     * Polls for MCP state changes across cluster instances. Detects:
+     * - MCP enabled by another instance → start locally
+     * - MCP disabled by another instance → stop locally
+     * - Tool configuration changes (workflow publish/unpublish, description/schema edits)
      */
     @Scheduled(fixedDelay = 10_000)
     public void pollForToolChanges() {
-        if (!running) return;
-
         settingsRepository.findFirstByOrderByCreatedAtAsc().ifPresent(settings -> {
-            // Check if MCP was disabled by another instance
-            if (!settings.isEnabled()) {
+            if (settings.isEnabled() && !running) {
+                log.info("MCP server enabled by another instance, starting");
+                startAll();
+                return;
+            }
+            if (!settings.isEnabled() && running) {
                 log.info("MCP server disabled by another instance, stopping");
                 stopAll();
                 return;
             }
         });
+
+        if (!running) return;
 
         // Always refresh — idempotent when nothing changed (no DB write, no SSE notification)
         refreshTools();

@@ -36,6 +36,12 @@ public @interface Node {
 	// node category for grouping in UI
 	String category() default "Utility";
 	
+	// this value will be used to limit the number of nodes visible in the node palette. Nodes with searchOnly=true will only be visible when searching by name.
+	boolean searchOnly() default false;
+	
+	// this value will be used to group nodes into the 'Other' category that will be displayed at the bottom of the node palette. Nodes with other=true will be placed in the 'Other' category.
+	boolean other() default false;
+	
 	// node version
 	int version() default 1;
 	
