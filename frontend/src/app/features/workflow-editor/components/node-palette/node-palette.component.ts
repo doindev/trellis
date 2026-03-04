@@ -190,6 +190,7 @@ export class NodePaletteComponent {
   isCategoryExpanded(category: string): boolean {
     const autoExpand = this.searchTerm().length > 0 || this.triggerOnly() || !!this.aiOutputTypeFilter();
     if (autoExpand) {
+      if (category === 'Other' && !this.expandedCategories.has(category)) return false;
       return !this.collapsedCategories.has(category);
     }
     return this.expandedCategories.has(category);
