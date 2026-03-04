@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage incidents, log entries, and users in PagerDuty",
 	category = "Miscellaneous",
 	icon = "pagerDuty",
-	credentials = {"pagerDutyApi"}
+	credentials = {"pagerDutyApi"},
+	searchOnly = true
 )
 public class PagerDutyNode extends AbstractApiNode {
 

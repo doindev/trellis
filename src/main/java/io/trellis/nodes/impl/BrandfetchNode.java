@@ -20,7 +20,8 @@ import java.util.Map;
 		description = "Retrieve brand assets via Brandfetch",
 		category = "Miscellaneous",
 		icon = "palette",
-		credentials = {"brandfetchApi"}
+		credentials = {"brandfetchApi"},
+		searchOnly = true
 )
 public class BrandfetchNode extends AbstractApiNode {
 

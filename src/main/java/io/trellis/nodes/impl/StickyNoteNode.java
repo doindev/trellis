@@ -22,7 +22,8 @@ import io.trellis.nodes.core.NodeParameter.ParameterType;
 	description = "Add a visual note to your workflow for documentation. Does not process any data.",
 	category = "Miscellaneous",
 	icon = "sticky-note",
-	group = "annotation"
+	group = "annotation",
+	searchOnly = true
 )
 public class StickyNoteNode extends AbstractNode {
 

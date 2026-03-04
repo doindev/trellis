@@ -22,7 +22,8 @@ import java.util.Map;
 		description = "Shorten and manage links via Bitly",
 		category = "Miscellaneous",
 		icon = "link",
-		credentials = {"bitlyApi"}
+		credentials = {"bitlyApi"},
+		searchOnly = true
 )
 public class BitlyNode extends AbstractApiNode {
 

@@ -22,7 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 	category = "Miscellaneous",
 	icon = "clockify",
 	trigger = true,
-	credentials = {"clockifyApi"}
+	credentials = {"clockifyApi"},
+	searchOnly = true,
+	other = true
 )
 public class ClockifyTriggerNode extends AbstractApiNode {
 

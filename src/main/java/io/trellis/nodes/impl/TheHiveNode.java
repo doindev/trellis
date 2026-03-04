@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage alerts, cases, logs, observables, and tasks in TheHive",
 	category = "Miscellaneous",
 	icon = "theHive",
-	credentials = {"theHiveApi"}
+	credentials = {"theHiveApi"},
+	searchOnly = true
 )
 public class TheHiveNode extends AbstractApiNode {
 

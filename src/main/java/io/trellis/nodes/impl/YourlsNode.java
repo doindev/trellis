@@ -22,7 +22,8 @@ import java.util.Map;
 		description = "Shorten and manage URLs via YOURLS",
 		category = "Miscellaneous",
 		icon = "link",
-		credentials = {"yourlsApi"}
+		credentials = {"yourlsApi"},
+		searchOnly = true
 )
 public class YourlsNode extends AbstractApiNode {
 

@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage threat intelligence data in MISP",
 	category = "Miscellaneous",
 	icon = "misp",
-	credentials = {"mispApi"}
+	credentials = {"mispApi"},
+	searchOnly = true
 )
 public class MispNode extends AbstractApiNode {
 

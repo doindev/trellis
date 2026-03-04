@@ -19,7 +19,9 @@ import java.util.*;
 		category = "Miscellaneous",
 		icon = "gumroad",
 		credentials = {"gumroadApi"},
-		trigger = true
+		trigger = true,
+		searchOnly = true,
+		other = true
 )
 public class GumroadTriggerNode extends AbstractApiNode {
 

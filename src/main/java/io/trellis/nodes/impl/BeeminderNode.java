@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Track goals and add datapoints in Beeminder",
 		category = "Miscellaneous",
 		icon = "beeminder",
-		credentials = {"beeminderApi"}
+		credentials = {"beeminderApi"},
+		searchOnly = true
 )
 public class BeeminderNode extends AbstractApiNode {
 

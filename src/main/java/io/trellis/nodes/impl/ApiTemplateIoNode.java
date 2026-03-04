@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Generate images and PDFs with APITemplate.io",
 		category = "Miscellaneous",
 		icon = "apiTemplateIo",
-		credentials = {"apiTemplateIoApi"}
+		credentials = {"apiTemplateIoApi"},
+		searchOnly = true
 )
 public class ApiTemplateIoNode extends AbstractApiNode {
 

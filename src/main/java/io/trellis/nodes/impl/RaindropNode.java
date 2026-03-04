@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage bookmarks and collections in Raindrop.io",
 		category = "Miscellaneous",
 		icon = "raindrop",
-		credentials = {"raindropOAuth2Api"}
+		credentials = {"raindropOAuth2Api"},
+		searchOnly = true
 )
 public class RaindropNode extends AbstractApiNode {
 

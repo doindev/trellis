@@ -19,7 +19,9 @@ import java.util.*;
 		category = "Miscellaneous",
 		icon = "strava",
 		credentials = {"stravaOAuth2Api"},
-		trigger = true
+		trigger = true,
+		searchOnly = true,
+		other = true
 )
 public class StravaTriggerNode extends AbstractApiNode {
 

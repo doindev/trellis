@@ -23,7 +23,8 @@ import java.util.regex.Pattern;
 		displayName = "RSS Read",
 		description = "Read and parse RSS/Atom feeds",
 		category = "Miscellaneous",
-		icon = "rss"
+		icon = "rss",
+		searchOnly = true
 )
 public class RssFeedReadNode extends AbstractApiNode {
 

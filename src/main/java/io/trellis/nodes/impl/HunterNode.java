@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Find and verify professional email addresses",
 		category = "Miscellaneous",
 		icon = "hunter",
-		credentials = {"hunterApi"}
+		credentials = {"hunterApi"},
+		searchOnly = true
 )
 public class HunterNode extends AbstractApiNode {
 

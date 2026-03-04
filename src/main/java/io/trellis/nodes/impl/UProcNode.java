@@ -22,7 +22,8 @@ import java.util.Map;
 		description = "Data enrichment and processing via uProc",
 		category = "Miscellaneous",
 		icon = "cog",
-		credentials = {"uProcApi"}
+		credentials = {"uProcApi"},
+		searchOnly = true
 )
 public class UProcNode extends AbstractApiNode {
 

@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Get cryptocurrency data from CoinGecko",
 		category = "Miscellaneous",
 		icon = "coinGecko",
-		credentials = {}
+		credentials = {},
+		searchOnly = true
 )
 public class CoinGeckoNode extends AbstractApiNode {
 

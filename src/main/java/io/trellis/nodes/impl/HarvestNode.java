@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage clients, projects, time entries, tasks, and users in Harvest",
 	category = "Miscellaneous",
 	icon = "harvest",
-	credentials = {"harvestApi"}
+	credentials = {"harvestApi"},
+	searchOnly = true
 )
 public class HarvestNode extends AbstractApiNode {
 

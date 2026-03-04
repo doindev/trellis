@@ -18,7 +18,9 @@ import java.util.*;
 		category = "Miscellaneous",
 		icon = "loneScale",
 		trigger = true,
-		credentials = {"loneScaleApi"}
+		credentials = {"loneScaleApi"},
+		searchOnly = true,
+		other = true
 )
 public class LoneScaleTriggerNode extends AbstractApiNode {
 

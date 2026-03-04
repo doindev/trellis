@@ -22,7 +22,8 @@ import java.util.Map;
 		description = "Retrieve stock market data via Marketstack",
 		category = "Miscellaneous",
 		icon = "chart-line",
-		credentials = {"marketstackApi"}
+		credentials = {"marketstackApi"},
+		searchOnly = true
 )
 public class MarketstackNode extends AbstractApiNode {
 

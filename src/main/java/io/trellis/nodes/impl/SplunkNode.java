@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Create searches, retrieve results, and fire alerts in Splunk",
 	category = "Miscellaneous",
 	icon = "splunk",
-	credentials = {"splunkApi"}
+	credentials = {"splunkApi"},
+	searchOnly = true
 )
 public class SplunkNode extends AbstractApiNode {
 

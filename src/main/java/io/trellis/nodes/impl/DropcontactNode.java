@@ -19,6 +19,7 @@ import java.util.*;
 		category = "Miscellaneous",
 		icon = "dropcontact",
 		credentials = {"dropcontactApi"}
+		searchOnly = true
 )
 public class DropcontactNode extends AbstractApiNode {
 

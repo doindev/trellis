@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Get security ratings and manage portfolios",
 		category = "Miscellaneous",
 		icon = "securityScorecard",
-		credentials = {"securityScorecardApi"}
+		credentials = {"securityScorecardApi"},
+		searchOnly = true
 )
 public class SecurityScorecardNode extends AbstractApiNode {
 

@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage certificates and certificate requests in Venafi TLS Protect Cloud",
 	category = "Miscellaneous",
 	icon = "venafi",
-	credentials = {"venafiTlsProtectCloudApi"}
+	credentials = {"venafiTlsProtectCloudApi"},
+	searchOnly = true
 )
 public class VenafiTlsProtectCloudNode extends AbstractApiNode {
 

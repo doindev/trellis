@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Interact with albums, artists, player controls, playlists, and tracks in Spotify",
 	category = "Miscellaneous",
 	icon = "spotify",
-	credentials = {"spotifyOAuth2Api"}
+	credentials = {"spotifyOAuth2Api"},
+	searchOnly = true
 )
 public class SpotifyNode extends AbstractApiNode {
 

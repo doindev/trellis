@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Fetch latest news from Currents API",
 		category = "Miscellaneous",
 		icon = "currents",
-		credentials = {"currentsApi"}
+		credentials = {"currentsApi"},
+		searchOnly = true
 )
 public class CurrentsNode extends AbstractApiNode {
 

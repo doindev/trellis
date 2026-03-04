@@ -24,7 +24,8 @@ import java.util.Map;
 		description = "Access NASA open APIs (APOD, Asteroids, etc.)",
 		category = "Miscellaneous",
 		icon = "rocket",
-		credentials = {"nasaApi"}
+		credentials = {"nasaApi"},
+		searchOnly = true
 )
 public class NasaNode extends AbstractApiNode {
 

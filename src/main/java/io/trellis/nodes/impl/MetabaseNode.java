@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Query and manage data in Metabase",
 		category = "Miscellaneous",
 		icon = "metabase",
-		credentials = {"metabaseApi"}
+		credentials = {"metabaseApi"},
+		searchOnly = true
 )
 public class MetabaseNode extends AbstractApiNode {
 

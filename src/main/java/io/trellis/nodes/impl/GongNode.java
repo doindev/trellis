@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 		description = "Access Gong call recordings and data",
 		category = "Miscellaneous",
 		icon = "gong",
-		credentials = {"gongApi"}
+		credentials = {"gongApi"},
+		searchOnly = true
 )
 public class GongNode extends AbstractApiNode {
 

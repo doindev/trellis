@@ -19,7 +19,8 @@ import java.util.*;
 		description = "Manage events, people, petitions, and tags with Action Network",
 		category = "Miscellaneous",
 		icon = "actionNetwork",
-		credentials = {"actionNetworkApi"}
+		credentials = {"actionNetworkApi"},
+		searchOnly = true
 )
 public class ActionNetworkNode extends AbstractApiNode {
 

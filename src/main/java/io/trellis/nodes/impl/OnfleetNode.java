@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage delivery operations in Onfleet",
 	category = "Miscellaneous",
 	icon = "onfleet",
-	credentials = {"onfleetApi"}
+	credentials = {"onfleetApi"},
+	searchOnly = true
 )
 public class OnfleetNode extends AbstractApiNode {
 

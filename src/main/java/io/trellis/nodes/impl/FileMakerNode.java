@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 		description = "Manage FileMaker records and run scripts",
 		category = "Miscellaneous",
 		icon = "fileMaker",
-		credentials = {"fileMakerApi"}
+		credentials = {"fileMakerApi"},
+		searchOnly = true
 )
 public class FileMakerNode extends AbstractApiNode {
 

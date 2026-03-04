@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage tasks in Flow",
 		category = "Miscellaneous",
 		icon = "flow",
-		credentials = {"flowApi"}
+		credentials = {"flowApi"},
+		searchOnly = true
 )
 public class FlowNode extends AbstractApiNode {
 

@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Execute GraphQL queries and mutations",
 		category = "Miscellaneous",
 		icon = "graphql",
-		credentials = {}
+		credentials = {},
+		searchOnly = true
 )
 public class GraphQlNode extends AbstractApiNode {
 

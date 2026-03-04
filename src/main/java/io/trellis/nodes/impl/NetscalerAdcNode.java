@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage certificates, files, servers, and service groups in Netscaler ADC",
 	category = "Miscellaneous",
 	icon = "netscaler",
-	credentials = {"netscalerAdcApi"}
+	credentials = {"netscalerAdcApi"},
+	searchOnly = true
 )
 public class NetscalerAdcNode extends AbstractApiNode {
 

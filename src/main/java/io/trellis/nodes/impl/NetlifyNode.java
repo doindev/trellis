@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage sites and deploys on Netlify",
 		category = "Miscellaneous",
 		icon = "netlify",
-		credentials = {"netlifyApi"}
+		credentials = {"netlifyApi"},
+		searchOnly = true
 )
 public class NetlifyNode extends AbstractApiNode {
 

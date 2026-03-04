@@ -22,7 +22,8 @@ import java.util.Map;
 		displayName = "Track Time Saved",
 		description = "Track estimated time saved by this workflow",
 		category = "Miscellaneous",
-		icon = "clock"
+		icon = "clock",
+		searchOnly = true
 )
 public class TrackTimeSavedNode extends AbstractNode {
 

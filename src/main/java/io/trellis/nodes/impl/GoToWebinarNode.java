@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 		description = "Manage GoToWebinar events",
 		category = "Miscellaneous",
 		icon = "goToWebinar",
-		credentials = {"goToWebinarOAuth2Api"}
+		credentials = {"goToWebinarOAuth2Api"},
+		searchOnly = true
 )
 public class GoToWebinarNode extends AbstractApiNode {
 

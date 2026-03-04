@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 		description = "Manage ERPNext documents",
 		category = "Miscellaneous",
 		icon = "erpNext",
-		credentials = {"erpNextApi"}
+		credentials = {"erpNextApi"},
+		searchOnly = true
 )
 public class ErpNextNode extends AbstractApiNode {
 

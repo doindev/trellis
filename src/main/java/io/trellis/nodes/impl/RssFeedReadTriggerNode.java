@@ -36,7 +36,9 @@ import lombok.extern.slf4j.Slf4j;
 	category = "Miscellaneous",
 	icon = "rss",
 	trigger = true,
-	polling = true
+	polling = true,
+	searchOnly = true,
+	other = true
 )
 public class RssFeedReadTriggerNode extends AbstractTriggerNode {
 

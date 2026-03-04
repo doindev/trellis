@@ -21,7 +21,8 @@ import java.util.Map;
 		displayName = "QuickChart",
 		description = "Generate chart images via QuickChart.io",
 		category = "Miscellaneous",
-		icon = "chart-bar"
+		icon = "chart-bar",
+		searchOnly = true
 )
 public class QuickChartNode extends AbstractApiNode {
 

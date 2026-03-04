@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage secrets, collections, groups, members, and events in Bitwarden.",
 	category = "Miscellaneous",
 	icon = "bitwarden",
-	credentials = {"bitwardenApi"}
+	credentials = {"bitwardenApi"},
+	searchOnly = true
 )
 public class BitwardenNode extends AbstractApiNode {
 

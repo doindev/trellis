@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Track time and manage projects, clients, tags, tasks, and time entries with Clockify.",
 	category = "Miscellaneous",
 	icon = "clockify",
-	credentials = {"clockifyApi"}
+	credentials = {"clockifyApi"},
+	searchOnly = true
 )
 public class ClockifyNode extends AbstractApiNode {
 

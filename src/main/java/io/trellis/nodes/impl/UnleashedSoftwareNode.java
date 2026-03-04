@@ -20,7 +20,8 @@ import javax.crypto.spec.SecretKeySpec;
 		description = "Query sales orders and stock data from Unleashed",
 		category = "Miscellaneous",
 		icon = "unleashedSoftware",
-		credentials = {"unleashedSoftwareApi"}
+		credentials = {"unleashedSoftwareApi"},
+		searchOnly = true
 )
 public class UnleashedSoftwareNode extends AbstractApiNode {
 

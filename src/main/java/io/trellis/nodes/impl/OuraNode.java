@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Get health and activity data from Oura Ring",
 		category = "Miscellaneous",
 		icon = "oura",
-		credentials = {"ouraApi"}
+		credentials = {"ouraApi"},
+		searchOnly = true
 )
 public class OuraNode extends AbstractApiNode {
 

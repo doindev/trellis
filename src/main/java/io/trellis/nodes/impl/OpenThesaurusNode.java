@@ -20,7 +20,8 @@ import java.util.Map;
 		displayName = "OpenThesaurus",
 		description = "Look up synonyms via OpenThesaurus (German)",
 		category = "Miscellaneous",
-		icon = "book"
+		icon = "book",
+		searchOnly = true
 )
 public class OpenThesaurusNode extends AbstractApiNode {
 

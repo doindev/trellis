@@ -19,7 +19,9 @@ import java.util.*;
 		category = "Miscellaneous",
 		icon = "netlify",
 		credentials = {"netlifyApi"},
-		trigger = true
+		trigger = true,
+		searchOnly = true,
+		other = true
 )
 public class NetlifyTriggerNode extends AbstractApiNode {
 

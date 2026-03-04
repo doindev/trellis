@@ -20,7 +20,9 @@ import java.util.*;
 		icon = "toggl",
 		credentials = {"togglApi"},
 		trigger = true,
-		polling = true
+		polling = true,
+		searchOnly = true,
+		other = true
 )
 public class TogglTriggerNode extends AbstractApiNode {
 

@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Automate browser sessions and web interactions with Airtop",
 		category = "Miscellaneous",
 		icon = "airtop",
-		credentials = {"airtopApi"}
+		credentials = {"airtopApi"},
+		searchOnly = true
 )
 public class AirtopNode extends AbstractApiNode {
 

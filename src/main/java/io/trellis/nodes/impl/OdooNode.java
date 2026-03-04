@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Interact with Odoo ERP via JSON-RPC to manage records on any model",
 	category = "Miscellaneous",
 	icon = "odoo",
-	credentials = {"odooApi"}
+	credentials = {"odooApi"},
+	searchOnly = true
 )
 public class OdooNode extends AbstractApiNode {
 

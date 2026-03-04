@@ -19,7 +19,9 @@ import java.util.*;
 		category = "Miscellaneous",
 		icon = "currents",
 		credentials = {"currentsApi"},
-		trigger = true
+		trigger = true,
+		searchOnly = true,
+		other = true
 )
 public class CurrentsTriggerNode extends AbstractApiNode {
 

@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage and launch automation agents on Phantombuster",
 		category = "Miscellaneous",
 		icon = "phantombuster",
-		credentials = {"phantombusterApi"}
+		credentials = {"phantombusterApi"},
+		searchOnly = true
 )
 public class PhantombusterNode extends AbstractApiNode {
 

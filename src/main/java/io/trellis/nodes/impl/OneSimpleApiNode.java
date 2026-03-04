@@ -23,7 +23,8 @@ import java.util.Map;
 		description = "Access various utility endpoints via One Simple API",
 		category = "Miscellaneous",
 		icon = "cog",
-		credentials = {"oneSimpleApi"}
+		credentials = {"oneSimpleApi"},
+		searchOnly = true
 )
 public class OneSimpleApiNode extends AbstractApiNode {
 

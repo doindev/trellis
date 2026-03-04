@@ -21,7 +21,8 @@ import java.util.Map;
 		description = "Enrich company and person data via UpLead",
 		category = "Miscellaneous",
 		icon = "address-card",
-		credentials = {"upleadApi"}
+		credentials = {"upleadApi"},
+		searchOnly = true
 )
 public class UpleadNode extends AbstractApiNode {
 

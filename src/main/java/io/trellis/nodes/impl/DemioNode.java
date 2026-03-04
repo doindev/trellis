@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage webinars and registrations using Demio",
 		category = "Miscellaneous",
 		icon = "demio",
-		credentials = {"demioApi"}
+		credentials = {"demioApi"},
+		searchOnly = true
 )
 public class DemioNode extends AbstractApiNode {
 

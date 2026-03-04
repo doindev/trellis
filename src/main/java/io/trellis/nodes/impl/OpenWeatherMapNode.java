@@ -21,7 +21,8 @@ import java.util.Map;
 		description = "Get weather data from OpenWeatherMap",
 		category = "Miscellaneous",
 		icon = "cloud-sun",
-		credentials = {"openWeatherMapApi"}
+		credentials = {"openWeatherMapApi"},
+		searchOnly = true
 )
 public class OpenWeatherMapNode extends AbstractApiNode {
 

@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Control Philips Hue smart lights",
 		category = "Miscellaneous",
 		icon = "philipsHue",
-		credentials = {"philipsHueOAuth2Api"}
+		credentials = {"philipsHueOAuth2Api"},
+		searchOnly = true
 )
 public class PhilipsHueNode extends AbstractApiNode {
 

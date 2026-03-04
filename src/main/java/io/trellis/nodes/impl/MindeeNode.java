@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Extract data from receipts and invoices with Mindee OCR",
 		category = "Miscellaneous",
 		icon = "mindee",
-		credentials = {"mindeeReceiptApi", "mindeeInvoiceApi"}
+		credentials = {"mindeeReceiptApi", "mindeeInvoiceApi"},
+		searchOnly = true
 )
 public class MindeeNode extends AbstractApiNode {
 

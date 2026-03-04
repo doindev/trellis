@@ -19,7 +19,8 @@ import java.util.*;
 		description = "Monitor website uptime with UptimeRobot",
 		category = "Miscellaneous",
 		icon = "uptimeRobot",
-		credentials = {"uptimeRobotApi"}
+		credentials = {"uptimeRobotApi"},
+		searchOnly = true
 )
 public class UptimeRobotNode extends AbstractApiNode {
 

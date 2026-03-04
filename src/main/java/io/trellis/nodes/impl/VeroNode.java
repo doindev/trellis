@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage users and track events in Vero",
 		category = "Miscellaneous",
 		icon = "vero",
-		credentials = {"veroApi"}
+		credentials = {"veroApi"},
+		searchOnly = true
 )
 public class VeroNode extends AbstractApiNode {
 

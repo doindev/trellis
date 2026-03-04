@@ -20,7 +20,8 @@ import java.util.Map;
 		description = "Preview any URL to get metadata",
 		category = "Miscellaneous",
 		icon = "eye",
-		credentials = {"peekalinkApi"}
+		credentials = {"peekalinkApi"},
+		searchOnly = true
 )
 public class PeekalinkNode extends AbstractApiNode {
 

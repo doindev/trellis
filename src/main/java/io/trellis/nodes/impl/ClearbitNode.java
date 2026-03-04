@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Look up company and person data with Clearbit",
 		category = "Miscellaneous",
 		icon = "clearbit",
-		credentials = {"clearbitApi"}
+		credentials = {"clearbitApi"},
+		searchOnly = true
 )
 public class ClearbitNode extends AbstractApiNode {
 

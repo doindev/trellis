@@ -21,7 +21,8 @@ import java.util.Map;
 		displayName = "Hacker News",
 		description = "Retrieve articles and users from Hacker News",
 		category = "Miscellaneous",
-		icon = "newspaper"
+		icon = "newspaper",
+		searchOnly = true
 )
 public class HackerNewsNode extends AbstractApiNode {
 

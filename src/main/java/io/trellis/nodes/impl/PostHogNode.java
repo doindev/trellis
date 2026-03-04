@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Send events and identify users in PostHog",
 		category = "Miscellaneous",
 		icon = "postHog",
-		credentials = {"postHogApi"}
+		credentials = {"postHogApi"},
+		searchOnly = true
 )
 public class PostHogNode extends AbstractApiNode {
 

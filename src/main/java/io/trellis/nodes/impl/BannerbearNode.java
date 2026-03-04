@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Auto-generate images with Bannerbear",
 		category = "Miscellaneous",
 		icon = "bannerbear",
-		credentials = {"bannerbearApi"}
+		credentials = {"bannerbearApi"},
+		searchOnly = true
 )
 public class BannerbearNode extends AbstractApiNode {
 

@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage collection records in Adalo apps",
 		category = "Miscellaneous",
 		icon = "adalo",
-		credentials = {"adaloApi"}
+		credentials = {"adaloApi"},
+		searchOnly = true
 )
 public class AdaloNode extends AbstractApiNode {
 

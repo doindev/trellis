@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage Cloudflare zones, DNS records, and SSL certificates.",
 	category = "Miscellaneous",
 	icon = "cloudflare",
-	credentials = {"cloudflareApi"}
+	credentials = {"cloudflareApi"},
+	searchOnly = true
 )
 public class CloudflareNode extends AbstractApiNode {
 

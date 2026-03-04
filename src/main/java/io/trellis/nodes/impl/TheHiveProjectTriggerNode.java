@@ -27,7 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 	icon = "theHive",
 	trigger = true,
 	polling = true,
-	credentials = {"theHiveProjectApi"}
+	credentials = {"theHiveProjectApi"},
+	searchOnly = true,
+	other = true
 )
 public class TheHiveProjectTriggerNode extends AbstractApiNode {
 

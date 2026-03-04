@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage affiliates and programs in Tapfiliate",
 		category = "Miscellaneous",
 		icon = "tapfiliate",
-		credentials = {"tapfiliateApi"}
+		credentials = {"tapfiliateApi"},
+		searchOnly = true
 )
 public class TapfiliateNode extends AbstractApiNode {
 

@@ -17,7 +17,8 @@ import java.util.*;
 		description = "Track shipments using the DHL API",
 		category = "Miscellaneous",
 		icon = "dhl",
-		credentials = {"dhlApi"}
+		credentials = {"dhlApi"},
+		searchOnly = true
 )
 public class DhlNode extends AbstractApiNode {
 

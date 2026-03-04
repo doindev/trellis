@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage lists and items with LoneScale",
 		category = "Miscellaneous",
 		icon = "loneScale",
-		credentials = {"loneScaleApi"}
+		credentials = {"loneScaleApi"},
+		searchOnly = true
 )
 public class LoneScaleNode extends AbstractApiNode {
 

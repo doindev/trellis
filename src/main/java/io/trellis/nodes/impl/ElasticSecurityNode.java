@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 		description = "Manage Elastic Security cases and connectors",
 		category = "Miscellaneous",
 		icon = "elasticSecurity",
-		credentials = {"elasticSecurityApi"}
+		credentials = {"elasticSecurityApi"},
+		searchOnly = true
 )
 public class ElasticSecurityNode extends AbstractApiNode {
 

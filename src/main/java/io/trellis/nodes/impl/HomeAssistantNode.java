@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Interact with Home Assistant to control smart home devices",
 	category = "Miscellaneous",
 	icon = "homeAssistant",
-	credentials = {"homeAssistantApi"}
+	credentials = {"homeAssistantApi"},
+	searchOnly = true
 )
 public class HomeAssistantNode extends AbstractApiNode {
 

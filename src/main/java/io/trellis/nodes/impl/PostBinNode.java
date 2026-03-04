@@ -21,7 +21,8 @@ import java.util.Map;
 		displayName = "PostBin",
 		description = "Create and manage request bins via PostBin",
 		category = "Miscellaneous",
-		icon = "inbox"
+		icon = "inbox",
+		searchOnly = true
 )
 public class PostBinNode extends AbstractApiNode {
 

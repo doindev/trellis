@@ -27,7 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 	icon = "venafi",
 	trigger = true,
 	polling = true,
-	credentials = {"venafiTlsProtectDatacenterApi"}
+	credentials = {"venafiTlsProtectDatacenterApi"},
+	searchOnly = true,
+	other = true
 )
 public class VenafiTlsProtectDatacenterTriggerNode extends AbstractApiNode {
 

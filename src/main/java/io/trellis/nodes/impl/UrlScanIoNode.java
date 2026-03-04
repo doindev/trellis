@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Scan and analyze URLs for threats",
 		category = "Miscellaneous",
 		icon = "urlScanIo",
-		credentials = {"urlScanIoApi"}
+		credentials = {"urlScanIoApi"},
+		searchOnly = true
 )
 public class UrlScanIoNode extends AbstractApiNode {
 

@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage activities using Strava",
 		category = "Miscellaneous",
 		icon = "strava",
-		credentials = {"stravaOAuth2Api"}
+		credentials = {"stravaOAuth2Api"},
+		searchOnly = true
 )
 public class StravaNode extends AbstractApiNode {
 

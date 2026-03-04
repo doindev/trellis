@@ -24,7 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage users and groups in Okta",
 	category = "Miscellaneous",
 	icon = "okta",
-	credentials = {"oktaApi"}
+	credentials = {"oktaApi"},
+	searchOnly = true
 )
 public class OktaNode extends AbstractApiNode {
 
