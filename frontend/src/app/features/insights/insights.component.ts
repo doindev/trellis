@@ -114,6 +114,7 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   ];
 
   // Filtered executions within the selected date range
+  // (MANUAL mode and unpublished workflows already excluded by backend metricsOnly param)
   filteredExecutions = computed(() => {
     const execs = this.executions();
     if (!Array.isArray(execs)) return [];
@@ -123,7 +124,6 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
       : this.rangeEnd().getTime() + 86400000 - 1; // include full end day
     return execs.filter(e => {
       if (!e.startedAt) return false;
-      if (e.mode === 'MANUAL') return false;
       const t = new Date(e.startedAt).getTime();
       return t >= start && t <= end;
     });
@@ -287,6 +287,8 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
           .filter(p => p.type === 'TEAM')
           .sort((a, b) => a.name.localeCompare(b.name));
         this.projects.set([...personal, ...team]);
+        // Reload executions now that project list is available for "all" filtering
+        this.loadExecutions();
       },
       error: () => this.projects.set([])
     });
@@ -307,10 +309,16 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadExecutions(): void {
-    const params: Record<string, string> = { size: '10000' };
+    const params: Record<string, string> = { size: '10000', metricsOnly: 'true' };
     const projectId = this.selectedProjectId();
     if (projectId !== 'all') {
       params['projectId'] = projectId;
+    } else {
+      // "All" = only projects the user has access to
+      const ids = this.projects().map(p => p.id).filter((id): id is string => !!id);
+      if (ids.length > 0) {
+        params['projectIds'] = ids.join(',');
+      }
     }
     this.executionService.list(params).subscribe({
       next: (data) => this.executions.set(Array.isArray(data) ? data : [])

@@ -1,11 +1,14 @@
 package io.trellis.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.trellis.config.ProjectContextPathFilter;
 import io.trellis.entity.ProjectEntity;
 import io.trellis.entity.WebhookEntity;
 import io.trellis.entity.WorkflowEntity;
 import io.trellis.repository.ProjectRepository;
 import io.trellis.repository.WebhookRepository;
+import io.trellis.security.WebhookSecurityRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,21 @@ public class WebhookService {
     private final WebhookRepository webhookRepository;
     private final ProjectRepository projectRepository;
     private final ObjectMapper objectMapper;
+    private final WebhookSecurityRegistry webhookSecurityRegistry;
+    private final ProjectContextPathFilter projectContextPathFilter;
+
+    @PostConstruct
+    public void initializeSecurityRegistry() {
+        List<WebhookEntity> webhooks = webhookRepository.findByIsTest(false);
+        for (WebhookEntity webhook : webhooks) {
+            String chain = webhook.getSecurityChain();
+            if (chain != null && !"none".equals(chain)) {
+                webhookSecurityRegistry.register(chain, webhook.getMethod(), webhook.getPath());
+            }
+        }
+        log.info("Initialized webhook security registry with {} entries",
+                webhooks.stream().filter(w -> w.getSecurityChain() != null && !"none".equals(w.getSecurityChain())).count());
+    }
 
     @Transactional
     @SuppressWarnings("unchecked")
@@ -93,6 +111,9 @@ public class WebhookService {
                         .webhookOptions(formConfig)
                         .build();
                 webhookRepository.save(getWebhook);
+                if (!"none".equals(authentication)) {
+                    webhookSecurityRegistry.register(authentication, "GET", normalizedPath);
+                }
 
                 // Register POST for form submission
                 WebhookEntity postWebhook = WebhookEntity.builder()
@@ -105,6 +126,9 @@ public class WebhookService {
                         .webhookOptions(formConfig)
                         .build();
                 webhookRepository.save(postWebhook);
+                if (!"none".equals(authentication)) {
+                    webhookSecurityRegistry.register(authentication, "POST", normalizedPath);
+                }
 
                 log.info("Registered form trigger: {} for workflow {}", path, workflow.getId());
             } else {
@@ -123,13 +147,25 @@ public class WebhookService {
                         .build();
 
                 webhookRepository.save(webhook);
+                if (!"none".equals(authentication)) {
+                    webhookSecurityRegistry.register(authentication, method.toUpperCase(), normalizedPath);
+                }
                 log.info("Registered webhook: {} {} for workflow {}", method, path, workflow.getId());
             }
         }
+
+        projectContextPathFilter.refreshCache();
     }
 
     @Transactional
     public void deregisterWorkflowWebhooks(String workflowId) {
+        List<WebhookEntity> existing = webhookRepository.findByWorkflowId(workflowId);
+        for (WebhookEntity webhook : existing) {
+            String chain = webhook.getSecurityChain();
+            if (chain != null && !"none".equals(chain)) {
+                webhookSecurityRegistry.deregister(chain, webhook.getMethod(), webhook.getPath());
+            }
+        }
         webhookRepository.deleteByWorkflowId(workflowId);
         webhookRepository.flush();
     }

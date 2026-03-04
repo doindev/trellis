@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -23,9 +24,17 @@ public class ExecutionController {
     public Page<ExecutionListResponse> list(
             @RequestParam(required = false) String workflowId,
             @RequestParam(required = false) String projectId,
+            @RequestParam(required = false) String projectIds,
             @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "false") boolean metricsOnly,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        if (metricsOnly) {
+            List<String> idList = projectIds != null
+                    ? Arrays.stream(projectIds.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList()
+                    : null;
+            return executionService.listProductionExecutions(projectId, idList, page, size);
+        }
         return executionService.listExecutions(workflowId, projectId, status, page, size);
     }
 

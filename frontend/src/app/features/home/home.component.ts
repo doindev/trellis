@@ -58,23 +58,28 @@ export class HomeComponent implements OnInit {
 
   // Insights
   executions = signal<Execution[]>([]);
-  totalExecutions = computed(() => {
+  /** Executions from published workflows only, excluding manual runs */
+  productionExecutions = computed(() => {
     const execs = this.executions();
-    return Array.isArray(execs) ? execs.filter(e => e.mode?.toUpperCase() !== 'MANUAL').length : 0;
+    if (!Array.isArray(execs)) return [];
+    const publishedWfIds = new Set(
+      this.workflows().filter(w => w.published).map(w => w.id)
+    );
+    return execs.filter(e =>
+      e.mode?.toUpperCase() !== 'MANUAL' && publishedWfIds.has(e.workflowId)
+    );
   });
-  failedExecutions = computed(() => {
-    const execs = this.executions();
-    return Array.isArray(execs) ? execs.filter(e => e.status?.toUpperCase() === 'ERROR' && e.mode?.toUpperCase() !== 'MANUAL').length : 0;
-  });
+  totalExecutions = computed(() => this.productionExecutions().length);
+  failedExecutions = computed(() =>
+    this.productionExecutions().filter(e => e.status?.toUpperCase() === 'ERROR').length
+  );
   failureRate = computed(() => {
     const total = this.totalExecutions();
     if (total === 0) return 0;
     return Math.round((this.failedExecutions() / total) * 100);
   });
   avgRunTimeMs = computed(() => {
-    const execs = this.executions();
-    if (!Array.isArray(execs)) return 0;
-    const finished = execs.filter(e => e.startedAt && e.finishedAt);
+    const finished = this.productionExecutions().filter(e => e.startedAt && e.finishedAt);
     if (finished.length === 0) return 0;
     const totalMs = finished.reduce((sum, e) => {
       return sum + (new Date(e.finishedAt!).getTime() - new Date(e.startedAt!).getTime());
@@ -283,15 +288,12 @@ export class HomeComponent implements OnInit {
 
   loadExecutions(): void {
     this.loadingExecutions.set(true);
-    this.executionService.list().subscribe({
+    const projectId = this.selectedProjectId();
+    const params: Record<string, string> = { size: '10000' };
+    if (projectId) params['projectId'] = projectId;
+    this.executionService.list(params).subscribe({
       next: (data) => {
-        let execs = Array.isArray(data) ? data : [];
-        // Filter to only executions belonging to this project's workflows
-        const projectWfIds = new Set(this.workflows().map(w => w.id));
-        if (projectWfIds.size > 0) {
-          execs = execs.filter(e => projectWfIds.has(e.workflowId));
-        }
-        this.executions.set(execs);
+        this.executions.set(Array.isArray(data) ? data : []);
         this.loadingExecutions.set(false);
       },
       error: () => this.loadingExecutions.set(false)

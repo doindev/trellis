@@ -103,7 +103,11 @@ public class ProjectService {
             if (contextPathChanged) {
                 entity = projectRepository.save(entity);
                 // Re-register webhooks for all published workflows in this project
-                reRegisterProjectWebhooks(id);
+                try {
+                    reRegisterProjectWebhooks(id);
+                } catch (Exception ex) {
+                    log.warn("Failed to re-register webhooks after context path change for project {}: {}", id, ex.getMessage());
+                }
                 log.info("Updated project: {} ({}) — context path changed to '{}'", entity.getName(), id, newContextPath);
                 return toDetailResponse(entity);
             }

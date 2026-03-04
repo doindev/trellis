@@ -206,6 +206,25 @@ public class WorkflowEngine {
                     inputData = Map.of("_subWorkflowItems", (Object) inputItems);
                 }
 
+                // When the workflow has multiple trigger/start nodes, only execute
+                // nodes reachable from the designated start node so that other
+                // triggers (e.g. a Webhook alongside a Manual Trigger) are skipped.
+                // Prefer a non-manual-trigger start node since sub-workflow/MCP
+                // calls are external invocations, not manual user actions.
+                List<WorkflowGraph.WorkflowNode> startNodes = graph.getNodes().values().stream()
+                        .filter(n -> graph.getIncomingConnections()
+                                .getOrDefault(n.getId(), List.of()).stream()
+                                .noneMatch(c -> "main".equals(c.getType())))
+                        .toList();
+                if (startNodes.size() > 1) {
+                    WorkflowGraph.WorkflowNode chosen = startNodes.stream()
+                            .filter(n -> !"manualTrigger".equals(n.getType()))
+                            .findFirst()
+                            .orElse(startNodes.get(0));
+                    Set<String> reachable = graph.getReachableNodes(chosen.getId());
+                    order = order.stream().filter(reachable::contains).toList();
+                }
+
                 for (String nodeId : order) {
                     if (state.isCancelled()) {
                         executionService.finish(execution.getId(), ExecutionStatus.CANCELED,

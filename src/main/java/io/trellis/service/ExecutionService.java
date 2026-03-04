@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,6 +97,23 @@ public class ExecutionService {
             entities = executionRepository.findAll(pageable);
         }
 
+        return entities.map(this::toListResponse);
+    }
+
+    /**
+     * List executions for metrics: excludes MANUAL mode, only published workflows,
+     * filtered by project(s).
+     */
+    public Page<ExecutionListResponse> listProductionExecutions(String projectId, List<String> projectIds, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startedAt"));
+        Page<ExecutionEntity> entities;
+        if (projectId != null) {
+            entities = executionRepository.findProductionByProjectId(projectId, ExecutionMode.MANUAL, pageable);
+        } else if (projectIds != null && !projectIds.isEmpty()) {
+            entities = executionRepository.findProductionByProjectIds(projectIds, ExecutionMode.MANUAL, pageable);
+        } else {
+            entities = Page.empty(pageable);
+        }
         return entities.map(this::toListResponse);
     }
 

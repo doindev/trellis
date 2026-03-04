@@ -83,7 +83,7 @@ export class ProjectSettingsComponent {
     this.projectService.update(this.projectId, {
       name: this.name,
       description: this.description,
-      contextPath: this.contextPath || undefined,
+      contextPath: this.contextPath,
       icon: icon as any
     }).subscribe({
       next: (updated) => {
