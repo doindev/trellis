@@ -94,6 +94,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Input() node!: WorkflowNode;
   @Input() nodeType?: NodeTypeDescription;
   @Input() workflowId = '';
+  @Input() projectId = '';
   @Input() allNodes: WorkflowNode[] = [];
   @Input() connections: Record<string, any> = {};
   @Input() executionData: Record<string, any> | null = null;

@@ -5,7 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "variables")
+@Table(name = "variables", uniqueConstraints =
+    @UniqueConstraint(columnNames = {"var_key", "project_id"}))
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,7 +17,7 @@ public class VariableEntity {
     @NanoId
     private String id;
 
-    @Column(name = "var_key", nullable = false, unique = true)
+    @Column(name = "var_key", nullable = false)
     private String key;
 
     @Column(name = "var_value", columnDefinition = "TEXT")

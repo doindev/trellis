@@ -2,7 +2,9 @@ import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, 
 import { CommonModule, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CredentialService } from '../../../core/services';
+import { ProjectService } from '../../../core/services/project.service';
 import { Credential, CredentialProperty, CredentialSchema } from '../../../core/models';
+import { Project } from '../../../core/models/project.model';
 
 @Component({
   selector: 'app-credential-create-modal',
@@ -62,7 +64,31 @@ export class CredentialCreateModalComponent implements OnInit {
   validationError = signal<string | null>(null);
   formDisabled = computed(() => this.validating() || this.saving());
 
-  constructor(private credentialService: CredentialService) {}
+  // Sharing state
+  allProjects = signal<Project[]>([]);
+  sharedWithProjectIds = signal<string[]>([]);
+  selectedShareProjectId = signal<string>('');
+
+  /** Whether the current credential is owned by the current project */
+  get isOwnedByCurrentProject(): boolean {
+    const cred = this.editorCredential();
+    return !!this.projectId && cred.projectId === this.projectId;
+  }
+
+  /** Projects available to share with (excludes current project and already-shared projects) */
+  shareableProjects = computed(() => {
+    const currentId = this.projectId;
+    const shared = new Set(this.sharedWithProjectIds());
+    return this.allProjects().filter(p => p.id !== currentId && !shared.has(p.id!));
+  });
+
+  /** Projects currently shared with (resolved names) */
+  sharedProjects = computed(() => {
+    const ids = new Set(this.sharedWithProjectIds());
+    return this.allProjects().filter(p => ids.has(p.id!));
+  });
+
+  constructor(private credentialService: CredentialService, private projectService: ProjectService) {}
 
   ngOnInit(): void {
     this.loadTypes();
@@ -124,6 +150,7 @@ export class CredentialCreateModalComponent implements OnInit {
     this.editorSchema.set(null);
     this.showEditorModal.set(true);
     this.focusFirstEditorInput();
+    this.loadShareData();
 
     if (cred.type) {
       this.credentialService.getSchema(cred.type).subscribe({
@@ -295,6 +322,52 @@ export class CredentialCreateModalComponent implements OnInit {
       );
       firstInput?.focus();
     }, 100);
+  }
+
+  // --- Sharing ---
+
+  loadShareData(): void {
+    this.projectService.list().subscribe({
+      next: (projects) => this.allProjects.set(projects),
+      error: () => {}
+    });
+    const credId = this.editorCredential().id;
+    if (credId) {
+      this.credentialService.getShares(credId).subscribe({
+        next: (ids) => this.sharedWithProjectIds.set(ids),
+        error: () => this.sharedWithProjectIds.set([])
+      });
+    } else {
+      this.sharedWithProjectIds.set([]);
+    }
+  }
+
+  addShare(): void {
+    const targetId = this.selectedShareProjectId();
+    const credId = this.editorCredential().id;
+    if (!targetId || !credId || !this.projectId) return;
+
+    this.credentialService.shareCredential(credId, targetId, this.projectId).subscribe({
+      next: () => {
+        this.sharedWithProjectIds.set([...this.sharedWithProjectIds(), targetId]);
+        this.selectedShareProjectId.set('');
+      },
+      error: () => {}
+    });
+  }
+
+  removeShare(targetProjectId: string): void {
+    const credId = this.editorCredential().id;
+    if (!credId) return;
+
+    this.credentialService.unshareCredential(credId, targetProjectId).subscribe({
+      next: () => {
+        this.sharedWithProjectIds.set(
+          this.sharedWithProjectIds().filter(id => id !== targetProjectId)
+        );
+      },
+      error: () => {}
+    });
   }
 
   // Keep original insertion order for KeyValuePipe

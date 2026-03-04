@@ -30,9 +30,28 @@ public class CredentialController {
     @GetMapping
     public List<CredentialResponse> list(@RequestParam(required = false) String projectId) {
         if (projectId != null) {
-            return credentialService.listCredentialsByProject(projectId);
+            return credentialService.listCredentialsVisibleToProject(projectId);
         }
         return credentialService.listCredentials();
+    }
+
+    @GetMapping("/{id}/shares")
+    public List<String> getShares(@PathVariable String id) {
+        return credentialService.getShareTargetIds(id);
+    }
+
+    @PostMapping("/{id}/shares")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void shareCredential(@PathVariable String id, @RequestBody Map<String, String> body) {
+        String targetProjectId = body.get("targetProjectId");
+        String callerProjectId = body.get("callerProjectId");
+        credentialService.shareCredential(id, targetProjectId, callerProjectId);
+    }
+
+    @DeleteMapping("/{id}/shares/{targetProjectId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unshareCredential(@PathVariable String id, @PathVariable String targetProjectId) {
+        credentialService.unshareCredential(id, targetProjectId);
     }
 
     @GetMapping("/{id}")

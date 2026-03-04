@@ -54,4 +54,16 @@ export class CredentialService {
   testCredentials(type: string, data: Record<string, any>): Observable<{ success: boolean; error?: string }> {
     return this.api.post<{ success: boolean; error?: string }>(`${this.path}/test`, { type, data });
   }
+
+  getShares(credentialId: string): Observable<string[]> {
+    return this.api.get<string[]>(`${this.path}/${credentialId}/shares`);
+  }
+
+  shareCredential(credentialId: string, targetProjectId: string, callerProjectId: string): Observable<void> {
+    return this.api.post<void>(`${this.path}/${credentialId}/shares`, { targetProjectId, callerProjectId });
+  }
+
+  unshareCredential(credentialId: string, targetProjectId: string): Observable<void> {
+    return this.api.delete<void>(`${this.path}/${credentialId}/shares/${targetProjectId}`);
+  }
 }

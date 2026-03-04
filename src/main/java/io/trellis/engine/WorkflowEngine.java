@@ -198,7 +198,7 @@ public class WorkflowEngine {
 
             try {
                 List<String> order = graph.getTopologicalOrder();
-                Map<String, String> variables = variableService.getAllVariablesAsMap();
+                Map<String, String> variables = variableService.getVariablesForProject(workflow.getProjectId());
 
                 // Wrap the input items for the start node injection mechanism
                 Map<String, Object> inputData = null;
@@ -335,7 +335,8 @@ public class WorkflowEngine {
             // Continue execution from the node AFTER the wait node
             List<String> order = graph.getTopologicalOrder();
             int waitIndex = order.indexOf(waitNodeId);
-            Map<String, String> variables = variableService.getAllVariablesAsMap();
+            WorkflowEntity resumeWorkflow = workflowService.findById(workflowId);
+            Map<String, String> variables = variableService.getVariablesForProject(resumeWorkflow.getProjectId());
 
             for (int i = waitIndex + 1; i < order.size(); i++) {
                 String nodeId = order.get(i);
@@ -614,7 +615,7 @@ public class WorkflowEngine {
             Object effectivePinData = resolveEffectivePinData(workflow, mode);
 
             List<String> order = graph.getTopologicalOrder();
-            Map<String, String> variables = variableService.getAllVariablesAsMap();
+            Map<String, String> variables = variableService.getVariablesForProject(workflow.getProjectId());
 
             // When a specific trigger node started this execution (e.g. webhook),
             // only execute nodes reachable from that trigger — skip other triggers
@@ -1121,7 +1122,11 @@ public class WorkflowEngine {
         if (inputData == null) inputData = List.of();
 
         try {
-            Map<String, String> variables = variableService.getAllVariablesAsMap();
+            String projectId = null;
+            if (workflowId != null && !workflowId.isEmpty()) {
+                try { projectId = workflowService.findById(workflowId).getProjectId(); } catch (Exception ignored) {}
+            }
+            Map<String, String> variables = variableService.getVariablesForProject(projectId);
             Map<String, Object> resolvedParams = resolveParameters(
                     parameters, inputData, null, null, variables, "single-node");
             Map<String, Object> credentials = resolveCredentials(
@@ -1252,7 +1257,7 @@ public class WorkflowEngine {
                 }
             }
 
-            Map<String, String> variables = variableService.getAllVariablesAsMap();
+            Map<String, String> variables = variableService.getVariablesForProject(null);
 
             ExpressionEvaluator.ExpressionContext ctx = ExpressionEvaluator.ExpressionContext.builder()
                     .currentItemData(currentItemData)

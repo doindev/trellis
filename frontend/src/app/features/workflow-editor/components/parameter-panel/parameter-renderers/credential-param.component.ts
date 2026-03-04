@@ -28,6 +28,7 @@ import { CredentialCreateModalComponent } from '../../../../../shared/components
       </select>
     </div>
     <app-credential-create-modal
+      [projectId]="projectId"
       (saved)="onCredentialCreated($event)"
       (closed)="onCreateClosed()" />
   `,
@@ -51,6 +52,7 @@ export class CredentialParamComponent implements OnInit, OnChanges {
   @Input() credentialTypes: string[] = [];
   @Input() currentCredentials: Record<string, any> = {};
   @Input() readOnly = false;
+  @Input() projectId = '';
   @Output() credentialChanged = new EventEmitter<Record<string, any>>();
 
   @ViewChild(CredentialCreateModalComponent) createModal!: CredentialCreateModalComponent;
@@ -92,7 +94,10 @@ export class CredentialParamComponent implements OnInit, OnChanges {
   }
 
   private loadCredentials(): void {
-    this.credentialService.list().subscribe({
+    const obs = this.projectId
+      ? this.credentialService.listByProject(this.projectId)
+      : this.credentialService.list();
+    obs.subscribe({
       next: (creds) => this.allCredentials = creds,
       error: () => {}
     });

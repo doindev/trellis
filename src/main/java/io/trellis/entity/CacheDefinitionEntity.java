@@ -7,7 +7,8 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "cache_definitions")
+@Table(name = "cache_definitions", uniqueConstraints =
+    @UniqueConstraint(columnNames = {"cache_name", "project_id"}))
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,7 +19,7 @@ public class CacheDefinitionEntity {
     @NanoId
     private String id;
 
-    @Column(name = "cache_name", nullable = false, unique = true)
+    @Column(name = "cache_name", nullable = false)
     private String name;
 
     private String description;

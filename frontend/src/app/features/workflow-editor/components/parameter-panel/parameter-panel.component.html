@@ -376,6 +376,7 @@
                 [credentialTypes]="activeCredentialTypes"
                 [currentCredentials]="node.credentials || {}"
                 [readOnly]="readOnly"
+                [projectId]="projectId"
                 (credentialChanged)="credentialChanged.emit($event)" />
             }
 
@@ -391,6 +392,7 @@
                         [param]="param"
                         [value]="getParameterValue(param.name, param.defaultValue)"
                         [readOnly]="readOnly"
+                        [projectId]="projectId"
                         [cacheSource]="node.parameters['cacheSource'] ?? 'inline'"
                         (valueChange)="onParameterChange(param.name, $event)" />
                     } @else if (param.name === 'model' && nodeType?.credentials?.length) {
@@ -513,6 +515,7 @@
                   [credentialTypes]="activeCredentialTypes"
                   [currentCredentials]="node.credentials || {}"
                   [readOnly]="readOnly"
+                  [projectId]="projectId"
                   (credentialChanged)="credentialChanged.emit($event)" />
               }
             }
@@ -550,6 +553,7 @@
                           [param]="param"
                           [value]="getParameterValue(param.name, param.defaultValue)"
                           [readOnly]="readOnly"
+                          [projectId]="projectId"
                           [cacheSource]="node.parameters['cacheSource'] ?? 'inline'"
                           (valueChange)="onParameterChange(param.name, $event)" />
                       } @else {

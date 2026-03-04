@@ -109,6 +109,7 @@
           <app-parameter-panel
             [node]="activeSelectedNode"
             [workflowId]="store.workflow()?.id || ''"
+            [projectId]="store.workflow()?.projectId || ''"
             [projectContextPath]="projectContextPath"
             [nodeType]="nodeTypeStore.getByType(activeSelectedNode.type)"
             [allNodes]="activeTab === 'executions' && executionWorkflow ? executionWorkflow.nodes : store.nodes()"

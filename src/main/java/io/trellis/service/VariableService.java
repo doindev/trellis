@@ -66,6 +66,25 @@ public class VariableService {
                 .collect(Collectors.toMap(VariableEntity::getKey, VariableEntity::getValue));
     }
 
+    /**
+     * Returns variables for a project: project-specific vars override global vars
+     * when keys collide (project vars take precedence).
+     */
+    public Map<String, String> getVariablesForProject(String projectId) {
+        Map<String, String> result = new java.util.LinkedHashMap<>();
+        // Start with global variables
+        for (VariableEntity v : variableRepository.findByProjectIdIsNull()) {
+            result.put(v.getKey(), v.getValue());
+        }
+        // Project-specific variables override globals
+        if (projectId != null) {
+            for (VariableEntity v : variableRepository.findByProjectId(projectId)) {
+                result.put(v.getKey(), v.getValue());
+            }
+        }
+        return result;
+    }
+
     private VariableEntity findById(String id) {
         return variableRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Variable not found: " + id));

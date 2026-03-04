@@ -38,8 +38,10 @@ public class CacheDefinitionController {
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Cache name is required");
         }
-        if (repository.findByName(name).isPresent()) {
-            throw new BadRequestException("A cache with name '" + name + "' already exists");
+        String projectId = (String) body.get("projectId");
+        // Check uniqueness within project scope
+        if (repository.findByNameAndProjectId(name, projectId).isPresent()) {
+            throw new BadRequestException("A cache with name '" + name + "' already exists in this project");
         }
 
         CacheDefinitionEntity entity = CacheDefinitionEntity.builder()

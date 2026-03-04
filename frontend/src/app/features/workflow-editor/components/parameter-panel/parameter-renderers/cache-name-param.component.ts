@@ -59,6 +59,7 @@ export class CacheNameParamComponent implements OnInit {
   @Input() param!: NodeParameter;
   @Input() value: any;
   @Input() readOnly = false;
+  @Input() projectId = '';
   @Input() cacheSource: string = 'select';
   @Output() valueChange = new EventEmitter<any>();
 
@@ -67,7 +68,10 @@ export class CacheNameParamComponent implements OnInit {
   constructor(private cacheService: CacheService) {}
 
   ngOnInit(): void {
-    this.cacheService.list().subscribe(caches => this.caches = caches);
+    const obs = this.projectId
+      ? this.cacheService.listByProject(this.projectId)
+      : this.cacheService.list();
+    obs.subscribe(caches => this.caches = caches);
   }
 
   get conflictWarning(): string | null {
