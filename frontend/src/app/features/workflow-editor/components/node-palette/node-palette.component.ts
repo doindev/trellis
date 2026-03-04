@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
@@ -54,6 +54,34 @@ export class NodePaletteComponent {
   /** When set, only show nodes whose outputs include this AI connection type. */
   aiOutputTypeFilter = signal<string | null>(null);
   actionPanel = signal<ActionPanel | null>(null);
+  private mouseX = 0;
+  private mouseY = 0;
+
+  @HostListener('mousemove', ['$event'])
+  onMouseMove(event: MouseEvent): void {
+    this.mouseX = event.clientX;
+    this.mouseY = event.clientY;
+  }
+
+  @HostListener('keydown', ['$event'])
+  onArrowKey(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    const el = document.elementFromPoint(this.mouseX, this.mouseY);
+    if (!el) return;
+    const scrollable = this.findScrollableParent(el);
+    if (!scrollable) return;
+    event.preventDefault();
+    scrollable.scrollBy({ top: event.key === 'ArrowDown' ? 60 : -60 });
+  }
+
+  private findScrollableParent(el: Element): Element | null {
+    let current: Element | null = el;
+    while (current) {
+      if (current.scrollHeight > current.clientHeight) return current;
+      current = current.parentElement;
+    }
+    return null;
+  }
 
   /** Human-readable labels for AI connection types. */
   private static readonly AI_TYPE_LABELS: Record<string, string> = {

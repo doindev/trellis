@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Get company settings and subscription metrics from ProfitWell",
 		category = "Finance",
 		icon = "profitWell",
-		credentials = {"profitWellApi"}
+		credentials = {"profitWellApi"},
+		searchOnly = true
 )
 public class ProfitWellNode extends AbstractApiNode {
 

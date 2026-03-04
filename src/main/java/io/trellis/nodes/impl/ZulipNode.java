@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Send messages and manage streams and users in Zulip",
 		category = "Communication / Chat & Messaging",
 		icon = "zulip",
-		credentials = {"zulipApi"}
+		credentials = {"zulipApi"},
+		searchOnly = true
 )
 public class ZulipNode extends AbstractApiNode {
 
