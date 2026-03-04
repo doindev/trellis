@@ -44,7 +44,7 @@ export interface FixedCollectionExpressionEvent {
           }
           @if (param.nestedParameters) {
             @for (nested of param.nestedParameters; track nested.name) {
-              <div class="row-field">
+              <div class="row-field" [class.row-field-options]="nested.type === 'options' && nested.options">
                 <label class="nested-label">{{ nested.displayName }}</label>
                 @if (nested.type === 'options' && nested.options) {
                   <select class="form-select param-input"
@@ -144,7 +144,8 @@ export interface FixedCollectionExpressionEvent {
     .drag-handle:active {
       cursor: grabbing;
     }
-    .row-field { flex: 1; min-width: 0; }
+    .row-field { flex: 2; min-width: 0; }
+    .row-field-options { flex: 1; }
     .nested-label { display: block; font-size: 0.6875rem; color: hsl(0,0%,58%); margin-bottom: 3px; }
     .text-input-wrapper {
       position: relative;
@@ -158,30 +159,25 @@ export interface FixedCollectionExpressionEvent {
     .param-input option { background: hsl(0,0%,13%); }
     .expr-editor-btn {
       position: absolute;
-      right: 3px;
+      right: 4px;
       top: 50%;
       transform: translateY(-50%);
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       background: transparent;
       border: none;
       border-radius: 4px;
-      color: hsl(0,0%,38%);
+      color: hsl(30,80%,50%);
       cursor: pointer;
       opacity: 0.6;
       transition: all 0.15s;
     }
-    .has-expression .expr-editor-btn {
-      color: hsl(30,80%,50%);
-      opacity: 0.8;
-    }
     .expr-editor-btn:hover {
       opacity: 1;
       background: hsla(30,80%,50%,0.15);
-      color: hsl(30,80%,50%);
     }
     .btn-row-delete {
       flex-shrink: 0;
@@ -323,7 +319,7 @@ export class FixedCollectionParamComponent implements OnDestroy {
     event.preventDefault();
     event.stopPropagation();
     const data = event.dataTransfer?.getData('text/plain');
-    if (!data || !data.includes('$json.')) return;
+    if (!data || (!data.includes('$json.') && !data.includes('$node['))) return;
 
     const currentVal = String(this.items[index]?.[fieldName] ?? '');
     const input = event.target as HTMLInputElement;

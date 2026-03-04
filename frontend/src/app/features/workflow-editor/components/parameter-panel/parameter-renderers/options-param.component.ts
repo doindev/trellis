@@ -185,7 +185,7 @@ export class OptionsParamComponent {
   onDrop(event: DragEvent): void {
     event.preventDefault();
     const data = event.dataTransfer?.getData('text/plain');
-    if (!data || !data.includes('$json.')) return;
+    if (!data || (!data.includes('$json.') && !data.includes('$node['))) return;
     const input = event.target as HTMLInputElement;
     const currentVal = String(this.value ?? '');
     const pos = input?.selectionStart ?? currentVal.length;

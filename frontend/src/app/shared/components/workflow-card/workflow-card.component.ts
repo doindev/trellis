@@ -38,6 +38,14 @@ export class WorkflowCardComponent {
     return this.workflow.published && (this.workflow.nodes || []).some(n => n.type === 'webhook');
   }
 
+  get isMcpEnabled(): boolean {
+    return !!this.workflow.mcpEnabled || (this.workflow.tags || []).some(t => t.name === 'mcp');
+  }
+
+  get isSwaggerEnabled(): boolean {
+    return !!this.workflow.swaggerEnabled || (this.workflow.tags || []).some(t => t.name === 'swagger');
+  }
+
   get timeAgo(): string {
     const date = this.workflow.updatedAt || this.workflow.createdAt;
     if (!date) return '';

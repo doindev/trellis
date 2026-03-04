@@ -189,7 +189,7 @@ export class StringParamComponent {
   onDrop(event: DragEvent): void {
     event.preventDefault();
     const data = event.dataTransfer?.getData('text/plain');
-    if (!data || !data.includes('$json.')) return;
+    if (!data || (!data.includes('$json.') && !data.includes('$node['))) return;
 
     const input = event.target as HTMLInputElement | HTMLTextAreaElement;
     const currentVal = String(this.value ?? '');

@@ -409,14 +409,16 @@ export class HomeComponent implements OnInit {
 
   onEnableMcp(workflow: Workflow): void {
     if (!workflow.id) return;
-    this.settingsService.updateMcpWorkflow(workflow.id, { mcpEnabled: true } as any).subscribe({
+    const enabled = !!workflow.mcpEnabled || (workflow.tags || []).some(t => t.name === 'mcp');
+    this.settingsService.updateMcpWorkflow(workflow.id, { mcpEnabled: !enabled } as any).subscribe({
       next: () => this.loadWorkflows()
     });
   }
 
   onEnableSwagger(workflow: Workflow): void {
     if (!workflow.id) return;
-    this.settingsService.updateSwaggerWorkflow(workflow.id, { swaggerEnabled: true } as any).subscribe({
+    const enabled = !!workflow.swaggerEnabled || (workflow.tags || []).some(t => t.name === 'swagger');
+    this.settingsService.updateSwaggerWorkflow(workflow.id, { swaggerEnabled: !enabled } as any).subscribe({
       next: () => this.loadWorkflows()
     });
   }

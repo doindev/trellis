@@ -108,7 +108,7 @@
           <path d="M2 17l10 5 10-5"/>
           <path d="M2 12l10 5 10-5"/>
         </svg>
-        Enable MCP access
+        {{ isMcpEnabled ? 'Disable' : 'Enable' }} MCP access
       </button>
     } @else {
       <button class="dropdown-item disabled" disabled>
@@ -127,7 +127,7 @@
           <polyline points="14 2 14 8 20 8"/>
           <path d="m5 17-3 3 3 3"/><path d="m9 17 3 3-3 3"/>
         </svg>
-        Enable Swagger access
+        {{ isSwaggerEnabled ? 'Disable' : 'Enable' }} Swagger access
       </button>
     } @else {
       <button class="dropdown-item disabled" disabled>
