@@ -147,17 +147,24 @@ export class NodePaletteComponent {
   }
 
   expandedCategories = new Set<string>();
+  collapsedCategories = new Set<string>();
 
   toggleCategory(category: string): void {
-    if (this.expandedCategories.has(category)) {
+    if (this.isCategoryExpanded(category)) {
       this.expandedCategories.delete(category);
+      this.collapsedCategories.add(category);
     } else {
       this.expandedCategories.add(category);
+      this.collapsedCategories.delete(category);
     }
   }
 
   isCategoryExpanded(category: string): boolean {
-    return this.expandedCategories.has(category) || this.searchTerm().length > 0 || this.triggerOnly() || !!this.aiOutputTypeFilter();
+    const autoExpand = this.searchTerm().length > 0 || this.triggerOnly() || !!this.aiOutputTypeFilter();
+    if (autoExpand) {
+      return !this.collapsedCategories.has(category);
+    }
+    return this.expandedCategories.has(category);
   }
 
   /** Check if a node has any action-bearing parameters (for showing the chevron). */
