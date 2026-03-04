@@ -1,4 +1,4 @@
-<div class="workflow-card" (click)="onCardClick()">
+<div class="workflow-card">
   <div class="card-left">
     <div class="card-icon">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
@@ -10,7 +10,7 @@
     </div>
     <div class="card-info">
       <div class="card-name-row">
-        <span class="card-name">{{ workflow.name }}</span>
+        <span class="card-name" (click)="onCardClick()">{{ workflow.name }}</span>
         @if (workflow.tags && workflow.tags.length > 0) {
           @for (tag of workflow.tags; track tag.id) {
             <span class="card-tag" [class.tag-mcp]="tag.name === 'mcp'" [class.tag-swagger]="tag.name === 'swagger'">{{ tag.name }}</span>
