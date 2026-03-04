@@ -38,11 +38,22 @@ export class ProjectSettingsComponent {
   transferProjectId = '';
 
   saving = false;
+  saveError = '';
 
   constructor(private projectService: ProjectService) {}
 
   open(): void {
     this.visible.set(true);
+    this.saveError = '';
+    // Populate form immediately from cached project data so it's
+    // never stale between save and the next GET response
+    const p = this.project();
+    if (p) {
+      this.name = p.name;
+      this.description = p.description || '';
+      this.contextPath = p.contextPath || '';
+      this.iconEmoji = p.icon?.value || '';
+    }
     this.loadProject();
     this.loadMembers();
     this.loadProjects();
@@ -79,6 +90,7 @@ export class ProjectSettingsComponent {
 
   saveGeneral(): void {
     this.saving = true;
+    this.saveError = '';
     const icon = this.iconEmoji ? { type: 'emoji', value: this.iconEmoji } : undefined;
     this.projectService.update(this.projectId, {
       name: this.name,
@@ -88,10 +100,17 @@ export class ProjectSettingsComponent {
     }).subscribe({
       next: (updated) => {
         this.project.set(updated);
+        this.name = updated.name;
+        this.description = updated.description || '';
+        this.contextPath = updated.contextPath || '';
+        this.iconEmoji = updated.icon?.value || '';
         this.saving = false;
         this.saved.emit(updated);
       },
-      error: () => this.saving = false
+      error: (err) => {
+        this.saving = false;
+        this.saveError = err.message || 'Failed to save project settings';
+      }
     });
   }
 

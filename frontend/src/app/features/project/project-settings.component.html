@@ -34,6 +34,10 @@
                 <input id="projectIcon" class="form-input form-input-small" type="text" [(ngModel)]="iconEmoji" [disabled]="isReadOnly()" placeholder="e.g. &#x1F4C1;">
               </div>
 
+              @if (saveError) {
+                <div class="save-error">{{ saveError }}</div>
+              }
+
               @if (!isReadOnly()) {
                 <button class="btn-save" (click)="saveGeneral()" [disabled]="saving">
                   {{ saving ? 'Saving...' : 'Save' }}
