@@ -164,6 +164,9 @@ export class HomeComponent implements OnInit {
   showDeleteConfirm = signal(false);
   credDeleteTarget = signal<Credential | null>(null);
   showCredDeleteConfirm = signal(false);
+  showCredUnshareConfirm = signal(false);
+  showCredShareError = signal(false);
+  credShareErrorMessage = signal('');
 
   // Move
   moveTarget = signal<Workflow | null>(null);
@@ -581,7 +584,26 @@ export class HomeComponent implements OnInit {
     event.stopPropagation();
     this.credActionsOpenId.set(null);
     this.credDeleteTarget.set(cred);
-    this.showCredDeleteConfirm.set(true);
+
+    const currentProjectId = this.selectedProjectId();
+    const isOwner = !cred.projectId || cred.projectId === currentProjectId;
+
+    if (!isOwner) {
+      // Shared credential — offer to remove the share instead
+      this.showCredUnshareConfirm.set(true);
+    } else if (cred.sharedWithProjectIds?.length) {
+      // Owner but credential is shared — block deletion and show error
+      const projectNames = cred.sharedWithProjectIds
+        .map(id => this.allProjects().find(p => p.id === id)?.name || id)
+        .join(', ');
+      this.credShareErrorMessage.set(
+        `Cannot delete '${cred.name}' because it is shared with: ${projectNames}. Revoke sharing access first.`
+      );
+      this.showCredShareError.set(true);
+    } else {
+      // Owner, no shares — normal delete
+      this.showCredDeleteConfirm.set(true);
+    }
   }
 
   onCredDeleteConfirmed(): void {
@@ -597,9 +619,29 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  onCredUnshareConfirmed(): void {
+    const target = this.credDeleteTarget();
+    const currentProjectId = this.selectedProjectId();
+    if (target?.id && currentProjectId) {
+      this.credentialService.unshareCredential(target.id, currentProjectId).subscribe({
+        next: () => {
+          this.credentials.update(cs => cs.filter(c => c.id !== target.id));
+          this.showCredUnshareConfirm.set(false);
+          this.credDeleteTarget.set(null);
+        }
+      });
+    }
+  }
+
   onCredDeleteCancelled(): void {
     this.showCredDeleteConfirm.set(false);
+    this.showCredUnshareConfirm.set(false);
+    this.showCredShareError.set(false);
     this.credDeleteTarget.set(null);
+  }
+
+  isSharedCredential(cred: Credential): boolean {
+    return !!cred.projectId && cred.projectId !== this.selectedProjectId();
   }
 
   credTimeAgo(cred: Credential): string {

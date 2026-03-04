@@ -110,6 +110,12 @@ public class CredentialService {
     @Transactional
     public void deleteCredential(String id) {
         CredentialEntity entity = findById(id);
+        List<String> shares = getShareTargetIds(id);
+        if (!shares.isEmpty()) {
+            throw new BadRequestException(
+                "Cannot delete credential '" + entity.getName()
+                + "' because it is shared with other projects. Revoke all shares first.");
+        }
         credentialRepository.delete(entity);
     }
 

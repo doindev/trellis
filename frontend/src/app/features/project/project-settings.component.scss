@@ -76,12 +76,13 @@
   background: hsl(0, 0%, 9%);
   border: 1px solid var(--trellis-border);
   border-radius: 6px;
-  color: var(--trellis-text-primary);
+  color: hsl(0, 0%, 96%);
   font-size: 0.8125rem;
   outline: none;
+  color-scheme: dark;
 
   &::placeholder { color: hsl(0, 0%, 40%); }
-  &:focus { border-color: var(--bs-primary); }
+  &:focus { border-color: var(--bs-primary); background: hsl(0, 0%, 9%); color: hsl(0, 0%, 96%); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
@@ -95,14 +96,15 @@
   background: hsl(0, 0%, 9%);
   border: 1px solid var(--trellis-border);
   border-radius: 6px;
-  color: var(--trellis-text-primary);
+  color: hsl(0, 0%, 96%);
   font-size: 0.8125rem;
   outline: none;
   resize: vertical;
   font-family: inherit;
+  color-scheme: dark;
 
   &::placeholder { color: hsl(0, 0%, 40%); }
-  &:focus { border-color: var(--bs-primary); }
+  &:focus { border-color: var(--bs-primary); background: hsl(0, 0%, 9%); color: hsl(0, 0%, 96%); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 

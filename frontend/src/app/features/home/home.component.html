@@ -267,11 +267,18 @@
                       @if (credActionsOpenId() === cred.id) {
                         <div class="cred-actions-dropdown">
                           <button class="cred-dropdown-item danger" (click)="confirmCredDelete(cred, $event)">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                              <polyline points="3 6 5 6 21 6"/>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            </svg>
-                            Delete
+                            @if (isSharedCredential(cred)) {
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                              </svg>
+                              Remove
+                            } @else {
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                              Delete
+                            }
                           </button>
                         </div>
                       }
@@ -465,6 +472,24 @@
   confirmText="Delete"
   confirmBtnClass="btn btn-danger"
   (confirmed)="onCredDeleteConfirmed()"
+  (cancelled)="onCredDeleteCancelled()" />
+
+<app-confirm-dialog
+  [isOpen]="showCredUnshareConfirm()"
+  title="Remove Shared Credential"
+  [message]="'Remove \'' + (credDeleteTarget()?.name || '') + '\' from this project? The credential will no longer be available to workflows in this project.'"
+  confirmText="Remove"
+  confirmBtnClass="btn btn-danger"
+  (confirmed)="onCredUnshareConfirmed()"
+  (cancelled)="onCredDeleteCancelled()" />
+
+<app-confirm-dialog
+  [isOpen]="showCredShareError()"
+  title="Cannot Delete Credential"
+  [message]="credShareErrorMessage()"
+  confirmText="OK"
+  confirmBtnClass="btn btn-primary"
+  (confirmed)="onCredDeleteCancelled()"
   (cancelled)="onCredDeleteCancelled()" />
 
 <app-workflow-move-modal

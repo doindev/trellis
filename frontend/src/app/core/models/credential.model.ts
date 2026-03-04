@@ -4,6 +4,7 @@ export interface Credential {
   type: string;
   data?: Record<string, any>;
   projectId?: string;
+  sharedWithProjectIds?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
