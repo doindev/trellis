@@ -380,15 +380,15 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     return results;
   }
 
-  /** All ancestor nodes via BFS traversal, closest first */
-  getAncestorNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription }[] {
-    const results: { node: WorkflowNode; nodeType?: NodeTypeDescription }[] = [];
+  /** All ancestor nodes via BFS traversal, closest first, with depth */
+  getAncestorNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription; depth: number }[] {
+    const results: { node: WorkflowNode; nodeType?: NodeTypeDescription; depth: number }[] = [];
     const visited = new Set<string>();
-    const queue: string[] = [this.node.id];
+    const queue: { id: string; depth: number }[] = [{ id: this.node.id, depth: 0 }];
     visited.add(this.node.id);
 
     while (queue.length > 0) {
-      const currentId = queue.shift()!;
+      const { id: currentId, depth } = queue.shift()!;
       // Find all source nodes that connect into currentId
       for (const [sourceId, conn] of Object.entries(this.connections)) {
         if (!conn?.main) continue;
@@ -399,8 +399,8 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
               visited.add(sourceId);
               const n = this.allNodes.find(nd => nd.id === sourceId);
               if (n) {
-                results.push({ node: n, nodeType: this.nodeTypeMap.get(n.type) });
-                queue.push(sourceId);
+                results.push({ node: n, nodeType: this.nodeTypeMap.get(n.type), depth: depth + 1 });
+                queue.push({ id: sourceId, depth: depth + 1 });
               }
             }
           }
@@ -1326,7 +1326,8 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     this.expressionEditorAncestorNodes = ancestors.map(a => ({
       id: a.node.id,
       name: a.node.name,
-      isDirectParent: directParentIds.has(a.node.id)
+      isDirectParent: directParentIds.has(a.node.id),
+      depth: a.depth
     }));
     this.expressionEditorNodeDataMap = {};
     this.expressionEditorNodeOutputs = {};

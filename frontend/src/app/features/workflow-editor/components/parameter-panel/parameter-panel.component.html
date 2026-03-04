@@ -175,7 +175,7 @@
                         (ngModelChange)="selectedInputNodeId = $event">
                   @for (anc of getAncestorNodes(); track anc.node.id) {
                     <option [ngValue]="anc.node.id">
-                      {{ anc.node.name }}
+                      {{ anc.node.name }} - {{ anc.depth }} {{ anc.depth === 1 ? 'node' : 'nodes' }} back
                     </option>
                   }
                 </select>

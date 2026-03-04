@@ -12,6 +12,7 @@ export interface ExpressionAncestorNode {
   id: string;
   name: string;
   isDirectParent: boolean;
+  depth: number;
 }
 
 @Component({
@@ -43,7 +44,7 @@ export interface ExpressionAncestorNode {
                         [ngModel]="selectedAncestorId"
                         (ngModelChange)="selectedAncestorId = $event">
                   @for (anc of ancestorNodes; track anc.id) {
-                    <option [ngValue]="anc.id">{{ anc.name }}</option>
+                    <option [ngValue]="anc.id">{{ anc.name }} - {{ anc.depth }} {{ anc.depth === 1 ? 'node' : 'nodes' }} back</option>
                   }
                 </select>
               </div>
