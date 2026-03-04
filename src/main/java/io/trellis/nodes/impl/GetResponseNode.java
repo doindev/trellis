@@ -22,7 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage contacts in GetResponse",
 	category = "Marketing",
 	icon = "getResponse",
-	credentials = {"getResponseApi"}
+	credentials = {"getResponseApi"},
+	searchOnly = true
 )
 public class GetResponseNode extends AbstractApiNode {
 

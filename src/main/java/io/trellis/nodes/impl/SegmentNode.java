@@ -19,7 +19,8 @@ import java.util.*;
 		description = "Send analytics data to Segment",
 		category = "Marketing",
 		icon = "segment",
-		credentials = {"segmentApi"}
+		credentials = {"segmentApi"},
+		searchOnly = true
 )
 public class SegmentNode extends AbstractApiNode {
 

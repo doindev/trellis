@@ -22,7 +22,9 @@ import java.util.*;
 		category = "Marketing",
 		icon = "mailchimp",
 		trigger = true,
-		credentials = {"mailchimpOAuth2Api"}
+		credentials = {"mailchimpOAuth2Api"},
+		searchOnly = true,
+		other = true
 )
 public class MailchimpTriggerNode extends AbstractApiNode {
 

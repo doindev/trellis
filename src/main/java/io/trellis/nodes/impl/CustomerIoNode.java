@@ -22,7 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Track customers and events in Customer.io",
 	category = "Marketing",
 	icon = "customerIo",
-	credentials = {"customerIoApi"}
+	credentials = {"customerIoApi"},
+	searchOnly = true
 )
 public class CustomerIoNode extends AbstractApiNode {
 

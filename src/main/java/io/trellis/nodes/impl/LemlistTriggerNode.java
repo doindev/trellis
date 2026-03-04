@@ -18,7 +18,9 @@ import java.util.*;
 		category = "Marketing",
 		icon = "lemlist",
 		trigger = true,
-		credentials = {"lemlistApi"}
+		credentials = {"lemlistApi"},
+		searchOnly = true,
+		other = true
 )
 public class LemlistTriggerNode extends AbstractApiNode {
 

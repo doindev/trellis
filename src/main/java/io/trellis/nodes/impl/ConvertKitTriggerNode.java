@@ -19,7 +19,9 @@ import java.util.*;
 		category = "Marketing",
 		icon = "convertKit",
 		credentials = {"convertKitApi"},
-		trigger = true
+		trigger = true,
+		searchOnly = true,
+		other = true
 )
 public class ConvertKitTriggerNode extends AbstractApiNode {
 

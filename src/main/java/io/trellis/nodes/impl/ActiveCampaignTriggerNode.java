@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 	icon = "activeCampaign",
 	credentials = {"activeCampaignApi"},
 	trigger = true,
+	searchOnly = true,
 	other = true
 )
 public class ActiveCampaignTriggerNode extends AbstractApiNode {

@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage email outreach with Lemlist",
 		category = "Marketing",
 		icon = "lemlist",
-		credentials = {"lemlistApi"}
+		credentials = {"lemlistApi"},
+		searchOnly = true
 )
 public class LemlistNode extends AbstractApiNode {
 

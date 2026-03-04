@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage subscribers and campaigns in ConvertKit",
 		category = "Marketing",
 		icon = "convertKit",
-		credentials = {"convertKitApi"}
+		credentials = {"convertKitApi"},
+		searchOnly = true
 )
 public class ConvertKitNode extends AbstractApiNode {
 

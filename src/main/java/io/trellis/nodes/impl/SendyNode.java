@@ -28,7 +28,8 @@ import java.util.Map;
 		description = "Manage subscribers and campaigns via Sendy",
 		category = "Marketing",
 		icon = "envelope",
-		credentials = {"sendyApi"}
+		credentials = {"sendyApi"},
+		searchOnly = true
 )
 public class SendyNode extends AbstractApiNode {
 

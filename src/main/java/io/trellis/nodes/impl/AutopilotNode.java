@@ -19,8 +19,7 @@ import java.util.*;
 		category = "Marketing",
 		icon = "autopilot",
 		credentials = {"autopilotApi"},
-		searchOnly = true,
-		other = true
+		searchOnly = true
 )
 public class AutopilotNode extends AbstractApiNode {
 

@@ -19,7 +19,9 @@ import java.util.*;
 		category = "Marketing",
 		icon = "mailerLite",
 		credentials = {"mailerLiteApi"},
-		trigger = true
+		trigger = true,
+		searchOnly = true,
+		other = true
 )
 public class MailerLiteTriggerNode extends AbstractApiNode {
 

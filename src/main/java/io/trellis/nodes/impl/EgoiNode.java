@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage contacts in E-goi",
 		category = "Marketing",
 		icon = "egoi",
-		credentials = {"egoiApi"}
+		credentials = {"egoiApi"},
+		searchOnly = true
 )
 public class EgoiNode extends AbstractApiNode {
 

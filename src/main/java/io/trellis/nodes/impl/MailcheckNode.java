@@ -20,7 +20,8 @@ import java.util.Map;
 		description = "Validate email addresses via Mailcheck",
 		category = "Marketing",
 		icon = "envelope",
-		credentials = {"mailcheckApi"}
+		credentials = {"mailcheckApi"},
+		searchOnly = true
 )
 public class MailcheckNode extends AbstractApiNode {
 

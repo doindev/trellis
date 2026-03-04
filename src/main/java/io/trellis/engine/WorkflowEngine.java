@@ -1282,7 +1282,6 @@ public class WorkflowEngine {
      * Wraps node execution with cache lookup/store logic for CacheableNode instances.
      * If caching is not enabled or the node is not a CacheableNode, delegates directly.
      */
-    @SuppressWarnings("unchecked")
     private NodeExecutionResult executeWithCaching(
             NodeInterface nodeInstance, NodeExecutionContext context,
             Map<String, Object> nodeParameters) {

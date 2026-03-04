@@ -18,7 +18,9 @@ import java.util.*;
 		category = "Marketing",
 		icon = "emelia",
 		trigger = true,
-		credentials = {"emeliaApi"}
+		credentials = {"emeliaApi"},
+		searchOnly = true,
+		other = true
 )
 public class EmeliaTriggerNode extends AbstractApiNode {
 

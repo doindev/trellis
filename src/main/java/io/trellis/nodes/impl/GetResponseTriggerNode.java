@@ -24,7 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 	category = "Marketing",
 	icon = "getResponse",
 	credentials = {"getResponseApi"},
-	trigger = true
+	trigger = true,
+	searchOnly = true,
+	other = true
 )
 public class GetResponseTriggerNode extends AbstractApiNode {
 

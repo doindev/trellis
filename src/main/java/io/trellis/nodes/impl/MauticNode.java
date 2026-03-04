@@ -19,7 +19,8 @@ import java.util.*;
 		description = "Manage contacts, campaigns, and emails in Mautic",
 		category = "Marketing",
 		icon = "mautic",
-		credentials = {"mauticApi"}
+		credentials = {"mauticApi"},
+		searchOnly = true
 )
 public class MauticNode extends AbstractApiNode {
 

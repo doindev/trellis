@@ -24,7 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 	category = "Marketing",
 	icon = "customerIo",
 	credentials = {"customerIoApi"},
-	trigger = true
+	trigger = true,
+	searchOnly = true,
+	other = true
 )
 public class CustomerIoTriggerNode extends AbstractApiNode {
 

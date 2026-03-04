@@ -22,7 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Interact with the ActiveCampaign API for marketing automation",
 	category = "Marketing",
 	icon = "activeCampaign",
-	credentials = {"activeCampaignApi"}
+	credentials = {"activeCampaignApi"},
+	searchOnly = true
 )
 public class ActiveCampaignNode extends AbstractApiNode {
 

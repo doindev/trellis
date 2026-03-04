@@ -22,7 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage Mailchimp audiences and campaigns",
 	category = "Marketing",
 	icon = "mailchimp",
-	credentials = {"mailchimpApi"}
+	credentials = {"mailchimpApi"},
+	searchOnly = true
 )
 public class MailchimpNode extends AbstractApiNode {
 

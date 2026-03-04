@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage campaigns and contact lists with Emelia",
 		category = "Marketing",
 		icon = "emelia",
-		credentials = {"emeliaApi"}
+		credentials = {"emeliaApi"},
+		searchOnly = true
 )
 public class EmeliaNode extends AbstractApiNode {
 

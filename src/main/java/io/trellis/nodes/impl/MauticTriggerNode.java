@@ -21,7 +21,9 @@ import java.util.*;
 		category = "Marketing",
 		icon = "mautic",
 		trigger = true,
-		credentials = {"mauticApi"}
+		credentials = {"mauticApi"},
+		searchOnly = true,
+		other = true
 )
 public class MauticTriggerNode extends AbstractApiNode {
 

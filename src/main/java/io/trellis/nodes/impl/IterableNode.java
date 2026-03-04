@@ -22,7 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Manage users and events in Iterable",
 	category = "Marketing",
 	icon = "iterable",
-	credentials = {"iterableApi"}
+	credentials = {"iterableApi"},
+	searchOnly = true
 )
 public class IterableNode extends AbstractApiNode {
 

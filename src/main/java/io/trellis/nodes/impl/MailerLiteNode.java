@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Manage subscribers in MailerLite",
 		category = "Marketing",
 		icon = "mailerLite",
-		credentials = {"mailerLiteApi"}
+		credentials = {"mailerLiteApi"},
+		searchOnly = true
 )
 public class MailerLiteNode extends AbstractApiNode {
 
