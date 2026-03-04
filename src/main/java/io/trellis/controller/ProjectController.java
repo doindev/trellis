@@ -2,6 +2,7 @@ package io.trellis.controller;
 
 import io.trellis.config.ProjectContextPathFilter;
 import io.trellis.dto.*;
+import io.trellis.service.ClusterSyncService;
 import io.trellis.service.ProjectService;
 import io.trellis.service.TrellisMcpServerManager;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ public class ProjectController {
     private final ProjectService projectService;
     private final ProjectContextPathFilter contextPathFilter;
     private final TrellisMcpServerManager mcpServerManager;
+    private final ClusterSyncService clusterSyncService;
 
     @GetMapping
     public List<ProjectResponse> list() {
@@ -34,6 +36,7 @@ public class ProjectController {
     public ProjectResponse create(@RequestBody ProjectCreateRequest request) {
         ProjectResponse response = projectService.createProject(request);
         contextPathFilter.refreshCache();
+        clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_CONTEXT_PATHS);
         return response;
     }
 
@@ -41,6 +44,8 @@ public class ProjectController {
     public ProjectResponse update(@PathVariable String id, @RequestBody ProjectUpdateRequest request) {
         ProjectResponse response = projectService.updateProject(id, request);
         contextPathFilter.refreshCache();
+        clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_CONTEXT_PATHS);
+        clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_WEBHOOKS);
         if (mcpServerManager.isRunning()) {
             mcpServerManager.refreshTools();
         }
@@ -52,6 +57,8 @@ public class ProjectController {
     public void delete(@PathVariable String id, @RequestBody(required = false) ProjectDeleteRequest request) {
         projectService.deleteProject(id, request);
         contextPathFilter.refreshCache();
+        clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_CONTEXT_PATHS);
+        clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_WEBHOOKS);
     }
 
     @GetMapping("/{id}/members")

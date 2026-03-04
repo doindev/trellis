@@ -68,4 +68,9 @@ public class WebhookSecurityRegistry {
         String key = method.toUpperCase() + ":" + path;
         return reverseIndex.getOrDefault(key, "none");
     }
+
+    public synchronized void clearAll() {
+        chainPatterns.clear();
+        reverseIndex.clear();
+    }
 }

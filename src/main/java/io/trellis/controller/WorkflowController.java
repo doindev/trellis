@@ -1,6 +1,8 @@
 package io.trellis.controller;
 
 import io.trellis.dto.*;
+import io.trellis.service.ClusterSyncService;
+import io.trellis.service.TrellisMcpServerManager;
 import io.trellis.service.WorkflowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,6 +17,8 @@ import java.util.List;
 public class WorkflowController {
 
     private final WorkflowService workflowService;
+    private final ClusterSyncService clusterSyncService;
+    private final TrellisMcpServerManager mcpServerManager;
 
     @GetMapping
     public List<WorkflowResponse> list(@RequestParam(required = false) String projectId) {
@@ -37,23 +41,37 @@ public class WorkflowController {
 
     @PutMapping("/{id}")
     public WorkflowResponse update(@PathVariable String id, @RequestBody WorkflowUpdateRequest request) {
-        return workflowService.updateWorkflow(id, request);
+        WorkflowResponse response = workflowService.updateWorkflow(id, request);
+        if (mcpServerManager.isRunning() && (request.getMcpEnabled() != null
+                || request.getMcpDescription() != null
+                || request.getMcpInputSchema() != null
+                || request.getMcpOutputSchema() != null
+                || request.getName() != null
+                || request.getDescription() != null)) {
+            mcpServerManager.refreshTools();
+        }
+        return response;
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String id) {
         workflowService.deleteWorkflow(id);
+        notifyWorkflowChanged();
     }
 
     @PostMapping("/{id}/publish")
     public WorkflowResponse publish(@PathVariable String id, @RequestBody PublishWorkflowRequest request) {
-        return workflowService.publishWorkflow(id, request);
+        WorkflowResponse response = workflowService.publishWorkflow(id, request);
+        notifyWorkflowChanged();
+        return response;
     }
 
     @PostMapping("/{id}/unpublish")
     public WorkflowResponse unpublish(@PathVariable String id) {
-        return workflowService.unpublishWorkflow(id);
+        WorkflowResponse response = workflowService.unpublishWorkflow(id);
+        notifyWorkflowChanged();
+        return response;
     }
 
     @PostMapping("/{id}/duplicate")
@@ -64,7 +82,9 @@ public class WorkflowController {
 
     @PostMapping("/{id}/archive")
     public WorkflowResponse archive(@PathVariable String id) {
-        return workflowService.archiveWorkflow(id);
+        WorkflowResponse response = workflowService.archiveWorkflow(id);
+        notifyWorkflowChanged();
+        return response;
     }
 
     @GetMapping("/{id}/versions")
@@ -83,7 +103,9 @@ public class WorkflowController {
 
     @PostMapping("/{id}/versions/{versionId}/publish")
     public WorkflowResponse publishFromVersion(@PathVariable String id, @PathVariable String versionId) {
-        return workflowService.publishFromVersion(id, versionId);
+        WorkflowResponse response = workflowService.publishFromVersion(id, versionId);
+        notifyWorkflowChanged();
+        return response;
     }
 
     @PostMapping("/{id}/versions/{versionId}/clone")
@@ -123,5 +145,12 @@ public class WorkflowController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeShare(@PathVariable String id, @PathVariable String shareId) {
         workflowService.removeShare(id, shareId);
+    }
+
+    private void notifyWorkflowChanged() {
+        clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_WEBHOOKS);
+        if (mcpServerManager.isRunning()) {
+            mcpServerManager.refreshTools();
+        }
     }
 }

@@ -117,22 +117,27 @@ public class TrellisMcpServerManager {
         boolean changed = !newHash.equals(currentToolsHash);
         currentToolsHash = newHash;
 
-        // Persist hash so other cluster instances can detect the change
-        settingsRepository.findFirstByOrderByCreatedAtAsc().ifPresent(settings -> {
-            settings.setToolsHash(newHash);
-            settingsRepository.save(settings);
-        });
+        if (changed) {
+            // Persist hash so other cluster instances can detect the change
+            settingsRepository.findFirstByOrderByCreatedAtAsc().ifPresent(settings -> {
+                if (!newHash.equals(settings.getToolsHash())) {
+                    settings.setToolsHash(newHash);
+                    settingsRepository.save(settings);
+                }
+            });
 
-        if (changed && running) {
-            notifyToolsChanged();
+            if (running) {
+                notifyToolsChanged();
+            }
+
+            log.info("Refreshed MCP tools: {}", tools.keySet());
         }
-
-        log.info("Refreshed MCP tools: {}", tools.keySet());
     }
 
     /**
-     * Polls the database for tool configuration changes made by other cluster instances.
-     * Compares the persisted tools hash against the local hash and refreshes if different.
+     * Polls for MCP tool configuration changes. Detects both:
+     * - Changes made by other cluster instances (via DB hash comparison)
+     * - Local changes from workflow publish/unpublish (by recomputing the hash)
      */
     @Scheduled(fixedDelay = 10_000)
     public void pollForToolChanges() {
@@ -145,13 +150,10 @@ public class TrellisMcpServerManager {
                 stopAll();
                 return;
             }
-
-            String dbHash = settings.getToolsHash();
-            if (dbHash != null && !dbHash.equals(currentToolsHash)) {
-                log.info("MCP tools hash changed (db={}, local={}), refreshing", dbHash, currentToolsHash);
-                refreshTools();
-            }
         });
+
+        // Always refresh — idempotent when nothing changed (no DB write, no SSE notification)
+        refreshTools();
     }
 
     /**

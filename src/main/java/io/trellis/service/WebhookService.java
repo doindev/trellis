@@ -36,6 +36,21 @@ public class WebhookService {
 
     @PostConstruct
     public void initializeSecurityRegistry() {
+        loadSecurityRegistryFromDatabase();
+    }
+
+    /**
+     * Clears the in-memory webhook security registry and reloads all
+     * patterns from the database. Used for cluster sync when another
+     * instance changes webhook registrations.
+     */
+    public void refreshSecurityRegistry() {
+        webhookSecurityRegistry.clearAll();
+        loadSecurityRegistryFromDatabase();
+        log.info("Refreshed webhook security registry from database");
+    }
+
+    private void loadSecurityRegistryFromDatabase() {
         List<WebhookEntity> webhooks = webhookRepository.findByIsTest(false);
         for (WebhookEntity webhook : webhooks) {
             String chain = webhook.getSecurityChain();
@@ -43,7 +58,7 @@ public class WebhookService {
                 webhookSecurityRegistry.register(chain, webhook.getMethod(), webhook.getPath());
             }
         }
-        log.info("Initialized webhook security registry with {} entries",
+        log.info("Loaded webhook security registry with {} entries",
                 webhooks.stream().filter(w -> w.getSecurityChain() != null && !"none".equals(w.getSecurityChain())).count());
     }
 
