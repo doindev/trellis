@@ -18,7 +18,7 @@ import java.util.*;
 		description = "Enrich and verify contact information",
 		category = "Miscellaneous",
 		icon = "dropcontact",
-		credentials = {"dropcontactApi"}
+		credentials = {"dropcontactApi"},
 		searchOnly = true
 )
 public class DropcontactNode extends AbstractApiNode {
