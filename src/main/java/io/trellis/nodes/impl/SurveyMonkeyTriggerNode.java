@@ -18,7 +18,9 @@ import java.util.*;
 		category = "Surveys & Forms",
 		icon = "surveyMonkey",
 		trigger = true,
-		credentials = {"surveyMonkeyApi"}
+		credentials = {"surveyMonkeyApi"},
+		searchOnly = true,
+		other = true
 )
 public class SurveyMonkeyTriggerNode extends AbstractApiNode {
 

@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 		description = "Manage IT service management in Freshservice",
 		category = "Customer Support",
 		icon = "freshservice",
-		credentials = {"freshserviceApi"}
+		credentials = {"freshserviceApi"},
+		searchOnly = true
 )
 public class FreshserviceNode extends AbstractApiNode {
 

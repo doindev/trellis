@@ -18,7 +18,9 @@ import java.util.*;
 		category = "Surveys & Forms",
 		icon = "typeform",
 		trigger = true,
-		credentials = {"typeformApi"}
+		credentials = {"typeformApi"},
+		searchOnly = true,
+		other = true
 )
 public class TypeformTriggerNode extends AbstractApiNode {
 

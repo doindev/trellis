@@ -3,7 +3,6 @@ package io.trellis.nodes.impl;
 import io.trellis.nodes.annotation.Node;
 import io.trellis.nodes.base.AbstractApiNode;
 import io.trellis.nodes.core.*;
-import io.trellis.nodes.core.NodeParameter.ParameterOption;
 import io.trellis.nodes.core.NodeParameter.ParameterType;
 
 import java.util.*;
@@ -18,7 +17,9 @@ import java.util.*;
 		category = "Surveys & Forms",
 		icon = "jotForm",
 		trigger = true,
-		credentials = {"jotFormApi"}
+		credentials = {"jotFormApi"},
+		searchOnly = true,
+		other = true
 )
 public class JotFormTriggerNode extends AbstractApiNode {
 

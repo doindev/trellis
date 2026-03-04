@@ -17,7 +17,9 @@ import java.util.*;
 		category = "Surveys & Forms",
 		icon = "wufoo",
 		trigger = true,
-		credentials = {"wufooApi"}
+		credentials = {"wufooApi"},
+		searchOnly = true,
+		other = true
 )
 public class WufooTriggerNode extends AbstractApiNode {
 

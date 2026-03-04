@@ -18,7 +18,9 @@ import java.util.*;
 		category = "Surveys & Forms",
 		icon = "formIo",
 		trigger = true,
-		credentials = {"formIoApi"}
+		credentials = {"formIoApi"},
+		searchOnly = true,
+		other = true
 )
 public class FormIoTriggerNode extends AbstractApiNode {
 

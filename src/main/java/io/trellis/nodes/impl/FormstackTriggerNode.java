@@ -17,7 +17,9 @@ import java.util.*;
 		category = "Surveys & Forms",
 		icon = "formstack",
 		trigger = true,
-		credentials = {"formstackApi"}
+		credentials = {"formstackApi"},
+		searchOnly = true,
+		other = true
 )
 public class FormstackTriggerNode extends AbstractApiNode {
 

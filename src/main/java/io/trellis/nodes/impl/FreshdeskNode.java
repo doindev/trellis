@@ -21,7 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 		description = "Manage tickets and contacts in Freshdesk",
 		category = "Customer Support",
 		icon = "freshdesk",
-		credentials = {"freshdeskApi"}
+		credentials = {"freshdeskApi"},
+		searchOnly = true
 )
 public class FreshdeskNode extends AbstractApiNode {
 
