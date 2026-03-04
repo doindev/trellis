@@ -37,6 +37,12 @@ public class McpSettingsEntity {
     @Column(nullable = false)
     private String agentToolsTransport = "STREAMABLE_HTTP";
 
+    /**
+     * Hash of the current MCP tool configuration (workflow names, context paths, etc.).
+     * Used by cluster instances to detect when tools need refreshing.
+     */
+    private String toolsHash;
+
     @Builder.Default
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();

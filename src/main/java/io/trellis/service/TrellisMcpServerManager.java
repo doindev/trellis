@@ -17,10 +17,13 @@ import lombok.Data;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,6 +49,7 @@ public class TrellisMcpServerManager {
     private final Map<String, ClientSessionInfo> clientSessions = new ConcurrentHashMap<>();
 
     private volatile boolean running = false;
+    private volatile String currentToolsHash = "";
 
     @PostConstruct
     public void init() {
@@ -83,6 +87,7 @@ public class TrellisMcpServerManager {
         });
 
         List<WorkflowEntity> workflows = workflowRepository.findByMcpEnabledTrue();
+        StringBuilder hashInput = new StringBuilder();
         for (WorkflowEntity wf : workflows) {
             String baseName = toSnakeCase(wf.getName());
             String contextPath = wf.getProjectId() != null ? contextPaths.get(wf.getProjectId()) : null;
@@ -99,8 +104,77 @@ public class TrellisMcpServerManager {
                     : wf.getDescription() != null ? wf.getDescription()
                     : "Execute workflow: " + wf.getName();
             tools.put(toolName, new McpToolDef(toolName, description, wf.getId(), wf.getMcpInputSchema(), wf.getMcpOutputSchema()));
+
+            // Build hash input: tool identity + description + schemas
+            hashInput.append(toolName).append('|')
+                    .append(description).append('|')
+                    .append(wf.getId()).append('|')
+                    .append(wf.getMcpInputSchema()).append('|')
+                    .append(wf.getMcpOutputSchema()).append('\n');
         }
+
+        String newHash = computeHash(hashInput.toString());
+        boolean changed = !newHash.equals(currentToolsHash);
+        currentToolsHash = newHash;
+
+        // Persist hash so other cluster instances can detect the change
+        settingsRepository.findFirstByOrderByCreatedAtAsc().ifPresent(settings -> {
+            settings.setToolsHash(newHash);
+            settingsRepository.save(settings);
+        });
+
+        if (changed && running) {
+            notifyToolsChanged();
+        }
+
         log.info("Refreshed MCP tools: {}", tools.keySet());
+    }
+
+    /**
+     * Polls the database for tool configuration changes made by other cluster instances.
+     * Compares the persisted tools hash against the local hash and refreshes if different.
+     */
+    @Scheduled(fixedDelay = 10_000)
+    public void pollForToolChanges() {
+        if (!running) return;
+
+        settingsRepository.findFirstByOrderByCreatedAtAsc().ifPresent(settings -> {
+            // Check if MCP was disabled by another instance
+            if (!settings.isEnabled()) {
+                log.info("MCP server disabled by another instance, stopping");
+                stopAll();
+                return;
+            }
+
+            String dbHash = settings.getToolsHash();
+            if (dbHash != null && !dbHash.equals(currentToolsHash)) {
+                log.info("MCP tools hash changed (db={}, local={}), refreshing", dbHash, currentToolsHash);
+                refreshTools();
+            }
+        });
+    }
+
+    /**
+     * Sends a tools/list_changed notification to all connected SSE clients
+     * so they know to re-fetch the tools list.
+     */
+    private void notifyToolsChanged() {
+        Map<String, Object> notification = new LinkedHashMap<>();
+        notification.put("jsonrpc", "2.0");
+        notification.put("method", "notifications/tools/list_changed");
+
+        List<String> deadSessions = new ArrayList<>();
+        for (Map.Entry<String, SseEmitter> entry : emitters.entrySet()) {
+            try {
+                entry.getValue().send(SseEmitter.event()
+                        .name("message")
+                        .data(objectMapper.writeValueAsString(notification),
+                                org.springframework.http.MediaType.TEXT_PLAIN));
+            } catch (IOException e) {
+                deadSessions.add(entry.getKey());
+            }
+        }
+        deadSessions.forEach(this::cleanup);
     }
 
     public boolean isRunning() {
@@ -480,6 +554,21 @@ public class TrellisMcpServerManager {
                 .replaceAll("[\\s\\-]+", "_")
                 .replaceAll("[^a-zA-Z0-9_]", "")
                 .toLowerCase();
+    }
+
+    private String computeHash(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (Exception e) {
+            // Fallback: use hashCode if SHA-256 unavailable (should never happen)
+            return Integer.toHexString(input.hashCode());
+        }
     }
 
     // --- Inner types ---

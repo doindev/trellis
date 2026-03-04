@@ -3,6 +3,7 @@ package io.trellis.controller;
 import io.trellis.config.ProjectContextPathFilter;
 import io.trellis.dto.*;
 import io.trellis.service.ProjectService;
+import io.trellis.service.TrellisMcpServerManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ public class ProjectController {
 
     private final ProjectService projectService;
     private final ProjectContextPathFilter contextPathFilter;
+    private final TrellisMcpServerManager mcpServerManager;
 
     @GetMapping
     public List<ProjectResponse> list() {
@@ -39,6 +41,9 @@ public class ProjectController {
     public ProjectResponse update(@PathVariable String id, @RequestBody ProjectUpdateRequest request) {
         ProjectResponse response = projectService.updateProject(id, request);
         contextPathFilter.refreshCache();
+        if (mcpServerManager.isRunning()) {
+            mcpServerManager.refreshTools();
+        }
         return response;
     }
 
