@@ -19,7 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 	category = "Social Media",
 	icon = "facebook",
 	credentials = {"facebookGraphApi"},
-	trigger = true
+	trigger = true,
+	searchOnly = true,
+	other = true
 )
 public class FacebookTriggerNode extends AbstractTriggerNode {
 

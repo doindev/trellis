@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.trellis.engine.WorkflowEngine;
 import io.trellis.entity.WebhookEntity;
-import io.trellis.entity.WorkflowEntity;
 import io.trellis.repository.WebhookRepository;
 import io.trellis.repository.WorkflowRepository;
 import io.trellis.service.WebSocketService;

@@ -8,7 +8,6 @@ import io.trellis.entity.McpSettingsEntity;
 import io.trellis.entity.WorkflowEntity;
 import io.trellis.engine.WorkflowEngine;
 import io.trellis.exception.NotFoundException;
-import io.trellis.entity.ProjectEntity;
 import io.trellis.repository.McpClientSessionRepository;
 import io.trellis.repository.McpEndpointRepository;
 import io.trellis.repository.McpSettingsRepository;

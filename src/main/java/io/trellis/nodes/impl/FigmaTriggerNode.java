@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Node(
 		type = "figmaTrigger",
-		displayName = "Figma Trigger (Beta)",
+		displayName = "Figma Trigger",
 		description = "Starts the workflow when Figma events occur",
 		category = "Miscellaneous",
 		icon = "figma",

@@ -18,7 +18,9 @@ import java.util.*;
 		category = "Spreadsheets",
 		icon = "seaTable",
 		trigger = true,
-		credentials = {"seaTableApi"}
+		credentials = {"seaTableApi"},
+		searchOnly = true,
+		other = true
 )
 public class SeaTableTriggerNode extends AbstractApiNode {
 

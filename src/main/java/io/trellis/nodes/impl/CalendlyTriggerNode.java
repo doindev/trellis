@@ -19,7 +19,9 @@ import java.util.*;
 		category = "Scheduling / Calendar",
 		icon = "calendly",
 		credentials = {"calendlyApi"},
-		trigger = true
+		trigger = true,
+		searchOnly = true,
+		other = true
 )
 public class CalendlyTriggerNode extends AbstractApiNode {
 

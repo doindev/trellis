@@ -19,7 +19,9 @@ import java.util.*;
 		category = "HR",
 		icon = "workable",
 		trigger = true,
-		credentials = {"workableApi"}
+		credentials = {"workableApi"},
+		searchOnly = true,
+		other = true
 )
 public class WorkableTriggerNode extends AbstractApiNode {
 
