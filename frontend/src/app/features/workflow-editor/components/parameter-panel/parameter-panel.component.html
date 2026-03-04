@@ -505,6 +505,9 @@
                   }
                 }
               </div>
+              @if (param.name === 'path' && isWebhookNode && webhookPathError) {
+                <div class="webhook-path-error">{{ webhookPathError }}</div>
+              }
               @if (activeCredentialTypes.length && credentialInsertAfterParam === param.name) {
                 <app-credential-param
                   [credentialTypes]="activeCredentialTypes"

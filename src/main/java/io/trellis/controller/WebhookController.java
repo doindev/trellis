@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.trellis.engine.WorkflowEngine;
 import io.trellis.entity.WebhookEntity;
 import io.trellis.entity.WorkflowEntity;
+import io.trellis.repository.WebhookRepository;
 import io.trellis.repository.WorkflowRepository;
 import io.trellis.service.WebSocketService;
 import io.trellis.service.WebhookService;
@@ -49,6 +50,7 @@ public class WebhookController {
     private final WorkflowEngine workflowEngine;
     private final WebSocketService webSocketService;
     private final WorkflowRepository workflowRepository;
+    private final WebhookRepository webhookRepository;
     private final ObjectMapper objectMapper;
 
     private static final long TEST_WEBHOOK_TIMEOUT_MS = 120_000; // 2 minutes
@@ -133,6 +135,36 @@ public class WebhookController {
         ));
         log.info("Stopped listening for test webhook for workflow {}", workflowId);
         return ResponseEntity.ok(Map.of("cancelled", true));
+    }
+
+    @PostMapping("/api/webhooks/validate-path")
+    public ResponseEntity<Map<String, Object>> validatePath(@RequestBody Map<String, String> body) {
+        String path = body.getOrDefault("path", "");
+        String method = body.getOrDefault("method", "GET");
+        String workflowId = body.get("workflowId");
+
+        // Normalize path identically to registerWorkflowWebhooks
+        String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+
+        // Resolve context path for this workflow's project
+        String contextPath = workflowRepository.findById(workflowId)
+                .map(wf -> webhookService.resolveContextPath(wf.getProjectId()))
+                .orElse(null);
+        if (contextPath != null && !contextPath.isBlank()) {
+            normalizedPath = contextPath + "/" + normalizedPath;
+        }
+
+        // Check for existing webhook with same method+path
+        Optional<WebhookEntity> existing = webhookRepository.findByMethodAndPathAndIsTest(method, normalizedPath, false);
+
+        if (existing.isPresent() && !existing.get().getWorkflowId().equals(workflowId)) {
+            return ResponseEntity.ok(Map.of(
+                    "available", false,
+                    "message", "This webhook path is already in use by another workflow"
+            ));
+        }
+
+        return ResponseEntity.ok(Map.of("available", true));
     }
 
     private DeferredResult<ResponseEntity<Object>> processWebhook(String path, Map<String, Object> body,

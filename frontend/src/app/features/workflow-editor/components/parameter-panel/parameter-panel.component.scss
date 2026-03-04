@@ -1366,3 +1366,10 @@
   padding: 6px 12px;
   flex-shrink: 0;
 }
+
+.webhook-path-error {
+  font-size: 0.75rem;
+  color: hsl(0, 72%, 68%);
+  margin-top: -12px;
+  margin-bottom: 8px;
+}

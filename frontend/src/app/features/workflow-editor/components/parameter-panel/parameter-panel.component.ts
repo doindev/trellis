@@ -164,6 +164,9 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     return run?.error || null;
   }
 
+  // Webhook path validation
+  webhookPathError = '';
+
   // Webhook test listening state
   isListening = false;
   listeningTestUrl = '';
@@ -476,6 +479,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   onParameterChange(name: string, value: any): void {
     if (name === 'path' && this.isWebhookNode) {
       this._localPath = value;
+      this.webhookPathError = '';
     }
     const updated = { ...this.node.parameters, [name]: value };
     this.parameterChanged.emit(updated);
@@ -488,6 +492,15 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
         const normalized = '/' + current;
         this._localPath = normalized;
         this.onParameterChange('path', normalized);
+      }
+      // Validate webhook path uniqueness
+      const pathVal = this._localPath ?? this.node?.parameters?.['path'] ?? '';
+      if (pathVal) {
+        const method = this.currentHttpMethod;
+        this.webhookTestService.validatePath(this.workflowId, method, pathVal).subscribe({
+          next: (res) => { this.webhookPathError = res.available ? '' : (res.message || 'Path already in use'); },
+          error: () => { this.webhookPathError = ''; }
+        });
       }
     }
 

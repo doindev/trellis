@@ -13,4 +13,8 @@ export class WebhookTestService {
   stopListening(workflowId: string): Observable<any> {
     return this.api.delete(`/webhooks/test/${workflowId}`);
   }
+
+  validatePath(workflowId: string, method: string, path: string): Observable<{ available: boolean; message?: string }> {
+    return this.api.post('/webhooks/validate-path', { workflowId, method, path });
+  }
 }
