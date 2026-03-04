@@ -7,8 +7,10 @@ import io.trellis.entity.McpSettingsEntity;
 import io.trellis.entity.WorkflowEntity;
 import io.trellis.engine.WorkflowEngine;
 import io.trellis.exception.NotFoundException;
+import io.trellis.entity.ProjectEntity;
 import io.trellis.repository.McpEndpointRepository;
 import io.trellis.repository.McpSettingsRepository;
+import io.trellis.repository.ProjectRepository;
 import io.trellis.repository.WorkflowRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
@@ -29,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TrellisMcpServerManager {
 
     private final WorkflowRepository workflowRepository;
+    private final ProjectRepository projectRepository;
     private final McpEndpointRepository endpointRepository;
     private final McpSettingsRepository settingsRepository;
     private final WorkflowEngine workflowEngine;
@@ -71,9 +74,27 @@ public class TrellisMcpServerManager {
 
     public void refreshTools() {
         tools.clear();
+        // Pre-load project context paths to avoid N+1 queries
+        Map<String, String> contextPaths = new HashMap<>();
+        projectRepository.findAll().forEach(p -> {
+            if (p.getContextPath() != null && !p.getContextPath().isBlank()) {
+                contextPaths.put(p.getId(), p.getContextPath());
+            }
+        });
+
         List<WorkflowEntity> workflows = workflowRepository.findByMcpEnabledTrue();
         for (WorkflowEntity wf : workflows) {
-            String toolName = toSnakeCase(wf.getName());
+            String baseName = toSnakeCase(wf.getName());
+            String contextPath = wf.getProjectId() != null ? contextPaths.get(wf.getProjectId()) : null;
+            String toolName = contextPath != null
+                    ? toSnakeCase(contextPath) + "__" + baseName
+                    : baseName;
+
+            if (tools.containsKey(toolName)) {
+                log.warn("Duplicate MCP tool name '{}' — workflow '{}' (id={}) overwrites a previous entry",
+                        toolName, wf.getName(), wf.getId());
+            }
+
             String description = wf.getMcpDescription() != null ? wf.getMcpDescription()
                     : wf.getDescription() != null ? wf.getDescription()
                     : "Execute workflow: " + wf.getName();
