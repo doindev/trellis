@@ -18,7 +18,8 @@ import java.util.Map;
 		displayName = "Code Tool",
 		description = "Tool that executes JavaScript or Python code",
 		category = "AI / Tools",
-		icon = "code"
+		icon = "code",
+		searchOnly = true
 )
 public class CodeToolNode extends AbstractAiToolNode {
 

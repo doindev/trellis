@@ -15,7 +15,8 @@ import java.util.List;
 		displayName = "Simple Memory",
 		description = "Stores chat history in process memory — no credentials required. Scoped by session ID.",
 		category = "AI / Memory",
-		icon = "brain"
+		icon = "brain",
+		searchOnly = true
 )
 public class WindowBufferMemoryNode extends AbstractAiMemoryNode {
 

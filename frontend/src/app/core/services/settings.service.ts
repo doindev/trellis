@@ -58,6 +58,7 @@ export interface McpClient {
   clientVersion: string;
   connectedAt: string;
   lastSeenAt: string;
+  disconnectedAt: string | null;
 }
 
 export interface McpSettings {

@@ -18,7 +18,8 @@ import java.util.*;
 		description = "Read web content, search, and research with Jina AI",
 		category = "AI",
 		icon = "jinaAi",
-		credentials = {"jinaAiApi"}
+		credentials = {"jinaAiApi"},
+		searchOnly = true
 )
 public class JinaAiNode extends AbstractApiNode {
 

@@ -20,7 +20,8 @@ import java.util.List;
 		description = "xAI Grok chat model",
 		category = "AI / Chat Models",
 		icon = "robot",
-		credentials = {"xAiApi"}
+		credentials = {"xAiApi"},
+		searchOnly = true
 )
 public class XAiGrokChatModelNode extends AbstractChatModelNode {
 

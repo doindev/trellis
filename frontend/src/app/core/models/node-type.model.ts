@@ -11,6 +11,8 @@ export interface NodeTypeDescription {
   group: string;
   subtitle: string;
   documentationUrl: string;
+  searchOnly: boolean;
+  other: boolean;
   parameters: NodeParameter[];
   inputs: NodeIO[];
   outputs: NodeIO[];

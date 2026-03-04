@@ -24,7 +24,8 @@ import java.util.List;
 		description = "Stores chat history in a PostgreSQL table",
 		category = "AI / Memory",
 		icon = "database",
-		credentials = "postgresApi"
+		credentials = "postgresApi",
+		searchOnly = true
 )
 public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 

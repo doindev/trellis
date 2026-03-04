@@ -20,7 +20,8 @@ import java.util.List;
 		description = "Chat model via Vercel AI Gateway",
 		category = "AI / Chat Models",
 		icon = "triangle",
-		credentials = {"vercelAiGatewayApi"}
+		credentials = {"vercelAiGatewayApi"},
+		searchOnly = true
 )
 public class VercelAiGatewayChatModelNode extends AbstractChatModelNode {
 

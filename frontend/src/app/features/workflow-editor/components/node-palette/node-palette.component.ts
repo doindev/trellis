@@ -79,11 +79,20 @@ export class NodePaletteComponent {
     const triggersOnly = this.triggerOnly();
     const aiFilter = this.aiOutputTypeFilter();
     const types = this._nodeTypes();
-    if (!term && !triggersOnly && !aiFilter) return types;
+    const isNodeTypeFilter = triggersOnly || !!aiFilter;
+    const isSearching = term.length > 0;
 
     const filtered = new Map<string, NodeTypeDescription[]>();
+
     types.forEach((nodes, category) => {
       let matching = nodes;
+
+      // Default view: hide searchOnly nodes
+      if (!isSearching && !isNodeTypeFilter) {
+        matching = matching.filter(n => !n.searchOnly);
+      }
+
+      // Apply node-type filters
       if (triggersOnly) {
         matching = matching.filter(n => n.isTrigger);
       }
@@ -92,17 +101,36 @@ export class NodePaletteComponent {
           n.outputs?.some(o => o.type === aiFilter)
         );
       }
-      if (term) {
+
+      // Apply text search
+      if (isSearching) {
         matching = matching.filter(n =>
           n.displayName.toLowerCase().includes(term) ||
           n.type.toLowerCase().includes(term) ||
           n.description?.toLowerCase().includes(term)
         );
       }
-      if (matching.length > 0) {
+
+      if (matching.length === 0) return;
+
+      // When a node-type filter is active, move other=true nodes to "Other"
+      if (isNodeTypeFilter) {
+        const normal = matching.filter(n => !n.other);
+        const otherNodes = matching.filter(n => n.other);
+        if (normal.length > 0) {
+          filtered.set(category, normal);
+        }
+        if (otherNodes.length > 0) {
+          const existing = filtered.get('Other') || [];
+          existing.push(...otherNodes);
+          filtered.set('Other', existing);
+        }
+      } else {
+        // Text search or default: use real category
         filtered.set(category, matching);
       }
     });
+
     return filtered;
   });
 
@@ -263,7 +291,11 @@ export class NodePaletteComponent {
 
   getCategoryEntries(): [string, NodeTypeDescription[]][] {
     return Array.from(this.filteredTypes().entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => {
+        if (a[0] === 'Other') return 1;
+        if (b[0] === 'Other') return -1;
+        return a[0].localeCompare(b[0]);
+      })
       .map(([cat, nodes]) => [
         cat,
         [...nodes].sort((a, b) => a.displayName.localeCompare(b.displayName))

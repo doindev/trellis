@@ -2,12 +2,14 @@ package io.trellis.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.trellis.dto.McpClientSession;
+import io.trellis.entity.McpClientSessionEntity;
 import io.trellis.entity.McpEndpointEntity;
 import io.trellis.entity.McpSettingsEntity;
 import io.trellis.entity.WorkflowEntity;
 import io.trellis.engine.WorkflowEngine;
 import io.trellis.exception.NotFoundException;
 import io.trellis.entity.ProjectEntity;
+import io.trellis.repository.McpClientSessionRepository;
 import io.trellis.repository.McpEndpointRepository;
 import io.trellis.repository.McpSettingsRepository;
 import io.trellis.repository.ProjectRepository;
@@ -37,9 +39,12 @@ public class TrellisMcpServerManager {
     private final ProjectRepository projectRepository;
     private final McpEndpointRepository endpointRepository;
     private final McpSettingsRepository settingsRepository;
+    private final McpClientSessionRepository clientSessionRepository;
     private final WorkflowEngine workflowEngine;
     private final ObjectMapper objectMapper;
     private final McpSystemToolService mcpSystemToolService;
+
+    private final String instanceId = UUID.randomUUID().toString();
 
     private static final List<String> SUPPORTED_VERSIONS = List.of(
             "2025-03-26", "2024-11-05");
@@ -53,6 +58,9 @@ public class TrellisMcpServerManager {
 
     @PostConstruct
     public void init() {
+        // Mark any sessions from a previous lifecycle of this instance as disconnected
+        clientSessionRepository.disconnectStaleByInstanceId(instanceId, Instant.now());
+
         boolean enabled = settingsRepository.findFirstByOrderByCreatedAtAsc()
                 .map(McpSettingsEntity::isEnabled)
                 .orElse(false);
@@ -71,6 +79,7 @@ public class TrellisMcpServerManager {
         running = false;
         emitters.values().forEach(SseEmitter::complete);
         emitters.clear();
+        clientSessions.forEach((id, session) -> persistDisconnect(id));
         clientSessions.clear();
         tools.clear();
         log.info("MCP server stopped");
@@ -215,9 +224,12 @@ public class TrellisMcpServerManager {
         String sessionId = UUID.randomUUID().toString();
         SseEmitter emitter = new SseEmitter(0L); // no timeout
 
+        Instant now = Instant.now();
         emitters.put(sessionId, emitter);
-        clientSessions.put(sessionId, new ClientSessionInfo(
-                sessionId, endpoint.getId(), endpoint.getName(), endpoint.getTransport(), Instant.now()));
+        ClientSessionInfo sessionInfo = new ClientSessionInfo(
+                sessionId, endpoint.getId(), endpoint.getName(), endpoint.getTransport(), now);
+        clientSessions.put(sessionId, sessionInfo);
+        persistNewSession(sessionInfo);
 
         emitter.onCompletion(() -> cleanup(sessionId));
         emitter.onTimeout(() -> cleanup(sessionId));
@@ -243,6 +255,7 @@ public class TrellisMcpServerManager {
         ClientSessionInfo session = clientSessions.get(sessionId);
         if (session != null) {
             session.setLastSeenAt(Instant.now());
+            persistLastSeenIfNeeded(session);
         }
 
         String method = (String) message.get("method");
@@ -279,13 +292,16 @@ public class TrellisMcpServerManager {
             McpEndpointEntity endpoint = endpointRepository.findByPath(endpointPath)
                     .orElseThrow(() -> new NotFoundException("MCP endpoint not found: " + endpointPath));
             returnSessionId = UUID.randomUUID().toString();
+            Instant now = Instant.now();
             session = new ClientSessionInfo(
-                    returnSessionId, endpoint.getId(), endpoint.getName(), endpoint.getTransport(), Instant.now());
+                    returnSessionId, endpoint.getId(), endpoint.getName(), endpoint.getTransport(), now);
             clientSessions.put(returnSessionId, session);
+            persistNewSession(session);
         }
 
         if (session != null) {
             session.setLastSeenAt(Instant.now());
+            persistLastSeenIfNeeded(session);
         }
 
         Map<String, Object> response = processMessage(message, session);
@@ -324,6 +340,7 @@ public class TrellisMcpServerManager {
                 if (clientInfo != null) {
                     session.setClientName((String) clientInfo.get("name"));
                     session.setClientVersion((String) clientInfo.get("version"));
+                    persistClientInfo(session);
                 }
             }
         }
@@ -529,16 +546,19 @@ public class TrellisMcpServerManager {
     // --- Session management ---
 
     public List<McpClientSession> getClientSessions() {
-        return clientSessions.values().stream()
-                .map(s -> McpClientSession.builder()
-                        .sessionId(s.sessionId)
-                        .endpointId(s.endpointId)
-                        .endpointName(s.endpointName)
-                        .transport(s.transport)
-                        .clientName(s.clientName)
-                        .clientVersion(s.clientVersion)
-                        .connectedAt(s.connectedAt)
-                        .lastSeenAt(s.lastSeenAt)
+        Instant cutoff = Instant.now().minusSeconds(86400);
+        return clientSessionRepository.findByLastSeenAtAfterOrderByDisconnectedAtAscConnectedAtDesc(cutoff)
+                .stream()
+                .map(e -> McpClientSession.builder()
+                        .sessionId(e.getSessionId())
+                        .endpointId(e.getEndpointId())
+                        .endpointName(e.getEndpointName())
+                        .transport(e.getTransport())
+                        .clientName(e.getClientName())
+                        .clientVersion(e.getClientVersion())
+                        .connectedAt(e.getConnectedAt())
+                        .lastSeenAt(e.getLastSeenAt())
+                        .disconnectedAt(e.getDisconnectedAt())
                         .build())
                 .toList();
     }
@@ -549,11 +569,74 @@ public class TrellisMcpServerManager {
             emitter.complete();
         }
         clientSessions.remove(sessionId);
+        persistDisconnect(sessionId);
     }
 
     private void cleanup(String sessionId) {
         emitters.remove(sessionId);
         clientSessions.remove(sessionId);
+        persistDisconnect(sessionId);
+    }
+
+    @Scheduled(fixedDelay = 3600_000)
+    public void purgeOldSessions() {
+        clientSessionRepository.deleteByLastSeenAtBefore(Instant.now().minusSeconds(86400));
+    }
+
+    private void persistNewSession(ClientSessionInfo session) {
+        try {
+            clientSessionRepository.save(McpClientSessionEntity.builder()
+                    .sessionId(session.getSessionId())
+                    .instanceId(instanceId)
+                    .endpointId(session.getEndpointId())
+                    .endpointName(session.getEndpointName())
+                    .transport(session.getTransport())
+                    .connectedAt(session.getConnectedAt())
+                    .lastSeenAt(session.getConnectedAt())
+                    .build());
+        } catch (Exception e) {
+            log.warn("Failed to persist MCP client session: {}", e.getMessage());
+        }
+    }
+
+    private void persistClientInfo(ClientSessionInfo session) {
+        try {
+            clientSessionRepository.findById(session.getSessionId()).ifPresent(entity -> {
+                entity.setClientName(session.getClientName());
+                entity.setClientVersion(session.getClientVersion());
+                clientSessionRepository.save(entity);
+            });
+        } catch (Exception e) {
+            log.warn("Failed to update MCP client info: {}", e.getMessage());
+        }
+    }
+
+    private void persistLastSeenIfNeeded(ClientSessionInfo session) {
+        Instant now = Instant.now();
+        if (session.getLastDbWrite() == null || now.minusSeconds(30).isAfter(session.getLastDbWrite())) {
+            try {
+                clientSessionRepository.findById(session.getSessionId()).ifPresent(entity -> {
+                    entity.setLastSeenAt(now);
+                    clientSessionRepository.save(entity);
+                });
+                session.setLastDbWrite(now);
+            } catch (Exception e) {
+                log.warn("Failed to update MCP session lastSeenAt: {}", e.getMessage());
+            }
+        }
+    }
+
+    private void persistDisconnect(String sessionId) {
+        try {
+            clientSessionRepository.findById(sessionId).ifPresent(entity -> {
+                if (entity.getDisconnectedAt() == null) {
+                    entity.setDisconnectedAt(Instant.now());
+                    clientSessionRepository.save(entity);
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Failed to persist MCP session disconnect: {}", e.getMessage());
+        }
     }
 
     private String toSnakeCase(String name) {
@@ -595,6 +678,7 @@ public class TrellisMcpServerManager {
         private Instant lastSeenAt;
         private String clientName;
         private String clientVersion;
+        private Instant lastDbWrite;
 
         ClientSessionInfo(String sessionId, String endpointId, String endpointName,
                           String transport, Instant connectedAt) {

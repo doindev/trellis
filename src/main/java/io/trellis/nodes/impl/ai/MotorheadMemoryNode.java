@@ -28,7 +28,8 @@ import java.util.Map;
 		description = "Stores chat history using a Motorhead memory server",
 		category = "AI / Memory",
 		icon = "database",
-		credentials = "motorheadApi"
+		credentials = "motorheadApi",
+		searchOnly = true
 )
 public class MotorheadMemoryNode extends AbstractAiMemoryNode {
 

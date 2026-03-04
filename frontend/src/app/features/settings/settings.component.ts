@@ -368,7 +368,15 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // Client actions
   loadMcpClients(): void {
     this.settingsService.listMcpClients().subscribe({
-      next: clients => this.mcpClients = clients,
+      next: clients => {
+        this.mcpClients = clients.sort((a, b) => {
+          // Connected (no disconnectedAt) first
+          if (!a.disconnectedAt && b.disconnectedAt) return -1;
+          if (a.disconnectedAt && !b.disconnectedAt) return 1;
+          // Within same group, most recent first
+          return new Date(b.connectedAt).getTime() - new Date(a.connectedAt).getTime();
+        });
+      },
       error: () => this.mcpClients = []
     });
   }

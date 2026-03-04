@@ -25,7 +25,8 @@ import java.util.List;
 		description = "Chat model via AWS Bedrock Converse API",
 		category = "AI / Chat Models",
 		icon = "aws",
-		credentials = {"aws"}
+		credentials = {"aws"},
+		searchOnly = true
 )
 public class BedrockChatModelNode extends AbstractChatModelNode {
 

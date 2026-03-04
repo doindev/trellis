@@ -17,7 +17,8 @@ import java.util.List;
 		description = "OpenAI chat model (GPT-4o, GPT-4o-mini, o3-mini, etc.)",
 		category = "AI / Chat Models",
 		icon = "openai",
-		credentials = {"openAiApi"}
+		credentials = {"openAiApi"},
+		searchOnly = true
 )
 public class OpenAiChatModelNode extends AbstractChatModelNode {
 

@@ -14,7 +14,8 @@ import io.trellis.nodes.core.NodeExecutionContext;
 		description = "Tool for searching the web using Tavily API",
 		category = "AI / Tools",
 		icon = "search",
-		credentials = {"tavilyApi"}
+		credentials = {"tavilyApi"},
+		searchOnly = true
 )
 public class TavilySearchToolNode extends AbstractAiToolNode {
 

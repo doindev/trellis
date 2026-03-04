@@ -646,11 +646,27 @@ select.form-input {
 .col-wf-status { width: 80px; }
 
 /* Client table columns */
+.col-client-status { width: 110px; display: flex; align-items: center; gap: 6px; }
 .col-client-name { flex: 2; min-width: 0; }
 .col-client-endpoint { flex: 1.5; min-width: 0; }
 .col-client-transport { width: 120px; }
 .col-client-connected { flex: 1; color: hsl(0, 0%, 52%); }
 .col-client-seen { flex: 1; color: hsl(0, 0%, 52%); }
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+
+  &.connected { background: hsl(147, 60%, 50%); }
+  &.disconnected { background: hsl(0, 0%, 52%); }
+}
+.status-label {
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 62%);
+}
 
 /* Status badge */
 .status-badge {

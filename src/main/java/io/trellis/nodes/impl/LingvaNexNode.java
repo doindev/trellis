@@ -20,7 +20,8 @@ import java.util.Map;
 		description = "Translate text via LingvaNex",
 		category = "AI",
 		icon = "language",
-		credentials = {"lingvaNexApi"}
+		credentials = {"lingvaNexApi"},
+		searchOnly = true
 )
 public class LingvaNexNode extends AbstractApiNode {
 

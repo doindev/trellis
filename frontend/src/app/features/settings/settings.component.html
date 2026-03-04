@@ -412,6 +412,7 @@
               @if (mcpActiveTab === 'clients') {
                 <div class="data-table tab-table">
                   <div class="table-header">
+                    <div class="col-client-status">Status</div>
                     <div class="col-client-name">Client</div>
                     <div class="col-client-endpoint">Endpoint</div>
                     <div class="col-client-transport">Transport</div>
@@ -420,6 +421,13 @@
                   </div>
                   @for (client of mcpClients; track client.sessionId) {
                     <div class="table-row">
+                      <div class="col-client-status">
+                        @if (!client.disconnectedAt) {
+                          <span class="status-dot connected"></span><span class="status-label">Connected</span>
+                        } @else {
+                          <span class="status-dot disconnected"></span><span class="status-label">Disconnected</span>
+                        }
+                      </div>
                       <div class="col-client-name">{{ client.clientName || 'Unknown' }} {{ client.clientVersion ? 'v' + client.clientVersion : '' }}</div>
                       <div class="col-client-endpoint">{{ client.endpointName }}</div>
                       <div class="col-client-transport">
@@ -433,7 +441,7 @@
                     </div>
                   }
                   @if (mcpClients.length === 0) {
-                    <div class="empty-row">No clients connected</div>
+                    <div class="empty-row">No recent client activity</div>
                   }
                 </div>
               }

@@ -10,7 +10,8 @@ import io.trellis.nodes.core.NodeExecutionContext;
 		displayName = "Calculator",
 		description = "Tool for evaluating mathematical expressions",
 		category = "AI / Tools",
-		icon = "calculator"
+		icon = "calculator",
+		searchOnly = true
 )
 public class CalculatorToolNode extends AbstractAiToolNode {
 

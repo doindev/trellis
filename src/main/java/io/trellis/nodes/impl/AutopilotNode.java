@@ -18,7 +18,9 @@ import java.util.*;
 		description = "Manage contacts and lists in Autopilot",
 		category = "Marketing",
 		icon = "autopilot",
-		credentials = {"autopilotApi"}
+		credentials = {"autopilotApi"},
+		searchOnly = true,
+		other = true
 )
 public class AutopilotNode extends AbstractApiNode {
 

@@ -21,7 +21,8 @@ import java.util.List;
 		description = "Chat model via Cohere API",
 		category = "AI / Chat Models",
 		icon = "brain",
-		credentials = {"cohereApi"}
+		credentials = {"cohereApi"},
+		searchOnly = true
 )
 public class CohereChatModelNode extends AbstractChatModelNode {
 

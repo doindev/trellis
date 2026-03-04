@@ -16,7 +16,8 @@ import io.trellis.nodes.core.NodeExecutionContext;
 		displayName = "Think",
 		description = "Tool for AI agent reasoning — accepts a thought and returns it unchanged",
 		category = "AI / Tools",
-		icon = "lightbulb"
+		icon = "lightbulb",
+		searchOnly = true
 )
 public class ThinkToolNode extends AbstractAiToolNode {
 

@@ -25,7 +25,8 @@ import java.util.*;
 		displayName = "MCP Client Tool",
 		description = "Connect to an MCP (Model Context Protocol) server and expose its tools to an AI agent",
 		category = "AI / Tools",
-		icon = "mcp"
+		icon = "mcp",
+		searchOnly = true
 )
 @Slf4j
 public class McpClientToolNode extends AbstractAiToolNode {

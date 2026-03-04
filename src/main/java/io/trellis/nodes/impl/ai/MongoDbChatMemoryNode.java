@@ -24,7 +24,8 @@ import java.util.List;
 		description = "Stores chat history in a MongoDB collection",
 		category = "AI / Memory",
 		icon = "database",
-		credentials = "mongoDb"
+		credentials = "mongoDb",
+		searchOnly = true
 )
 public class MongoDbChatMemoryNode extends AbstractAiMemoryNode {
 

@@ -18,7 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 		displayName = "Simple Vector Store",
 		description = "In-memory vector store for development and testing",
 		category = "AI / Vector Stores",
-		icon = "database"
+		icon = "database",
+		searchOnly = true
 )
 public class SimpleVectorStoreNode extends AbstractVectorStoreNode {
 

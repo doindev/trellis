@@ -17,7 +17,8 @@ import java.util.List;
 		description = "Mistral AI chat model",
 		category = "AI / Chat Models",
 		icon = "mistral",
-		credentials = {"mistralApi"}
+		credentials = {"mistralApi"},
+		searchOnly = true
 )
 public class MistralChatModelNode extends AbstractChatModelNode {
 

@@ -17,7 +17,8 @@ import java.util.List;
 		description = "Google AI Gemini chat model",
 		category = "AI / Chat Models",
 		icon = "google",
-		credentials = {"googleAiApi"}
+		credentials = {"googleAiApi"},
+		searchOnly = true
 )
 public class GeminiChatModelNode extends AbstractChatModelNode {
 

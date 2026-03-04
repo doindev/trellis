@@ -29,7 +29,8 @@ import java.util.stream.Collectors;
 		displayName = "Vector Store Question Answer Tool",
 		description = "Answer questions with a vector store",
 		category = "AI / Tools",
-		icon = "database"
+		icon = "database",
+		searchOnly = true
 )
 public class VectorStoreQaToolNode extends AbstractAiToolNode {
 

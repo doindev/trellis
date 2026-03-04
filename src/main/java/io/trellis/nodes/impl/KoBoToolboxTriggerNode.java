@@ -17,7 +17,8 @@ import java.util.*;
 		category = "Surveys & Forms",
 		icon = "koBoToolbox",
 		trigger = true,
-		credentials = {"koBoToolboxApi"}
+		credentials = {"koBoToolboxApi"},
+		other = true
 )
 public class KoBoToolboxTriggerNode extends AbstractApiNode {
 

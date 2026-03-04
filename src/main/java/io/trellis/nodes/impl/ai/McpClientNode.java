@@ -27,7 +27,8 @@ import java.util.Map;
 		description = "Connect to an MCP server and interact with its tools and resources",
 		category = "AI / MCP",
 		icon = "mcp",
-		credentials = {"mcpClientApi"}
+		credentials = {"mcpClientApi"},
+		searchOnly = true
 )
 public class McpClientNode extends AbstractApiNode {
 

@@ -15,7 +15,8 @@ import java.util.List;
 		displayName = "Token Buffer Memory",
 		description = "Keeps messages up to a token limit in memory",
 		category = "AI / Memory",
-		icon = "brain"
+		icon = "brain",
+		searchOnly = true
 )
 public class TokenBufferMemoryNode extends AbstractAiMemoryNode {
 

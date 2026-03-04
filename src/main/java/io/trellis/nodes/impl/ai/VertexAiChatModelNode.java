@@ -21,7 +21,8 @@ import java.util.List;
 		description = "Chat model via Google Cloud Vertex AI",
 		category = "AI / Chat Models",
 		icon = "google",
-		credentials = {"googleApi"}
+		credentials = {"googleApi"},
+		searchOnly = true
 )
 public class VertexAiChatModelNode extends AbstractChatModelNode {
 

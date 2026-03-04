@@ -20,7 +20,8 @@ import java.util.List;
 		displayName = "Wikipedia",
 		description = "Tool for searching and retrieving Wikipedia articles",
 		category = "AI / Tools",
-		icon = "book-open"
+		icon = "book-open",
+		searchOnly = true
 )
 public class WikipediaToolNode extends AbstractAiToolNode {
 

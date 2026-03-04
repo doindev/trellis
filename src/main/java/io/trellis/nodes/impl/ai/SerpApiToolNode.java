@@ -28,7 +28,8 @@ import java.util.List;
 		description = "Search Google using SerpAPI",
 		category = "AI / Tools",
 		icon = "search",
-		credentials = {"serpApi"}
+		credentials = {"serpApi"},
+		searchOnly = true
 )
 public class SerpApiToolNode extends AbstractAiToolNode {
 

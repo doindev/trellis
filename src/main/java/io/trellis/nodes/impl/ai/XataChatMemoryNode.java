@@ -29,7 +29,8 @@ import java.util.regex.Pattern;
 		description = "Stores chat history using the Xata database API",
 		category = "AI / Memory",
 		icon = "database",
-		credentials = "xataApi"
+		credentials = "xataApi",
+		searchOnly = true
 )
 public class XataChatMemoryNode extends AbstractAiMemoryNode {
 

@@ -19,7 +19,8 @@ import java.util.List;
 		description = "Anthropic chat model (Claude Sonnet, Haiku, Opus)",
 		category = "AI / Chat Models",
 		icon = "anthropic",
-		credentials = {"anthropicApi"}
+		credentials = {"anthropicApi"},
+		searchOnly = true
 )
 public class AnthropicChatModelNode extends AbstractChatModelNode {
 

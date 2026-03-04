@@ -27,7 +27,8 @@ import java.util.List;
 		description = "Search the web using SearXNG metasearch engine",
 		category = "AI / Tools",
 		icon = "search",
-		credentials = {"searXngApi"}
+		credentials = {"searXngApi"},
+		searchOnly = true
 )
 public class SearXngToolNode extends AbstractAiToolNode {
 

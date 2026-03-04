@@ -59,6 +59,8 @@ public class NodeTypeController {
         map.put("group", reg.getGroup());
         map.put("subtitle", reg.getSubtitle());
         map.put("documentationUrl", reg.getDocumentationUrl());
+        map.put("searchOnly", reg.isSearchOnly());
+        map.put("other", reg.isOther());
         map.put("parameters", reg.getParameters());
         map.put("inputs", reg.getInputs());
         map.put("outputs", reg.getOutputs());

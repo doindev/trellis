@@ -19,7 +19,9 @@ import java.util.*;
 		category = "Marketing",
 		icon = "autopilot",
 		credentials = {"autopilotApi"},
-		trigger = true
+		trigger = true,
+		searchOnly = true,
+		other = true
 )
 public class AutopilotTriggerNode extends AbstractApiNode {
 

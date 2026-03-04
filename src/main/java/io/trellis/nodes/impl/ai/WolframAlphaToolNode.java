@@ -24,7 +24,8 @@ import java.nio.charset.StandardCharsets;
 		description = "Computational intelligence engine for factual and mathematical queries",
 		category = "AI / Tools",
 		icon = "calculator",
-		credentials = {"wolframAlphaApi"}
+		credentials = {"wolframAlphaApi"},
+		searchOnly = true
 )
 public class WolframAlphaToolNode extends AbstractAiToolNode {
 

@@ -20,7 +20,8 @@ import java.util.List;
 		description = "Lemonade self-hosted chat model (OpenAI-compatible)",
 		category = "AI / Chat Models",
 		icon = "robot",
-		credentials = {"lemonadeApi"}
+		credentials = {"lemonadeApi"},
+		searchOnly = true
 )
 public class LemonadeChatModelNode extends AbstractChatModelNode {
 

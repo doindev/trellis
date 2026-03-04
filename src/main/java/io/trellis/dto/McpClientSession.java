@@ -20,4 +20,5 @@ public class McpClientSession {
     private String clientVersion;
     private Instant connectedAt;
     private Instant lastSeenAt;
+    private Instant disconnectedAt;
 }

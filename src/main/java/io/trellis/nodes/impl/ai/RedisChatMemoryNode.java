@@ -21,7 +21,8 @@ import java.util.List;
 		description = "Stores chat history in Redis with optional TTL",
 		category = "AI / Memory",
 		icon = "database",
-		credentials = "redis"
+		credentials = "redis",
+		searchOnly = true
 )
 public class RedisChatMemoryNode extends AbstractAiMemoryNode {
 

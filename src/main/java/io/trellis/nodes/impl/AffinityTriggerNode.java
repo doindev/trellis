@@ -18,7 +18,8 @@ import java.util.*;
 		category = "CRM & Sales",
 		icon = "affinity",
 		credentials = {"affinityApi"},
-		trigger = true
+		trigger = true,
+		other = true
 )
 public class AffinityTriggerNode extends AbstractTriggerNode {
 

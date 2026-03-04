@@ -74,6 +74,8 @@ public class NodeRegistry {
 				.group(annotation.group())
 				.subtitle(annotation.subtitle())
 				.documentationUrl(annotation.documentationUrl())
+				.searchOnly(annotation.searchOnly())
+				.other(annotation.other())
 				.nodeInstance(node)
 				.parameters(params)
 				.inputs(node.getInputs())
@@ -237,6 +239,8 @@ public class NodeRegistry {
 		private String subtitle;
 		private String documentationUrl;
 		private NodeInterface nodeInstance;
+		private boolean searchOnly;
+		private boolean other;
 		private List<NodeParameter> parameters;
 		private List<NodeInput> inputs;
 		private List<NodeOutput> outputs;

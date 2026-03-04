@@ -21,7 +21,8 @@ import java.util.List;
 		description = "Groq ultra-fast inference chat model",
 		category = "AI / Chat Models",
 		icon = "bolt",
-		credentials = {"groqApi"}
+		credentials = {"groqApi"},
+		searchOnly = true
 )
 public class GroqChatModelNode extends AbstractChatModelNode {
 

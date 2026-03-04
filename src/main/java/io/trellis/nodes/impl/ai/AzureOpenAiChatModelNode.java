@@ -16,7 +16,8 @@ import java.util.List;
 		description = "Azure-hosted OpenAI chat model",
 		category = "AI / Chat Models",
 		icon = "azure",
-		credentials = {"azureOpenAiApi"}
+		credentials = {"azureOpenAiApi"},
+		searchOnly = true
 )
 public class AzureOpenAiChatModelNode extends AbstractChatModelNode {
 

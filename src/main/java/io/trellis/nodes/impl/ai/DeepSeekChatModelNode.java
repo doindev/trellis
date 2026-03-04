@@ -20,7 +20,8 @@ import java.util.List;
 		description = "DeepSeek chat model (DeepSeek-V3, DeepSeek-R1, etc.)",
 		category = "AI / Chat Models",
 		icon = "robot",
-		credentials = {"deepSeekApi"}
+		credentials = {"deepSeekApi"},
+		searchOnly = true
 )
 public class DeepSeekChatModelNode extends AbstractChatModelNode {
 

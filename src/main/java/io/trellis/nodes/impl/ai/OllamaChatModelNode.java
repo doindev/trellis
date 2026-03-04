@@ -16,7 +16,8 @@ import java.util.List;
 		description = "Ollama locally hosted chat model",
 		category = "AI / Chat Models",
 		icon = "ollama",
-		credentials = {"ollamaApi"}
+		credentials = {"ollamaApi"},
+		searchOnly = true
 )
 public class OllamaChatModelNode extends AbstractChatModelNode {
 

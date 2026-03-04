@@ -23,7 +23,8 @@ import java.util.List;
 		displayName = "HTTP Request Tool",
 		description = "Tool that makes HTTP requests to a specified URL",
 		category = "AI / Tools",
-		icon = "globe"
+		icon = "globe",
+		searchOnly = true
 )
 public class HttpRequestToolNode extends AbstractAiToolNode {
 

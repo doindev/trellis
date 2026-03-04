@@ -23,7 +23,8 @@ import java.util.*;
 		icon = "airtable",
 		trigger = true,
 		polling = true,
-		credentials = {"airtableApi"}
+		credentials = {"airtableApi"},
+		other = true
 )
 public class AirtableTriggerNode extends AbstractApiNode {
 

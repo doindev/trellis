@@ -20,7 +20,8 @@ import java.util.List;
 		description = "OpenRouter unified LLM gateway chat model",
 		category = "AI / Chat Models",
 		icon = "route",
-		credentials = {"openRouterApi"}
+		credentials = {"openRouterApi"},
+		searchOnly = true
 )
 public class OpenRouterChatModelNode extends AbstractChatModelNode {
 
