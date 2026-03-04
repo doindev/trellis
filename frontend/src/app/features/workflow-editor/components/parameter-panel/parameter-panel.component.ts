@@ -140,6 +140,9 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   inputSchemaCollapsed = new Set<string>();
   outputSchemaCollapsed = new Set<string>();
 
+  // Ancestor node selector for input column
+  selectedInputNodeId: string | null = null;
+
   // Multi-output tab state
   selectedOutputIndex = 0;
 
@@ -221,6 +224,9 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['node'] && changes['node'].currentValue?.id !== changes['node'].previousValue?.id) {
       this.selectedOutputIndex = 0;
+      // Default to first direct parent node
+      const parents = this.previousNodes;
+      this.selectedInputNodeId = parents.length > 0 ? parents[0].node.id : null;
     }
   }
 
@@ -372,6 +378,44 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
       }
     }
     return results;
+  }
+
+  /** All ancestor nodes via BFS traversal, closest first */
+  getAncestorNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription }[] {
+    const results: { node: WorkflowNode; nodeType?: NodeTypeDescription }[] = [];
+    const visited = new Set<string>();
+    const queue: string[] = [this.node.id];
+    visited.add(this.node.id);
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      // Find all source nodes that connect into currentId
+      for (const [sourceId, conn] of Object.entries(this.connections)) {
+        if (!conn?.main) continue;
+        for (const outputs of conn.main) {
+          if (!outputs) continue;
+          for (const c of outputs) {
+            if (c.node === currentId && !visited.has(sourceId)) {
+              visited.add(sourceId);
+              const n = this.allNodes.find(nd => nd.id === sourceId);
+              if (n) {
+                results.push({ node: n, nodeType: this.nodeTypeMap.get(n.type) });
+                queue.push(sourceId);
+              }
+            }
+          }
+        }
+      }
+    }
+    return results;
+  }
+
+  /** Returns the nodes to display in the input column based on the selected ancestor */
+  get selectedInputNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription }[] {
+    if (!this.selectedInputNodeId) return this.previousNodes;
+    const ancestor = this.allNodes.find(n => n.id === this.selectedInputNodeId);
+    if (!ancestor) return this.previousNodes;
+    return [{ node: ancestor, nodeType: this.nodeTypeMap.get(ancestor.type) }];
   }
 
   get nodeExecutionData(): any {
@@ -682,7 +726,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
 
   get inputSchemaNodes(): SchemaNode[] {
     const items: Record<string, any>[] = [];
-    for (const prev of this.previousNodes) {
+    for (const prev of this.selectedInputNodes) {
       const data = this.getPreviousNodeData(prev.node.id);
       if (data) items.push(...this.extractItems(data));
     }
@@ -704,7 +748,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
 
   get inputTableRows(): Record<string, any>[] {
     const allRows: Record<string, any>[] = [];
-    for (const prev of this.previousNodes) {
+    for (const prev of this.selectedInputNodes) {
       const data = this.getPreviousNodeData(prev.node.id);
       if (data) allRows.push(...this.extractItems(data));
     }
@@ -1309,14 +1353,24 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     this.expressionEditorOpen = false;
   }
 
+  /** Returns the expression prefix for the currently selected input node */
+  private get inputExpressionPrefix(): string {
+    if (!this.selectedInputNodeId) return '$json.';
+    const isDirectParent = this.previousNodes.some(p => p.node.id === this.selectedInputNodeId);
+    if (isDirectParent) return '$json.';
+    const node = this.allNodes.find(n => n.id === this.selectedInputNodeId);
+    if (!node) return '$json.';
+    return '$node["' + node.name + '"].json.';
+  }
+
   onSchemaDragStart(event: DragEvent, node: SchemaNode): void {
     if (node.children && node.children.length > 0) return;
-    event.dataTransfer?.setData('text/plain', '{{$json.' + node.path + '}}');
+    event.dataTransfer?.setData('text/plain', '{{' + this.inputExpressionPrefix + node.path + '}}');
     event.dataTransfer!.effectAllowed = 'copy';
   }
 
   onFieldDragStart(event: DragEvent, fieldName: string): void {
-    event.dataTransfer?.setData('text/plain', '{{$json.' + fieldName + '}}');
+    event.dataTransfer?.setData('text/plain', '{{' + this.inputExpressionPrefix + fieldName + '}}');
     event.dataTransfer!.effectAllowed = 'copy';
   }
 

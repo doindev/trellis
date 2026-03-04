@@ -167,7 +167,21 @@
             <!-- Normal input column for non-webhook nodes or read-only mode -->
             @if (previousNodes.length === 0) {
               <div class="empty-state">No input connections</div>
-            } @else if (inputDisplayMode === 'schema' && hasInputData) {
+            }
+            @if (getAncestorNodes().length > 0 && !isWebhookNode) {
+              <div class="input-node-select">
+                <select class="form-select form-select-sm input-node-dropdown"
+                        [ngModel]="selectedInputNodeId"
+                        (ngModelChange)="selectedInputNodeId = $event">
+                  @for (anc of getAncestorNodes(); track anc.node.id) {
+                    <option [ngValue]="anc.node.id">
+                      {{ anc.node.name }}
+                    </option>
+                  }
+                </select>
+              </div>
+            }
+            @if (previousNodes.length > 0 && inputDisplayMode === 'schema' && hasInputData) {
               @if (inputSchemaNodes.length === 0) {
                 <div class="empty-state-sm">{{ inputSearch ? 'No matching fields' : 'No data' }}</div>
               } @else {
@@ -247,7 +261,7 @@
                 </div>
               }
             } @else {
-              @for (prev of previousNodes; track prev.node.id) {
+              @for (prev of selectedInputNodes; track prev.node.id) {
                 <div class="data-block">
                   <div class="data-block-header">{{ prev.node.name }}</div>
                   @if (getJsonTreeLines(prev.node.id); as lines) {

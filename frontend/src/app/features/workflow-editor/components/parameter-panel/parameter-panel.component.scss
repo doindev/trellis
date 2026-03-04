@@ -588,6 +588,35 @@
   }
 }
 
+// ── Input node selector ──
+
+.input-node-select {
+  padding: 8px 16px;
+  border-bottom: 1px solid hsl(0, 0%, 24%);
+  flex-shrink: 0;
+}
+
+.input-node-dropdown {
+  width: 100%;
+  background: hsl(0, 0%, 9%);
+  color: hsl(0, 0%, 88%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  padding: 4px 8px;
+
+  &:focus {
+    border-color: hsl(7, 100%, 68%);
+    outline: none;
+    box-shadow: 0 0 0 2px hsla(7, 100%, 68%, 0.2);
+  }
+
+  option {
+    background: hsl(0, 0%, 13%);
+    color: hsl(0, 0%, 88%);
+  }
+}
+
 // ── Column borders (resize handles) ──
 
 .column-border {
