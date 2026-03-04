@@ -1221,7 +1221,7 @@ public class WorkflowEngine {
      * Returns { "result": <value>, "error": "" } or { "result": null, "error": "<message>" }.
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> evaluateExpressionPreview(String expression, List<Map<String, Object>> inputItems) {
+    public Map<String, Object> evaluateExpressionPreview(String expression, List<Map<String, Object>> inputItems, Map<String, Object> nodeOutputs) {
         Map<String, Object> result = new LinkedHashMap<>();
         try {
             Map<String, Object> currentItemData = Map.of();
@@ -1238,6 +1238,7 @@ public class WorkflowEngine {
             ExpressionEvaluator.ExpressionContext ctx = ExpressionEvaluator.ExpressionContext.builder()
                     .currentItemData(currentItemData)
                     .inputItems(inputItems)
+                    .nodeOutputs(nodeOutputs)
                     .variables(variables)
                     .executionId("preview")
                     .runIndex(0)

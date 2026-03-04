@@ -16,7 +16,7 @@ import { NoticeParamComponent } from './parameter-renderers/notice-param.compone
 import { CredentialParamComponent } from './parameter-renderers/credential-param.component';
 import { ModelParamComponent } from './parameter-renderers/model-param.component';
 import { CacheNameParamComponent } from './parameter-renderers/cache-name-param.component';
-import { ExpressionEditorModalComponent } from './expression-editor-modal.component';
+import { ExpressionEditorModalComponent, ExpressionAncestorNode } from './expression-editor-modal.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
   CheckCircle, Copy, Square, Search, ChevronRight, Pin, PinOff, Pencil,
@@ -1312,15 +1312,44 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   expressionEditorParam = '';
   expressionEditorValue = '';
   expressionEditorInputItems: any[] = [];
+  expressionEditorAncestorNodes: ExpressionAncestorNode[] = [];
+  expressionEditorNodeDataMap: Record<string, any[]> = {};
+  expressionEditorNodeOutputs: Record<string, any> = {};
 
   // For fixedCollection nested expression editing
   private fcExpressionContext: { paramName: string; index: number; fieldName: string } | null = null;
+
+  /** Build ancestor info and data maps for the expression editor */
+  private prepareExpressionEditorAncestors(): void {
+    const directParentIds = new Set(this.previousNodes.map(p => p.node.id));
+    const ancestors = this.getAncestorNodes();
+    this.expressionEditorAncestorNodes = ancestors.map(a => ({
+      id: a.node.id,
+      name: a.node.name,
+      isDirectParent: directParentIds.has(a.node.id)
+    }));
+    this.expressionEditorNodeDataMap = {};
+    this.expressionEditorNodeOutputs = {};
+    for (const anc of ancestors) {
+      const data = this.getPreviousNodeData(anc.node.id);
+      if (data) {
+        const rawItems = this.extractRawItems(data);
+        this.expressionEditorNodeDataMap[anc.node.id] = rawItems;
+        // Build nodeOutputs keyed by node name (first item's json data)
+        const items = this.extractItems(data);
+        if (items.length > 0) {
+          this.expressionEditorNodeOutputs[anc.node.name] = items[0];
+        }
+      }
+    }
+  }
 
   openExpressionEditor(paramName: string, currentValue: any): void {
     this.fcExpressionContext = null;
     this.expressionEditorParam = paramName;
     this.expressionEditorValue = String(currentValue ?? '');
     this.expressionEditorInputItems = this.collectInputForExecution();
+    this.prepareExpressionEditorAncestors();
     this.expressionEditorOpen = true;
   }
 
@@ -1329,6 +1358,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     this.expressionEditorParam = paramName + '[' + event.index + '].' + event.fieldName;
     this.expressionEditorValue = event.value;
     this.expressionEditorInputItems = this.collectInputForExecution();
+    this.prepareExpressionEditorAncestors();
     this.expressionEditorOpen = true;
   }
 

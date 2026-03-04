@@ -101,8 +101,10 @@ export class WorkflowService {
     return this.api.post('/nodes/execute', request);
   }
 
-  evaluateExpression(expression: string, inputData: any[]): Observable<{ result: any; error: string }> {
-    return this.api.post<{ result: any; error: string }>('/expressions/evaluate', { expression, inputData });
+  evaluateExpression(expression: string, inputData: any[], nodeOutputs?: Record<string, any>): Observable<{ result: any; error: string }> {
+    const body: any = { expression, inputData };
+    if (nodeOutputs) body.nodeOutputs = nodeOutputs;
+    return this.api.post<{ result: any; error: string }>('/expressions/evaluate', body);
   }
 
   startExecution(executionId: string, triggerNodeId?: string): Observable<any> {

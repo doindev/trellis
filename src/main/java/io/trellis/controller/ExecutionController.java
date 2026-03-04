@@ -74,7 +74,8 @@ public class ExecutionController {
     public Map<String, Object> evaluateExpression(@RequestBody Map<String, Object> request) {
         String expression = (String) request.get("expression");
         List<Map<String, Object>> inputData = (List<Map<String, Object>>) request.get("inputData");
-        return workflowEngine.evaluateExpressionPreview(expression, inputData);
+        Map<String, Object> nodeOutputs = (Map<String, Object>) request.get("nodeOutputs");
+        return workflowEngine.evaluateExpressionPreview(expression, inputData, nodeOutputs);
     }
 
     @SuppressWarnings("unchecked")

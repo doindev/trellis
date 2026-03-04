@@ -8,6 +8,12 @@ import { debounceTime, switchMap } from 'rxjs/operators';
 import { WorkflowService } from '../../../../core/services';
 import { SchemaNode } from './parameter-panel.component';
 
+export interface ExpressionAncestorNode {
+  id: string;
+  name: string;
+  isDirectParent: boolean;
+}
+
 @Component({
   selector: 'app-expression-editor-modal',
   standalone: true,
@@ -31,6 +37,17 @@ import { SchemaNode } from './parameter-panel.component';
             <div class="expr-col-header">
               <span class="expr-col-label">Input Data</span>
             </div>
+            @if (ancestorNodes.length > 0) {
+              <div class="expr-node-select">
+                <select class="expr-node-dropdown"
+                        [ngModel]="selectedAncestorId"
+                        (ngModelChange)="selectedAncestorId = $event">
+                  @for (anc of ancestorNodes; track anc.id) {
+                    <option [ngValue]="anc.id">{{ anc.name }}</option>
+                  }
+                </select>
+              </div>
+            }
             <div class="expr-col-search">
               <input type="text" class="expr-search-input" placeholder="Search fields..."
                      [(ngModel)]="schemaSearch">
@@ -212,6 +229,27 @@ import { SchemaNode } from './parameter-panel.component';
       color: hsl(0, 0%, 58%);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+    }
+    .expr-node-select {
+      padding: 6px 8px 2px;
+      flex-shrink: 0;
+    }
+    .expr-node-dropdown {
+      width: 100%;
+      background: hsl(0, 0%, 8%);
+      color: hsl(0, 0%, 88%);
+      border: 1px solid hsl(0, 0%, 22%);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      outline: none;
+    }
+    .expr-node-dropdown:focus {
+      border-color: hsl(247, 49%, 53%);
+    }
+    .expr-node-dropdown option {
+      background: hsl(0, 0%, 11%);
+      color: hsl(0, 0%, 88%);
     }
     .expr-col-search {
       padding: 8px 8px 4px;
@@ -443,6 +481,9 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
   @Input() expression = '';
   @Input() inputItems: any[] = [];
   @Input() nodeNames: string[] = [];
+  @Input() ancestorNodes: ExpressionAncestorNode[] = [];
+  @Input() nodeDataMap: Record<string, any[]> = {};
+  @Input() nodeOutputs: Record<string, any> = {};
 
   @Output() expressionSaved = new EventEmitter<string>();
   @Output() closed = new EventEmitter<void>();
@@ -460,6 +501,9 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
   hintText = 'Use {{ }} for expressions';
   placeholderText = 'e.g. Hello {{$json.name}}';
 
+  // Ancestor node selector
+  selectedAncestorId: string | null = null;
+
   // Autocomplete state
   showAutocomplete = false;
   autocompleteSuggestions: string[] = [];
@@ -476,6 +520,11 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.currentExpression = this.expression;
 
+    // Default to first ancestor (direct parent)
+    if (this.ancestorNodes.length > 0) {
+      this.selectedAncestorId = this.ancestorNodes[0].id;
+    }
+
     this.subscription = this.evaluateSubject.pipe(
       debounceTime(300),
       switchMap(expr => {
@@ -486,7 +535,7 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
           return [];
         }
         this.isEvaluating = true;
-        return this.workflowService.evaluateExpression(expr, this.inputItems);
+        return this.workflowService.evaluateExpression(expr, this.inputItems, this.nodeOutputs);
       })
     ).subscribe({
       next: (res) => {
@@ -742,18 +791,31 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
   }
 
   private extractSchemaItems(): Record<string, any>[] {
+    // If an ancestor is selected, use its data from the data map
+    if (this.selectedAncestorId && this.nodeDataMap[this.selectedAncestorId]) {
+      const items = this.nodeDataMap[this.selectedAncestorId];
+      return items.map((item: any) => item?.json ?? item);
+    }
     if (!this.inputItems || this.inputItems.length === 0) return [];
     return this.inputItems.map(item => item?.json ?? item);
   }
 
+  /** Returns the expression prefix for the currently selected ancestor node */
+  private get expressionPrefix(): string {
+    if (!this.selectedAncestorId) return '$json.';
+    const ancestor = this.ancestorNodes.find(a => a.id === this.selectedAncestorId);
+    if (!ancestor || ancestor.isDirectParent) return '$json.';
+    return '$node["' + ancestor.name + '"].json.';
+  }
+
   onSchemaClick(node: SchemaNode): void {
     if (node.children && node.children.length > 0) return;
-    this.insertAtCursor('{{$json.' + node.path + '}}');
+    this.insertAtCursor('{{' + this.expressionPrefix + node.path + '}}');
   }
 
   onSchemaDragStart(event: DragEvent, node: SchemaNode): void {
     if (node.children && node.children.length > 0) return;
-    event.dataTransfer?.setData('text/plain', '{{$json.' + node.path + '}}');
+    event.dataTransfer?.setData('text/plain', '{{' + this.expressionPrefix + node.path + '}}');
     event.dataTransfer!.effectAllowed = 'copy';
   }
 

@@ -885,6 +885,9 @@
     [expression]="expressionEditorValue"
     [inputItems]="expressionEditorInputItems"
     [nodeNames]="allNodeNames"
+    [ancestorNodes]="expressionEditorAncestorNodes"
+    [nodeDataMap]="expressionEditorNodeDataMap"
+    [nodeOutputs]="expressionEditorNodeOutputs"
     (expressionSaved)="onExpressionEditorSave($event)"
     (closed)="onExpressionEditorClose()" />
 }
