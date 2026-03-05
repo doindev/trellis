@@ -25,7 +25,8 @@ import java.util.Map;
 		description = "Triggers workflow execution from chat input via webhook or API",
 		category = "AI / Triggers",
 		icon = "comments",
-		trigger = true
+		trigger = true,
+		triggerFavorite = true
 )
 public class ChatTriggerNode extends AbstractTriggerNode {
 
