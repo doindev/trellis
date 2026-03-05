@@ -12,7 +12,8 @@ export interface NodeTypeDescription {
   subtitle: string;
   documentationUrl: string;
   searchOnly: boolean;
-  other: boolean;
+  triggerCategory: string;
+  triggerFavorite: boolean;
   parameters: NodeParameter[];
   inputs: NodeIO[];
   outputs: NodeIO[];

@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 	category = "AI / MCP",
 	icon = "mcp",
 	trigger = true,
-	other = true
+	triggerCategory = "Other"
 )
 public class McpServerTriggerNode extends AbstractTriggerNode {
 

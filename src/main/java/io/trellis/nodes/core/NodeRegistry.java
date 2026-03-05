@@ -75,7 +75,8 @@ public class NodeRegistry {
 				.subtitle(annotation.subtitle())
 				.documentationUrl(annotation.documentationUrl())
 				.searchOnly(annotation.searchOnly())
-				.other(annotation.other())
+				.triggerCategory(annotation.triggerCategory())
+				.triggerFavorite(annotation.triggerFavorite())
 				.nodeInstance(node)
 				.parameters(params)
 				.inputs(node.getInputs())
@@ -240,7 +241,8 @@ public class NodeRegistry {
 		private String documentationUrl;
 		private NodeInterface nodeInstance;
 		private boolean searchOnly;
-		private boolean other;
+		private String triggerCategory;
+		private boolean triggerFavorite;
 		private List<NodeParameter> parameters;
 		private List<NodeInput> inputs;
 		private List<NodeOutput> outputs;

@@ -39,8 +39,11 @@ public @interface Node {
 	// this value will be used to limit the number of nodes visible in the node palette. Nodes with searchOnly=true will only be visible when searching by name.
 	boolean searchOnly() default false;
 	
-	// this value will be used to group nodes into the 'Other' category that will be displayed at the bottom of the node palette. Nodes with other=true will be placed in the 'Other' category.
-	boolean other() default false;
+	// overrides the category when the node palette is filtered by type (e.g. trigger). Empty string means use the default category.
+	String triggerCategory() default "";
+
+	// when true, this node appears in the 'Favorites' category at the top of the filtered node palette
+	boolean triggerFavorite() default false;
 	
 	// node version
 	int version() default 1;

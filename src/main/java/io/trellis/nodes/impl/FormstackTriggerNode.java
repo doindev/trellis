@@ -19,7 +19,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"formstackApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class FormstackTriggerNode extends AbstractApiNode {
 

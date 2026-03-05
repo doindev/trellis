@@ -20,7 +20,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"loneScaleApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class LoneScaleTriggerNode extends AbstractApiNode {
 

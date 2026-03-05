@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"currentsApi"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class CurrentsTriggerNode extends AbstractApiNode {
 

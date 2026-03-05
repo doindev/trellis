@@ -24,7 +24,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"mailchimpOAuth2Api"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class MailchimpTriggerNode extends AbstractApiNode {
 

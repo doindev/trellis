@@ -20,7 +20,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"formIoApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class FormIoTriggerNode extends AbstractApiNode {
 

@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 	trigger = true,
 	polling = true,
 	searchOnly = true,
-	other = true
+	triggerCategory = "Other"
 )
 public class RssFeedReadTriggerNode extends AbstractTriggerNode {
 

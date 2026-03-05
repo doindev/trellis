@@ -20,7 +20,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"emeliaApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class EmeliaTriggerNode extends AbstractApiNode {
 

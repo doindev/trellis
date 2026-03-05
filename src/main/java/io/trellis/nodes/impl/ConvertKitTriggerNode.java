@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"convertKitApi"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class ConvertKitTriggerNode extends AbstractApiNode {
 

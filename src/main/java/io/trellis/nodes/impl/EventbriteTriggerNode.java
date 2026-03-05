@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"eventbriteApi"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class EventbriteTriggerNode extends AbstractApiNode {
 

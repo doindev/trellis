@@ -22,7 +22,7 @@ import java.util.*;
 		icon = "awsSns",
 		trigger = true,
 		credentials = {"awsApi"},
-		other = true
+		triggerCategory = "Other"
 )
 public class AwsSnsTriggerNode extends AbstractApiNode {
 

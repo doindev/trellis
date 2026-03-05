@@ -20,7 +20,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"lemlistApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class LemlistTriggerNode extends AbstractApiNode {
 

@@ -31,7 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Starts the workflow when an HTTP request is received at the configured path.",
 	category = "Core Triggers",
 	icon = "webhook",
-	trigger = true
+	trigger = true,
+	triggerFavorite = true
 )
 public class WebhookNode extends AbstractTriggerNode {
 

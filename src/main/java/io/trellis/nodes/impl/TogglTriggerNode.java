@@ -22,7 +22,7 @@ import java.util.*;
 		trigger = true,
 		polling = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class TogglTriggerNode extends AbstractApiNode {
 

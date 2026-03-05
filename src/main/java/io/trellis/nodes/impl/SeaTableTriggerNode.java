@@ -20,7 +20,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"seaTableApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class SeaTableTriggerNode extends AbstractApiNode {
 

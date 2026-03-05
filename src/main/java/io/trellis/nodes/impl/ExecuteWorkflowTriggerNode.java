@@ -35,7 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Starts when called by the Execute Sub-Workflow node. Define expected input fields or accept all data from the parent workflow.",
 	category = "Core Triggers",
 	icon = "play",
-	trigger = true
+	trigger = true,
+	triggerFavorite = true
 )
 public class ExecuteWorkflowTriggerNode extends AbstractTriggerNode {
 

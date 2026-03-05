@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	credentials = {"facebookLeadAdsOAuth2Api"},
 	trigger = true,
 	searchOnly = true,
-	other = true
+	triggerCategory = "Other"
 )
 public class FacebookLeadAdsTriggerNode extends AbstractApiNode {
 

@@ -18,7 +18,7 @@ import java.util.*;
 		icon = "koBoToolbox",
 		trigger = true,
 		credentials = {"koBoToolboxApi"},
-		other = true
+		triggerCategory = "Other"
 )
 public class KoBoToolboxTriggerNode extends AbstractApiNode {
 

@@ -19,7 +19,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"jotFormApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class JotFormTriggerNode extends AbstractApiNode {
 

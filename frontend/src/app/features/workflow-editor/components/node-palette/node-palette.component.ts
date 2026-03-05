@@ -141,17 +141,20 @@ export class NodePaletteComponent {
 
       if (matching.length === 0) return;
 
-      // When a node-type filter is active, move other=true nodes to "Other"
+      // When a node-type filter is active, use triggerCategory/triggerFavorite to override grouping
       if (isNodeTypeFilter) {
-        const normal = matching.filter(n => !n.other);
-        const otherNodes = matching.filter(n => n.other);
-        if (normal.length > 0) {
-          filtered.set(category, normal);
-        }
-        if (otherNodes.length > 0) {
-          const existing = filtered.get('Other') || [];
-          existing.push(...otherNodes);
-          filtered.set('Other', existing);
+        for (const node of matching) {
+          // Favorites go to 'Favorites' category
+          if (node.triggerFavorite) {
+            const fav = filtered.get('Favorites') || [];
+            fav.push(node);
+            filtered.set('Favorites', fav);
+          }
+          // Place in triggerCategory or original category
+          const cat = node.triggerCategory || category;
+          const existing = filtered.get(cat) || [];
+          existing.push(node);
+          filtered.set(cat, existing);
         }
       } else {
         // Text search or default: use real category
@@ -188,9 +191,14 @@ export class NodePaletteComponent {
   }
 
   isCategoryExpanded(category: string): boolean {
-    const autoExpand = this.searchTerm().length > 0 || this.triggerOnly() || !!this.aiOutputTypeFilter();
-    if (autoExpand) {
-      if (category === 'Other' && !this.expandedCategories.has(category)) return false;
+    const isFiltered = this.triggerOnly() || !!this.aiOutputTypeFilter();
+    const isSearching = this.searchTerm().length > 0;
+    if (isFiltered) {
+      // Favorites always expanded unless explicitly collapsed; all others collapsed unless explicitly expanded
+      if (category === 'Favorites') return !this.collapsedCategories.has(category);
+      return this.expandedCategories.has(category);
+    }
+    if (isSearching) {
       return !this.collapsedCategories.has(category);
     }
     return this.expandedCategories.has(category);
@@ -328,6 +336,8 @@ export class NodePaletteComponent {
   getCategoryEntries(): [string, NodeTypeDescription[]][] {
     return Array.from(this.filteredTypes().entries())
       .sort((a, b) => {
+        if (a[0] === 'Favorites') return -1;
+        if (b[0] === 'Favorites') return 1;
         if (a[0] === 'Other') return 1;
         if (b[0] === 'Other') return -1;
         return a[0].localeCompare(b[0]);

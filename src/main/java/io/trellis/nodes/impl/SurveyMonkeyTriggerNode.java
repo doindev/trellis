@@ -20,7 +20,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"surveyMonkeyApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class SurveyMonkeyTriggerNode extends AbstractApiNode {
 

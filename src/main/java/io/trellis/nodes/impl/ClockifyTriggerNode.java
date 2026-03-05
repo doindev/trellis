@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 	trigger = true,
 	credentials = {"clockifyApi"},
 	searchOnly = true,
-	other = true
+	triggerCategory = "Other"
 )
 public class ClockifyTriggerNode extends AbstractApiNode {
 

@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 	polling = true,
 	credentials = {"venafiTlsProtectDatacenterApi"},
 	searchOnly = true,
-	other = true
+	triggerCategory = "Other"
 )
 public class VenafiTlsProtectDatacenterTriggerNode extends AbstractApiNode {
 

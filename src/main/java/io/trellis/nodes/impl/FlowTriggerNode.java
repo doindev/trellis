@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"flowApi"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class FlowTriggerNode extends AbstractApiNode {
 

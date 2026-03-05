@@ -19,7 +19,7 @@ import java.util.*;
 		icon = "affinity",
 		credentials = {"affinityApi"},
 		trigger = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class AffinityTriggerNode extends AbstractTriggerNode {
 

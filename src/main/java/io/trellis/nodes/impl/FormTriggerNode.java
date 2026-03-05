@@ -29,7 +29,8 @@ import java.util.Map;
     description = "Starts the workflow when a user submits a web form at the configured URL.",
     category = "Human in the Loop",
     icon = "clipboard-list",
-    trigger = true
+    trigger = true,
+    triggerFavorite = true
 )
 public class FormTriggerNode extends AbstractTriggerNode {
 

@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"gumroadApi"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class GumroadTriggerNode extends AbstractApiNode {
 

@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"netlifyApi"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class NetlifyTriggerNode extends AbstractApiNode {
 

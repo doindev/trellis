@@ -21,7 +21,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"workableApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class WorkableTriggerNode extends AbstractApiNode {
 

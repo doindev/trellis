@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"mailerLiteApi"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class MailerLiteTriggerNode extends AbstractApiNode {
 

@@ -25,7 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Triggers the workflow on a time-based schedule using either a fixed interval or a cron expression.",
 	category = "Core Triggers",
 	icon = "clock",
-	trigger = true
+	trigger = true,
+	triggerFavorite = true
 )
 public class ScheduleTriggerNode extends AbstractTriggerNode {
 

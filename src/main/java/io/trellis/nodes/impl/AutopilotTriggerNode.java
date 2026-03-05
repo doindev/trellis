@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"autopilotApi"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class AutopilotTriggerNode extends AbstractApiNode {
 

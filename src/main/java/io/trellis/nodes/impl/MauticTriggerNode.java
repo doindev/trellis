@@ -23,7 +23,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"mauticApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class MauticTriggerNode extends AbstractApiNode {
 

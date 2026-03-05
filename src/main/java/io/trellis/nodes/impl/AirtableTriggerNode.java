@@ -24,7 +24,7 @@ import java.util.*;
 		trigger = true,
 		polling = true,
 		credentials = {"airtableApi"},
-		other = true
+		triggerCategory = "Other"
 )
 public class AirtableTriggerNode extends AbstractApiNode {
 

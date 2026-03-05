@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"stravaOAuth2Api"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class StravaTriggerNode extends AbstractApiNode {
 

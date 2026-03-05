@@ -20,7 +20,7 @@ import java.util.*;
 		icon = "acuityScheduling",
 		credentials = {"acuitySchedulingApi"},
 		trigger = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class AcuitySchedulingTriggerNode extends AbstractApiNode {
 

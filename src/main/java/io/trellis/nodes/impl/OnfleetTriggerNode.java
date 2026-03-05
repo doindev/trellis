@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 	trigger = true,
 	polling = true,
 	credentials = {"onfleetApi"},
-	searchOnly = true,other = true
+	searchOnly = true,triggerCategory = "Other"
 )
 public class OnfleetTriggerNode extends AbstractApiNode {
 

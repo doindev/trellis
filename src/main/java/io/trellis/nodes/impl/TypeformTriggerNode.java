@@ -20,7 +20,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"typeformApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class TypeformTriggerNode extends AbstractApiNode {
 

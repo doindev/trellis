@@ -19,7 +19,7 @@ import java.util.*;
 		trigger = true,
 		credentials = {"wufooApi"},
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class WufooTriggerNode extends AbstractApiNode {
 

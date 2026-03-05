@@ -21,7 +21,7 @@ import java.util.*;
 		credentials = {"calApi"},
 		trigger = true,
 		searchOnly = true,
-		other = true
+		triggerCategory = "Other"
 )
 public class CalTriggerNode extends AbstractApiNode {
 
