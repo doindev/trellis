@@ -59,7 +59,7 @@
 
   <div class="palette-content" [class.panel-open]="actionPanel()">
     <!-- Main node list -->
-    <div class="palette-body">
+    <div #paletteBody class="palette-body">
       @for (entry of getCategoryEntries(); track entry[0]) {
         <div class="category">
           <div class="category-header" (click)="toggleCategory(entry[0])">

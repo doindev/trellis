@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, computed, ViewChild, ElementRef, HostListener, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, effect, ViewChild, ElementRef, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
@@ -50,6 +50,14 @@ export class NodePaletteComponent implements OnInit {
     });
   }
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('paletteBody') paletteBody?: ElementRef<HTMLElement>;
+
+  private scrollOnFilterChange = effect(() => {
+    // Read the filter signals so the effect re-runs when they change
+    this.triggerOnly();
+    this.aiOutputTypeFilter();
+    this.paletteBody?.nativeElement.scrollTo({ top: 0 });
+  });
 
   @Input() set nodeTypes(value: Map<string, NodeTypeDescription[]>) {
     this._nodeTypes.set(value);
