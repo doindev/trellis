@@ -133,7 +133,10 @@
       "Bash(timeout:*)",
       "WebFetch(domain:mohankumarsagadevan.medium.com)",
       "Bash(mvn dependency:build-classpath:*)",
-      "WebFetch(domain:search.maven.org)"
+      "WebFetch(domain:search.maven.org)",
+      "Bash(echo:*)",
+      "mcp__trellis-agent__trellis_list_node_categories",
+      "mcp__trellis-agent__trellis_list_browser_sessions"
     ]
   }
 }

@@ -97,6 +97,11 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   'taiga': <><path d="M12 2L6 10h4l-4 6h12l-4-6h4L12 2z" /><path d="M12 16v6" /></>,
   'disqus': <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><path d="M10 7h1a3 3 0 0 1 0 6h-1V7z" /></>,
 
+  // Sentiment / Classifier / Template nodes
+  'heart-pulse': <><path d="M19.5 12.572l-7.5 7.428l-7.5-7.428A5 5 0 1 1 12 6.006a5 5 0 1 1 7.5 6.572" /><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.278" /></>,
+  'tags': <><path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19" /><path d="M9.586 5.586A2 2 0 0 0 8.172 5H3a1 1 0 0 0-1 1v5.172a2 2 0 0 0 .586 1.414L8.29 18.29a2.426 2.426 0 0 0 3.42 0l3.58-3.58a2.426 2.426 0 0 0 0-3.42z" /><circle cx="6.5" cy="9.5" r=".5" fill="currentColor" /></>,
+  'braces': <><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1" /><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1" /></>,
+
   // --- New standard Lucide icons ---
 
   'mail': <><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></>,
