@@ -691,6 +691,25 @@
                   </div>
                 </div>
               </div>
+              @if (isTriggerNode) {
+                <div class="param-group">
+                  <div class="setting-row">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox"
+                             [ngModel]="getSettingValue('instanceSync', true)"
+                             (ngModelChange)="onParameterChange('instanceSync', $event)"
+                             id="setting-instanceSync"
+                             [disabled]="readOnly">
+                      <label class="form-check-label param-label" for="setting-instanceSync">
+                        Enable Instance Synchronization
+                      </label>
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                      Ensures only one instance executes this trigger at a time across a multi-instance deployment.
+                    </small>
+                  </div>
+                </div>
+              }
             </div>
           }
         </div>

@@ -1,6 +1,7 @@
 package io.trellis.service;
 
 import io.trellis.dto.*;
+import io.trellis.engine.TriggerSchedulerService;
 import io.trellis.entity.ProjectEntity.ProjectType;
 import io.trellis.entity.ProjectRelationEntity;
 import io.trellis.entity.ProjectRelationEntity.ProjectRole;
@@ -24,7 +25,10 @@ import io.trellis.repository.WorkflowShareRepository;
 import io.trellis.repository.WorkflowVersionRepository;
 import io.trellis.util.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -53,6 +57,12 @@ public class WorkflowService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final SecurityContextHelper securityContextHelper;
+
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private TriggerSchedulerService triggerSchedulerService;
+
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private ClusterSyncService clusterSyncService;
 
     // --- Access control helpers ---
 
@@ -227,6 +237,7 @@ public class WorkflowService {
         checkEditAccess(entity);
         if (entity.isPublished()) {
             webhookService.deregisterWorkflowWebhooks(id);
+            triggerSchedulerService.deregisterWorkflowTriggers(id);
         }
         workflowShareRepository.deleteByWorkflowId(id);
         workflowVersionRepository.deleteByWorkflowId(id);
@@ -269,6 +280,8 @@ public class WorkflowService {
         entity = workflowRepository.save(entity);
 
         webhookService.registerWorkflowWebhooks(entity);
+        triggerSchedulerService.registerWorkflowTriggers(entity);
+        clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_TRIGGERS);
         log.info("Published workflow: {} ({}) as {}", entity.getName(), id, versionName);
 
         return toResponse(entity);
@@ -359,6 +372,8 @@ public class WorkflowService {
         entity = workflowRepository.save(entity);
 
         webhookService.registerWorkflowWebhooks(entity);
+        triggerSchedulerService.registerWorkflowTriggers(entity);
+        clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_TRIGGERS);
         log.info("Published workflow {} ({}) from version {} as {}", entity.getName(), workflowId, versionId, versionName);
         return toResponse(entity);
     }
@@ -402,6 +417,8 @@ public class WorkflowService {
         WorkflowEntity entity = findById(id);
         if (entity.isPublished()) {
             webhookService.deregisterWorkflowWebhooks(id);
+            triggerSchedulerService.deregisterWorkflowTriggers(id);
+            clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_TRIGGERS);
             entity.setPublished(false);
             disableSwaggerAccess(entity);
             entity = workflowRepository.save(entity);
@@ -415,6 +432,7 @@ public class WorkflowService {
         WorkflowEntity entity = findById(id);
         if (entity.isPublished()) {
             webhookService.deregisterWorkflowWebhooks(id);
+            triggerSchedulerService.deregisterWorkflowTriggers(id);
             entity.setPublished(false);
         }
         disableSwaggerAccess(entity);

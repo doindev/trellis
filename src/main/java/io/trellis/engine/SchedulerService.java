@@ -45,6 +45,24 @@ public class SchedulerService {
         }
     }
 
+    /**
+     * Deregisters all scheduled tasks whose key starts with the given prefix.
+     * Used to remove all triggers for a workflow (keys are workflowId_nodeId).
+     */
+    public void deregisterByPrefix(String prefix) {
+        scheduledTasks.keySet().removeIf(key -> {
+            if (key.startsWith(prefix)) {
+                ScheduledFuture<?> future = scheduledTasks.get(key);
+                if (future != null) {
+                    future.cancel(false);
+                    log.info("Deregistered schedule: {}", key);
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+
     public boolean isScheduled(String workflowId) {
         return scheduledTasks.containsKey(workflowId);
     }

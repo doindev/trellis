@@ -1,15 +1,22 @@
 package io.trellis.service;
 
 import io.trellis.config.ProjectContextPathFilter;
+import io.trellis.engine.TriggerSchedulerService;
 import io.trellis.entity.ClusterSyncEntity;
+import io.trellis.entity.WorkflowEntity;
 import io.trellis.repository.ClusterSyncRepository;
+import io.trellis.repository.WorkflowRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,10 +35,15 @@ public class ClusterSyncService {
 
     public static final String DOMAIN_WEBHOOKS = "webhooks";
     public static final String DOMAIN_CONTEXT_PATHS = "context_paths";
+    public static final String DOMAIN_TRIGGERS = "triggers";
 
     private final ClusterSyncRepository repository;
     private final WebhookService webhookService;
     private final ProjectContextPathFilter contextPathFilter;
+    private final WorkflowRepository workflowRepository;
+
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private TriggerSchedulerService triggerSchedulerService;
 
     private final Map<String, Long> localVersions = new ConcurrentHashMap<>();
 
@@ -74,7 +86,15 @@ public class ClusterSyncService {
         switch (domain) {
             case DOMAIN_WEBHOOKS -> webhookService.refreshSecurityRegistry();
             case DOMAIN_CONTEXT_PATHS -> contextPathFilter.refreshCache();
+            case DOMAIN_TRIGGERS -> refreshTriggers();
             default -> log.warn("Unknown cluster sync domain: {}", domain);
         }
+    }
+
+    private void refreshTriggers() {
+        if (triggerSchedulerService == null) return;
+        List<WorkflowEntity> published = workflowRepository.findByPublished(true);
+        triggerSchedulerService.registerAllPublished(published);
+        log.info("Refreshed triggers for {} published workflow(s)", published.size());
     }
 }

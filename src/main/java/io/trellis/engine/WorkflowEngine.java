@@ -104,6 +104,25 @@ public class WorkflowEngine {
         executeAsync(executionId, workflow, inputData, NodeExecutionContext.ExecutionMode.MANUAL);
     }
 
+    public String startTriggerExecution(String workflowId, String triggerNodeId) {
+        WorkflowEntity workflow = workflowService.findById(workflowId);
+
+        Map<String, Object> workflowSnapshot = new LinkedHashMap<>();
+        workflowSnapshot.put("id", workflow.getId());
+        workflowSnapshot.put("name", workflow.getName());
+        workflowSnapshot.put("nodes", workflow.getNodes());
+        workflowSnapshot.put("connections", workflow.getConnections());
+
+        var execution = executionService.createExecution(
+                workflowId, workflowSnapshot, ExecutionMode.TRIGGER);
+
+        Map<String, Object> triggerInput = new LinkedHashMap<>();
+        triggerInput.put("triggerNodeId", triggerNodeId);
+
+        executeAsync(execution.getId(), workflow, triggerInput, NodeExecutionContext.ExecutionMode.TRIGGER);
+        return execution.getId();
+    }
+
     public String startWebhookExecution(String workflowId, String triggerNodeId, Map<String, Object> webhookData) {
         WorkflowEntity workflow = workflowService.findById(workflowId);
 
