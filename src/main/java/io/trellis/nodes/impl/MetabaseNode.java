@@ -16,7 +16,7 @@ import java.util.*;
 		type = "metabase",
 		displayName = "Metabase",
 		description = "Query and manage data in Metabase",
-		category = "Miscellaneous",
+		category = "Data & Storage / Databases",
 		icon = "metabase",
 		credentials = {"metabaseApi"},
 		searchOnly = true

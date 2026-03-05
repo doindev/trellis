@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "supabase",
 	displayName = "Supabase",
 	description = "Manage rows in Supabase tables via the PostgREST API",
-	category = "Database",
+	category = "Data & Storage / Databases",
 	icon = "supabase",
 	credentials = {"supabaseApi"}
 )

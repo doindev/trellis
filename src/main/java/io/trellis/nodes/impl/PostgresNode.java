@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "postgres",
 	displayName = "PostgreSQL",
 	description = "Execute queries against a PostgreSQL database.",
-	category = "Databases",
+	category = "Data & Storage / Databases",
 	icon = "postgres",
 	credentials = {"postgresApi"}
 )

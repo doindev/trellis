@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "elasticsearch",
 	displayName = "Elasticsearch",
 	description = "Index, get, search, update, and delete documents in Elasticsearch",
-	category = "Database",
+	category = "Data & Storage / Databases",
 	icon = "elasticsearch",
 	credentials = {"elasticsearchApi"}
 )

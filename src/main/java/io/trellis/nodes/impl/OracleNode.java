@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "oracle",
 	displayName = "Oracle DB",
 	description = "Execute queries against an Oracle database.",
-	category = "Databases",
+	category = "Data & Storage / Databases",
 	icon = "oracle",
 	credentials = {"oracleDBApi"}
 )

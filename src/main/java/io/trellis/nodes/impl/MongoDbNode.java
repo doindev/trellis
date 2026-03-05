@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "mongoDb",
 	displayName = "MongoDB",
 	description = "Interact with a MongoDB database.",
-	category = "Databases",
+	category = "Data & Storage / Databases",
 	icon = "mongo",
 	credentials = {"mongoDb"}
 )

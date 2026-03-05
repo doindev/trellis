@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "mysql",
 	displayName = "MySQL",
 	description = "Execute queries against a MySQL database.",
-	category = "Databases",
+	category = "Data & Storage / Databases",
 	icon = "mysql",
 	credentials = {"mysqlApi"}
 )

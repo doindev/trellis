@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "redisTrigger",
 	displayName = "Redis Trigger",
 	description = "Starts the workflow when messages are received on a Redis channel or key changes are detected",
-	category = "Database",
+	category = "Data & Storage / Databases",
 	icon = "redis",
 	trigger = true,
 	credentials = {"redisApi"}

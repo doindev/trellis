@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "neo4j",
 	displayName = "Neo4j",
 	description = "Execute Cypher queries against a Neo4j graph database.",
-	category = "Databases",
+	category = "Data & Storage / Databases",
 	icon = "neo4j",
 	credentials = {"neo4j"}
 )

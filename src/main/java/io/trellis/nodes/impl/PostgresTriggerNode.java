@@ -26,7 +26,7 @@ import java.sql.ResultSetMetaData;
 	type = "postgresTrigger",
 	displayName = "Postgres Trigger",
 	description = "Starts the workflow when new or updated rows are detected in a PostgreSQL table",
-	category = "Database",
+	category = "Data & Storage / Databases",
 	icon = "postgres",
 	trigger = true,
 	polling = true,

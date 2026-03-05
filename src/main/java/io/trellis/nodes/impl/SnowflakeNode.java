@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "snowflake",
 	displayName = "Snowflake",
 	description = "Execute queries and manage data in Snowflake",
-	category = "Database",
+	category = "Data & Storage / Databases",
 	icon = "snowflake",
 	credentials = {"snowflakeApi"}
 )

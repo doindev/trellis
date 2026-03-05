@@ -28,7 +28,7 @@ import redis.clients.jedis.JedisPool;
 	type = "redis",
 	displayName = "Redis",
 	description = "Interact with a Redis database.",
-	category = "Databases",
+	category = "Data & Storage / Databases",
 	icon = "redis",
 	credentials = {"redis"}
 )
