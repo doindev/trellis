@@ -1,6 +1,7 @@
 package io.trellis.repository;
 
 import io.trellis.entity.ExecutionEntity;
+import io.trellis.entity.ExecutionEntity.ExecutionMode;
 import io.trellis.entity.ExecutionEntity.ExecutionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.time.Instant;
 import java.util.List;
 
 @Repository
@@ -40,4 +42,10 @@ public interface ExecutionRepository extends JpaRepository<ExecutionEntity, Stri
     Page<ExecutionEntity> findProductionByProjectIds(@Param("projectIds") java.util.List<String> projectIds,
                                                      @Param("excludeMode") ExecutionEntity.ExecutionMode excludeMode,
                                                      Pageable pageable);
+
+    @Query("SELECT e FROM ExecutionEntity e WHERE e.startedAt >= :start AND e.startedAt < :end " +
+           "AND e.mode NOT IN :excludedModes")
+    List<ExecutionEntity> findForRollup(@Param("start") Instant start,
+                                        @Param("end") Instant end,
+                                        @Param("excludedModes") List<ExecutionMode> excludedModes);
 }

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
 import { ExecutionService, ProjectService } from '../../core/services';
-import { Execution, Project } from '../../core/models';
+import { MetricsResponse, MetricsBucket } from '../../core/services/execution.service';
+import { Project } from '../../core/models';
 import {
   Chart,
   BarController,
@@ -75,7 +76,7 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
 
   activeMetric = signal('total');
-  executions = signal<Execution[]>([]);
+  metricsResponse = signal<MetricsResponse | null>(null);
   showDatePicker = signal(false);
   selectedProjectId = signal('all');
   projects = signal<Project[]>([]);
@@ -113,29 +114,9 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
     { key: 'averageRunTime', label: 'Run time (avg.)' }
   ];
 
-  // Filtered executions within the selected date range
-  // (MANUAL mode and unpublished workflows already excluded by backend metricsOnly param)
-  filteredExecutions = computed(() => {
-    const execs = this.executions();
-    if (!Array.isArray(execs)) return [];
-    const start = this.rangeStart().getTime();
-    const end = this.rollingHours()
-      ? this.rangeEnd().getTime()
-      : this.rangeEnd().getTime() + 86400000 - 1; // include full end day
-    return execs.filter(e => {
-      if (!e.startedAt) return false;
-      const t = new Date(e.startedAt).getTime();
-      return t >= start && t <= end;
-    });
-  });
+  totalExecutions = computed(() => this.metricsResponse()?.summary?.total ?? 0);
 
-  totalExecutions = computed(() => {
-    return this.filteredExecutions().length;
-  });
-
-  failedExecutions = computed(() => {
-    return this.filteredExecutions().filter(e => e.status?.toLowerCase() === 'error').length;
-  });
+  failedExecutions = computed(() => this.metricsResponse()?.summary?.error ?? 0);
 
   failureRate = computed(() => {
     const total = this.totalExecutions();
@@ -144,49 +125,43 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   });
 
   avgRunTimeMs = computed(() => {
-    const execs = this.filteredExecutions();
-    const finished = execs.filter(e => e.startedAt && e.finishedAt);
-    if (finished.length === 0) return 0;
-    const totalMs = finished.reduce((sum, e) => {
-      return sum + (new Date(e.finishedAt!).getTime() - new Date(e.startedAt!).getTime());
-    }, 0);
-    return Math.round(totalMs / finished.length);
+    const summary = this.metricsResponse()?.summary;
+    if (!summary || summary.finishedCount === 0) return 0;
+    return Math.round(summary.totalDurationMs / summary.finishedCount);
   });
 
   timeBuckets = computed<TimeBucket[]>(() => {
+    const response = this.metricsResponse();
+    if (!response?.buckets?.length) {
+      return this.buildEmptyBuckets(this.rangeStart(), this.rangeEnd(), this.rollingHours());
+    }
+
     const start = this.rangeStart();
     const end = this.rangeEnd();
     const rolling = this.rollingHours();
-    const execs = this.filteredExecutions();
 
-    const buckets = this.buildBuckets(start, end, rolling);
+    // Build display buckets at the appropriate visual granularity
+    const displayBuckets = this.buildEmptyBuckets(start, end, rolling);
 
-    for (const exec of execs) {
-      if (!exec.startedAt) continue;
-      const execTime = new Date(exec.startedAt).getTime();
-      const bucket = buckets.find(b => execTime >= b.start.getTime() && execTime < b.end.getTime());
-      if (!bucket) continue;
+    // Map API buckets into display buckets
+    for (const apiBucket of response.buckets) {
+      const bucketTime = new Date(apiBucket.time).getTime();
+      const target = displayBuckets.find(b => bucketTime >= b.start.getTime() && bucketTime < b.end.getTime());
+      if (!target) continue;
 
-      bucket.total++;
-      if (exec.status?.toLowerCase() === 'error') {
-        bucket.failed++;
-      } else {
-        bucket.success++;
-      }
-
-      if (exec.startedAt && exec.finishedAt) {
-        const duration = new Date(exec.finishedAt).getTime() - new Date(exec.startedAt).getTime();
-        bucket.totalDurationMs += duration;
-        bucket.finishedCount++;
-      }
+      target.total += apiBucket.total;
+      target.success += apiBucket.success;
+      target.failed += apiBucket.error;
+      target.totalDurationMs += apiBucket.totalDurationMs;
+      target.finishedCount += apiBucket.finishedCount;
     }
 
-    for (const bucket of buckets) {
+    for (const bucket of displayBuckets) {
       bucket.failureRate = bucket.total > 0 ? Math.round((bucket.failed / bucket.total) * 100) : 0;
       bucket.avgRunTimeMs = bucket.finishedCount > 0 ? Math.round(bucket.totalDurationMs / bucket.finishedCount) : 0;
     }
 
-    return buckets;
+    return displayBuckets;
   });
 
   dateRangeLabel = computed(() => {
@@ -251,7 +226,7 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Re-read range signals to trigger reload on change
     this.rangeStart();
     this.rangeEnd();
-    this.loadExecutions();
+    this.loadMetrics();
   });
 
   private chartEffect = effect(() => {
@@ -287,8 +262,8 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
           .filter(p => p.type === 'TEAM')
           .sort((a, b) => a.name.localeCompare(b.name));
         this.projects.set([...personal, ...team]);
-        // Reload executions now that project list is available for "all" filtering
-        this.loadExecutions();
+        // Reload metrics now that project list is available for "all" filtering
+        this.loadMetrics();
       },
       error: () => this.projects.set([])
     });
@@ -296,7 +271,7 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onProjectChange(projectId: string): void {
     this.selectedProjectId.set(projectId);
-    this.loadExecutions();
+    this.loadMetrics();
   }
 
   ngAfterViewInit(): void {
@@ -308,20 +283,25 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.chart?.destroy();
   }
 
-  loadExecutions(): void {
-    const params: Record<string, string> = { size: '10000', metricsOnly: 'true' };
+  loadMetrics(): void {
+    const start = this.rangeStart();
+    const end = this.rollingHours() ? this.rangeEnd() : new Date(this.rangeEnd().getTime() + 86400000);
+    const params: Record<string, string> = {
+      start: start.toISOString(),
+      end: end.toISOString()
+    };
     const projectId = this.selectedProjectId();
     if (projectId !== 'all') {
       params['projectId'] = projectId;
     } else {
-      // "All" = only projects the user has access to
       const ids = this.projects().map(p => p.id).filter((id): id is string => !!id);
       if (ids.length > 0) {
         params['projectIds'] = ids.join(',');
       }
     }
-    this.executionService.list(params).subscribe({
-      next: (data) => this.executions.set(Array.isArray(data) ? data : [])
+    this.executionService.getMetrics(params).subscribe({
+      next: (data) => this.metricsResponse.set(data),
+      error: () => this.metricsResponse.set(null)
     });
   }
 
@@ -711,7 +691,7 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // --- Bucket building ---
 
-  private buildBuckets(start: Date, end: Date, rolling: boolean): TimeBucket[] {
+  private buildEmptyBuckets(start: Date, end: Date, rolling: boolean): TimeBucket[] {
     const endBoundary = rolling
       ? end.getTime()
       : end.getTime() + 86400000; // extend to cover the full end day

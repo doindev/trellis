@@ -56,35 +56,20 @@ export class HomeComponent implements OnInit {
   searchTerm = signal('');
   sortBy = signal('updatedAt');
 
-  // Insights
+  // Insights (pre-aggregated from metrics API)
   executions = signal<Execution[]>([]);
-  /** Executions from published workflows only, excluding manual runs */
-  productionExecutions = computed(() => {
-    const execs = this.executions();
-    if (!Array.isArray(execs)) return [];
-    const publishedWfIds = new Set(
-      this.workflows().filter(w => w.published).map(w => w.id)
-    );
-    return execs.filter(e =>
-      e.mode?.toUpperCase() !== 'MANUAL' && publishedWfIds.has(e.workflowId)
-    );
-  });
-  totalExecutions = computed(() => this.productionExecutions().length);
-  failedExecutions = computed(() =>
-    this.productionExecutions().filter(e => e.status?.toUpperCase() === 'ERROR').length
-  );
+  metricsSummary = signal<{ total: number; success: number; error: number; canceled: number; totalDurationMs: number; finishedCount: number } | null>(null);
+  totalExecutions = computed(() => this.metricsSummary()?.total ?? 0);
+  failedExecutions = computed(() => this.metricsSummary()?.error ?? 0);
   failureRate = computed(() => {
     const total = this.totalExecutions();
     if (total === 0) return 0;
     return Math.round((this.failedExecutions() / total) * 100);
   });
   avgRunTimeMs = computed(() => {
-    const finished = this.productionExecutions().filter(e => e.startedAt && e.finishedAt);
-    if (finished.length === 0) return 0;
-    const totalMs = finished.reduce((sum, e) => {
-      return sum + (new Date(e.finishedAt!).getTime() - new Date(e.startedAt!).getTime());
-    }, 0);
-    return Math.round(totalMs / finished.length);
+    const summary = this.metricsSummary();
+    if (!summary || summary.finishedCount === 0) return 0;
+    return Math.round(summary.totalDurationMs / summary.finishedCount);
   });
   // Workflow filters
   showWfFilterModal = signal(false);
@@ -373,6 +358,23 @@ export class HomeComponent implements OnInit {
     this.loadWorkflows();
     this.loadCredentials();
     this.loadExecutions();
+    this.loadInsightsMetrics();
+  }
+
+  loadInsightsMetrics(): void {
+    const now = new Date();
+    const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // last 7 days
+    const projectId = this.selectedProjectId();
+    if (!projectId) return;
+    const params: Record<string, string> = {
+      start: start.toISOString(),
+      end: now.toISOString(),
+      projectId
+    };
+    this.executionService.getMetrics(params).subscribe({
+      next: (data) => this.metricsSummary.set(data.summary),
+      error: () => this.metricsSummary.set(null)
+    });
   }
 
   getProjectName(projectId?: string): string {

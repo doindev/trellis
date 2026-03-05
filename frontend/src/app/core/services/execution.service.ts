@@ -11,6 +11,30 @@ interface Page<T> {
   number: number;
 }
 
+export interface MetricsBucket {
+  time: string;
+  total: number;
+  success: number;
+  error: number;
+  canceled: number;
+  totalDurationMs: number;
+  finishedCount: number;
+}
+
+export interface MetricsSummary {
+  total: number;
+  success: number;
+  error: number;
+  canceled: number;
+  totalDurationMs: number;
+  finishedCount: number;
+}
+
+export interface MetricsResponse {
+  summary: MetricsSummary;
+  buckets: MetricsBucket[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ExecutionService {
   private readonly path = '/executions';
@@ -21,6 +45,10 @@ export class ExecutionService {
     return this.api.get<Page<Execution>>(this.path, params).pipe(
       map(page => page.content)
     );
+  }
+
+  getMetrics(params: Record<string, string>): Observable<MetricsResponse> {
+    return this.api.get<MetricsResponse>('/metrics', params);
   }
 
   get(id: string): Observable<Execution> {
