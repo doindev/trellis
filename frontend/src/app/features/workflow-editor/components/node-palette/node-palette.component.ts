@@ -1,9 +1,10 @@
-import { Component, Input, Output, EventEmitter, signal, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, computed, ViewChild, ElementRef, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS } from 'lucide-angular';
 import { NODE_ICON_SET } from '../../../../shared/node-icons';
 import { NodeTypeDescription, NodeParameter, ParameterOption } from '../../../../core/models';
+import { SettingsService } from '../../../../core/services';
 
 export interface NodeClickedWithAction {
   nodeType: NodeTypeDescription;
@@ -38,7 +39,16 @@ interface ActionPanel {
   templateUrl: './node-palette.component.html',
   styleUrl: './node-palette.component.scss'
 })
-export class NodePaletteComponent {
+export class NodePaletteComponent implements OnInit {
+  supportEmail = '';
+
+  constructor(private settingsService: SettingsService) {}
+
+  ngOnInit(): void {
+    this.settingsService.getSettings().subscribe(settings => {
+      this.supportEmail = settings.supportEmail || '';
+    });
+  }
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
   @Input() set nodeTypes(value: Map<string, NodeTypeDescription[]>) {
@@ -367,6 +377,11 @@ export class NodePaletteComponent {
     this.searchTerm.set('');
     this.actionPanel.set(null);
     this.focusSearch();
+  }
+
+  get suggestionMailtoUrl(): string {
+    const subject = encodeURIComponent('New Node Suggestion');
+    return `mailto:${this.supportEmail}?subject=${subject}`;
   }
 
   getCategoryEntries(): [string, NodeTypeDescription[]][] {

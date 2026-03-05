@@ -20,7 +20,7 @@ import java.util.*;
 		type = "awsComprehend",
 		displayName = "AWS Comprehend",
 		description = "Detect language, sentiment, and entities in text",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

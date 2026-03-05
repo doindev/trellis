@@ -165,6 +165,9 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     return run?.error || null;
   }
 
+  // Support email (from settings)
+  supportEmail = '';
+
   // Webhook path validation
   webhookPathError = '';
 
@@ -198,10 +201,10 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   ) {}
 
   ngOnInit(): void {
-    if (this.isWebhookNode) {
-      this.settingsService.getSettings().subscribe(settings => {
+    this.settingsService.getSettings().subscribe(settings => {
+      this.supportEmail = settings.supportEmail || '';
+      if (this.isWebhookNode) {
         if (this.projectContextPath) {
-          // Extract base URL (scheme+host+port) and use context path prefix
           const prodUrl = settings.webhookUrlProduction || '';
           const baseUrl = this.extractBaseUrl(prodUrl);
           this.webhookUrlProduction = baseUrl + '/' + this.projectContextPath + '/';
@@ -210,8 +213,8 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
           this.webhookUrlProduction = settings.webhookUrlProduction || '';
           this.webhookUrlTest = settings.webhookUrlTest || '';
         }
-      });
-    }
+      }
+    });
   }
 
   private extractBaseUrl(url: string): string {
@@ -1421,6 +1424,13 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
 
   get allNodeNames(): string[] {
     return this.allNodes.map(n => n.name);
+  }
+
+  get supportMailtoUrl(): string {
+    const category = this.nodeType?.category || '';
+    const displayName = this.nodeType?.displayName || this.node?.type || '';
+    const subject = encodeURIComponent(`[${category}] ${displayName}`);
+    return `mailto:${this.supportEmail}?subject=${subject}`;
   }
 
   /** Get all unique top-level field names from input items for a given node */

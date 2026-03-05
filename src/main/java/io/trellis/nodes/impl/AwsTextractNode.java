@@ -21,7 +21,7 @@ import java.util.*;
 		type = "awsTextract",
 		displayName = "AWS Textract",
 		description = "Extract text and data from documents and images",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

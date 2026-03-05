@@ -21,7 +21,7 @@ import java.util.*;
 		type = "awsSqs",
 		displayName = "AWS SQS",
 		description = "Send messages to AWS SQS queues",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

@@ -20,7 +20,7 @@ import java.util.*;
 		type = "awsElb",
 		displayName = "AWS ELB",
 		description = "Manage Elastic Load Balancers",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

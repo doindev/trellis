@@ -20,7 +20,7 @@ import java.util.*;
 		type = "awsIam",
 		displayName = "AWS IAM",
 		description = "Manage users and groups in AWS IAM",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "awsIam",
 		credentials = {"awsApi"}
 )

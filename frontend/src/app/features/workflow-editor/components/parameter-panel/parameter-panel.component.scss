@@ -1373,3 +1373,24 @@
   margin-top: -12px;
   margin-bottom: 8px;
 }
+
+// ── Footer ──
+
+.node-modal-footer {
+  display: flex;
+  justify-content: center;
+  padding: 8px 20px;
+  border-top: 1px solid hsl(0, 0%, 20%);
+  flex-shrink: 0;
+
+  a {
+    font-size: 0.75rem;
+    color: hsl(0, 0%, 50%);
+    text-decoration: none;
+
+    &:hover {
+      color: hsl(0, 0%, 70%);
+      text-decoration: underline;
+    }
+  }
+}

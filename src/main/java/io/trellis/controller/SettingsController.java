@@ -38,6 +38,9 @@ public class SettingsController {
     @Value("${trellis.webhook.test-base-path:/webhook-test/}")
     private String webhookTestBasePath;
 
+    @Value("${trellis.support.email:}")
+    private String supportEmail;
+
     @GetMapping
     public Map<String, Object> getSettings() {
         String baseUrl = "http://localhost:" + serverPort;
@@ -58,6 +61,9 @@ public class SettingsController {
         settings.put("webhookUrlTest", baseUrl + webhookTestBasePath);
         settings.put("version", "1.0.0");
         settings.put("platform", "trellis");
+        if (supportEmail != null && !supportEmail.isBlank()) {
+            settings.put("supportEmail", supportEmail);
+        }
         return settings;
     }
 

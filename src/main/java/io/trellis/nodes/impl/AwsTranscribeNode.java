@@ -20,7 +20,7 @@ import java.util.*;
 		type = "awsTranscribe",
 		displayName = "AWS Transcribe",
 		description = "Create and manage transcription jobs",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

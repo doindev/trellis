@@ -20,7 +20,7 @@ import java.util.*;
 		type = "awsSes",
 		displayName = "AWS SES",
 		description = "Send emails and manage templates with Amazon SES",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

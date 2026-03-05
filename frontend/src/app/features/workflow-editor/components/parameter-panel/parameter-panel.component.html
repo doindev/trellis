@@ -903,6 +903,12 @@
       </div>
 
     </div>
+
+    @if (supportEmail) {
+      <div class="node-modal-footer">
+        <a [href]="supportMailtoUrl">Submit a node suggestion or report a problem</a>
+      </div>
+    }
   </div>
 </div>
 

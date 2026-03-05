@@ -21,7 +21,7 @@ import java.util.*;
 		type = "awsRekognition",
 		displayName = "AWS Rekognition",
 		description = "Analyze images for faces, labels, text, and celebrities",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

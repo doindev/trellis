@@ -21,7 +21,7 @@ import java.util.*;
 		type = "awsDynamoDb",
 		displayName = "AWS DynamoDB",
 		description = "Manage items in AWS DynamoDB tables",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "awsDynamoDb",
 		credentials = {"awsApi"}
 )

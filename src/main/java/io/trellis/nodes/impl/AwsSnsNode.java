@@ -20,7 +20,7 @@ import java.util.*;
 		type = "awsSns",
 		displayName = "AWS SNS",
 		description = "Create, delete and publish to AWS SNS topics",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

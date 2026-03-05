@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "s3",
 	displayName = "S3",
 	description = "Generic S3-compatible storage. Works with MinIO, DigitalOcean Spaces, Backblaze B2, and other S3-compatible services.",
-	category = "Cloud Storage",
+	category = "AWS",
 	icon = "s3",
 	credentials = {"s3Api"}
 )

@@ -26,7 +26,7 @@ import java.util.*;
 		type = "awsLambda",
 		displayName = "AWS Lambda",
 		description = "Invoke AWS Lambda functions",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

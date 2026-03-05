@@ -20,7 +20,7 @@ import java.util.*;
 		type = "awsCognito",
 		displayName = "AWS Cognito",
 		description = "Manage users, groups and pools in AWS Cognito",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "awsCognito",
 		credentials = {"awsApi"}
 )

@@ -20,7 +20,7 @@ import java.util.*;
 		type = "awsCertificateManager",
 		displayName = "AWS Certificate Manager",
 		description = "Manage SSL/TLS certificates with AWS ACM",
-		category = "AWS Services",
+		category = "AWS",
 		icon = "aws",
 		credentials = {"aws"}
 )

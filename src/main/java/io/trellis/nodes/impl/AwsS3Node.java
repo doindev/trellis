@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "awsS3",
 	displayName = "AWS S3",
 	description = "Manage buckets and objects in Amazon S3.",
-	category = "Cloud Storage",
+	category = "AWS",
 	icon = "awsS3",
 	credentials = {"awsApi"}
 )
