@@ -1,4 +1,4 @@
-import { Component, HostListener, NgZone, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, HostListener, NgZone, OnInit, OnDestroy, ViewChild, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
@@ -86,6 +86,22 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   isPersonalProject = false;
   projectName = 'Personal';
   knownCredentialIds = new Set<string>();
+  /** AI input types (e.g. 'ai_languageModel') needed by nodes currently on the canvas. */
+  canvasNeededAiTypes = computed(() => {
+    const nodes = this.store.nodes();
+    const needed = new Set<string>();
+    for (const node of nodes) {
+      const typeDesc = this.nodeTypeStore.getByType(node.type);
+      if (typeDesc?.inputs) {
+        for (const input of typeDesc.inputs) {
+          if (input.type?.startsWith('ai_')) {
+            needed.add(input.type);
+          }
+        }
+      }
+    }
+    return needed;
+  });
   private executionSub?: Subscription;
   private currentExecutionId: string | null = null;
   private autoSaveInterval: ReturnType<typeof setInterval> | null = null;

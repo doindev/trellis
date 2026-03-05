@@ -88,6 +88,7 @@
           <div class="palette-slide" [class.palette-open]="showPalette">
             <app-node-palette
               [nodeTypes]="nodeTypeStore.groupedByCategory()"
+              [canvasNeededAiTypes]="canvasNeededAiTypes()"
               (close)="togglePalette()"
               (nodeClicked)="onPaletteNodeClicked($event)"
               (nodeClickedWithAction)="onPaletteNodeClickedWithAction($event)" />

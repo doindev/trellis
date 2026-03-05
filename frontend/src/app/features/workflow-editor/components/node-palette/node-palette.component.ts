@@ -44,11 +44,16 @@ export class NodePaletteComponent {
   @Input() set nodeTypes(value: Map<string, NodeTypeDescription[]>) {
     this._nodeTypes.set(value);
   }
+  /** Set of AI input types (e.g. 'ai_languageModel') needed by nodes currently on the canvas. */
+  @Input() set canvasNeededAiTypes(value: Set<string>) {
+    this._canvasNeededAiTypes.set(value);
+  }
   @Output() close = new EventEmitter<void>();
   @Output() nodeClicked = new EventEmitter<NodeTypeDescription>();
   @Output() nodeClickedWithAction = new EventEmitter<NodeClickedWithAction>();
 
   private _nodeTypes = signal<Map<string, NodeTypeDescription[]>>(new Map());
+  private _canvasNeededAiTypes = signal<Set<string>>(new Set());
   searchTerm = signal('');
   triggerOnly = signal(false);
   /** When set, only show nodes whose outputs include this AI connection type. */
@@ -118,6 +123,13 @@ export class NodePaletteComponent {
       // Default view: hide searchOnly nodes
       if (!isSearching && !isNodeTypeFilter) {
         matching = matching.filter(n => !n.searchOnly);
+      }
+
+      // Hide AI-ecosystem nodes when no consumer on the canvas needs them,
+      // unless the user is searching by text or an explicit AI filter is active.
+      if (!isSearching && !isNodeTypeFilter) {
+        const neededAiTypes = this._canvasNeededAiTypes();
+        matching = matching.filter(n => !this.isHiddenAiNode(n, neededAiTypes));
       }
 
       // Apply node-type filters
@@ -286,6 +298,30 @@ export class NodePaletteComponent {
     const allowed = show[resourceName];
     if (!allowed) return true;
     return Array.isArray(allowed) && allowed.includes(resourceValue);
+  }
+
+  /** Gateway node types that should always remain visible so the user can bootstrap AI workflows. */
+  private static readonly AI_ENTRY_POINTS = new Set(['aiAgent', 'basicLlmChain']);
+
+  /** Returns true if this node is part of the AI ecosystem and not currently needed on the canvas. */
+  private isHiddenAiNode(n: NodeTypeDescription, neededAiTypes: Set<string>): boolean {
+    // Check outputs: hide sub-nodes whose ai_* outputs aren't needed
+    const nonMainOutputs = (n.outputs || []).filter(o => o.type !== 'main');
+    if (nonMainOutputs.length > 0 && nonMainOutputs.every(o => o.type.startsWith('ai_'))) {
+      if (!nonMainOutputs.some(o => neededAiTypes.has(o.type))) {
+        return true;
+      }
+    }
+    // Check inputs: hide consumer nodes (chains, etc.) whose ai_* inputs
+    // aren't needed by any other node on the canvas — but never hide entry points
+    if (NodePaletteComponent.AI_ENTRY_POINTS.has(n.type)) return false;
+    const aiInputs = (n.inputs || []).filter(i => i.type?.startsWith('ai_'));
+    if (aiInputs.length > 0) {
+      if (!aiInputs.some(i => neededAiTypes.has(i.type))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   onNodeItemClick(nodeType: NodeTypeDescription): void {
