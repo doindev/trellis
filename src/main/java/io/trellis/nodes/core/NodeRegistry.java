@@ -143,6 +143,12 @@ public class NodeRegistry {
 				.filter(n -> category.equalsIgnoreCase(n.getCategory()))
 				.collect(Collectors.toList());
 	}
+
+	// get category names with node counts
+	public Map<String, Long> getCategoriesWithCounts() {
+		return getAllNodes().stream()
+				.collect(Collectors.groupingBy(NodeRegistration::getCategory, Collectors.counting()));
+	}
 	
 	
 	// returns cache parameters injected into CacheableNode implementations

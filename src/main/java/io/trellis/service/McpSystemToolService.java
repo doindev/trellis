@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.trellis.dto.*;
 import io.trellis.nodes.core.NodeRegistry;
 import io.trellis.nodes.core.NodeRegistry.NodeRegistration;
+import io.trellis.util.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -19,10 +21,12 @@ public class McpSystemToolService {
     private final NodeRegistry nodeRegistry;
     private final WorkflowService workflowService;
     private final ExecutionService executionService;
+    private final ProjectService projectService;
     private final ObjectMapper objectMapper;
     private final RemoteControlService remoteControlService;
     private final WebSocketService webSocketService;
     private final BrowserSessionRegistry browserSessionRegistry;
+    private final SecurityContextHelper securityContextHelper;
 
     private static final String TOOL_PREFIX = "trellis_";
 
@@ -31,12 +35,19 @@ public class McpSystemToolService {
     public List<Map<String, Object>> getSystemToolDefinitions() {
         List<Map<String, Object>> tools = new ArrayList<>();
 
+        tools.add(toolDef("trellis_list_node_categories",
+                "List all available node categories with counts. Use this FIRST to discover what categories exist, then use trellis_list_node_types with a category filter.",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap()
+                )));
+
         tools.add(toolDef("trellis_list_node_types",
-                "List available node types in the Trellis workflow engine. Returns type, displayName, category, description, and flags for each node.",
+                "List available node types in the Trellis workflow engine. IMPORTANT: There are 520+ nodes — always use the 'category' parameter to filter. Call trellis_list_node_categories FIRST to see available categories. When called with no parameters, returns a category summary instead of all nodes.",
                 Map.of(
                         "type", "object",
                         "properties", orderedMap(
-                                "category", prop("string", "Filter by category name (case-insensitive)"),
+                                "category", prop("string", "Filter by category name (case-insensitive). RECOMMENDED — use trellis_list_node_categories to find valid names."),
                                 "search", prop("string", "Search term to filter by type or displayName")
                         )
                 )));
@@ -178,6 +189,23 @@ public class McpSystemToolService {
                         "required", List.of("id")
                 )));
 
+        tools.add(toolDef("trellis_list_projects",
+                "List all projects the user has access to. Returns project details including the user's role (PROJECT_PERSONAL_OWNER, PROJECT_ADMIN, PROJECT_EDITOR, PROJECT_VIEWER).",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap()
+                )));
+
+        tools.add(toolDef("trellis_get_project",
+                "Get detailed project info including members (if admin). Returns project details, workflow/credential counts, and the user's role.",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap(
+                                "id", prop("string", "The project ID")
+                        ),
+                        "required", List.of("id")
+                )));
+
         return tools;
     }
 
@@ -222,8 +250,11 @@ public class McpSystemToolService {
 
             // Dispatch to handler
             Object result = switch (name) {
+                case "trellis_list_node_categories" -> handleListNodeCategories(arguments);
                 case "trellis_list_node_types" -> handleListNodeTypes(arguments);
                 case "trellis_get_node_type" -> handleGetNodeType(arguments);
+                case "trellis_list_projects" -> handleListProjects(arguments);
+                case "trellis_get_project" -> handleGetProject(arguments);
                 case "trellis_list_workflows" -> handleListWorkflows(arguments);
                 case "trellis_get_workflow" -> handleGetWorkflow(arguments);
                 case "trellis_create_workflow" -> handleCreateWorkflow(arguments);
@@ -276,6 +307,9 @@ public class McpSystemToolService {
             case "trellis_get_execution" -> "Get execution details for '" + args.getOrDefault("id", "?") + "'";
             case "trellis_workflow_guide" -> "Get workflow building guide" +
                     (args.get("topic") != null ? " (topic: " + args.get("topic") + ")" : "");
+            case "trellis_list_node_categories" -> "List all node categories with counts";
+            case "trellis_list_projects" -> "List all accessible projects";
+            case "trellis_get_project" -> "Get project details for '" + args.getOrDefault("id", "?") + "'";
             case "trellis_list_browser_sessions" -> "List active browser sessions";
             case "trellis_browser_control" -> {
                 String action = (String) args.getOrDefault("action", "?");
@@ -310,9 +344,47 @@ public class McpSystemToolService {
         String category = (String) args.get("category");
         String search = (String) args.get("search");
 
+        // When no filters provided, return category summary instead of all 520+ nodes
+        if ((category == null || category.isBlank()) && (search == null || search.isBlank())) {
+            Map<String, Long> counts = nodeRegistry.getCategoriesWithCounts();
+            List<Map<String, Object>> categories = counts.entrySet().stream()
+                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                    .map(e -> {
+                        Map<String, Object> m = new LinkedHashMap<>();
+                        m.put("category", e.getKey());
+                        m.put("nodeCount", e.getValue());
+                        return m;
+                    })
+                    .toList();
+            Map<String, Object> summary = new LinkedHashMap<>();
+            summary.put("categories", categories);
+            summary.put("totalCategories", categories.size());
+            summary.put("totalNodes", counts.values().stream().mapToLong(Long::longValue).sum());
+            summary.put("hint", "Use 'category' to list nodes in a specific category, or 'search' to find by keyword.");
+            return summary;
+        }
+
         Collection<NodeRegistration> nodes;
         if (category != null && !category.isBlank()) {
             nodes = nodeRegistry.getNodesByCategory(category);
+            // If no exact match, suggest similar categories
+            if (nodes.isEmpty()) {
+                Map<String, Long> allCategories = nodeRegistry.getCategoriesWithCounts();
+                String lowerCategory = category.toLowerCase();
+                List<String> suggestions = allCategories.keySet().stream()
+                        .filter(c -> c.toLowerCase().contains(lowerCategory) || lowerCategory.contains(c.toLowerCase()))
+                        .sorted()
+                        .toList();
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("nodeTypes", List.of());
+                result.put("count", 0);
+                if (!suggestions.isEmpty()) {
+                    result.put("message", "No nodes found in category '" + category + "'. Did you mean: " + String.join(", ", suggestions));
+                } else {
+                    result.put("message", "No nodes found in category '" + category + "'. Use trellis_list_node_categories to see valid category names.");
+                }
+                return result;
+            }
         } else {
             nodes = nodeRegistry.getAllNodes();
         }
@@ -344,6 +416,72 @@ public class McpSystemToolService {
                 .toList();
 
         return Map.of("nodeTypes", result, "count", result.size());
+    }
+
+    private Object handleListNodeCategories(Map<String, Object> args) {
+        Map<String, Long> counts = nodeRegistry.getCategoriesWithCounts();
+        List<Map<String, Object>> categories = counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .map(e -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("category", e.getKey());
+                    m.put("nodeCount", e.getValue());
+                    return m;
+                })
+                .toList();
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("categories", categories);
+        result.put("totalCategories", categories.size());
+        result.put("totalNodes", counts.values().stream().mapToLong(Long::longValue).sum());
+        return result;
+    }
+
+    private Object handleListProjects(Map<String, Object> args) {
+        String currentUserId = securityContextHelper.getCurrentUserId();
+        List<ProjectResponse> projects = projectService.listProjects();
+
+        List<Map<String, Object>> result = projects.stream()
+                .map(p -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", p.getId());
+                    m.put("name", p.getName());
+                    m.put("type", p.getType());
+                    m.put("description", p.getDescription());
+                    m.put("contextPath", p.getContextPath());
+                    m.put("workflowCount", p.getWorkflowCount());
+                    m.put("credentialCount", p.getCredentialCount());
+                    m.put("userRole", projectService.getUserRoleString(p.getId(), currentUserId));
+                    return m;
+                })
+                .toList();
+
+        return Map.of("projects", result, "count", result.size());
+    }
+
+    private Object handleGetProject(Map<String, Object> args) {
+        String id = (String) args.get("id");
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("'id' is required");
+        }
+
+        String currentUserId = securityContextHelper.getCurrentUserId();
+        ProjectResponse project = projectService.getProject(id);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", project.getId());
+        result.put("name", project.getName());
+        result.put("type", project.getType());
+        result.put("description", project.getDescription());
+        result.put("contextPath", project.getContextPath());
+        result.put("workflowCount", project.getWorkflowCount());
+        result.put("credentialCount", project.getCredentialCount());
+        result.put("userRole", projectService.getUserRoleString(id, currentUserId));
+        if (project.getMembers() != null) {
+            result.put("members", project.getMembers());
+        }
+        result.put("createdAt", project.getCreatedAt());
+        result.put("updatedAt", project.getUpdatedAt());
+        return result;
     }
 
     private Object handleGetNodeType(Map<String, Object> args) {
@@ -392,12 +530,18 @@ public class McpSystemToolService {
             workflows = workflowService.listWorkflows();
         }
 
+        // Pre-load project names to avoid N+1 queries
+        Map<String, String> projectNames = projectService.listProjects().stream()
+                .collect(Collectors.toMap(ProjectResponse::getId, ProjectResponse::getName, (a, b) -> a));
+
         List<Map<String, Object>> result = workflows.stream()
                 .map(wf -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("id", wf.getId());
                     m.put("name", wf.getName());
                     m.put("description", wf.getDescription());
+                    m.put("projectId", wf.getProjectId());
+                    m.put("projectName", projectNames.getOrDefault(wf.getProjectId(), null));
                     m.put("published", wf.isPublished());
                     m.put("currentVersion", wf.getCurrentVersion());
                     m.put("mcpEnabled", wf.isMcpEnabled());
@@ -424,11 +568,22 @@ public class McpSystemToolService {
 
         WorkflowResponse wf = workflowService.getWorkflow(id);
 
+        // Resolve project name
+        String projectName = null;
+        if (wf.getProjectId() != null) {
+            try {
+                projectName = projectService.getProject(wf.getProjectId()).getName();
+            } catch (Exception e) {
+                // Project may have been deleted
+            }
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", wf.getId());
         result.put("name", wf.getName());
         result.put("description", wf.getDescription());
         result.put("projectId", wf.getProjectId());
+        result.put("projectName", projectName);
         result.put("published", wf.isPublished());
         result.put("currentVersion", wf.getCurrentVersion());
         result.put("nodes", wf.getNodes());

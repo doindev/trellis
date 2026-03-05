@@ -263,6 +263,12 @@ public class ProjectService {
         });
     }
 
+    public String getUserRoleString(String projectId, String userId) {
+        return projectRelationRepository.findByProjectIdAndUserId(projectId, userId)
+                .map(r -> r.getRole().name())
+                .orElse(null);
+    }
+
     public ProjectEntity findById(String id) {
         return projectRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Project not found: " + id));
