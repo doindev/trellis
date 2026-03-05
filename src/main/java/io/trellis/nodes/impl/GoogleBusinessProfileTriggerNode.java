@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "googleBusinessProfileTrigger",
 	displayName = "Google Business Profile Trigger",
 	description = "Polls for new or updated reviews on a Google Business Profile",
-	category = "Google Services",
+	category = "Google",
 	icon = "googleBusinessProfile",
 	trigger = true,
 	polling = true,

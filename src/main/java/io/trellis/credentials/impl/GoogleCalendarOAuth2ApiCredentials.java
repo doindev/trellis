@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleCalendarOAuth2Api",
         displayName = "Google Calendar OAuth2 API",
         description = "Google Calendar OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlecalendar",
         extendsType = "oAuth2Api"
 )

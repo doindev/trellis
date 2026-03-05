@@ -16,7 +16,7 @@ import java.util.*;
 		type = "googleBooks",
 		displayName = "Google Books",
 		description = "Search volumes and manage bookshelves in Google Books",
-		category = "Google Services",
+		category = "Google",
 		icon = "googleBooks",
 		credentials = {"googleBooksApi"}
 )

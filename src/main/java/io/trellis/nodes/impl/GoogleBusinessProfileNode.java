@@ -16,7 +16,7 @@ import java.util.*;
 		type = "googleBusinessProfile",
 		displayName = "Google Business Profile",
 		description = "Manage Google Business Profile posts and reviews",
-		category = "Google Services",
+		category = "Google",
 		icon = "googleBusinessProfile",
 		credentials = {"googleBusinessProfileOAuth2Api"}
 )

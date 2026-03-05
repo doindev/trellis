@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleFirebaseRealtimeDatabaseOAuth2Api",
         displayName = "Google Firebase Realtime Database OAuth2 API",
         description = "Google Firebase Realtime Database OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlefirebaserealtimedatabase",
         extendsType = "oAuth2Api"
 )

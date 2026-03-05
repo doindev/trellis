@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleFirebaseCloudFirestoreOAuth2Api",
         displayName = "Google Firebase Cloud Firestore OAuth2 API",
         description = "Google Firebase Cloud Firestore OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlefirebasecloudfirestore",
         extendsType = "oAuth2Api"
 )

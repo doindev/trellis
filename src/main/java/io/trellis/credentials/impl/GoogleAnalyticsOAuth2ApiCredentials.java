@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleAnalyticsOAuth2Api",
         displayName = "Google Analytics OAuth2 API",
         description = "Google Analytics OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googleanalytics",
         extendsType = "oAuth2Api"
 )

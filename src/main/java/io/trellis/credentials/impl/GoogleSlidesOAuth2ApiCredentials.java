@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleSlidesOAuth2Api",
         displayName = "Google Slides OAuth2 API",
         description = "Google Slides OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googleslides",
         extendsType = "oAuth2Api"
 )

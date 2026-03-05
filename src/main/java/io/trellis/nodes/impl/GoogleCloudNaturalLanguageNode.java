@@ -16,7 +16,7 @@ import java.util.*;
 		type = "googleCloudNaturalLanguage",
 		displayName = "Google Cloud Natural Language",
 		description = "Analyze sentiment of text using Google Cloud Natural Language",
-		category = "Google Services",
+		category = "Google",
 		icon = "googleCloudNaturalLanguage",
 		credentials = {"googleCloudNaturalLanguageApi"}
 )

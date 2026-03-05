@@ -12,7 +12,7 @@ import java.util.Map;
         type = "gmailOAuth2Api",
         displayName = "Gmail OAuth2 API",
         description = "Gmail OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "gmail",
         extendsType = "oAuth2Api"
 )

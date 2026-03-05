@@ -16,7 +16,7 @@ import java.util.*;
 		type = "googlePerspective",
 		displayName = "Google Perspective",
 		description = "Analyze text for toxicity using the Google Perspective API",
-		category = "Google Services",
+		category = "Google",
 		icon = "googlePerspective",
 		credentials = {"googlePerspectiveApi"}
 )

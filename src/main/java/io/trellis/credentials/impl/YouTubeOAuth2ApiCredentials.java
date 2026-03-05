@@ -12,7 +12,7 @@ import java.util.Map;
         type = "youTubeOAuth2Api",
         displayName = "YouTube OAuth2 API",
         description = "YouTube OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "youtube",
         extendsType = "oAuth2Api"
 )

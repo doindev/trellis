@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleDriveOAuth2Api",
         displayName = "Google Drive OAuth2 API",
         description = "Google Drive OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googledrive",
         extendsType = "oAuth2Api"
 )

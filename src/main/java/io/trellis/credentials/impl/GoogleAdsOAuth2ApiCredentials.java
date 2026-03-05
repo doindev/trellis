@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleAdsOAuth2Api",
         displayName = "Google Ads OAuth2 API",
         description = "Google Ads OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googleads",
         extendsType = "oAuth2Api"
 )

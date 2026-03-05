@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleSheetsTriggerOAuth2Api",
         displayName = "Google Sheets Trigger OAuth2 API",
         description = "Google Sheets Trigger OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlesheetstrigger",
         extendsType = "oAuth2Api"
 )

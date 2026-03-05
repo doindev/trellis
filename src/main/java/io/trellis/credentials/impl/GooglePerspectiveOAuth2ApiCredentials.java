@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googlePerspectiveOAuth2Api",
         displayName = "Google Perspective OAuth2 API",
         description = "Google Perspective OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googleperspective",
         extendsType = "oAuth2Api"
 )

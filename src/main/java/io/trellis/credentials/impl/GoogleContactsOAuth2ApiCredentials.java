@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleContactsOAuth2Api",
         displayName = "Google Contacts OAuth2 API",
         description = "Google Contacts OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlecontacts",
         extendsType = "oAuth2Api"
 )

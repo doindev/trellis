@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "googleAds",
 	displayName = "Google Ads",
 	description = "Manage campaigns, ad groups, and ads in Google Ads using GAQL queries",
-	category = "Google Services",
+	category = "Google",
 	icon = "googleAds",
 	credentials = {"googleAdsOAuth2Api"}
 )

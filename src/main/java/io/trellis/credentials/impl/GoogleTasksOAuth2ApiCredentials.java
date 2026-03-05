@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleTasksOAuth2Api",
         displayName = "Google Tasks OAuth2 API",
         description = "Google Tasks OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googletasks",
         extendsType = "oAuth2Api"
 )

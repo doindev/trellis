@@ -12,7 +12,7 @@ import java.util.Map;
         type = "gSuiteAdminOAuth2Api",
         displayName = "Google Workspace Admin OAuth2 API",
         description = "Google Workspace Admin OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "gsuiteadmin",
         extendsType = "oAuth2Api"
 )

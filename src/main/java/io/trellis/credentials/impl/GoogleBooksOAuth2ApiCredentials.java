@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleBooksOAuth2Api",
         displayName = "Google Books OAuth2 API",
         description = "Google Books OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlebooks",
         extendsType = "oAuth2Api"
 )

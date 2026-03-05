@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleChatOAuth2Api",
         displayName = "Google Chat OAuth2 API",
         description = "Google Chat OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlechat",
         extendsType = "oAuth2Api"
 )

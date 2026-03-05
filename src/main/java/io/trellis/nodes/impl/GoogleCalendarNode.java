@@ -16,7 +16,7 @@ import java.util.*;
 		type = "googleCalendar",
 		displayName = "Google Calendar",
 		description = "Manage Google Calendar events",
-		category = "Google Services",
+		category = "Google",
 		icon = "googleCalendar",
 		credentials = {"googleCalendarOAuth2Api"}
 )

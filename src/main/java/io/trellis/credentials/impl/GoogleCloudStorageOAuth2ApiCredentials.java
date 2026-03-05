@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleCloudStorageOAuth2Api",
         displayName = "Google Cloud Storage OAuth2 API",
         description = "Google Cloud Storage OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlecloudstorage",
         extendsType = "oAuth2Api"
 )

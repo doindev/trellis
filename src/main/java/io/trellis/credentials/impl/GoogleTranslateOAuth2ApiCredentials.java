@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleTranslateOAuth2Api",
         displayName = "Google Translate OAuth2 API",
         description = "Google Translate OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googletranslate",
         extendsType = "oAuth2Api"
 )

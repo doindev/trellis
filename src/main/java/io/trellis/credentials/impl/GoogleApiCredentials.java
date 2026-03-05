@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleApi",
         displayName = "Google API",
         description = "Google API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "google"
 )
 public class GoogleApiCredentials implements CredentialProviderInterface {

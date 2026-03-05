@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleDocsOAuth2Api",
         displayName = "Google Docs OAuth2 API",
         description = "Google Docs OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googledocs",
         extendsType = "oAuth2Api"
 )

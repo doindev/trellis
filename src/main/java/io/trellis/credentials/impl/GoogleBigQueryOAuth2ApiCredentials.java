@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleBigQueryOAuth2Api",
         displayName = "Google Big Query OAuth2 API",
         description = "Google Big Query OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlebigquery",
         extendsType = "oAuth2Api"
 )

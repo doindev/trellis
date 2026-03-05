@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleCloudNaturalLanguageOAuth2Api",
         displayName = "Google Cloud Natural Language OAuth2 API",
         description = "Google Cloud Natural Language OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlecloudnaturallanguage",
         extendsType = "oAuth2Api"
 )

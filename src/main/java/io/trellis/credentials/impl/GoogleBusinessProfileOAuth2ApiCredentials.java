@@ -12,7 +12,7 @@ import java.util.Map;
         type = "googleBusinessProfileOAuth2Api",
         displayName = "Google Business Profile OAuth2 API",
         description = "Google Business Profile OAuth2 API authentication",
-        category = "Google Services",
+        category = "Google",
         icon = "googlebusinessprofile",
         extendsType = "oAuth2Api"
 )
