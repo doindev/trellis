@@ -16,7 +16,7 @@ import java.util.*;
 		type = "grist",
 		displayName = "Grist",
 		description = "Create, read, update, and delete rows in Grist tables",
-		category = "Spreadsheets",
+		category = "Spreadsheets & Data Tables",
 		icon = "grist",
 		credentials = {"gristApi"}
 )

@@ -16,7 +16,7 @@ import java.util.*;
 		type = "quickBase",
 		displayName = "Quick Base",
 		description = "Manage records and data in Quick Base",
-		category = "Spreadsheets",
+		category = "Spreadsheets & Data Tables",
 		icon = "quickBase",
 		credentials = {"quickbaseApi"}
 )

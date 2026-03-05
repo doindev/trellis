@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "airtable",
 	displayName = "Airtable",
 	description = "Manage records in Airtable bases.",
-	category = "Spreadsheets",
+	category = "Spreadsheets & Data Tables",
 	icon = "airtable",
 	credentials = {"airtableApi"}
 )

@@ -16,7 +16,7 @@ import java.util.*;
 		type = "invoiceNinjaTrigger",
 		displayName = "Invoice Ninja Trigger",
 		description = "Starts the workflow when an Invoice Ninja event occurs",
-		category = "E-Commerce",
+		category = "E-Commerce / Payments",
 		icon = "invoiceNinja",
 		credentials = {"invoiceNinjaApi"},
 		trigger = true

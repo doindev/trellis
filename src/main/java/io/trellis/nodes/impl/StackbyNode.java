@@ -16,7 +16,7 @@ import java.util.*;
 		type = "stackby",
 		displayName = "Stackby",
 		description = "Manage records in Stackby tables",
-		category = "Spreadsheets",
+		category = "Spreadsheets & Data Tables",
 		icon = "stackby",
 		credentials = {"stackbyApi"}
 )

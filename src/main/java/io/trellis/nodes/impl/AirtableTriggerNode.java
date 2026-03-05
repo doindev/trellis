@@ -19,7 +19,7 @@ import java.util.*;
 		type = "airtableTrigger",
 		displayName = "Airtable Trigger",
 		description = "Polls Airtable for new or updated records",
-		category = "Data",
+		category = "Data & Storage / Databases",
 		icon = "airtable",
 		trigger = true,
 		polling = true,

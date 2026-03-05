@@ -16,7 +16,7 @@ import java.util.*;
 		type = "seaTable",
 		displayName = "SeaTable",
 		description = "Manage rows and tables in SeaTable",
-		category = "Spreadsheets",
+		category = "Spreadsheets & Data Tables",
 		icon = "seaTable",
 		credentials = {"seaTableApi"}
 )

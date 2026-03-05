@@ -16,7 +16,7 @@ import java.util.*;
 		type = "coda",
 		displayName = "Coda",
 		description = "Interact with the Coda API to manage docs, tables, and rows",
-		category = "Data",
+		category = "Data & Storage / Databases",
 		icon = "coda",
 		credentials = {"codaApi"}
 )

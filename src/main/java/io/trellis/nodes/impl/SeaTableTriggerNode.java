@@ -15,7 +15,7 @@ import java.util.*;
 		type = "seaTableTrigger",
 		displayName = "SeaTable Trigger",
 		description = "Triggers when a SeaTable row event occurs",
-		category = "Spreadsheets",
+		category = "Spreadsheets & Data Tables",
 		icon = "seaTable",
 		trigger = true,
 		credentials = {"seaTableApi"},
