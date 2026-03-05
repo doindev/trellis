@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "hubspotTrigger",
 	displayName = "HubSpot Trigger",
 	description = "Starts the workflow when contacts, companies, or deals are created or updated in HubSpot",
-	category = "CRM & Sales",
+	category = "CRM",
 	icon = "hubspot",
 	trigger = true,
 	polling = true,

@@ -15,7 +15,7 @@ import java.util.*;
 		type = "copperTrigger",
 		displayName = "Copper Trigger",
 		description = "Starts the workflow when events occur in Copper CRM",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "copper",
 		credentials = {"copperApi"},
 		trigger = true

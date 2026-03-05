@@ -16,7 +16,7 @@ import java.util.*;
 		type = "monicaCrm",
 		displayName = "Monica CRM",
 		description = "Manage contacts, activities, notes, and more in Monica CRM",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "monicaCrm",
 		credentials = {"monicaCrmApi"}
 )

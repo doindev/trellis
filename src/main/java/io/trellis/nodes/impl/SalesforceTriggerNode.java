@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "salesforceTrigger",
 	displayName = "Salesforce Trigger",
 	description = "Polls for new or updated records in Salesforce using SOQL queries",
-	category = "CRM & Sales",
+	category = "CRM",
 	icon = "salesforce",
 	trigger = true,
 	polling = true,

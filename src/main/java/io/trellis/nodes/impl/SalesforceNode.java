@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "salesforce",
 	displayName = "Salesforce",
 	description = "Manage accounts, contacts, leads, opportunities, cases, tasks, documents, flows, and search in Salesforce CRM",
-	category = "CRM & Sales",
+	category = "CRM",
 	icon = "salesforce",
 	credentials = {"salesforceOAuth2Api"}
 )

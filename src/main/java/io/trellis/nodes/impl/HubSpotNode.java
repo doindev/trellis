@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "hubspot",
 	displayName = "HubSpot",
 	description = "Manage contacts, companies, deals, engagements, forms, and tickets in HubSpot CRM",
-	category = "CRM & Sales",
+	category = "CRM",
 	icon = "hubspot",
 	credentials = {"hubspotApi"}
 )

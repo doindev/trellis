@@ -16,7 +16,7 @@ import java.util.*;
 		type = "salesmate",
 		displayName = "Salesmate",
 		description = "Manage companies, activities, and deals in Salesmate CRM",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "salesmate",
 		credentials = {"salesmateApi"}
 )

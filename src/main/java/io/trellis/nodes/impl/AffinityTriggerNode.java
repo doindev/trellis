@@ -15,7 +15,7 @@ import java.util.*;
 		type = "affinityTrigger",
 		displayName = "Affinity Trigger",
 		description = "Starts the workflow when events occur in Affinity CRM",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "affinity",
 		credentials = {"affinityApi"},
 		trigger = true,

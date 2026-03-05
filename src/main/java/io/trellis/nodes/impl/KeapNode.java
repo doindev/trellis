@@ -16,7 +16,7 @@ import java.util.*;
 		type = "keap",
 		displayName = "Keap",
 		description = "Manage contacts and orders in Keap (Infusionsoft)",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "keap",
 		credentials = {"keapOAuth2Api"}
 )

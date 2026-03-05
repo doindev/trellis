@@ -16,7 +16,7 @@ import java.util.*;
 		type = "highLevel",
 		displayName = "HighLevel",
 		description = "Manage data in HighLevel CRM",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "highLevel",
 		credentials = {"highLevelOAuth2Api"}
 )

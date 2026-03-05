@@ -16,7 +16,7 @@ import java.util.*;
 		type = "copper",
 		displayName = "Copper",
 		description = "Manage data in Copper CRM",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "copper",
 		credentials = {"copperApi"}
 )

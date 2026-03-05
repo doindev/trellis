@@ -16,7 +16,7 @@ import java.util.*;
 		type = "affinity",
 		displayName = "Affinity",
 		description = "Manage relationships in Affinity CRM",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "affinity",
 		credentials = {"affinityApi"}
 )

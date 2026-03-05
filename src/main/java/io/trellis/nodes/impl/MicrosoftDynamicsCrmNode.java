@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "microsoftDynamicsCrm",
 	displayName = "Microsoft Dynamics CRM",
 	description = "Manage accounts, contacts, leads, and opportunities in Microsoft Dynamics 365 CRM",
-	category = "CRM & Sales",
+	category = "CRM",
 	icon = "microsoftDynamicsCrm",
 	credentials = {"microsoftDynamicsCrmOAuth2Api"}
 )

@@ -16,7 +16,7 @@ import java.util.*;
 		type = "agileCrm",
 		displayName = "Agile CRM",
 		description = "Manage contacts and deals in Agile CRM",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "agileCrm",
 		credentials = {"agileCrmApi"}
 )

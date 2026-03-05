@@ -16,7 +16,7 @@ import java.util.*;
 		type = "freshworksCrm",
 		displayName = "Freshworks CRM",
 		description = "Manage data in Freshworks CRM",
-		category = "CRM & Sales",
+		category = "CRM",
 		icon = "freshworksCrm",
 		credentials = {"freshworksCrmApi"}
 )
