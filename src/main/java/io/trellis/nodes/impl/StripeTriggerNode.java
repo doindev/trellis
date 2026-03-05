@@ -19,7 +19,7 @@ import java.util.*;
 		type = "stripeTrigger",
 		displayName = "Stripe Trigger",
 		description = "Starts the workflow when a new Stripe event occurs",
-		category = "E-Commerce / Payments",
+		category = "E-Commerce",
 		icon = "stripe",
 		credentials = {"stripeApi"},
 		trigger = true,

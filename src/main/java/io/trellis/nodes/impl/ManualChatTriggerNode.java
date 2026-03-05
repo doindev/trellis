@@ -22,7 +22,8 @@ import java.util.Map;
 		description = "Runs the flow on new manual chat message",
 		category = "Core Triggers",
 		icon = "comments",
-		trigger = true
+		trigger = true,
+		triggerFavorite = true
 )
 public class ManualChatTriggerNode extends AbstractTriggerNode {
 

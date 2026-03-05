@@ -27,7 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 	icon = "wise",
 	trigger = true,
 	polling = true,
-	credentials = {"wiseApi"}
+	credentials = {"wiseApi"},
+	searchOnly = true,
+	triggerCategory = "Other"
 )
 public class WiseTriggerNode extends AbstractApiNode {
 

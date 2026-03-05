@@ -22,7 +22,9 @@ import java.util.*;
 		category = "Email",
 		icon = "brevo",
 		trigger = true,
-		credentials = {"brevoApi"}
+		credentials = {"brevoApi"},
+		searchOnly = true,
+		triggerCategory = "Other"
 )
 public class BrevoTriggerNode extends AbstractApiNode {
 

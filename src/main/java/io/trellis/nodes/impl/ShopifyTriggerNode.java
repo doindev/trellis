@@ -19,7 +19,7 @@ import java.util.*;
 		type = "shopifyTrigger",
 		displayName = "Shopify Trigger",
 		description = "Starts the workflow when new orders, products, or customers are created in Shopify",
-		category = "E-Commerce / Payments",
+		category = "E-Commerce",
 		icon = "shopify",
 		credentials = {"shopifyApi"},
 		trigger = true,
