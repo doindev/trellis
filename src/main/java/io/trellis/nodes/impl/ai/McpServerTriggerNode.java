@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "mcpTrigger",
 	displayName = "MCP Server Trigger",
 	description = "Implements a Model Context Protocol (MCP) server endpoint that accepts tool calls and resource requests from MCP clients.",
-	category = "AI / MCP",
+	category = "AI",
 	icon = "mcp",
 	trigger = true,
 	triggerCategory = "Other"

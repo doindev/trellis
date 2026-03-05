@@ -17,7 +17,7 @@ import java.util.*;
 		type = "brevo",
 		displayName = "Brevo",
 		description = "Manage contacts and send emails via the Brevo API",
-		category = "Email",
+		category = "Communication / Email",
 		icon = "brevo",
 		credentials = {"brevoApi"}
 )

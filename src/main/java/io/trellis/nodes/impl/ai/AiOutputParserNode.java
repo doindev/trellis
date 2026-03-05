@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "aiOutputParser",
 	displayName = "AI Output Parser",
 	description = "Extract structured data from AI/LLM text output: JSON blocks, key-value pairs, sections, lists, or regex.",
-	category = "AI / Output Parsers",
+	category = "AI / Miscellaneous",
 	icon = "file-json"
 )
 public class AiOutputParserNode extends AbstractNode {

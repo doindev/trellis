@@ -23,7 +23,7 @@ import java.util.Map;
 		type = "chatTrigger",
 		displayName = "Chat Trigger",
 		description = "Triggers workflow execution from chat input via webhook or API",
-		category = "AI / Triggers",
+		category = "AI",
 		icon = "comments",
 		trigger = true,
 		triggerFavorite = true

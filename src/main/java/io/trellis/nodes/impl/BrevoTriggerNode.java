@@ -19,7 +19,7 @@ import java.util.*;
 		type = "brevoTrigger",
 		displayName = "Brevo Trigger",
 		description = "Starts the workflow when a Brevo event occurs",
-		category = "Email",
+		category = "Communication / Email",
 		icon = "brevo",
 		trigger = true,
 		credentials = {"brevoApi"},
