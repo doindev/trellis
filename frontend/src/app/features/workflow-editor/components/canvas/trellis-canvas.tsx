@@ -27,6 +27,7 @@ import { calculateLayout } from './canvas-layout';
 
 export interface CanvasActions {
   singleSelectedId: string | null;
+  crayonMode: boolean;
   executeFromNode: (nodeId: string) => void;
   toggleDisabled: (nodeId: string) => void;
   deleteNode: (nodeId: string) => void;
@@ -43,6 +44,7 @@ export interface CanvasActions {
 
 export const CanvasActionsContext = createContext<CanvasActions>({
   singleSelectedId: null,
+  crayonMode: false,
   executeFromNode: () => {},
   toggleDisabled: () => {},
   deleteNode: () => {},
@@ -146,6 +148,8 @@ function TrellisCanvasInner({
   const [edges, setEdges, handleEdgesChange] = useEdgesState(initialEdges);
   const [ready, setReady] = useState(false);
   const [singleSelectedId, setSingleSelectedId] = useState<string | null>(null);
+  const [crayonMode, setCrayonMode] = useState(false);
+  const crayonSeqIndex = useRef(0);
   const initialFitDone = useRef(false);
 
   // Execute button: trigger node tracking and dropdown state
@@ -457,6 +461,7 @@ function TrellisCanvasInner({
   // Context value for node action toolbar
   const canvasActionsValue = useMemo<CanvasActions>(() => ({
     singleSelectedId,
+    crayonMode,
     executeFromNode: (nodeId) => onExecuteFromNodeRef.current?.(nodeId),
     toggleDisabled: (nodeId) => onToggleNodeDisabledRef.current?.(nodeId),
     deleteNode: (nodeId) => {
@@ -487,7 +492,7 @@ function TrellisCanvasInner({
         targetHandle: targetHandle,
       });
     },
-  }), [singleSelectedId, setNodes, setEdges, buildConnectionsMap, onNodeClick]);
+  }), [singleSelectedId, crayonMode, setNodes, setEdges, buildConnectionsMap, onNodeClick]);
 
   const isValidConnection = useCallback((connection: Edge | Connection): boolean => {
     const source = decodeHandleId(connection.sourceHandle as string | null);
@@ -627,8 +632,27 @@ function TrellisCanvasInner({
     }
   }, [triggerCleanUp]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const CRAYON_SEQUENCE = ['d', 's', 'd', 'j'];
+
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+      // Crayon mode easter egg: D, S, D, J toggles on; Escape toggles off
+      if (crayonMode && event.key === 'Escape') {
+        setCrayonMode(false);
+        crayonSeqIndex.current = 0;
+        return;
+      }
+      const k = event.key.toLowerCase();
+      if (k === CRAYON_SEQUENCE[crayonSeqIndex.current]) {
+        crayonSeqIndex.current++;
+        if (crayonSeqIndex.current === CRAYON_SEQUENCE.length) {
+          setCrayonMode(true);
+          crayonSeqIndex.current = 0;
+        }
+      } else {
+        crayonSeqIndex.current = 0;
+      }
+
       if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
         event.preventDefault();
         setNodes((nds) => nds.map((n) => ({ ...n, selected: true })));
@@ -643,7 +667,7 @@ function TrellisCanvasInner({
         zoomIn();
       }
     },
-    [nodes, onNodeDelete, zoomIn, zoomOut, setNodes]
+    [nodes, onNodeDelete, zoomIn, zoomOut, setNodes, crayonMode]
   );
 
   const defaultEdgeOptions = useMemo(
@@ -674,10 +698,20 @@ function TrellisCanvasInner({
     <CanvasActionsContext.Provider value={canvasActionsValue}>
       <div
         ref={reactFlowWrapper}
+        className={crayonMode ? 'crayon-mode' : undefined}
         style={{ width: '100%', height: '100%', opacity: ready ? 1 : 0, transition: 'opacity 300ms ease' }}
         onKeyDown={onKeyDown}
         tabIndex={0}
       >
+        {/* SVG filter for crayon mode easter egg */}
+        <svg width="0" height="0" style={{ position: 'absolute' }}>
+          <defs>
+            <filter id="crayon-filter">
+              <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves={4} result="noise" seed="1" />
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale={3} />
+            </filter>
+          </defs>
+        </svg>
         <ReactFlow
           nodes={nodes}
           edges={edges}

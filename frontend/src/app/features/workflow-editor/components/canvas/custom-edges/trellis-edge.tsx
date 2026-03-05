@@ -7,6 +7,65 @@ import {
 } from '@xyflow/react';
 import { CanvasActionsContext } from '../trellis-canvas';
 
+/**
+ * Subdivide straight segments of an SVG path and add perpendicular wobble
+ * for a hand-drawn / crayon look. Curves (Q/C) are left intact.
+ */
+function jitterPath(path: string, seed: number, amount: number = 2.5, step: number = 18): string {
+  let s = Math.abs(seed) | 1;
+  const rand = () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return (s / 0x7fffffff) * 2 - 1; // -1 to 1
+  };
+
+  // Tokenise: split into commands (M, L, Q, C, etc.) with their coordinate groups
+  const tokens = path.match(/[MLHVCSQTAZmlhvcsqtaz][^MLHVCSQTAZmlhvcsqtaz]*/g);
+  if (!tokens) return path;
+
+  let cx = 0, cy = 0; // current point
+  const parts: string[] = [];
+
+  for (const tok of tokens) {
+    const cmd = tok[0];
+    const nums = tok.slice(1).trim().match(/-?\d+\.?\d*/g)?.map(Number) || [];
+
+    if (cmd === 'M') {
+      cx = nums[0]; cy = nums[1];
+      parts.push(`M${cx},${cy}`);
+    } else if (cmd === 'L') {
+      const tx = nums[0], ty = nums[1];
+      const dx = tx - cx, dy = ty - cy;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const segments = Math.max(1, Math.round(len / step));
+      // Perpendicular direction
+      const px = len > 0 ? -dy / len : 0;
+      const py = len > 0 ? dx / len : 0;
+
+      for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const wobble = i < segments ? rand() * amount : 0; // no wobble on final point
+        const x = cx + dx * t + px * wobble;
+        const y = cy + dy * t + py * wobble;
+        parts.push(`L${x.toFixed(1)},${y.toFixed(1)}`);
+      }
+      cx = tx; cy = ty;
+    } else {
+      // Q, C, etc. — keep as-is, just lightly jitter control points
+      const jittered = tok.replace(/-?\d+\.?\d*/g, (m) => {
+        return (parseFloat(m) + rand() * (amount * 0.3)).toFixed(1);
+      });
+      parts.push(jittered);
+      // Update current point to last coordinate pair
+      if (nums.length >= 2) {
+        cx = nums[nums.length - 2];
+        cy = nums[nums.length - 1];
+      }
+    }
+  }
+
+  return parts.join(' ');
+}
+
 interface TrellisEdgeData {
   animated?: boolean;
   status?: 'success' | 'error';
@@ -56,6 +115,14 @@ function TrellisEdgeComponent({
   });
 
   const ctx = useContext(CanvasActionsContext);
+
+  // Crayon mode: jitter the path for a hand-drawn look
+  const renderedPath = useMemo(() => {
+    if (!ctx.crayonMode) return edgePath;
+    const seed = Math.round(sourceX * 73 + sourceY * 137 + targetX * 251 + targetY * 389);
+    return jitterPath(edgePath, seed);
+  }, [ctx.crayonMode, edgePath, sourceX, sourceY, targetX, targetY]);
+
   const [hovered, setHovered] = useState(false);
   const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -102,7 +169,7 @@ function TrellisEdgeComponent({
       <g onMouseEnter={showToolbar} onMouseLeave={hideToolbar}>
         <BaseEdge
           id={id}
-          path={edgePath}
+          path={renderedPath}
           markerEnd={markerEnd}
           style={edgeStyle}
           className={className}

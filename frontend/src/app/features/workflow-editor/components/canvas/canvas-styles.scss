@@ -818,3 +818,31 @@
     font-style: italic;
   }
 }
+
+/* ── Crayon Mode Easter Egg ── */
+.crayon-mode {
+  .trellis-node {
+    border-width: 3.5px !important;
+    border-style: solid !important;
+    filter: url(#crayon-filter);
+  }
+
+  /* Edges: thicker + round caps only — no SVG filter (causes clipping on thin paths) */
+  .react-flow__edge-path {
+    stroke-width: 4.5 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  .react-flow__connection-path {
+    stroke-width: 4.5 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  .trellis-handle {
+    width: 18px !important;
+    height: 18px !important;
+    filter: url(#crayon-filter);
+  }
+}
