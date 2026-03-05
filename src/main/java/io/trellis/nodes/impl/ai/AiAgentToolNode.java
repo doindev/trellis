@@ -31,7 +31,7 @@ import io.trellis.nodes.core.NodeParameter.ParameterType;
 		type = "aiAgentTool",
 		displayName = "AI Agent Tool",
 		description = "An AI agent exposed as a tool. Unlike a Sub Agent, it is invoked as a regular tool call by the parent agent rather than being delegated to as a sub-agent.",
-		category = "AI / Agents",
+		category = "AI",
 		icon = "brain-cog"
 )
 public class AiAgentToolNode extends AbstractAiSubNode {

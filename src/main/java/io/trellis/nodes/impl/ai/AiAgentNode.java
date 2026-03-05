@@ -26,7 +26,7 @@ import io.trellis.nodes.core.NodeParameter.ParameterType;
 		type = "aiAgent",
 		displayName = "AI Agent",
 		description = "Autonomous AI agent that can use tools, memory, and a language model to process requests",
-		category = "AI / Agents",
+		category = "AI",
 		icon = "bot"
 )
 public class AiAgentNode extends AbstractNode {

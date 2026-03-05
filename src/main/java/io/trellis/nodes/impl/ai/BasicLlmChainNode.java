@@ -18,7 +18,7 @@ import java.util.Map;
 		type = "basicLlmChain",
 		displayName = "Basic LLM Chain",
 		description = "Send a prompt to a language model and get a response",
-		category = "AI / Chains",
+		category = "AI",
 		icon = "link"
 )
 public class BasicLlmChainNode extends AbstractNode {

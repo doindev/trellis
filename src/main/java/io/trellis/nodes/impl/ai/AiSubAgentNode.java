@@ -31,7 +31,7 @@ import io.trellis.nodes.core.NodeParameter.ParameterType;
 		type = "aiSubAgent",
 		displayName = "AI Sub Agent",
 		description = "Sub-agent that connects to an AI Agent or another Sub Agent via the Tool handle. Has its own tools, memory, and optionally its own model.",
-		category = "AI / Agents",
+		category = "AI",
 		icon = "bot-message-square"
 )
 public class AiSubAgentNode extends AbstractAiSubNode {
