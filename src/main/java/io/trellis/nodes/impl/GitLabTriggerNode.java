@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "gitlabTrigger",
 	displayName = "GitLab Trigger",
 	description = "Starts the workflow when GitLab events occur",
-	category = "Development",
+	category = "Development / DevOps",
 	icon = "gitlab",
 	credentials = {"gitlabApi"},
 	trigger = true

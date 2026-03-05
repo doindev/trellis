@@ -16,7 +16,7 @@ import java.util.*;
 		type = "wooCommerceTrigger",
 		displayName = "WooCommerce Trigger",
 		description = "Starts the workflow when a WooCommerce event occurs",
-		category = "E-Commerce",
+		category = "E-Commerce / Payments",
 		icon = "wooCommerce",
 		credentials = {"wooCommerceApi"},
 		trigger = true

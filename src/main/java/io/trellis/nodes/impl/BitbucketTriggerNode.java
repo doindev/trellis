@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "bitbucketTrigger",
 	displayName = "Bitbucket Trigger",
 	description = "Starts the workflow when Bitbucket events occur",
-	category = "Development",
+	category = "Development / DevOps",
 	icon = "bitbucket",
 	credentials = {"bitbucketApi"},
 	trigger = true

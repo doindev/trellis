@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "grafana",
 	displayName = "Grafana",
 	description = "Manage Grafana dashboards, teams, and users",
-	category = "Development",
+	category = "Development / DevOps",
 	icon = "grafana",
 	credentials = {"grafanaApi"}
 )

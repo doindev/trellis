@@ -17,7 +17,7 @@ import java.util.*;
 		type = "paddle",
 		displayName = "Paddle",
 		description = "Manage products and subscriptions in Paddle",
-		category = "E-Commerce",
+		category = "E-Commerce / Payments",
 		icon = "paddle",
 		credentials = {"paddleApi"}
 )

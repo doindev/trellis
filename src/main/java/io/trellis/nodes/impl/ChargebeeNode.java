@@ -16,7 +16,7 @@ import java.util.*;
 		type = "chargebee",
 		displayName = "Chargebee",
 		description = "Manage subscriptions and invoices in Chargebee",
-		category = "E-Commerce",
+		category = "E-Commerce / Payments",
 		icon = "chargebee",
 		credentials = {"chargebeeApi"}
 )

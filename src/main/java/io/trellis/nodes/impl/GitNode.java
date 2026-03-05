@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "git",
 	displayName = "Git",
 	description = "Perform local Git operations such as clone, commit, push, pull, and more",
-	category = "Development",
+	category = "Development / DevOps",
 	icon = "git",
 	credentials = {}
 )

@@ -17,7 +17,7 @@ import java.util.*;
 		type = "invoiceNinja",
 		displayName = "Invoice Ninja",
 		description = "Manage invoices and clients in Invoice Ninja",
-		category = "E-Commerce",
+		category = "E-Commerce / Payments",
 		icon = "invoiceNinja",
 		credentials = {"invoiceNinjaApi"}
 )

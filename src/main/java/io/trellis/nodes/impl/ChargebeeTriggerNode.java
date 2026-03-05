@@ -16,7 +16,7 @@ import java.util.*;
 		type = "chargebeeTrigger",
 		displayName = "Chargebee Trigger",
 		description = "Starts the workflow when a Chargebee event occurs",
-		category = "E-Commerce",
+		category = "E-Commerce / Payments",
 		icon = "chargebee",
 		credentials = {"chargebeeApi"},
 		trigger = true

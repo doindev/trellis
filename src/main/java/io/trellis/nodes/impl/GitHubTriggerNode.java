@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "githubTrigger",
 	displayName = "GitHub Trigger",
 	description = "Starts the workflow when GitHub events occur",
-	category = "Development",
+	category = "Development / DevOps",
 	icon = "github",
 	credentials = {"githubApi"},
 	trigger = true

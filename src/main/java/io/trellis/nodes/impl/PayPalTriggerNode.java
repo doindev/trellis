@@ -17,7 +17,7 @@ import java.util.*;
 		type = "payPalTrigger",
 		displayName = "PayPal Trigger",
 		description = "Starts the workflow when a PayPal event occurs",
-		category = "E-Commerce",
+		category = "E-Commerce / Payments",
 		icon = "payPal",
 		credentials = {"payPalApi"},
 		trigger = true
