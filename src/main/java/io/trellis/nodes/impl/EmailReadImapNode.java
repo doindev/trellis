@@ -29,7 +29,7 @@ import jakarta.mail.search.ReceivedDateTerm;
 	type = "emailReadImap",
 	displayName = "Email Trigger (IMAP)",
 	description = "Polls an IMAP email server for new messages",
-	category = "Core / Triggers",
+	category = "Core Triggers",
 	icon = "email",
 	trigger = true,
 	polling = true,

@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "sseTrigger",
 	displayName = "SSE Trigger",
 	description = "Connects to a Server-Sent Events (SSE) endpoint and triggers on new events.",
-	category = "Core / Triggers",
+	category = "Core Triggers",
 	icon = "sseTrigger",
 	trigger = true,
 	polling = true,

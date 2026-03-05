@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 	type = "localFileTrigger",
 	displayName = "Local File Trigger",
 	description = "Watches a local directory for file changes (created, modified, deleted).",
-	category = "Core / Triggers",
+	category = "Core Triggers",
 	icon = "localFileTrigger",
 	trigger = true,
 	polling = true
