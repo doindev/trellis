@@ -11,8 +11,11 @@ import io.trellis.repository.ExecutionMetricsHourlyRepository;
 import io.trellis.repository.ExecutionRepository;
 import io.trellis.repository.WorkflowRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -42,6 +45,10 @@ public class MetricsRollupService {
     private final ExecutionMetrics5minRepository fiveMinRepository;
     private final WorkflowRepository workflowRepository;
     private final TriggerLockService triggerLockService;
+
+    /** Self-reference through proxy so @Transactional works on internal calls. */
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private MetricsRollupService self;
 
     private volatile boolean backfillDone = false;
 
@@ -74,9 +81,9 @@ public class MetricsRollupService {
         }
         try {
             Instant now = Instant.now();
-            rollup5min(now.minus(Duration.ofMinutes(15)), now);
-            rollupHourly(now.minus(Duration.ofHours(3)), now);
-            cleanup5min(now);
+            self.rollup5min(now.minus(Duration.ofMinutes(15)), now);
+            self.rollupHourly(now.minus(Duration.ofHours(3)), now);
+            self.cleanup5min(now);
         } catch (Exception e) {
             log.error("Incremental metrics rollup failed", e);
         } finally {
@@ -93,11 +100,11 @@ public class MetricsRollupService {
 
         // 5min: backfill last 48 hours
         Instant fiveMinStart = now.minus(RETENTION_5MIN);
-        rollup5min(fiveMinStart, now);
+        self.rollup5min(fiveMinStart, now);
 
         // Hourly: backfill last 90 days
         Instant hourlyStart = now.minus(Duration.ofDays(90));
-        rollupHourly(hourlyStart, now);
+        self.rollupHourly(hourlyStart, now);
 
         log.info("Metrics backfill complete");
     }
