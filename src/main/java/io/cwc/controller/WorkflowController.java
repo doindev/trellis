@@ -11,6 +11,7 @@ import io.cwc.service.CwcMcpServerManager;
 import io.cwc.service.WorkflowService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/workflows")
@@ -22,11 +23,23 @@ public class WorkflowController {
     private final CwcMcpServerManager mcpServerManager;
 
     @GetMapping
-    public List<WorkflowResponse> list(@RequestParam(required = false) String projectId) {
+    public List<WorkflowResponse> list(@RequestParam(required = false) String projectId,
+                                       @RequestParam(required = false) String type) {
+        List<WorkflowResponse> result;
         if (projectId != null) {
-            return workflowService.listWorkflowsByProject(projectId);
+            result = workflowService.listWorkflowsByProject(projectId);
+        } else {
+            result = workflowService.listWorkflows();
         }
-        return workflowService.listWorkflows();
+        if (type != null) {
+            result = result.stream().filter(w -> type.equals(w.getType())).toList();
+        }
+        return result;
+    }
+
+    @GetMapping("/agents/visible")
+    public List<WorkflowResponse> listVisibleAgents(@RequestParam String projectId) {
+        return workflowService.listAgentsVisibleToProject(projectId);
     }
 
     @GetMapping("/{id}")
@@ -146,6 +159,26 @@ public class WorkflowController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeShare(@PathVariable String id, @PathVariable String shareId) {
         workflowService.removeShare(id, shareId);
+    }
+
+    // --- Agent project shares ---
+
+    @GetMapping("/{id}/project-shares")
+    public List<Map<String, String>> getAgentProjectShares(@PathVariable String id) {
+        return workflowService.getAgentProjectShares(id);
+    }
+
+    @PostMapping("/{id}/project-shares")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Map<String, String> shareAgentWithProject(@PathVariable String id,
+                                                      @RequestBody Map<String, String> request) {
+        return workflowService.shareAgentWithProject(id, request.get("targetProjectId"));
+    }
+
+    @DeleteMapping("/{id}/project-shares/{targetProjectId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unshareAgentFromProject(@PathVariable String id, @PathVariable String targetProjectId) {
+        workflowService.unshareAgentFromProject(id, targetProjectId);
     }
 
     private void notifyWorkflowChanged() {

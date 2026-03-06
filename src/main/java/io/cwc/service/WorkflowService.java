@@ -31,6 +31,7 @@ import io.cwc.repository.ProjectRepository;
 import io.cwc.repository.TagRepository;
 import io.cwc.repository.UserRepository;
 import io.cwc.repository.WorkflowRepository;
+import io.cwc.repository.AgentShareRepository;
 import io.cwc.repository.WorkflowShareRepository;
 import io.cwc.repository.WorkflowVersionRepository;
 import io.cwc.util.SecurityContextHelper;
@@ -54,6 +55,7 @@ public class WorkflowService {
     private final TagRepository tagRepository;
     private final NodeRegistry nodeRegistry;
     private final WorkflowShareRepository workflowShareRepository;
+    private final AgentShareRepository agentShareRepository;
     private final ProjectRelationRepository projectRelationRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -154,15 +156,16 @@ public class WorkflowService {
             projectId = resolvePersonalProjectId();
         }
 
-        WorkflowEntity entity = WorkflowEntity.builder()
+        var builder = WorkflowEntity.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .projectId(projectId)
                 .nodes(ensureNodeIds(request.getNodes()))
                 .connections(request.getConnections())
-                .settings(request.getSettings())
-                .build();
-        return toResponse(workflowRepository.save(entity));
+                .settings(request.getSettings());
+        if (request.getType() != null) builder.type(request.getType());
+        if (request.getIcon() != null) builder.icon(request.getIcon());
+        return toResponse(workflowRepository.save(builder.build()));
     }
 
     private String resolvePersonalProjectId() {
@@ -184,6 +187,8 @@ public class WorkflowService {
 
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
+        if (request.getType() != null) entity.setType(request.getType());
+        if (request.getIcon() != null) entity.setIcon(request.getIcon());
         if (request.getNodes() != null) entity.setNodes(ensureNodeIds(request.getNodes()));
         if (request.getConnections() != null) entity.setConnections(request.getConnections());
         if (request.getSettings() != null) entity.setSettings(request.getSettings());
@@ -241,6 +246,7 @@ public class WorkflowService {
             triggerSchedulerService.deregisterWorkflowTriggers(id);
         }
         workflowShareRepository.deleteByWorkflowId(id);
+        agentShareRepository.deleteByAgentId(id);
         workflowVersionRepository.deleteByWorkflowId(id);
         workflowRepository.delete(entity);
     }
@@ -585,6 +591,66 @@ public class WorkflowService {
         workflowShareRepository.delete(share);
     }
 
+    // --- Agent share methods ---
+
+    @Transactional(readOnly = true)
+    public List<WorkflowResponse> listAgentsVisibleToProject(String projectId) {
+        // Agents owned by the project
+        List<WorkflowEntity> owned = workflowRepository.findByProjectIdAndType(projectId, "AGENT").stream()
+                .filter(w -> !w.isArchived())
+                .toList();
+        // Agents shared with the project
+        List<String> sharedAgentIds = agentShareRepository.findByTargetProjectId(projectId).stream()
+                .map(io.cwc.entity.AgentShareEntity::getAgentId)
+                .toList();
+        List<WorkflowEntity> shared = sharedAgentIds.stream()
+                .map(id -> workflowRepository.findById(id).orElse(null))
+                .filter(w -> w != null && !w.isArchived())
+                .toList();
+        // Deduplicate
+        Set<String> seen = new LinkedHashSet<>();
+        List<WorkflowResponse> result = new ArrayList<>();
+        for (WorkflowEntity w : owned) {
+            if (seen.add(w.getId())) result.add(toResponse(w));
+        }
+        for (WorkflowEntity w : shared) {
+            if (seen.add(w.getId())) result.add(toResponse(w));
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, String>> getAgentProjectShares(String agentId) {
+        return agentShareRepository.findByAgentId(agentId).stream()
+                .map(share -> {
+                    String projectName = projectRepository.findById(share.getTargetProjectId())
+                            .map(p -> p.getName())
+                            .orElse(share.getTargetProjectId());
+                    return Map.of(
+                            "id", share.getId(),
+                            "targetProjectId", share.getTargetProjectId(),
+                            "projectName", projectName
+                    );
+                })
+                .toList();
+    }
+
+    @Transactional
+    public Map<String, String> shareAgentWithProject(String agentId, String targetProjectId) {
+        findById(agentId); // verify exists
+        io.cwc.entity.AgentShareEntity share = io.cwc.entity.AgentShareEntity.builder()
+                .agentId(agentId)
+                .targetProjectId(targetProjectId)
+                .build();
+        share = agentShareRepository.save(share);
+        return Map.of("id", share.getId(), "agentId", agentId, "targetProjectId", targetProjectId);
+    }
+
+    @Transactional
+    public void unshareAgentFromProject(String agentId, String targetProjectId) {
+        agentShareRepository.deleteByAgentIdAndTargetProjectId(agentId, targetProjectId);
+    }
+
     // --- Helpers ---
 
     /**
@@ -716,6 +782,8 @@ public class WorkflowService {
                 .projectId(entity.getProjectId())
                 .name(entity.getName())
                 .description(entity.getDescription())
+                .type(entity.getType())
+                .icon(entity.getIcon())
                 .published(entity.isPublished())
                 .archived(entity.isArchived())
                 .currentVersion(entity.getCurrentVersion())

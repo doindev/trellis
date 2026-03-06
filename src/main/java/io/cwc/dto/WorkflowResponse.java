@@ -12,6 +12,8 @@ public class WorkflowResponse {
     private String projectId;
     private String name;
     private String description;
+    private String type;
+    private String icon;
     private boolean published;
     private boolean archived;
     private int currentVersion;

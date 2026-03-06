@@ -1,0 +1,395 @@
+{
+  "name": "Ralph Wiggum Loop Agent",
+  "description": "Multi-agent orchestration using the Ralph Wiggum Loop pattern. Orchestrator delegates cyclically to Planner, Executor, Reviewer sub-agents. Shared task database via globalThis.taskDb.",
+  "nodes": [
+    {
+      "id": "chatTrigger1",
+      "name": "Chat Trigger",
+      "type": "chatTrigger",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {
+        "initialMessages": "Hello! I'm the Ralph Wiggum Loop agent. Give me a task and my team (Planner, Executor, Reviewer) will loop through it until it's done right."
+      }
+    },
+    {
+      "id": "mainAgent",
+      "name": "Orchestrator",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [600, 300],
+      "parameters": {
+        "systemMessage": "You are the Orchestrator in a Ralph Wiggum Loop — a cyclical multi-agent system. You coordinate three specialized sub-agents to complete user requests.\n\nWORKFLOW LOOP:\n1. PLAN: Delegate to the planner agent to break down the request into tasks stored in the shared task database\n2. EXECUTE: Delegate to the executor agent to work on all pending tasks\n3. REVIEW: Delegate to the reviewer agent to check completed work quality\n4. LOOP: Check the task database with list_tasks_from_db — if any tasks are still pending or need revision, repeat steps 2-3\n5. COMPLETE: When ALL tasks reach 'approved' status, compile the final results and report to the user\n\nRULES:\n- Always use the task database tools to track progress between delegations\n- Keep looping until ALL tasks reach 'approved' status\n- Use the Think tool to reason about the current state before each delegation\n- Always list tasks after each sub-agent returns to check progress\n- Maximum 3 full loops before summarizing whatever progress was made",
+        "prompt": "{{input}}",
+        "maxIterations": 30
+      }
+    },
+    {
+      "id": "mainModel",
+      "name": "Orchestrator Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [250, 580],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.7,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "mainMemory",
+      "name": "Orchestrator Memory",
+      "type": "windowBufferMemory",
+      "typeVersion": 1,
+      "position": [450, 580],
+      "parameters": {
+        "sessionId": "orchestrator_session",
+        "contextWindowLength": 15
+      }
+    },
+    {
+      "id": "mainThink",
+      "name": "Think",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [650, 580],
+      "parameters": {}
+    },
+    {
+      "id": "mainAddTask",
+      "name": "add_task_to_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [850, 580],
+      "parameters": {
+        "language": "js",
+        "code": "// Add a task to the shared task database.\n// Input: JSON string with { title, description, assignedTo, priority }\n// assignedTo should be 'executor'. priority: 'high','medium','low'\nvar task = JSON.parse(input);\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar id = 'task_' + (globalThis.taskDb.length + 1);\nvar newTask = {\n  id: id,\n  title: task.title || 'Untitled',\n  description: task.description || '',\n  assignedTo: task.assignedTo || 'executor',\n  priority: task.priority || 'medium',\n  status: 'pending',\n  result: null,\n  createdAt: new Date().toISOString()\n};\nglobalThis.taskDb.push(newTask);\nreturn JSON.stringify({ success: true, task: newTask, totalTasks: globalThis.taskDb.length });"
+      }
+    },
+    {
+      "id": "mainListTasks",
+      "name": "list_tasks_from_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [1050, 580],
+      "parameters": {
+        "language": "js",
+        "code": "// List tasks from the shared database.\n// Input: filter string — 'all', 'pending', 'in_progress', 'completed', or 'approved'\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar filter = (input || 'all').trim().toLowerCase();\nvar tasks = globalThis.taskDb;\nif (filter !== 'all') {\n  tasks = globalThis.taskDb.filter(function(t) { return t.status === filter; });\n}\nreturn JSON.stringify({ filter: filter, count: tasks.length, tasks: tasks });"
+      }
+    },
+    {
+      "id": "mainUpdateTask",
+      "name": "update_task_in_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [1250, 580],
+      "parameters": {
+        "language": "js",
+        "code": "// Update a task in the shared database.\n// Input: JSON string with { id, status?, result?, assignedTo?, notes? }\n// status values: 'pending','in_progress','completed','approved'\nvar update = JSON.parse(input);\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar task = null;\nfor (var i = 0; i < globalThis.taskDb.length; i++) {\n  if (globalThis.taskDb[i].id === update.id) { task = globalThis.taskDb[i]; break; }\n}\nif (!task) return JSON.stringify({ success: false, error: 'Task not found: ' + update.id });\nif (update.status) task.status = update.status;\nif (update.result !== undefined) task.result = update.result;\nif (update.assignedTo) task.assignedTo = update.assignedTo;\nif (update.notes) task.notes = update.notes;\ntask.updatedAt = new Date().toISOString();\nreturn JSON.stringify({ success: true, task: task });"
+      }
+    },
+    {
+      "id": "plannerAgent",
+      "name": "Planner",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [250, 850],
+      "parameters": {
+        "agentName": "planner",
+        "agentDescription": "The Planner agent. Delegate to this agent to analyze a request and break it down into structured tasks in the shared task database. It creates clear, atomic, actionable tasks with descriptions and priorities.",
+        "systemMessage": "You are the Planner Agent in a Ralph Wiggum Loop. You analyze requests and create structured task plans.\n\nYOUR JOB:\n1. First, list existing tasks to understand the current state\n2. Break down the delegated request into clear, atomic tasks\n3. Add each task to the shared database using add_task_to_db with:\n   - title: Clear, actionable task name\n   - description: Detailed requirements and acceptance criteria\n   - assignedTo: 'executor'\n   - priority: 'high', 'medium', or 'low'\n4. Return a summary of all tasks you created\n\nRULES:\n- Check existing tasks first to avoid duplicates\n- Each task should be independently completable\n- Include enough detail for the Executor to work without ambiguity\n- Use Think to reason about the best task breakdown\n- Always list tasks at the end to confirm what was created",
+        "maxIterations": 10
+      }
+    },
+    {
+      "id": "executorAgent",
+      "name": "Executor",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [700, 850],
+      "parameters": {
+        "agentName": "executor",
+        "agentDescription": "The Executor agent. Delegate to this agent to actually perform the work on pending tasks. It picks up tasks from the database, does the work, records results, and marks them completed.",
+        "systemMessage": "You are the Executor Agent in a Ralph Wiggum Loop. You do the actual work on tasks.\n\nYOUR JOB:\n1. List pending tasks from the database using list_tasks_from_db with input 'pending'\n2. For each pending task, work on it thoroughly:\n   a. Update its status to 'in_progress' using update_task_in_db\n   b. Think through the problem and produce a detailed result\n   c. Update the task with your result and set status to 'completed'\n3. If a task reveals sub-problems, add new tasks for them\n4. Return a summary of all work completed\n\nRULES:\n- Always check for pending tasks first\n- Produce detailed, high-quality results\n- Use the calculator for any mathematical computations\n- Use Think to reason through complex problems\n- Update task status as you progress\n- Work through ALL pending tasks, not just the first one",
+        "maxIterations": 15
+      }
+    },
+    {
+      "id": "reviewerAgent",
+      "name": "Reviewer",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [1100, 850],
+      "parameters": {
+        "agentName": "reviewer",
+        "agentDescription": "The Reviewer agent. Delegate to this agent to review completed work for quality and correctness. It approves good work and sends back inadequate work for revision.",
+        "systemMessage": "You are the Reviewer Agent in a Ralph Wiggum Loop. You ensure work quality meets standards.\n\nYOUR JOB:\n1. List completed tasks using list_tasks_from_db with input 'completed'\n2. Review each completed task's result against its description/acceptance criteria\n3. For each task:\n   - If the result is thorough and correct: Update status to 'approved'\n   - If it needs revision: Set status back to 'pending' and optionally add a new task describing required fixes\n4. Return a summary of your review decisions\n\nRULES:\n- Be thorough but fair in reviews\n- Provide specific feedback when requesting revisions (add it to the task notes)\n- Use Think to reason about quality criteria\n- A task is 'approved' only when it fully meets its description\n- Check that results are accurate, complete, and well-structured\n- Review ALL completed tasks, not just the first one",
+        "maxIterations": 10
+      }
+    },
+    {
+      "id": "plannerModel",
+      "name": "Planner Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [50, 1100],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.5,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "plannerMemory",
+      "name": "Planner Memory",
+      "type": "windowBufferMemory",
+      "typeVersion": 1,
+      "position": [250, 1100],
+      "parameters": {
+        "sessionId": "planner_session",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "plannerThink",
+      "name": "Think",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [0, 1300],
+      "parameters": {}
+    },
+    {
+      "id": "plannerAddTask",
+      "name": "add_task_to_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [200, 1300],
+      "parameters": {
+        "language": "js",
+        "code": "// Add a task to the shared task database.\n// Input: JSON string with { title, description, assignedTo, priority }\nvar task = JSON.parse(input);\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar id = 'task_' + (globalThis.taskDb.length + 1);\nvar newTask = {\n  id: id,\n  title: task.title || 'Untitled',\n  description: task.description || '',\n  assignedTo: task.assignedTo || 'executor',\n  priority: task.priority || 'medium',\n  status: 'pending',\n  result: null,\n  createdAt: new Date().toISOString()\n};\nglobalThis.taskDb.push(newTask);\nreturn JSON.stringify({ success: true, task: newTask, totalTasks: globalThis.taskDb.length });"
+      }
+    },
+    {
+      "id": "plannerListTasks",
+      "name": "list_tasks_from_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [400, 1300],
+      "parameters": {
+        "language": "js",
+        "code": "// List tasks from the shared database.\n// Input: filter — 'all', 'pending', 'in_progress', 'completed', or 'approved'\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar filter = (input || 'all').trim().toLowerCase();\nvar tasks = globalThis.taskDb;\nif (filter !== 'all') {\n  tasks = globalThis.taskDb.filter(function(t) { return t.status === filter; });\n}\nreturn JSON.stringify({ filter: filter, count: tasks.length, tasks: tasks });"
+      }
+    },
+    {
+      "id": "executorModel",
+      "name": "Executor Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [550, 1100],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.7,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "executorMemory",
+      "name": "Executor Memory",
+      "type": "windowBufferMemory",
+      "typeVersion": 1,
+      "position": [750, 1100],
+      "parameters": {
+        "sessionId": "executor_session",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "executorThink",
+      "name": "Think",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [500, 1300],
+      "parameters": {}
+    },
+    {
+      "id": "executorListTasks",
+      "name": "list_tasks_from_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [700, 1300],
+      "parameters": {
+        "language": "js",
+        "code": "// List tasks from the shared database.\n// Input: filter — 'all', 'pending', 'in_progress', 'completed', or 'approved'\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar filter = (input || 'all').trim().toLowerCase();\nvar tasks = globalThis.taskDb;\nif (filter !== 'all') {\n  tasks = globalThis.taskDb.filter(function(t) { return t.status === filter; });\n}\nreturn JSON.stringify({ filter: filter, count: tasks.length, tasks: tasks });"
+      }
+    },
+    {
+      "id": "executorUpdateTask",
+      "name": "update_task_in_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [900, 1300],
+      "parameters": {
+        "language": "js",
+        "code": "// Update a task in the shared database.\n// Input: JSON string with { id, status?, result?, assignedTo?, notes? }\nvar update = JSON.parse(input);\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar task = null;\nfor (var i = 0; i < globalThis.taskDb.length; i++) {\n  if (globalThis.taskDb[i].id === update.id) { task = globalThis.taskDb[i]; break; }\n}\nif (!task) return JSON.stringify({ success: false, error: 'Task not found: ' + update.id });\nif (update.status) task.status = update.status;\nif (update.result !== undefined) task.result = update.result;\nif (update.assignedTo) task.assignedTo = update.assignedTo;\nif (update.notes) task.notes = update.notes;\ntask.updatedAt = new Date().toISOString();\nreturn JSON.stringify({ success: true, task: task });"
+      }
+    },
+    {
+      "id": "executorCalc",
+      "name": "calculator",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [700, 1500],
+      "parameters": {
+        "language": "js",
+        "code": "// Calculator tool: evaluates mathematical expressions.\n// Input: a math expression string like '2 + 3 * 4' or '(100 / 5) + 10'\ntry {\n  var result = eval(input);\n  return JSON.stringify({ expression: input, result: result });\n} catch(e) {\n  return JSON.stringify({ error: 'Invalid expression: ' + e.message });\n}"
+      }
+    },
+    {
+      "id": "reviewerModel",
+      "name": "Reviewer Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [1000, 1100],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.3,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "reviewerMemory",
+      "name": "Reviewer Memory",
+      "type": "windowBufferMemory",
+      "typeVersion": 1,
+      "position": [1200, 1100],
+      "parameters": {
+        "sessionId": "reviewer_session",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "reviewerThink",
+      "name": "Think",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [950, 1300],
+      "parameters": {}
+    },
+    {
+      "id": "reviewerListTasks",
+      "name": "list_tasks_from_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [1150, 1300],
+      "parameters": {
+        "language": "js",
+        "code": "// List tasks from the shared database.\n// Input: filter — 'all', 'pending', 'in_progress', 'completed', or 'approved'\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar filter = (input || 'all').trim().toLowerCase();\nvar tasks = globalThis.taskDb;\nif (filter !== 'all') {\n  tasks = globalThis.taskDb.filter(function(t) { return t.status === filter; });\n}\nreturn JSON.stringify({ filter: filter, count: tasks.length, tasks: tasks });"
+      }
+    },
+    {
+      "id": "reviewerUpdateTask",
+      "name": "update_task_in_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [1350, 1300],
+      "parameters": {
+        "language": "js",
+        "code": "// Update a task in the shared database.\n// Input: JSON string with { id, status?, result?, assignedTo?, notes? }\nvar update = JSON.parse(input);\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar task = null;\nfor (var i = 0; i < globalThis.taskDb.length; i++) {\n  if (globalThis.taskDb[i].id === update.id) { task = globalThis.taskDb[i]; break; }\n}\nif (!task) return JSON.stringify({ success: false, error: 'Task not found: ' + update.id });\nif (update.status) task.status = update.status;\nif (update.result !== undefined) task.result = update.result;\nif (update.assignedTo) task.assignedTo = update.assignedTo;\nif (update.notes) task.notes = update.notes;\ntask.updatedAt = new Date().toISOString();\nreturn JSON.stringify({ success: true, task: task });"
+      }
+    },
+    {
+      "id": "reviewerAddTask",
+      "name": "add_task_to_db",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [1150, 1500],
+      "parameters": {
+        "language": "js",
+        "code": "// Add a task to the shared task database.\n// Input: JSON string with { title, description, assignedTo, priority }\nvar task = JSON.parse(input);\nif (!globalThis.taskDb) globalThis.taskDb = [];\nvar id = 'task_' + (globalThis.taskDb.length + 1);\nvar newTask = {\n  id: id,\n  title: task.title || 'Untitled',\n  description: task.description || '',\n  assignedTo: task.assignedTo || 'executor',\n  priority: task.priority || 'medium',\n  status: 'pending',\n  result: null,\n  createdAt: new Date().toISOString()\n};\nglobalThis.taskDb.push(newTask);\nreturn JSON.stringify({ success: true, task: newTask, totalTasks: globalThis.taskDb.length });"
+      }
+    }
+  ],
+  "connections": {
+    "chatTrigger1": {
+      "main": [[{"node": "mainAgent", "type": "main", "index": 0}]]
+    },
+    "mainModel": {
+      "ai_languageModel": [[{"node": "mainAgent", "type": "ai_languageModel", "index": 0}]]
+    },
+    "mainMemory": {
+      "ai_memory": [[{"node": "mainAgent", "type": "ai_memory", "index": 0}]]
+    },
+    "mainThink": {
+      "ai_tool": [[{"node": "mainAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "mainAddTask": {
+      "ai_tool": [[{"node": "mainAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "mainListTasks": {
+      "ai_tool": [[{"node": "mainAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "mainUpdateTask": {
+      "ai_tool": [[{"node": "mainAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "plannerAgent": {
+      "ai_tool": [[{"node": "mainAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "executorAgent": {
+      "ai_tool": [[{"node": "mainAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "reviewerAgent": {
+      "ai_tool": [[{"node": "mainAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "plannerModel": {
+      "ai_languageModel": [[{"node": "plannerAgent", "type": "ai_languageModel", "index": 0}]]
+    },
+    "plannerMemory": {
+      "ai_memory": [[{"node": "plannerAgent", "type": "ai_memory", "index": 0}]]
+    },
+    "plannerThink": {
+      "ai_tool": [[{"node": "plannerAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "plannerAddTask": {
+      "ai_tool": [[{"node": "plannerAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "plannerListTasks": {
+      "ai_tool": [[{"node": "plannerAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "executorModel": {
+      "ai_languageModel": [[{"node": "executorAgent", "type": "ai_languageModel", "index": 0}]]
+    },
+    "executorMemory": {
+      "ai_memory": [[{"node": "executorAgent", "type": "ai_memory", "index": 0}]]
+    },
+    "executorThink": {
+      "ai_tool": [[{"node": "executorAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "executorListTasks": {
+      "ai_tool": [[{"node": "executorAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "executorUpdateTask": {
+      "ai_tool": [[{"node": "executorAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "executorCalc": {
+      "ai_tool": [[{"node": "executorAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "reviewerModel": {
+      "ai_languageModel": [[{"node": "reviewerAgent", "type": "ai_languageModel", "index": 0}]]
+    },
+    "reviewerMemory": {
+      "ai_memory": [[{"node": "reviewerAgent", "type": "ai_memory", "index": 0}]]
+    },
+    "reviewerThink": {
+      "ai_tool": [[{"node": "reviewerAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "reviewerListTasks": {
+      "ai_tool": [[{"node": "reviewerAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "reviewerUpdateTask": {
+      "ai_tool": [[{"node": "reviewerAgent", "type": "ai_tool", "index": 0}]]
+    },
+    "reviewerAddTask": {
+      "ai_tool": [[{"node": "reviewerAgent", "type": "ai_tool", "index": 0}]]
+    }
+  }
+}

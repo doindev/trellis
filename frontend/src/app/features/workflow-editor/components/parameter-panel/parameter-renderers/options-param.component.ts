@@ -1,7 +1,8 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NodeParameter } from '../../../../../core/models';
+import { NodeParameter, ParameterOption } from '../../../../../core/models';
+import { NodeTypeService } from '../../../../../core/services/node-type.service';
 
 @Component({
   selector: 'app-options-param',
@@ -56,7 +57,7 @@ import { NodeParameter } from '../../../../../core/models';
         @if (!param.required) {
           <option [ngValue]="null">-- Select --</option>
         }
-        @for (opt of param.options || []; track opt.value) {
+        @for (opt of effectiveOptions; track opt.value) {
           <option [ngValue]="opt.value">{{ opt.name }}</option>
         }
       </select>
@@ -145,11 +146,12 @@ import { NodeParameter } from '../../../../../core/models';
     }
   `]
 })
-export class OptionsParamComponent {
+export class OptionsParamComponent implements OnInit {
   @Input() param!: NodeParameter;
   @Input() value: any;
   @Input() readOnly = false;
   @Input() expressionError = '';
+  @Input() projectId = '';
   @Output() valueChange = new EventEmitter<any>();
   @Output() blurred = new EventEmitter<void>();
   @Output() focused = new EventEmitter<void>();
@@ -157,6 +159,26 @@ export class OptionsParamComponent {
 
   expressionMode = false;
   expressionPlaceholder = 'e.g. {{$json.status}}';
+  dynamicOptions: ParameterOption[] | null = null;
+
+  constructor(private nodeTypeService: NodeTypeService) {}
+
+  ngOnInit(): void {
+    if (this.param.name === 'agentDefinitionId' && this.projectId) {
+      this.nodeTypeService.getAgentOptions(this.projectId).subscribe({
+        next: (opts) => {
+          this.dynamicOptions = [
+            { name: '(None - configure manually)', value: '', description: '' },
+            ...opts.map(o => ({ name: o.name, value: o.value, description: '' }))
+          ];
+        }
+      });
+    }
+  }
+
+  get effectiveOptions(): ParameterOption[] {
+    return this.dynamicOptions || this.param.options || [];
+  }
 
   get isExpression(): boolean {
     const str = String(this.value ?? '');
@@ -164,8 +186,8 @@ export class OptionsParamComponent {
   }
 
   get selectedDescription(): string {
-    if (!this.value || !this.param.options || this.isExpression) return '';
-    const opt = this.param.options.find(o => o.value === this.value);
+    if (!this.value || this.isExpression) return '';
+    const opt = this.effectiveOptions.find(o => o.value === this.value);
     return opt?.description || '';
   }
 

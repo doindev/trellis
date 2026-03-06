@@ -138,7 +138,21 @@
       "mcp__trellis-agent__trellis_list_node_categories",
       "mcp__trellis-agent__trellis_list_browser_sessions",
       "Bash(git mv:*)",
-      "Bash(mvn test:*)"
+      "Bash(mvn test:*)",
+      "mcp__cwc-agent__cwc_list_node_categories",
+      "mcp__cwc-agent__cwc_list_browser_sessions",
+      "mcp__cwc-agent__cwc_workflow_guide",
+      "mcp__cwc-agent__cwc_list_node_types",
+      "mcp__cwc-agent__cwc_get_node_type",
+      "mcp__cwc-agent__cwc_push_to_canvas",
+      "mcp__cwc-agent__cwc_get_agent",
+      "mcp__cwc-agent__cwc_get_workflow",
+      "mcp__cwc-agent__cwc_list_agents",
+      "mcp__cwc-agent__cwc_list_workflows",
+      "mcp__cwc-agent__cwc_create_agent",
+      "mcp__cwc-agent__cwc_update_agent",
+      "mcp__cwc-agent__cwc_browser_control",
+      "mcp__cwc-agent__cwc_update_workflow"
     ]
   }
 }

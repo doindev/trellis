@@ -66,12 +66,16 @@ export class NodePaletteComponent implements OnInit {
   @Input() set canvasNeededAiTypes(value: Set<string>) {
     this._canvasNeededAiTypes.set(value);
   }
+  @Input() set editorMode(value: 'workflow' | 'agent') {
+    this._editorMode.set(value);
+  }
   @Output() close = new EventEmitter<void>();
   @Output() nodeClicked = new EventEmitter<NodeTypeDescription>();
   @Output() nodeClickedWithAction = new EventEmitter<NodeClickedWithAction>();
 
   private _nodeTypes = signal<Map<string, NodeTypeDescription[]>>(new Map());
   private _canvasNeededAiTypes = signal<Set<string>>(new Set());
+  private _editorMode = signal<'workflow' | 'agent'>('workflow');
   searchTerm = signal('');
   triggerOnly = signal(false);
   /** When set, only show nodes whose outputs include this AI connection type. */
@@ -130,6 +134,7 @@ export class NodePaletteComponent implements OnInit {
     const triggersOnly = this.triggerOnly();
     const aiFilter = this.aiOutputTypeFilter();
     const types = this._nodeTypes();
+    const isAgentMode = this._editorMode() === 'agent';
     const isNodeTypeFilter = triggersOnly || !!aiFilter;
     const isSearching = term.length > 0;
 
@@ -138,14 +143,23 @@ export class NodePaletteComponent implements OnInit {
     types.forEach((nodes, category) => {
       let matching = nodes;
 
-      // Default view: hide searchOnly nodes
-      if (!isSearching && !isNodeTypeFilter) {
+      // Agent mode: only show AI-related nodes
+      if (isAgentMode) {
+        matching = matching.filter(n => this.isAgentModeNode(n, category));
+      }
+
+      // Default view: hide searchOnly nodes (in agent mode, show all AI sub-nodes)
+      if (!isSearching && !isNodeTypeFilter && !isAgentMode) {
         matching = matching.filter(n => !n.searchOnly);
+      }
+      if (isAgentMode && !isSearching && !isNodeTypeFilter) {
+        // In agent mode, show searchOnly AI sub-nodes directly
       }
 
       // Hide AI-ecosystem nodes when no consumer on the canvas needs them,
       // unless the user is searching by text or an explicit AI filter is active.
-      if (!isSearching && !isNodeTypeFilter) {
+      // Skip this in agent mode — always show all AI nodes.
+      if (!isSearching && !isNodeTypeFilter && !isAgentMode) {
         const neededAiTypes = this._canvasNeededAiTypes();
         matching = matching.filter(n => !this.isHiddenAiNode(n, neededAiTypes));
       }
@@ -320,6 +334,21 @@ export class NodePaletteComponent implements OnInit {
 
   /** Gateway node types that should always remain visible so the user can bootstrap AI workflows. */
   private static readonly AI_ENTRY_POINTS = new Set(['aiAgent', 'basicLlmChain']);
+
+  /** Returns true if this node should be shown in agent editor mode (AI-related nodes only). */
+  private isAgentModeNode(n: NodeTypeDescription, category: string): boolean {
+    // Always show AI category nodes
+    if (category === 'AI') return true;
+    // Show the AI Agent and Basic LLM Chain nodes
+    if (n.type === 'aiAgent' || n.type === 'basicLlmChain') return true;
+    // Show manualChatTrigger for testing
+    if (n.type === 'manualChatTrigger') return true;
+    // Show nodes with AI output types (models, memory, tools, embeddings, etc.)
+    if (n.outputs?.some(o => o.type?.startsWith('ai_'))) return true;
+    // Show nodes with AI input types
+    if (n.inputs?.some(i => i.type?.startsWith('ai_'))) return true;
+    return false;
+  }
 
   /** Returns true if this node is part of the AI ecosystem and not currently needed on the canvas. */
   private isHiddenAiNode(n: NodeTypeDescription, neededAiTypes: Set<string>): boolean {

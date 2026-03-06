@@ -6,6 +6,8 @@ import lombok.Data;
 public class WorkflowUpdateRequest {
     private String name;
     private String description;
+    private String type;
+    private String icon;
     private Object nodes;
     private Object connections;
     private Object settings;

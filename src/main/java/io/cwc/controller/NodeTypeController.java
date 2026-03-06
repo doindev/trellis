@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.bind.annotation.RequestParam;
 import io.cwc.exception.NotFoundException;
 import io.cwc.nodes.core.NodeRegistry;
 import io.cwc.nodes.core.NodeRegistry.NodeRegistration;
+import io.cwc.service.WorkflowService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -21,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class NodeTypeController {
 
     private final NodeRegistry nodeRegistry;
+    private final WorkflowService workflowService;
 
     @GetMapping
     public Collection<Map<String, Object>> getAll() {
@@ -34,6 +37,18 @@ public class NodeTypeController {
         NodeRegistration registration = nodeRegistry.getNode(type)
                 .orElseThrow(() -> new NotFoundException("Node type not found: " + type));
         return toMap(registration);
+    }
+
+    @GetMapping("/agent-options")
+    public List<Map<String, String>> getAgentOptions(@RequestParam(required = false) String projectId) {
+        var agents = projectId != null
+                ? workflowService.listAgentsVisibleToProject(projectId)
+                : workflowService.listWorkflows().stream()
+                        .filter(w -> "AGENT".equals(w.getType()))
+                        .toList();
+        return agents.stream()
+                .map(a -> Map.of("value", a.getId(), "name", a.getName()))
+                .toList();
     }
 
     @GetMapping("/categories")

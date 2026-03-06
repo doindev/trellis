@@ -33,6 +33,12 @@ public class WorkflowEntity {
 
     @Builder.Default
     @Column(nullable = false)
+    private String type = "WORKFLOW";  // "WORKFLOW" or "AGENT"
+
+    private String icon;  // emoji/icon for agent display
+
+    @Builder.Default
+    @Column(nullable = false)
     private boolean published = false;
 
     @Builder.Default

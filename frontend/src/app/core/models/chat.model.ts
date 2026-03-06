@@ -13,14 +13,3 @@ export interface ChatMessage {
   content: string;
   createdAt: string;
 }
-
-export interface ChatAgent {
-  id: string;
-  name: string;
-  description?: string;
-  systemPrompt?: string;
-  icon?: string;
-  model?: string;
-  createdAt: string;
-  updatedAt: string;
-}

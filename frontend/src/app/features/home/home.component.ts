@@ -8,7 +8,7 @@ import { WorkflowCardComponent } from '../../shared/components/workflow-card/wor
 import { VariableListComponent } from '../variables/variable-list.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { CredentialCreateModalComponent } from '../../shared/components/credential-create-modal/credential-create-modal.component';
-import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Layers } from 'lucide-angular';
+import { LucideAngularModule, LucideIconProvider, LUCIDE_ICONS, KeyRound, Layers, Bot } from 'lucide-angular';
 import { CacheListComponent } from '../cache/cache-list.component';
 import { ProjectSettingsComponent } from '../project/project-settings.component';
 import { WorkflowMoveModalComponent } from '../../shared/components/workflow-move-modal/workflow-move-modal.component';
@@ -39,7 +39,7 @@ import {
     WorkflowShareModalComponent,
     ProjectSettingsComponent
   ],
-  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Layers }) }],
+  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Layers, Bot }) }],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
@@ -48,7 +48,7 @@ export class HomeComponent implements OnInit {
   @ViewChild(CacheListComponent) cacheList!: CacheListComponent;
   @ViewChild('projectSettings') projectSettings!: ProjectSettingsComponent;
 
-  activeTab = signal<'workflows' | 'credentials' | 'executions' | 'variables' | 'caches'>('workflows');
+  activeTab = signal<'workflows' | 'credentials' | 'executions' | 'variables' | 'caches' | 'agents'>('workflows');
 
   // Workflow state
   workflows = signal<Workflow[]>([]);
@@ -144,6 +144,29 @@ export class HomeComponent implements OnInit {
     return creds;
   });
 
+  // Agent state
+  agents = signal<Workflow[]>([]);
+  loadingAgents = signal(true);
+  agentSearchTerm = signal('');
+  agentSortBy = signal('updatedAt');
+  filteredAgents = computed(() => {
+    const term = this.agentSearchTerm().toLowerCase();
+    const sort = this.agentSortBy();
+    let agents = this.agents();
+    if (term) {
+      agents = agents.filter(a => a.name.toLowerCase().includes(term));
+    }
+    agents = [...agents].sort((a, b) => {
+      switch (sort) {
+        case 'name': return a.name.localeCompare(b.name);
+        case 'nameDesc': return b.name.localeCompare(a.name);
+        case 'createdAt': return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        default: return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      }
+    });
+    return agents;
+  });
+
   // Delete
   deleteTarget = signal<Workflow | null>(null);
   showDeleteConfirm = signal(false);
@@ -163,6 +186,9 @@ export class HomeComponent implements OnInit {
 
   // Credential actions dropdown
   credActionsOpenId = signal<string | null>(null);
+
+  // Agent actions dropdown
+  agentActionsOpenId = signal<string | null>(null);
 
   // Execution tab state
   execAutoRefresh = signal(true);
@@ -224,7 +250,7 @@ export class HomeComponent implements OnInit {
   ngOnInit(): void {
     // Set active tab from route param
     const tabFromRoute = this.route.snapshot.paramMap.get('tab');
-    if (tabFromRoute && ['workflows', 'credentials', 'executions', 'variables', 'caches'].includes(tabFromRoute)) {
+    if (tabFromRoute && ['workflows', 'credentials', 'executions', 'variables', 'caches', 'agents'].includes(tabFromRoute)) {
       this.activeTab.set(tabFromRoute as any);
     }
 
@@ -256,7 +282,7 @@ export class HomeComponent implements OnInit {
     this.loadProjects();
   }
 
-  setTab(tab: 'workflows' | 'credentials' | 'executions' | 'variables' | 'caches'): void {
+  setTab(tab: 'workflows' | 'credentials' | 'executions' | 'variables' | 'caches' | 'agents'): void {
     this.activeTab.set(tab);
     this.router.navigate(['/home', tab]);
   }
@@ -264,7 +290,8 @@ export class HomeComponent implements OnInit {
   loadWorkflows(): void {
     this.loadingWorkflows.set(true);
     const projectId = this.selectedProjectId();
-    const params = projectId ? { projectId } : undefined;
+    const params: Record<string, string> = { type: 'WORKFLOW' };
+    if (projectId) params['projectId'] = projectId;
     this.workflowService.list(params).subscribe({
       next: (data) => {
         this.workflows.set(data);
@@ -359,6 +386,98 @@ export class HomeComponent implements OnInit {
     this.loadCredentials();
     this.loadExecutions();
     this.loadInsightsMetrics();
+    this.loadAgents();
+  }
+
+  loadAgents(): void {
+    this.loadingAgents.set(true);
+    const projectId = this.selectedProjectId();
+    if (!projectId) {
+      this.loadingAgents.set(false);
+      return;
+    }
+    this.workflowService.list({ projectId, type: 'AGENT' }).subscribe({
+      next: (data) => {
+        this.agents.set(data);
+        this.loadingAgents.set(false);
+      },
+      error: () => this.loadingAgents.set(false)
+    });
+  }
+
+  createAgent(): void {
+    this.showCreateDropdown = false;
+    const projectId = this.selectedProjectId();
+    this.router.navigate(['/agent/new'], projectId ? { queryParams: { projectId } } : {});
+  }
+
+  openAgent(agent: Workflow): void {
+    if (agent.id) {
+      this.router.navigate(['/agent', agent.id]);
+    }
+  }
+
+  duplicateAgent(agent: Workflow): void {
+    if (!agent.id) return;
+    const copy: Partial<Workflow> = {
+      name: agent.name + ' (copy)',
+      type: 'AGENT',
+      icon: agent.icon,
+      published: false,
+      currentVersion: 0,
+      nodes: agent.nodes,
+      connections: agent.connections,
+      settings: agent.settings,
+      projectId: agent.projectId
+    };
+    this.workflowService.create(copy as Workflow).subscribe({
+      next: () => this.loadAgents()
+    });
+  }
+
+  moveAgent(agent: Workflow): void {
+    this.agentActionsOpenId.set(null);
+    this.moveTarget.set(agent);
+    this.showMoveModal.set(true);
+  }
+
+  shareAgent(agent: Workflow): void {
+    this.agentActionsOpenId.set(null);
+    if (agent.published) return;
+    this.shareTarget.set(agent);
+    this.showShareModal.set(true);
+  }
+
+  confirmAgentDelete(agent: Workflow): void {
+    this.deleteTarget.set(agent);
+    this.showDeleteConfirm.set(true);
+  }
+
+  onAgentSearchChange(value: string): void {
+    this.agentSearchTerm.set(value);
+  }
+
+  onAgentSortChange(value: string): void {
+    this.agentSortBy.set(value);
+  }
+
+  toggleAgentActions(id: string, event: Event): void {
+    event.stopPropagation();
+    this.agentActionsOpenId.set(this.agentActionsOpenId() === id ? null : id);
+  }
+
+  agentTimeAgo(agent: Workflow): string {
+    const date = agent.updatedAt || agent.createdAt;
+    if (!date) return '';
+    const diff = Date.now() - new Date(date).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    return new Date(date).toLocaleDateString();
   }
 
   loadInsightsMetrics(): void {
@@ -442,7 +561,11 @@ export class HomeComponent implements OnInit {
       next: () => {
         this.showMoveModal.set(false);
         this.moveTarget.set(null);
-        this.loadWorkflows();
+        if (target.type === 'AGENT') {
+          this.loadAgents();
+        } else {
+          this.loadWorkflows();
+        }
       }
     });
   }
@@ -488,7 +611,11 @@ export class HomeComponent implements OnInit {
     if (target?.id) {
       this.workflowService.delete(target.id).subscribe({
         next: () => {
-          this.workflows.update(wfs => wfs.filter(w => w.id !== target.id));
+          if (target.type === 'AGENT') {
+            this.agents.update(a => a.filter(w => w.id !== target.id));
+          } else {
+            this.workflows.update(wfs => wfs.filter(w => w.id !== target.id));
+          }
           this.showDeleteConfirm.set(false);
           this.deleteTarget.set(null);
         }

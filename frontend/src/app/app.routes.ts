@@ -28,6 +28,16 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/workflow-editor/workflow-editor.component').then(m => m.WorkflowEditorComponent)
   },
+  {
+    path: 'agent/new',
+    loadComponent: () =>
+      import('./features/workflow-editor/workflow-editor.component').then(m => m.WorkflowEditorComponent)
+  },
+  {
+    path: 'agent/:id',
+    loadComponent: () =>
+      import('./features/workflow-editor/workflow-editor.component').then(m => m.WorkflowEditorComponent)
+  },
   { path: 'insights', redirectTo: '/insights/total', pathMatch: 'full' },
   {
     path: 'insights/:metric',

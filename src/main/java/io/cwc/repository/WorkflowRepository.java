@@ -16,4 +16,6 @@ public interface WorkflowRepository extends JpaRepository<WorkflowEntity, String
     List<WorkflowEntity> findByProjectIdIsNull();
     List<WorkflowEntity> findByMcpEnabledTrue();
     List<WorkflowEntity> findBySwaggerEnabledTrue();
+    List<WorkflowEntity> findByProjectIdAndType(String projectId, String type);
+    List<WorkflowEntity> findByType(String type);
 }

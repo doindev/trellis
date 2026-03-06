@@ -207,6 +207,58 @@ public class McpSystemToolService {
                         "required", List.of("id")
                 )));
 
+        // --- Agent Tools ---
+
+        tools.add(toolDef("cwc_list_agents",
+                "List all AI agents with summary info (id, name, icon, description, published status). Agents are workflows with type=AGENT.",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap(
+                                "projectId", prop("string", "Filter agents by project ID")
+                        )
+                )));
+
+        tools.add(toolDef("cwc_get_agent",
+                "Get the full agent definition including nodes, connections, settings, and icon.",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap(
+                                "id", prop("string", "The agent ID")
+                        ),
+                        "required", List.of("id")
+                )));
+
+        tools.add(toolDef("cwc_create_agent",
+                "Create a new AI agent. If no nodes are provided, auto-creates a default AI Agent node with the given system message.",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap(
+                                "name", prop("string", "Agent name (required)"),
+                                "description", prop("string", "Agent description"),
+                                "icon", prop("string", "Emoji icon for the agent, e.g. '\uD83E\uDD16'"),
+                                "projectId", prop("string", "Project ID to create the agent in"),
+                                "systemMessage", prop("string", "System message/prompt for the AI Agent node"),
+                                "nodes", Map.of("type", "array", "description", "Array of node objects. If omitted, auto-creates an AI Agent node with defaults."),
+                                "connections", Map.of("type", "object", "description", "Connection map between nodes")
+                        ),
+                        "required", List.of("name")
+                )));
+
+        tools.add(toolDef("cwc_update_agent",
+                "Update an existing AI agent. Only provided fields are updated. The target must be an agent (type=AGENT).",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap(
+                                "id", prop("string", "The agent ID (required)"),
+                                "name", prop("string", "New agent name"),
+                                "description", prop("string", "New description"),
+                                "icon", prop("string", "New emoji icon"),
+                                "nodes", Map.of("type", "array", "description", "Updated node array"),
+                                "connections", Map.of("type", "object", "description", "Updated connections map")
+                        ),
+                        "required", List.of("id")
+                )));
+
         return tools;
     }
 
@@ -221,7 +273,9 @@ public class McpSystemToolService {
             "cwc_push_to_canvas",
             "cwc_create_workflow",
             "cwc_update_workflow",
-            "cwc_publish_workflow"
+            "cwc_publish_workflow",
+            "cwc_create_agent",
+            "cwc_update_agent"
     );
 
     private boolean requiresConsent(String toolName) {
@@ -267,6 +321,10 @@ public class McpSystemToolService {
                 case "cwc_browser_control" -> handleBrowserControl(arguments, targetSession);
                 case "cwc_push_to_canvas" -> handlePushToCanvas(arguments, targetSession);
                 case "cwc_publish_workflow" -> handlePublishWorkflow(arguments);
+                case "cwc_list_agents" -> handleListAgents(arguments);
+                case "cwc_get_agent" -> handleGetAgent(arguments);
+                case "cwc_create_agent" -> handleCreateAgent(arguments);
+                case "cwc_update_agent" -> handleUpdateAgent(arguments);
                 default -> throw new IllegalArgumentException("Unknown system tool: " + name);
             };
 
@@ -335,6 +393,13 @@ public class McpSystemToolService {
                         ? "Publish workflow '" + args.getOrDefault("id", "?") + "' as '" + vName + "'"
                         : "Publish workflow '" + args.getOrDefault("id", "?") + "' as a new version";
             }
+            case "cwc_list_agents" -> {
+                String projId = (String) args.get("projectId");
+                yield projId != null ? "List agents in project " + projId : "List all AI agents";
+            }
+            case "cwc_get_agent" -> "Get agent definition for '" + args.getOrDefault("id", "?") + "'";
+            case "cwc_create_agent" -> "Create a new AI agent named '" + args.getOrDefault("name", "?") + "'";
+            case "cwc_update_agent" -> "Update agent '" + args.getOrDefault("id", "?") + "'";
             default -> "Execute " + name;
         };
     }
@@ -536,6 +601,7 @@ public class McpSystemToolService {
                 .collect(Collectors.toMap(ProjectResponse::getId, ProjectResponse::getName, (a, b) -> a));
 
         List<Map<String, Object>> result = workflows.stream()
+                .filter(wf -> !"AGENT".equals(wf.getType()))
                 .map(wf -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("id", wf.getId());
@@ -857,6 +923,164 @@ public class McpSystemToolService {
         return result;
     }
 
+    // --- Agent Handlers ---
+
+    private Object handleListAgents(Map<String, Object> args) {
+        String projectId = (String) args.get("projectId");
+
+        List<WorkflowResponse> workflows;
+        if (projectId != null && !projectId.isBlank()) {
+            workflows = workflowService.listWorkflowsByProject(projectId);
+        } else {
+            workflows = workflowService.listWorkflows();
+        }
+
+        Map<String, String> projectNames = projectService.listProjects().stream()
+                .collect(Collectors.toMap(ProjectResponse::getId, ProjectResponse::getName, (a, b) -> a));
+
+        List<Map<String, Object>> result = workflows.stream()
+                .filter(wf -> "AGENT".equals(wf.getType()))
+                .map(wf -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", wf.getId());
+                    m.put("name", wf.getName());
+                    m.put("icon", wf.getIcon());
+                    m.put("description", wf.getDescription());
+                    m.put("projectId", wf.getProjectId());
+                    m.put("projectName", projectNames.getOrDefault(wf.getProjectId(), null));
+                    m.put("published", wf.isPublished());
+                    m.put("createdAt", wf.getCreatedAt());
+                    m.put("updatedAt", wf.getUpdatedAt());
+                    return m;
+                })
+                .toList();
+
+        return Map.of("agents", result, "count", result.size());
+    }
+
+    private Object handleGetAgent(Map<String, Object> args) {
+        String id = (String) args.get("id");
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("'id' is required");
+        }
+
+        WorkflowResponse wf = workflowService.getWorkflow(id);
+        if (!"AGENT".equals(wf.getType())) {
+            throw new IllegalArgumentException("'" + id + "' is not an agent (type=" + wf.getType() + "). Use cwc_get_workflow instead.");
+        }
+
+        String projectName = null;
+        if (wf.getProjectId() != null) {
+            try {
+                projectName = projectService.getProject(wf.getProjectId()).getName();
+            } catch (Exception e) {
+                // Project may have been deleted
+            }
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", wf.getId());
+        result.put("name", wf.getName());
+        result.put("icon", wf.getIcon());
+        result.put("description", wf.getDescription());
+        result.put("projectId", wf.getProjectId());
+        result.put("projectName", projectName);
+        result.put("published", wf.isPublished());
+        result.put("currentVersion", wf.getCurrentVersion());
+        result.put("nodes", wf.getNodes());
+        result.put("connections", wf.getConnections());
+        result.put("settings", wf.getSettings());
+        result.put("createdAt", wf.getCreatedAt());
+        result.put("updatedAt", wf.getUpdatedAt());
+        return result;
+    }
+
+    private Object handleCreateAgent(Map<String, Object> args) {
+        String name = (String) args.get("name");
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("'name' is required");
+        }
+
+        WorkflowCreateRequest request = new WorkflowCreateRequest();
+        request.setName(name);
+        request.setType("AGENT");
+        request.setDescription((String) args.get("description"));
+        request.setIcon((String) args.get("icon"));
+        request.setProjectId((String) args.get("projectId"));
+
+        if (args.containsKey("nodes")) {
+            request.setNodes(args.get("nodes"));
+            request.setConnections(args.get("connections"));
+        } else {
+            // Auto-create default AI Agent node (mirrors frontend behavior)
+            String systemMessage = (String) args.get("systemMessage");
+            if (systemMessage == null || systemMessage.isBlank()) {
+                systemMessage = "You are a helpful assistant.";
+            }
+
+            String agentNodeId = UUID.randomUUID().toString();
+            List<Map<String, Object>> defaultNodes = List.of(Map.of(
+                    "id", agentNodeId,
+                    "name", "AI Agent",
+                    "type", "aiAgent",
+                    "typeVersion", 1,
+                    "parameters", Map.of(
+                            "systemMessage", systemMessage,
+                            "prompt", "={{$json.chatInput}}",
+                            "maxIterations", 10
+                    ),
+                    "position", List.of(400, 300)
+            ));
+            request.setNodes(defaultNodes);
+            request.setConnections(Map.of());
+        }
+
+        WorkflowResponse wf = workflowService.createWorkflow(request);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", wf.getId());
+        result.put("name", wf.getName());
+        result.put("icon", wf.getIcon());
+        result.put("description", wf.getDescription());
+        result.put("message", "Agent created successfully");
+        result.put("editorUrl", "/agent/" + wf.getId());
+        return result;
+    }
+
+    private Object handleUpdateAgent(Map<String, Object> args) {
+        String id = (String) args.get("id");
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("'id' is required");
+        }
+
+        WorkflowResponse existing = workflowService.getWorkflow(id);
+        if (!"AGENT".equals(existing.getType())) {
+            throw new IllegalArgumentException("'" + id + "' is not an agent (type=" + existing.getType() + "). Use cwc_update_workflow instead.");
+        }
+        if (existing.isPublished()) {
+            throw new IllegalArgumentException(
+                    "Agent '" + id + "' is published and cannot be modified directly. "
+                    + "Use cwc_publish_workflow to create a new version instead.");
+        }
+
+        WorkflowUpdateRequest request = new WorkflowUpdateRequest();
+        if (args.containsKey("name")) request.setName((String) args.get("name"));
+        if (args.containsKey("description")) request.setDescription((String) args.get("description"));
+        if (args.containsKey("icon")) request.setIcon((String) args.get("icon"));
+        if (args.containsKey("nodes")) request.setNodes(args.get("nodes"));
+        if (args.containsKey("connections")) request.setConnections(args.get("connections"));
+
+        WorkflowResponse wf = workflowService.updateWorkflow(id, request);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", wf.getId());
+        result.put("name", wf.getName());
+        result.put("icon", wf.getIcon());
+        result.put("message", "Agent updated successfully");
+        result.put("editorUrl", "/agent/" + wf.getId());
+        return result;
+    }
+
     // --- Helper Methods ---
 
     private Map<String, Object> toolDef(String name, String description, Map<String, Object> inputSchema) {
@@ -923,6 +1147,65 @@ public class McpSystemToolService {
               "nodeA_id": { "main": [[{ "node": "nodeB_id", "type": "main", "index": 0 }]] },
               "nodeB_id": { "main": [[{ "node": "nodeC_id", "type": "main", "index": 0 }]] }
             }
+
+            --- AI NODE CONNECTIONS ---
+
+            AI nodes (aiAgent, aiSubAgent) have special AI input handles for connecting
+            sub-nodes like chat models, memory, and tools. These use different connection
+            types instead of "main".
+
+            AI connection types:
+            - ai_languageModel: connects a Chat Model node (e.g. anthropicChatModel) to an agent
+            - ai_memory: connects a Memory node (e.g. windowBufferMemory) to an agent
+            - ai_tool: connects a Tool node (e.g. codeTool, toolThink, aiSubAgent) to an agent
+
+            CRITICAL RULE — DUAL INDEX ENTRIES:
+            Each AI connection requires TWO entries in the inner array: one with index 0
+            (used internally by the UI connection handler) AND one with the handle's visual
+            position index on the agent node. Without both entries, the connection will NOT
+            render on the canvas even though the node appears.
+
+            The handle visual positions on an AI agent node are:
+            - ai_languageModel = position 0 → only index: 0 needed (single entry, since both values are 0)
+            - ai_memory = position 1 → index: 0 AND index: 1 (two entries required)
+            - ai_tool = position 2 → index: 0 AND index: 2 (two entries required)
+
+            Format for AI connections — the source is the sub-node, the target is the agent:
+            {
+              "<chatModelNodeId>": {
+                "ai_languageModel": [[
+                  { "node": "<agentNodeId>", "type": "ai_languageModel", "index": 0 }
+                ]]
+              },
+              "<memoryNodeId>": {
+                "ai_memory": [[
+                  { "node": "<agentNodeId>", "type": "ai_memory", "index": 0 },
+                  { "node": "<agentNodeId>", "type": "ai_memory", "index": 1 }
+                ]]
+              },
+              "<toolNodeId>": {
+                "ai_tool": [[
+                  { "node": "<agentNodeId>", "type": "ai_tool", "index": 0 },
+                  { "node": "<agentNodeId>", "type": "ai_tool", "index": 2 }
+                ]]
+              }
+            }
+
+            Multiple tools can each connect to the same agent (each with dual index entries):
+            {
+              "thinkTool": { "ai_tool": [[{ "node": "myAgent", "type": "ai_tool", "index": 0 }, { "node": "myAgent", "type": "ai_tool", "index": 2 }]] },
+              "codeTool1": { "ai_tool": [[{ "node": "myAgent", "type": "ai_tool", "index": 0 }, { "node": "myAgent", "type": "ai_tool", "index": 2 }]] },
+              "subAgent1": { "ai_tool": [[{ "node": "myAgent", "type": "ai_tool", "index": 0 }, { "node": "myAgent", "type": "ai_tool", "index": 2 }]] }
+            }
+
+            Full AI Agent example (agent with model, memory, and 2 tools):
+            {
+              "trigger1":  { "main": [[{ "node": "agent1", "type": "main", "index": 0 }]] },
+              "model1":    { "ai_languageModel": [[{ "node": "agent1", "type": "ai_languageModel", "index": 0 }]] },
+              "memory1":   { "ai_memory": [[{ "node": "agent1", "type": "ai_memory", "index": 0 }, { "node": "agent1", "type": "ai_memory", "index": 1 }]] },
+              "think1":    { "ai_tool": [[{ "node": "agent1", "type": "ai_tool", "index": 0 }, { "node": "agent1", "type": "ai_tool", "index": 2 }]] },
+              "codeTool1": { "ai_tool": [[{ "node": "agent1", "type": "ai_tool", "index": 0 }, { "node": "agent1", "type": "ai_tool", "index": 2 }]] }
+            }
             """;
 
     private static final String GUIDE_PARAMETERS = """
@@ -969,6 +1252,14 @@ public class McpSystemToolService {
 
             6. Sub-workflows:
                ExecuteWorkflow node runs another workflow inline, passing data in and receiving results.
+
+            7. AI Agent with tools:
+               An aiAgent node needs at minimum a Chat Model (ai_languageModel connection).
+               Optionally add Memory (ai_memory) and Tools (ai_tool).
+               Sub-nodes connect TO the agent — the sub-node is the source, the agent is the target.
+               Use aiSubAgent nodes as tools on a parent aiAgent for multi-agent orchestration.
+               Each aiSubAgent also needs its own Chat Model, Memory, and Tools.
+               IMPORTANT: All AI connection indices must be 0 (see node_wiring guide for details).
 
             Node positioning:
             - Nodes have position: { x: number, y: number }

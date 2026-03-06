@@ -10,6 +10,8 @@ export interface Workflow {
   projectId?: string;
   name: string;
   description?: string;
+  type?: 'WORKFLOW' | 'AGENT';
+  icon?: string;
   published: boolean;
   archived?: boolean;
   currentVersion: number;

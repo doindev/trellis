@@ -58,6 +58,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   @ViewChild(NodePaletteComponent) nodePalette!: NodePaletteComponent;
   @ViewChild(EditorDrawerComponent) editorDrawer!: EditorDrawerComponent;
 
+  editorMode: 'workflow' | 'agent' = 'workflow';
   showPalette = false;
   showVersionsPanel = false;
   showPublishModal = false;
@@ -131,6 +132,13 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.loadCredentialIds();
     this.wsService.connect();
 
+    // Detect agent mode from the route path
+    const urlPath = this.route.snapshot.url.map(s => s.path).join('/');
+    const fullUrl = this.router.url;
+    if (fullUrl.startsWith('/agent/') || fullUrl.startsWith('/agent?')) {
+      this.editorMode = 'agent';
+    }
+
     const id = this.route.snapshot.paramMap.get('id');
     const qp = this.route.snapshot.queryParams;
 
@@ -138,6 +146,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       this.workflowService.get(id).subscribe({
         next: (workflow) => {
           this.store.loadWorkflow(workflow);
+          if (workflow.type === 'AGENT') {
+            this.editorMode = 'agent';
+          }
           this.loadProjectContextPath(workflow.projectId);
 
           // If navigated with tab=executions&executionId=..., open that execution
@@ -159,12 +170,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
                 });
                 setTimeout(() => this.canvasWrapper?.triggerCleanUp(), 200);
                 // Clean up the URL
-                this.location.replaceState('/workflow/' + workflow.id);
+                this.location.replaceState((this.editorMode === 'agent' ? '/agent/' : '/workflow/') + workflow.id);
               }
             });
           }
         },
-        error: () => this.router.navigate(['/home/workflows'])
+        error: () => this.router.navigate([this.editorMode === 'agent' ? '/home/agents' : '/home/workflows'])
       });
     } else {
       this.store.createNew();
@@ -175,6 +186,27 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
           this.store.workflow.set({ ...wf, projectId });
         }
         this.loadProjectContextPath(projectId);
+      }
+
+      // For agent mode, set type and auto-place AI Agent node
+      if (this.editorMode === 'agent') {
+        const wf = this.store.workflow();
+        if (wf) {
+          const agentNodeId = this.generateNodeId();
+          this.store.workflow.set({
+            ...wf,
+            type: 'AGENT',
+            name: 'New Agent',
+            nodes: [{
+              id: agentNodeId,
+              name: 'AI Agent',
+              type: 'aiAgent',
+              typeVersion: 1,
+              parameters: { systemMessage: 'You are a helpful assistant.', prompt: '={{$json.chatInput}}', maxIterations: 10 },
+              position: [400, 300] as [number, number]
+            }]
+          });
+        }
       }
 
       // Check for agent-loaded workflow data
@@ -210,9 +242,19 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   private replaceUrlOnFirstSave = (saved: { id?: string }) => {
     if (saved.id) {
-      this.location.replaceState('/workflow/' + saved.id);
+      const prefix = this.editorMode === 'agent' ? '/agent/' : '/workflow/';
+      this.location.replaceState(prefix + saved.id);
     }
   };
+
+  private generateNodeId(): string {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let id = '';
+    for (let i = 0; i < 21; i++) {
+      id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return id;
+  }
 
   private startAutoSaveTimer(): void {
     this.stopAutoSaveTimer();
@@ -995,10 +1037,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     const projectId = this.store.workflow()?.projectId;
+    const tab = this.editorMode === 'agent' ? '/home/agents' : '/home/workflows';
     if (projectId) {
-      this.router.navigate(['/home/workflows'], { queryParams: { projectId } });
+      this.router.navigate([tab], { queryParams: { projectId } });
     } else {
-      this.router.navigate(['/home/workflows']);
+      this.router.navigate([tab]);
     }
   }
 

@@ -85,6 +85,22 @@ export class WorkflowService {
     return this.api.delete<void>(`${this.path}/${workflowId}/shares/${shareId}`);
   }
 
+  listAgentsVisibleToProject(projectId: string): Observable<Workflow[]> {
+    return this.api.get<Workflow[]>(`${this.path}/agents/visible`, { projectId });
+  }
+
+  getAgentProjectShares(id: string): Observable<{ id: string; targetProjectId: string; projectName: string }[]> {
+    return this.api.get<any[]>(`${this.path}/${id}/project-shares`);
+  }
+
+  shareAgentWithProject(id: string, targetProjectId: string): Observable<any> {
+    return this.api.post<any>(`${this.path}/${id}/project-shares`, { targetProjectId });
+  }
+
+  unshareAgentFromProject(id: string, targetProjectId: string): Observable<void> {
+    return this.api.delete<void>(`${this.path}/${id}/project-shares/${targetProjectId}`);
+  }
+
   run(id: string, inputData?: any): Observable<any> {
     return this.api.post<any>(`${this.path}/${id}/run`, inputData || {});
   }

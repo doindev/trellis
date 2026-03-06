@@ -197,6 +197,12 @@ public class AiAgentNode extends AbstractNode {
 	public List<NodeParameter> getParameters() {
 		return List.of(
 				NodeParameter.builder()
+						.name("agentDefinitionId").displayName("Predefined Agent")
+						.type(ParameterType.OPTIONS)
+						.defaultValue("")
+						.description("Select a predefined agent to inherit its model, memory, tools, and system prompt. Leave empty to configure manually.")
+						.build(),
+				NodeParameter.builder()
 						.name("systemMessage").displayName("System Message")
 						.type(ParameterType.STRING)
 						.typeOptions(Map.of("rows", 6))

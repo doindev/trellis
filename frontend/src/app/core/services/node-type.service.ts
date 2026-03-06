@@ -38,4 +38,8 @@ export class NodeTypeService {
   getCachedByType(type: string): NodeTypeDescription | undefined {
     return this.nodeTypesSubject.value.find(nt => nt.type === type);
   }
+
+  getAgentOptions(projectId: string): Observable<{ value: string; name: string }[]> {
+    return this.api.get<{ value: string; name: string }[]>(`${this.path}/agent-options`, { projectId });
+  }
 }
