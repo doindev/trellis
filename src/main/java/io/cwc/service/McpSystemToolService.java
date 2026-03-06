@@ -132,12 +132,12 @@ public class McpSystemToolService {
                 )));
 
         tools.add(toolDef("cwc_workflow_guide",
-                "Returns instructional documentation on how to build CWC workflows, including node structure, connections format, expression syntax, and common patterns.",
+                "Returns instructional documentation on how to build CWC workflows, including node structure, connections format, expression syntax, common patterns, and AI agent architecture. IMPORTANT: If you are building an AI Agent or working with AI nodes, request the 'ai_agents' topic FIRST.",
                 Map.of(
                         "type", "object",
                         "properties", orderedMap(
                                 "topic", prop("string",
-                                        "Topic to get help on: 'overview', 'node_wiring', 'parameters', 'common_patterns', or 'all' (default: 'all')")
+                                        "Topic to get help on: 'overview', 'node_wiring', 'parameters', 'common_patterns', 'ai_agents', or 'all' (default: 'all')")
                         )
                 )));
 
@@ -808,10 +808,13 @@ public class McpSystemToolService {
         if ("all".equals(topic) || "common_patterns".equals(topic)) {
             guide.put("common_patterns", GUIDE_COMMON_PATTERNS);
         }
+        if ("all".equals(topic) || "ai_agents".equals(topic)) {
+            guide.put("ai_agents", GUIDE_AI_AGENTS);
+        }
 
         if (guide.isEmpty()) {
             guide.put("error", "Unknown topic: " + topic
-                    + ". Valid topics: overview, node_wiring, parameters, common_patterns, all");
+                    + ". Valid topics: overview, node_wiring, parameters, common_patterns, ai_agents, all");
         }
 
         return guide;
@@ -1148,64 +1151,39 @@ public class McpSystemToolService {
               "nodeB_id": { "main": [[{ "node": "nodeC_id", "type": "main", "index": 0 }]] }
             }
 
-            --- AI NODE CONNECTIONS ---
+            --- AI NODE CONNECTIONS (summary — see 'ai_agents' topic for full guide) ---
 
-            AI nodes (aiAgent, aiSubAgent) have special AI input handles for connecting
-            sub-nodes like chat models, memory, and tools. These use different connection
-            types instead of "main".
+            AI nodes (aiAgent, aiSubAgent) have special AI input handles that use connection
+            types OTHER than "main": ai_languageModel, ai_memory, and ai_tool.
 
-            AI connection types:
-            - ai_languageModel: connects a Chat Model node (e.g. anthropicChatModel) to an agent
-            - ai_memory: connects a Memory node (e.g. windowBufferMemory) to an agent
-            - ai_tool: connects a Tool node (e.g. codeTool, toolThink, aiSubAgent) to an agent
+            For AI connections, the SOURCE is always the sub-node and the TARGET is the agent.
+            The connection type key matches the AI input handle type on the agent.
 
-            CRITICAL RULE — DUAL INDEX ENTRIES:
-            Each AI connection requires TWO entries in the inner array: one with index 0
-            (used internally by the UI connection handler) AND one with the handle's visual
-            position index on the agent node. Without both entries, the connection will NOT
-            render on the canvas even though the node appears.
+            CRITICAL — DUAL INDEX RULE:
+            Each AI connection needs TWO entries in the inner target array:
+            - Entry 1: index: 0  (always 0 — required by the UI connection handler)
+            - Entry 2: index: N  (the handle's FIXED visual position on the agent node)
 
-            The handle visual positions on an AI agent node are:
-            - ai_languageModel = position 0 → only index: 0 needed (single entry, since both values are 0)
-            - ai_memory = position 1 → index: 0 AND index: 1 (two entries required)
-            - ai_tool = position 2 → index: 0 AND index: 2 (two entries required)
+            The handle positions are FIXED and NEVER change regardless of how many connections exist:
+            - ai_languageModel handle = position 0 → single entry {index: 0} (both values are 0)
+            - ai_memory handle       = position 1 → two entries: {index: 0} AND {index: 1}
+            - ai_tool handle         = position 2 → two entries: {index: 0} AND {index: 2}
 
-            Format for AI connections — the source is the sub-node, the target is the agent:
+            IMPORTANT: The index value for ai_tool is ALWAYS 2 — even when connecting multiple
+            tools to the same agent. Do NOT increment it to 3, 4, 5, etc. Every tool connection
+            uses index 0 and index 2 identically.
+
+            Quick example (agent with model, memory, think tool, code tool, and sub-agent as tool):
             {
-              "<chatModelNodeId>": {
-                "ai_languageModel": [[
-                  { "node": "<agentNodeId>", "type": "ai_languageModel", "index": 0 }
-                ]]
-              },
-              "<memoryNodeId>": {
-                "ai_memory": [[
-                  { "node": "<agentNodeId>", "type": "ai_memory", "index": 0 },
-                  { "node": "<agentNodeId>", "type": "ai_memory", "index": 1 }
-                ]]
-              },
-              "<toolNodeId>": {
-                "ai_tool": [[
-                  { "node": "<agentNodeId>", "type": "ai_tool", "index": 0 },
-                  { "node": "<agentNodeId>", "type": "ai_tool", "index": 2 }
-                ]]
-              }
-            }
-
-            Multiple tools can each connect to the same agent (each with dual index entries):
-            {
-              "thinkTool": { "ai_tool": [[{ "node": "myAgent", "type": "ai_tool", "index": 0 }, { "node": "myAgent", "type": "ai_tool", "index": 2 }]] },
-              "codeTool1": { "ai_tool": [[{ "node": "myAgent", "type": "ai_tool", "index": 0 }, { "node": "myAgent", "type": "ai_tool", "index": 2 }]] },
-              "subAgent1": { "ai_tool": [[{ "node": "myAgent", "type": "ai_tool", "index": 0 }, { "node": "myAgent", "type": "ai_tool", "index": 2 }]] }
-            }
-
-            Full AI Agent example (agent with model, memory, and 2 tools):
-            {
-              "trigger1":  { "main": [[{ "node": "agent1", "type": "main", "index": 0 }]] },
               "model1":    { "ai_languageModel": [[{ "node": "agent1", "type": "ai_languageModel", "index": 0 }]] },
               "memory1":   { "ai_memory": [[{ "node": "agent1", "type": "ai_memory", "index": 0 }, { "node": "agent1", "type": "ai_memory", "index": 1 }]] },
               "think1":    { "ai_tool": [[{ "node": "agent1", "type": "ai_tool", "index": 0 }, { "node": "agent1", "type": "ai_tool", "index": 2 }]] },
-              "codeTool1": { "ai_tool": [[{ "node": "agent1", "type": "ai_tool", "index": 0 }, { "node": "agent1", "type": "ai_tool", "index": 2 }]] }
+              "codeTool1": { "ai_tool": [[{ "node": "agent1", "type": "ai_tool", "index": 0 }, { "node": "agent1", "type": "ai_tool", "index": 2 }]] },
+              "subAgent1": { "ai_tool": [[{ "node": "agent1", "type": "ai_tool", "index": 0 }, { "node": "agent1", "type": "ai_tool", "index": 2 }]] }
             }
+
+            For full AI agent architecture, node types, sub-agent wiring, and multi-agent
+            examples, use: cwc_workflow_guide with topic 'ai_agents'
             """;
 
     private static final String GUIDE_PARAMETERS = """
@@ -1258,13 +1236,339 @@ public class McpSystemToolService {
                Optionally add Memory (ai_memory) and Tools (ai_tool).
                Sub-nodes connect TO the agent — the sub-node is the source, the agent is the target.
                Use aiSubAgent nodes as tools on a parent aiAgent for multi-agent orchestration.
-               Each aiSubAgent also needs its own Chat Model, Memory, and Tools.
-               IMPORTANT: All AI connection indices must be 0 (see node_wiring guide for details).
+               Each aiSubAgent can have its own Chat Model, Memory, and Tools.
+               IMPORTANT: See the 'ai_agents' topic (cwc_workflow_guide with topic 'ai_agents')
+               for the full AI connection format, dual-index rule, and multi-agent examples.
 
             Node positioning:
             - Nodes have position: { x: number, y: number }
             - Typical horizontal spacing: 250px between nodes
             - Typical vertical spacing: 100px for parallel branches
             - Start position around x: 250, y: 300
+            """;
+
+    // ── Comprehensive AI Agent guide ──────────────────────────────────────────
+    private static final String GUIDE_AI_AGENTS = """
+
+            ╔══════════════════════════════════════════════════════════════════╗
+            ║                   CWC AI AGENT ARCHITECTURE                     ║
+            ╚══════════════════════════════════════════════════════════════════╝
+
+            This guide covers everything needed to build AI Agents: node types,
+            connection wiring, the dual-index rule, sub-agent orchestration,
+            and complete working examples.
+
+            ═══════════════════════════════════════════════════════════════════
+            1. AI NODE TYPES — WHAT EACH NODE IS
+            ═══════════════════════════════════════════════════════════════════
+
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ AGENT NODES (these RECEIVE connections from sub-nodes)          │
+            ├─────────────────────────────────────────────────────────────────┤
+            │                                                                 │
+            │  aiAgent (AI Agent)                                             │
+            │    The primary autonomous agent node. Processes user prompts    │
+            │    using a language model, can use tools in a loop, and         │
+            │    maintains conversation memory.                               │
+            │    Inputs:  main (data), ai_languageModel, ai_memory, ai_tool  │
+            │    Outputs: main (data)                                         │
+            │    Key params: systemMessage, prompt, maxIterations             │
+            │    REQUIRED: Must have at least one ai_languageModel connected  │
+            │                                                                 │
+            │  aiSubAgent (AI Sub Agent)                                      │
+            │    A child agent that connects as a TOOL to a parent agent.     │
+            │    The parent agent can delegate tasks to it by name.           │
+            │    Inputs:  ai_languageModel, ai_memory, ai_tool               │
+            │    Outputs: ai_tool (this is how it connects to its parent!)    │
+            │    Key params: agentName, agentDescription, systemMessage,      │
+            │                maxIterations                                    │
+            │    NOTE: No "main" input — it receives work from its parent     │
+            │    agent via the tool interface, not from the data flow.        │
+            │    The parent sees it as a callable tool identified by          │
+            │    agentName, and uses agentDescription to decide when to       │
+            │    delegate to it.                                              │
+            │                                                                 │
+            └─────────────────────────────────────────────────────────────────┘
+
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ SUB-NODES (these CONNECT TO agent nodes via AI handles)         │
+            ├─────────────────────────────────────────────────────────────────┤
+            │                                                                 │
+            │  --- Chat Models (connect to ai_languageModel handle) ---       │
+            │                                                                 │
+            │  anthropicChatModel — Claude models (Sonnet, Haiku, Opus)       │
+            │    Params: model (select), temperature, maxTokens               │
+            │    Credentials: anthropicApi                                    │
+            │    Output type: ai_languageModel                                │
+            │                                                                 │
+            │  (Use cwc_list_node_types with category "AI / Chat Models"      │
+            │   to discover all available chat model providers)               │
+            │                                                                 │
+            │  --- Memory (connect to ai_memory handle) ---                   │
+            │                                                                 │
+            │  windowBufferMemory — In-process chat history (no credentials)  │
+            │    Params: sessionId, contextWindowLength                        │
+            │    Output type: ai_memory                                       │
+            │                                                                 │
+            │  (Use cwc_list_node_types with category "AI / Memory"           │
+            │   to discover all available memory providers)                   │
+            │                                                                 │
+            │  --- Tools (connect to ai_tool handle) ---                      │
+            │                                                                 │
+            │  toolThink — Reasoning scratchpad for the agent (no params)     │
+            │    Output type: ai_tool                                         │
+            │                                                                 │
+            │  codeTool — Executes JavaScript or Python code                  │
+            │    Params: language ("js"/"python"), code (the script)          │
+            │    The agent passes input via the 'input' variable              │
+            │    Output type: ai_tool                                         │
+            │                                                                 │
+            │  aiSubAgent — Another agent acting as a tool (see above)        │
+            │    Output type: ai_tool                                         │
+            │                                                                 │
+            │  (Use cwc_list_node_types with category "AI / Tools"            │
+            │   to discover all available tool types)                         │
+            │                                                                 │
+            └─────────────────────────────────────────────────────────────────┘
+
+
+            ═══════════════════════════════════════════════════════════════════
+            2. AI CONNECTION RULES
+            ═══════════════════════════════════════════════════════════════════
+
+            RULE 1 — Direction: The sub-node is the SOURCE, the agent is the TARGET.
+
+              The connection map key is the sub-node's ID.
+              The inner array entries point at the agent node.
+              This is the OPPOSITE of how you might intuit it — the model/memory/tool
+              nodes "plug into" the agent, so THEY are the source of the connection.
+
+            RULE 2 — Connection type key matches the AI handle type.
+
+              The key under the source node ID is the AI handle type:
+              - "ai_languageModel" for chat model connections
+              - "ai_memory" for memory connections
+              - "ai_tool" for tool connections (including sub-agents!)
+
+            RULE 3 — DUAL INDEX (the most common source of errors!)
+
+              Each AI connection's inner array needs TWO target objects:
+              - One with index: 0  (always literal 0 — required by the UI)
+              - One with index: N  (the FIXED handle position on the agent)
+
+              The three AI handles on an agent have FIXED positions:
+              ┌──────────────────────┬──────────────┬───────────────────────┐
+              │ Handle type          │ Position     │ Inner array entries    │
+              ├──────────────────────┼──────────────┼───────────────────────┤
+              │ ai_languageModel     │ 0            │ [{index:0}]           │
+              │ ai_memory            │ 1            │ [{index:0},{index:1}] │
+              │ ai_tool              │ 2            │ [{index:0},{index:2}] │
+              └──────────────────────┴──────────────┴───────────────────────┘
+
+              ai_languageModel only needs one entry because position 0 = index 0.
+              ai_memory needs two entries: index 0 AND index 1.
+              ai_tool needs two entries: index 0 AND index 2.
+
+              ⚠ COMMON MISTAKE: Do NOT increment the tool index for multiple tools!
+              If you connect 3 tools to an agent, ALL THREE use index 0 + index 2.
+              The index is the HANDLE POSITION (always 2 for tools), not a counter.
+
+              ❌ WRONG — incrementing index per tool:
+              "tool1": { "ai_tool": [[{..., "index": 0}, {..., "index": 2}]] }
+              "tool2": { "ai_tool": [[{..., "index": 0}, {..., "index": 3}]] }  ← WRONG!
+              "tool3": { "ai_tool": [[{..., "index": 0}, {..., "index": 4}]] }  ← WRONG!
+
+              ✅ CORRECT — all tools use index 2:
+              "tool1": { "ai_tool": [[{..., "index": 0}, {..., "index": 2}]] }
+              "tool2": { "ai_tool": [[{..., "index": 0}, {..., "index": 2}]] }
+              "tool3": { "ai_tool": [[{..., "index": 0}, {..., "index": 2}]] }
+
+            RULE 4 — Every target entry must include node, type, AND index.
+
+              Each entry in the inner array is:
+              { "node": "<agentNodeId>", "type": "<ai_handle_type>", "index": <N> }
+
+
+            ═══════════════════════════════════════════════════════════════════
+            3. CONNECTION FORMAT TEMPLATES
+            ═══════════════════════════════════════════════════════════════════
+
+            --- Connecting a Chat Model to an agent/sub-agent ---
+            "<modelNodeId>": {
+              "ai_languageModel": [[
+                { "node": "<agentNodeId>", "type": "ai_languageModel", "index": 0 }
+              ]]
+            }
+
+            --- Connecting Memory to an agent/sub-agent ---
+            "<memoryNodeId>": {
+              "ai_memory": [[
+                { "node": "<agentNodeId>", "type": "ai_memory", "index": 0 },
+                { "node": "<agentNodeId>", "type": "ai_memory", "index": 1 }
+              ]]
+            }
+
+            --- Connecting a Tool to an agent/sub-agent ---
+            (works for toolThink, codeTool, aiSubAgent, or any ai_tool output node)
+            "<toolNodeId>": {
+              "ai_tool": [[
+                { "node": "<agentNodeId>", "type": "ai_tool", "index": 0 },
+                { "node": "<agentNodeId>", "type": "ai_tool", "index": 2 }
+              ]]
+            }
+
+            --- Connecting a Sub-Agent as a tool to a parent agent ---
+            (aiSubAgent outputs ai_tool — same format as any tool connection)
+            "<subAgentNodeId>": {
+              "ai_tool": [[
+                { "node": "<parentAgentNodeId>", "type": "ai_tool", "index": 0 },
+                { "node": "<parentAgentNodeId>", "type": "ai_tool", "index": 2 }
+              ]]
+            }
+
+
+            ═══════════════════════════════════════════════════════════════════
+            4. EXAMPLE — SIMPLE AI AGENT (model + memory + 1 tool)
+            ═══════════════════════════════════════════════════════════════════
+
+            Nodes:
+            [
+              { "id": "agent1", "name": "My Agent", "type": "aiAgent", "typeVersion": 1,
+                "position": [500, 300],
+                "parameters": { "systemMessage": "You are a helpful assistant.",
+                                "prompt": "{{input}}", "maxIterations": 10 } },
+              { "id": "model1", "name": "Claude", "type": "anthropicChatModel", "typeVersion": 1,
+                "position": [200, 150],
+                "parameters": { "model": "claude-sonnet-4-20250514", "temperature": 0.7,
+                                "maxTokens": 1024 } },
+              { "id": "memory1", "name": "Memory", "type": "windowBufferMemory", "typeVersion": 1,
+                "position": [200, 300],
+                "parameters": { "sessionId": "default", "contextWindowLength": 10 } },
+              { "id": "think1", "name": "Think", "type": "toolThink", "typeVersion": 1,
+                "position": [200, 450], "parameters": {} }
+            ]
+
+            Connections:
+            {
+              "model1":  { "ai_languageModel": [[{ "node": "agent1", "type": "ai_languageModel", "index": 0 }]] },
+              "memory1": { "ai_memory": [[{ "node": "agent1", "type": "ai_memory", "index": 0 }, { "node": "agent1", "type": "ai_memory", "index": 1 }]] },
+              "think1":  { "ai_tool": [[{ "node": "agent1", "type": "ai_tool", "index": 0 }, { "node": "agent1", "type": "ai_tool", "index": 2 }]] }
+            }
+
+
+            ═══════════════════════════════════════════════════════════════════
+            5. EXAMPLE — MULTI-AGENT ORCHESTRATION (parent + 2 sub-agents)
+            ═══════════════════════════════════════════════════════════════════
+
+            Architecture:
+              parentAgent (aiAgent)
+                ├── model1 (anthropicChatModel) ─── ai_languageModel
+                ├── memory1 (windowBufferMemory) ── ai_memory
+                ├── think1 (toolThink) ──────────── ai_tool
+                ├── subAgent1 (aiSubAgent) ──────── ai_tool  ← sub-agent AS a tool
+                │     ├── model2 (anthropicChatModel) ─── ai_languageModel
+                │     └── code1 (codeTool) ────────────── ai_tool
+                └── subAgent2 (aiSubAgent) ──────── ai_tool  ← sub-agent AS a tool
+                      └── model3 (anthropicChatModel) ─── ai_languageModel
+
+            Key insight: An aiSubAgent OUTPUTS ai_tool, so it connects to the parent
+            agent's ai_tool handle using the SAME format as toolThink or codeTool.
+            But the aiSubAgent also RECEIVES its own sub-node connections (model, memory,
+            tools) on its own AI input handles, using the same dual-index rule.
+
+            Nodes:
+            [
+              { "id": "parentAgent", "name": "Supervisor", "type": "aiAgent", "typeVersion": 1,
+                "position": [600, 300],
+                "parameters": { "systemMessage": "You are a supervisor agent. Delegate tasks to researcher for facts and to creative for ideas.",
+                                "prompt": "{{input}}", "maxIterations": 15 } },
+              { "id": "model1", "name": "Supervisor Model", "type": "anthropicChatModel", "typeVersion": 1,
+                "position": [200, 150],
+                "parameters": { "model": "claude-sonnet-4-20250514", "temperature": 0.7, "maxTokens": 2048 } },
+              { "id": "memory1", "name": "Supervisor Memory", "type": "windowBufferMemory", "typeVersion": 1,
+                "position": [200, 300],
+                "parameters": { "sessionId": "supervisor", "contextWindowLength": 15 } },
+              { "id": "think1", "name": "Think", "type": "toolThink", "typeVersion": 1,
+                "position": [200, 450], "parameters": {} },
+              { "id": "subAgent1", "name": "Researcher", "type": "aiSubAgent", "typeVersion": 1,
+                "position": [400, 600],
+                "parameters": { "agentName": "researcher",
+                                "agentDescription": "Research agent for factual questions and analysis",
+                                "systemMessage": "You are a precise research agent.", "maxIterations": 8 } },
+              { "id": "model2", "name": "Researcher Model", "type": "anthropicChatModel", "typeVersion": 1,
+                "position": [200, 750],
+                "parameters": { "model": "claude-sonnet-4-20250514", "temperature": 0.3, "maxTokens": 2048 } },
+              { "id": "code1", "name": "Calculator", "type": "codeTool", "typeVersion": 1,
+                "position": [400, 750],
+                "parameters": { "language": "js", "code": "try { return String(eval(input)); } catch(e) { return 'Error: ' + e.message; }" } },
+              { "id": "subAgent2", "name": "Creative", "type": "aiSubAgent", "typeVersion": 1,
+                "position": [800, 600],
+                "parameters": { "agentName": "creative",
+                                "agentDescription": "Creative agent for brainstorming and ideas",
+                                "systemMessage": "You are a creative thinker.", "maxIterations": 8 } },
+              { "id": "model3", "name": "Creative Model", "type": "anthropicChatModel", "typeVersion": 1,
+                "position": [800, 750],
+                "parameters": { "model": "claude-sonnet-4-20250514", "temperature": 1.0, "maxTokens": 2048 } }
+            ]
+
+            Connections:
+            {
+              "model1":    { "ai_languageModel": [[{ "node": "parentAgent", "type": "ai_languageModel", "index": 0 }]] },
+              "memory1":   { "ai_memory": [[{ "node": "parentAgent", "type": "ai_memory", "index": 0 }, { "node": "parentAgent", "type": "ai_memory", "index": 1 }]] },
+              "think1":    { "ai_tool": [[{ "node": "parentAgent", "type": "ai_tool", "index": 0 }, { "node": "parentAgent", "type": "ai_tool", "index": 2 }]] },
+              "subAgent1": { "ai_tool": [[{ "node": "parentAgent", "type": "ai_tool", "index": 0 }, { "node": "parentAgent", "type": "ai_tool", "index": 2 }]] },
+              "subAgent2": { "ai_tool": [[{ "node": "parentAgent", "type": "ai_tool", "index": 0 }, { "node": "parentAgent", "type": "ai_tool", "index": 2 }]] },
+              "model2":    { "ai_languageModel": [[{ "node": "subAgent1", "type": "ai_languageModel", "index": 0 }]] },
+              "code1":     { "ai_tool": [[{ "node": "subAgent1", "type": "ai_tool", "index": 0 }, { "node": "subAgent1", "type": "ai_tool", "index": 2 }]] },
+              "model3":    { "ai_languageModel": [[{ "node": "subAgent2", "type": "ai_languageModel", "index": 0 }]] }
+            }
+
+            NOTE: subAgent1, subAgent2, and think1 ALL connect to parentAgent's ai_tool
+            handle with the SAME indices: index 0 and index 2. The index does NOT vary
+            per tool — it is the fixed handle position.
+
+
+            ═══════════════════════════════════════════════════════════════════
+            6. CREATING AGENTS vs WORKFLOWS
+            ═══════════════════════════════════════════════════════════════════
+
+            - Use cwc_create_agent (not cwc_create_workflow) when building AI agents.
+              This sets the type to AGENT and provides the agent chat UI.
+            - cwc_create_agent can auto-create a default aiAgent node if no nodes are
+              provided — just pass a systemMessage. But for sub-agents and tools,
+              you must provide the full nodes and connections arrays.
+            - Use cwc_create_workflow for non-AI automation workflows.
+            - Agents appear in cwc_list_agents; workflows appear in cwc_list_workflows.
+            - After creating an agent, navigate to it with cwc_browser_control using
+              the editorUrl returned by cwc_create_agent.
+
+
+            ═══════════════════════════════════════════════════════════════════
+            7. COMMON MISTAKES & TROUBLESHOOTING
+            ═══════════════════════════════════════════════════════════════════
+
+            ❌ MISTAKE: Incrementing ai_tool index per tool (index 2, 3, 4...)
+            ✅ FIX: Always use index 0 + index 2 for EVERY ai_tool connection.
+
+            ❌ MISTAKE: Using "main" connection type for AI sub-nodes
+            ✅ FIX: Use ai_languageModel, ai_memory, or ai_tool as the connection key.
+
+            ❌ MISTAKE: Making the agent the source and sub-node the target
+            ✅ FIX: Sub-node is ALWAYS the source (map key), agent is the target (in array).
+
+            ❌ MISTAKE: Forgetting the dual index entries for ai_memory or ai_tool
+            ✅ FIX: ai_memory needs [{index:0},{index:1}], ai_tool needs [{index:0},{index:2}].
+
+            ❌ MISTAKE: Connecting aiSubAgent via "main" to parent agent
+            ✅ FIX: aiSubAgent outputs ai_tool — connect it the same way as toolThink/codeTool.
+
+            ❌ MISTAKE: Not giving aiSubAgent its own Chat Model
+            ✅ FIX: Each aiSubAgent can have its own model, memory, and tools. The model
+               is optional only if the parent agent's model is inherited (check node docs).
+               In practice, always give each sub-agent its own anthropicChatModel.
+
+            ❌ MISTAKE: Creating an agent with cwc_create_workflow
+            ✅ FIX: Use cwc_create_agent to get type=AGENT and the agent chat UI.
+
             """;
 }

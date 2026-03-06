@@ -152,7 +152,10 @@
       "mcp__cwc-agent__cwc_create_agent",
       "mcp__cwc-agent__cwc_update_agent",
       "mcp__cwc-agent__cwc_browser_control",
-      "mcp__cwc-agent__cwc_update_workflow"
+      "mcp__cwc-agent__cwc_update_workflow",
+      "Bash(claude mcp call:*)",
+      "Bash(claude mcp list:*)",
+      "Bash(claude:*)"
     ]
   }
 }
