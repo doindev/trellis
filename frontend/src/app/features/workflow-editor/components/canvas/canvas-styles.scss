@@ -1,6 +1,6 @@
-/* React Flow overrides for Trellis theme — n8n style */
+/* React Flow overrides for CWC theme — n8n style */
 
-.trellis-flow {
+.cwc-flow {
   background: hsl(0, 0%, 9%) !important;
 }
 
@@ -40,7 +40,7 @@
 }
 
 /* Nodes */
-.trellis-node {
+.cwc-node {
   background: hsl(0, 0%, 13%);
   border: 1.5px solid hsl(0, 0%, 24%);
   border-radius: 8px;
@@ -87,7 +87,7 @@
   position: relative;
 }
 
-.trellis-node.icon-only {
+.cwc-node.icon-only {
   min-width: auto;
   width: 68px;
   height: 68px;
@@ -107,7 +107,7 @@
   }
 }
 
-.trellis-node.trigger-node.icon-only {
+.cwc-node.trigger-node.icon-only {
   border-radius: 50%;
 }
 
@@ -225,7 +225,7 @@
 }
 
 /* Connection handles */
-.trellis-handle {
+.cwc-handle {
   width: 14px !important;
   height: 14px !important;
   background: hsl(0, 0%, 30%) !important;
@@ -573,7 +573,7 @@
 }
 
 /* AI handles are rounded squares instead of circles */
-.trellis-handle.ai-handle {
+.cwc-handle.ai-handle {
   width: 16px !important;
   height: 16px !important;
   border-radius: 3px !important;
@@ -585,7 +585,7 @@
 }
 
 /* Give AI-capable nodes extra spacing for handle containers */
-.trellis-node.has-ai-handles {
+.cwc-node.has-ai-handles {
   margin-top: 28px;
   margin-bottom: 28px;
 }
@@ -679,7 +679,7 @@
 }
 
 /* CSS-driven edge animation — applied via className to avoid inline style churn */
-.react-flow__edge .trellis-edge-animated {
+.react-flow__edge .cwc-edge-animated {
   stroke-dasharray: 5 5;
   animation: dashdraw 0.5s linear infinite;
   will-change: stroke-dashoffset;
@@ -821,7 +821,7 @@
 
 /* ── Crayon Mode Easter Egg ── */
 .crayon-mode {
-  .trellis-node {
+  .cwc-node {
     border-width: 3.5px !important;
     border-style: solid !important;
     filter: url(#crayon-filter);
@@ -840,7 +840,7 @@
     stroke-linejoin: round !important;
   }
 
-  .trellis-handle {
+  .cwc-handle {
     width: 18px !important;
     height: 18px !important;
     filter: url(#crayon-filter);

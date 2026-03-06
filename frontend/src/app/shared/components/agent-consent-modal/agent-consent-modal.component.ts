@@ -169,19 +169,19 @@ export class AgentConsentModalComponent implements OnInit, OnDestroy, AfterViewI
   private timer: ReturnType<typeof setInterval> | null = null;
 
   private static readonly TOOL_DISPLAY_NAMES: Record<string, string> = {
-    trellis_list_node_types: 'List Node Types',
-    trellis_get_node_type: 'Get Node Type',
-    trellis_list_workflows: 'List Workflows',
-    trellis_get_workflow: 'Get Workflow',
-    trellis_create_workflow: 'Create Workflow',
-    trellis_update_workflow: 'Update Workflow',
-    trellis_list_executions: 'List Executions',
-    trellis_get_execution: 'Get Execution',
-    trellis_workflow_guide: 'Workflow Guide',
-    trellis_list_browser_sessions: 'List Sessions',
-    trellis_browser_control: 'Browser Control',
-    trellis_push_to_canvas: 'Push to Canvas',
-    trellis_publish_workflow: 'Publish Workflow'
+    cwc_list_node_types: 'List Node Types',
+    cwc_get_node_type: 'Get Node Type',
+    cwc_list_workflows: 'List Workflows',
+    cwc_get_workflow: 'Get Workflow',
+    cwc_create_workflow: 'Create Workflow',
+    cwc_update_workflow: 'Update Workflow',
+    cwc_list_executions: 'List Executions',
+    cwc_get_execution: 'Get Execution',
+    cwc_workflow_guide: 'Workflow Guide',
+    cwc_list_browser_sessions: 'List Sessions',
+    cwc_browser_control: 'Browser Control',
+    cwc_push_to_canvas: 'Push to Canvas',
+    cwc_publish_workflow: 'Publish Workflow'
   };
 
   ngOnInit(): void {

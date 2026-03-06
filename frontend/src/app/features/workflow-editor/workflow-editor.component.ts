@@ -69,8 +69,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   showMcpParamEditorModal = false;
   validationErrors: { nodeName: string; warnings: string[] }[] = [];
   availableWorkflows: { id: string; name: string }[] = [];
-  drawerExpandedEditor = localStorage.getItem('trellis.drawer.editor') === 'true';
-  drawerExpandedExecutions = localStorage.getItem('trellis.drawer.executions') === 'true';
+  drawerExpandedEditor = localStorage.getItem('cwc.drawer.editor') === 'true';
+  drawerExpandedExecutions = localStorage.getItem('cwc.drawer.executions') === 'true';
   activeTab: 'editor' | 'executions' = 'editor';
   pendingConnection: { sourceNodeId: string; sourceHandleId: string; isTargetHandle?: boolean } | null = null;
   pendingEdgeInsertion: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string } | null = null;
@@ -373,10 +373,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   set drawerExpanded(value: boolean) {
     if (this.activeTab === 'executions') {
       this.drawerExpandedExecutions = value;
-      localStorage.setItem('trellis.drawer.executions', String(value));
+      localStorage.setItem('cwc.drawer.executions', String(value));
     } else {
       this.drawerExpandedEditor = value;
-      localStorage.setItem('trellis.drawer.editor', String(value));
+      localStorage.setItem('cwc.drawer.editor', String(value));
     }
   }
 

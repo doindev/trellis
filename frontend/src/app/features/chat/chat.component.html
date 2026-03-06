@@ -20,7 +20,7 @@
               }
             </div>
             <div class="chat-msg-body">
-              <div class="chat-msg-role">{{ msg.role === 'user' ? 'You' : 'Trellis' }}</div>
+              <div class="chat-msg-role">{{ msg.role === 'user' ? 'You' : 'CWC' }}</div>
               <div class="chat-msg-content" [innerHTML]="renderMarkdown(msg.content)"></div>
             </div>
           </div>
@@ -33,7 +33,7 @@
               </svg>
             </div>
             <div class="chat-msg-body">
-              <div class="chat-msg-role">Trellis</div>
+              <div class="chat-msg-role">CWC</div>
               <div class="chat-msg-content typing-indicator">
                 <span></span><span></span><span></span>
               </div>
@@ -339,7 +339,7 @@
           <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>
         </svg>
       </div>
-      <h2>Trellis Chat</h2>
+      <h2>CWC Chat</h2>
       <p>Start a new conversation or select one from the sidebar.</p>
     </div>
   }

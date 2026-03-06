@@ -29,7 +29,7 @@ import { NodeParameter } from '../../../../../core/models';
   `,
   styles: [`
     .param-label { display: block; font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin-bottom: 4px; }
-    .required { color: var(--trellis-error-color); }
+    .required { color: var(--cwc-error-color); }
     .param-description { font-size: 0.6875rem; color: hsl(0,0%,58%); margin-bottom: 6px; }
     .json-editor {
       font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
@@ -42,7 +42,7 @@ import { NodeParameter } from '../../../../../core/models';
       border-radius: 6px;
     }
     .json-editor:focus { background: hsl(0,0%,9%); border-color: hsl(247,49%,53%); box-shadow: 0 0 0 2px hsla(247,49%,53%,0.15); color: hsl(0,0%,96%); }
-    .json-editor.is-invalid { border-color: var(--trellis-error-color); }
+    .json-editor.is-invalid { border-color: var(--cwc-error-color); }
     .invalid-feedback { font-size: 0.6875rem; }
   `]
 })

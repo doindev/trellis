@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import TrellisCanvas, { type TrellisCanvasProps } from './trellis-canvas';
+import CwcCanvas, { type CwcCanvasProps } from './cwc-canvas';
 import { Workflow, WorkflowNode, NodeTypeDescription, NodeParameter } from '../../../../core/models';
 
 @Component({
@@ -68,11 +68,11 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
   private cleanUpCounter = 0;
 
   // Stable callback references — created once, never recreated
-  private callbacks: Partial<TrellisCanvasProps> | null = null;
+  private callbacks: Partial<CwcCanvasProps> | null = null;
 
   constructor(private ngZone: NgZone) {}
 
-  private getCallbacks(): Partial<TrellisCanvasProps> {
+  private getCallbacks(): Partial<CwcCanvasProps> {
     if (!this.callbacks) {
       this.callbacks = {
         onNodeClick: (nodeId: string) => {
@@ -164,7 +164,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     const reactNodes = this.buildReactNodes();
     const reactEdges = this.buildReactEdges();
 
-    const props: TrellisCanvasProps = {
+    const props: CwcCanvasProps = {
       initialNodes: reactNodes,
       initialEdges: reactEdges,
       isExecuting: this.isExecuting,
@@ -174,7 +174,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       ...this.getCallbacks(),
     };
 
-    this.root.render(createElement(TrellisCanvas, props));
+    this.root.render(createElement(CwcCanvas, props));
   }
 
   private buildReactNodes(): any[] {
@@ -189,7 +189,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       const execEntry = Array.isArray(execData) ? execData[0] : execData;
 
       const isStickyNote = node.type === 'stickyNote';
-      const reactType = isStickyNote ? 'stickyNoteNode' : (isTrigger ? 'trellisTriggerNode' : 'trellisNode');
+      const reactType = isStickyNote ? 'stickyNoteNode' : (isTrigger ? 'cwcTriggerNode' : 'cwcNode');
 
       return {
         id: nodeId,
@@ -278,7 +278,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
               target: target.node,
               sourceHandle: `${connectionType}:${outputIndex}`,
               targetHandle: `${connectionType}:${target.index || 0}`,
-              type: 'trellisEdge',
+              type: 'cwcEdge',
               data: {
                 animated,
                 status: edgeStatus,

@@ -11,7 +11,7 @@
 .insights-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
   margin: 0 0 24px;
 }
 
@@ -26,9 +26,9 @@
 .control-select {
   padding: 8px 12px;
   background: hsl(0, 0%, 9%);
-  border: 1px solid var(--trellis-border);
+  border: 1px solid var(--cwc-border);
   border-radius: 6px;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
   font-size: 0.8125rem;
   outline: none;
   cursor: pointer;
@@ -52,9 +52,9 @@
   gap: 8px;
   padding: 8px 14px;
   background: hsl(0, 0%, 9%);
-  border: 1px solid var(--trellis-border);
+  border: 1px solid var(--cwc-border);
   border-radius: 6px;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
   font-size: 0.8125rem;
   cursor: pointer;
   transition: border-color 0.15s ease;
@@ -76,7 +76,7 @@
   z-index: 100;
   display: flex;
   background: hsl(0, 0%, 13%);
-  border: 1px solid var(--trellis-border);
+  border: 1px solid var(--cwc-border);
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -88,7 +88,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 12px;
-  border-right: 1px solid var(--trellis-border);
+  border-right: 1px solid var(--cwc-border);
   min-width: 160px;
 }
 
@@ -101,7 +101,7 @@
   background: none;
   border: none;
   border-radius: 6px;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
   font-size: 0.8125rem;
   cursor: pointer;
   text-align: left;
@@ -109,7 +109,7 @@
   transition: background 0.12s ease;
 
   &:hover {
-    background: var(--trellis-hover-bg);
+    background: var(--cwc-hover-bg);
   }
 
   &.active {
@@ -123,11 +123,11 @@
 
   &.locked {
     cursor: default;
-    color: var(--trellis-text-secondary);
+    color: var(--cwc-text-secondary);
   }
 
   .lock-icon {
-    color: var(--trellis-text-secondary);
+    color: var(--cwc-text-secondary);
     flex-shrink: 0;
   }
 }
@@ -155,7 +155,7 @@
 .dp-cal-month {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
 }
 
 .dp-nav-btn {
@@ -165,14 +165,14 @@
   width: 28px;
   height: 28px;
   background: none;
-  border: 1px solid var(--trellis-border);
+  border: 1px solid var(--cwc-border);
   border-radius: 6px;
-  color: var(--trellis-text-secondary);
+  color: var(--cwc-text-secondary);
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: var(--trellis-hover-bg);
-    color: var(--trellis-text-primary);
+    background: var(--cwc-hover-bg);
+    color: var(--cwc-text-primary);
   }
 
   &:disabled {
@@ -209,7 +209,7 @@
   margin: 0 auto;
   border-radius: 6px;
   font-size: 0.8125rem;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
   cursor: default;
   position: relative;
 
@@ -227,7 +227,7 @@
 
   &.selected {
     background: hsla(7, 100%, 68%, 0.15);
-    color: var(--trellis-text-primary);
+    color: var(--cwc-text-primary);
     border-radius: 0;
   }
 
@@ -265,7 +265,7 @@
   align-items: center;
   gap: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--trellis-border);
+  border-top: 1px solid var(--cwc-border);
 }
 
 .dp-date-inputs {
@@ -275,26 +275,26 @@
   gap: 8px;
   padding: 7px 12px;
   background: hsl(0, 0%, 9%);
-  border: 1px solid var(--trellis-border);
+  border: 1px solid var(--cwc-border);
   border-radius: 6px;
   font-size: 0.8125rem;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
 }
 
 .dp-date-segment {
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
 }
 
 .dp-date-sep {
-  color: var(--trellis-text-secondary);
+  color: var(--cwc-text-secondary);
 }
 
 .dp-apply-btn {
   padding: 7px 20px;
   background: hsl(0, 0%, 9%);
-  border: 1px solid var(--trellis-border);
+  border: 1px solid var(--cwc-border);
   border-radius: 6px;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -303,18 +303,18 @@
 
   &:hover {
     border-color: hsl(0, 0%, 40%);
-    background: var(--trellis-hover-bg);
+    background: var(--cwc-hover-bg);
   }
 }
 
 /* Metric Tabs */
 .metric-tabs {
   display: flex;
-  border: 1px solid var(--trellis-border);
+  border: 1px solid var(--cwc-border);
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 32px;
-  background: var(--trellis-insight-bg);
+  background: var(--cwc-insight-bg);
 }
 
 .metric-tab {
@@ -324,8 +324,8 @@
   align-items: center;
   padding: 16px 12px;
   text-decoration: none;
-  color: var(--trellis-text-primary);
-  border-right: 1px solid var(--trellis-border);
+  color: var(--cwc-text-primary);
+  border-right: 1px solid var(--cwc-border);
   cursor: pointer;
   transition: background 0.15s ease;
   position: relative;
@@ -335,7 +335,7 @@
   }
 
   &:hover {
-    background: var(--trellis-hover-bg);
+    background: var(--cwc-hover-bg);
   }
 
   &.active {
@@ -356,7 +356,7 @@
 .metric-tab-label {
   font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--trellis-text-secondary);
+  color: var(--cwc-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin-bottom: 2px;
@@ -371,7 +371,7 @@
 .metric-tab-value {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
 }
 
 /* Content Area */
@@ -384,8 +384,8 @@
   position: relative;
   width: 100%;
   height: 360px;
-  background: var(--trellis-insight-bg);
-  border: 1px solid var(--trellis-border);
+  background: var(--cwc-insight-bg);
+  border: 1px solid var(--cwc-border);
   border-radius: 10px;
   padding: 24px;
 

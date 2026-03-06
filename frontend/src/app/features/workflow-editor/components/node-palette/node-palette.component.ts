@@ -367,7 +367,7 @@ export class NodePaletteComponent implements OnInit {
 
   onDragStart(event: DragEvent, nodeType: NodeTypeDescription): void {
     if (event.dataTransfer) {
-      event.dataTransfer.setData('application/trellis-node-type', JSON.stringify({
+      event.dataTransfer.setData('application/cwc-node-type', JSON.stringify({
         type: nodeType.type,
         displayName: nodeType.displayName,
         version: nodeType.version

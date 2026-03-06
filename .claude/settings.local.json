@@ -136,7 +136,9 @@
       "WebFetch(domain:search.maven.org)",
       "Bash(echo:*)",
       "mcp__trellis-agent__trellis_list_node_categories",
-      "mcp__trellis-agent__trellis_list_browser_sessions"
+      "mcp__trellis-agent__trellis_list_browser_sessions",
+      "Bash(git mv:*)",
+      "Bash(mvn test:*)"
     ]
   }
 }

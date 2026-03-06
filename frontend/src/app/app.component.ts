@@ -20,7 +20,7 @@ import { ChatSession } from './core/models/chat.model';
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit, OnDestroy {
-  title = 'Trellis';
+  title = 'CWC';
   sidebarCollapsed = false;
   showAddDropdown = false;
   showCreateMenu = false;

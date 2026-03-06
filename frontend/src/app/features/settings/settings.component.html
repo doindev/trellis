@@ -121,7 +121,7 @@
       </div>
     }
 
-    <!-- TRELLIS API -->
+    <!-- CWC API -->
     @if (activeSection === 'api') {
       <div class="section-page">
         <div class="section-header-row">
@@ -269,7 +269,7 @@
     @if (activeSection === 'environments') {
       <div class="section-page">
         <h1 class="section-title">Environments</h1>
-        <p class="section-subtitle">Connect your Trellis instance to a git repository for version control</p>
+        <p class="section-subtitle">Connect your CWC instance to a git repository for version control</p>
         <div class="placeholder-card">
           <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
@@ -526,17 +526,17 @@
               <div class="settings-card">
                 <h3 class="card-title">Available Tools</h3>
                 <div class="agent-tools-list">
-                  <span class="agent-tool-badge">trellis_list_node_types</span>
-                  <span class="agent-tool-badge">trellis_get_node_type</span>
-                  <span class="agent-tool-badge">trellis_list_workflows</span>
-                  <span class="agent-tool-badge">trellis_get_workflow</span>
-                  <span class="agent-tool-badge">trellis_create_workflow</span>
-                  <span class="agent-tool-badge">trellis_update_workflow</span>
-                  <span class="agent-tool-badge">trellis_list_executions</span>
-                  <span class="agent-tool-badge">trellis_get_execution</span>
-                  <span class="agent-tool-badge">trellis_workflow_guide</span>
-                  <span class="agent-tool-badge">trellis_browser_control</span>
-                  <span class="agent-tool-badge">trellis_push_to_canvas</span>
+                  <span class="agent-tool-badge">cwc_list_node_types</span>
+                  <span class="agent-tool-badge">cwc_get_node_type</span>
+                  <span class="agent-tool-badge">cwc_list_workflows</span>
+                  <span class="agent-tool-badge">cwc_get_workflow</span>
+                  <span class="agent-tool-badge">cwc_create_workflow</span>
+                  <span class="agent-tool-badge">cwc_update_workflow</span>
+                  <span class="agent-tool-badge">cwc_list_executions</span>
+                  <span class="agent-tool-badge">cwc_get_execution</span>
+                  <span class="agent-tool-badge">cwc_workflow_guide</span>
+                  <span class="agent-tool-badge">cwc_browser_control</span>
+                  <span class="agent-tool-badge">cwc_push_to_canvas</span>
                 </div>
               </div>
             }
@@ -662,7 +662,7 @@
             <h3 class="card-title">API Metadata</h3>
             <div class="form-row">
               <label class="form-label">API Title</label>
-              <input class="form-input" type="text" [(ngModel)]="swaggerSettings.apiTitle" placeholder="Trellis API">
+              <input class="form-input" type="text" [(ngModel)]="swaggerSettings.apiTitle" placeholder="CWC API">
             </div>
             <div class="form-row">
               <label class="form-label">Description</label>

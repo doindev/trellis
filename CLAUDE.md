@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Trellis is a workflow automation platform (similar to n8n/Make/Zapier) with a Java Spring Boot backend and Angular frontend. It features a node-based execution engine where workflow "nodes" are auto-discovered Spring components that process data through configurable pipelines.
+CWC is a workflow automation platform (similar to n8n/Make/Zapier) with a Java Spring Boot backend and Angular frontend. It features a node-based execution engine where workflow "nodes" are auto-discovered Spring components that process data through configurable pipelines.
 
 ## Build & Run Commands
 
@@ -34,9 +34,9 @@ Frontend is built automatically via `frontend-maven-plugin` (Node v20.18.0). The
 
 The central abstraction is the **node**: a unit of work in a workflow pipeline.
 
-1. **`@Node` annotation** (`io.trellis.nodes.annotation.Node`) — marks a class as a workflow node. Includes metadata: `type` (unique ID), `displayName`, `category`, `version`, `trigger`/`polling` flags, `credentials` required.
+1. **`@Node` annotation** (`io.cwc.nodes.annotation.Node`) — marks a class as a workflow node. Includes metadata: `type` (unique ID), `displayName`, `category`, `version`, `trigger`/`polling` flags, `credentials` required.
 
-2. **`NodeInterface`** (`io.trellis.nodes.core`) — contract every node implements. Key method: `execute(NodeExecutionContext) -> NodeExecutionResult`. Also defines `getParameters()`, `getInputs()`, `getOutputs()`, lifecycle hooks (`beforeExecute`/`afterExecute`), and `validateParameters()`.
+2. **`NodeInterface`** (`io.cwc.nodes.core`) — contract every node implements. Key method: `execute(NodeExecutionContext) -> NodeExecutionResult`. Also defines `getParameters()`, `getInputs()`, `getOutputs()`, lifecycle hooks (`beforeExecute`/`afterExecute`), and `validateParameters()`.
 
 3. **`NodeRegistry`** — Spring `@Component` that auto-discovers all `@Node`-annotated beans at startup via `ApplicationContext.getBeansWithAnnotation()`. Stores them in a `ConcurrentHashMap` keyed by `type` and `type_Vversion`. Supports versioned nodes with latest-version resolution.
 
@@ -48,7 +48,7 @@ The central abstraction is the **node**: a unit of work in a workflow pipeline.
 
 All data flows through nodes as `List<Map<String, Object>>` wrapped in the standard format: `{ "json": <actual_data> }`. Access nested values via dot notation (e.g., `json.user.email`). Use `AbstractNode.wrapInJson()` / `unwrapJson()` helpers.
 
-### Base Node Classes (`io.trellis.nodes.base`)
+### Base Node Classes (`io.cwc.nodes.base`)
 
 - **`AbstractNode`** — utility methods: nested value get/set (dot notation), JSON wrap/unwrap, deep clone, type conversions, error handling with `continueOnFail` support.
 - **`AbstractApiNode`** — HTTP client support (RestClient, HttpClient), authentication (API Key, Basic, OAuth2), URL building, response parsing.
@@ -87,7 +87,7 @@ App runs on port **5678**. Key properties in `application.properties`:
 
 ```
 io.trellis/
-├── TrellisApplication.java    # Entry point
+├── CwcApplication.java    # Entry point
 ├── config/                    # Spring configuration
 ├── exception/                 # Global exception handling
 ├── nodes/

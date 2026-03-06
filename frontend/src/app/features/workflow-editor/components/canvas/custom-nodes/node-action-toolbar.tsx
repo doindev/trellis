@@ -1,6 +1,6 @@
 import React, { memo, useState, useRef, useEffect, useContext } from 'react';
 import { NodeToolbar, Position } from '@xyflow/react';
-import { CanvasActionsContext } from '../trellis-canvas';
+import { CanvasActionsContext } from '../cwc-canvas';
 
 interface NodeActionToolbarProps {
   nodeId: string;

@@ -1,0 +1,49 @@
+package io.cwc.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.Instant;
+
+import io.cwc.util.NanoId;
+
+@Entity
+@Table(name = "cache_definitions", uniqueConstraints =
+    @UniqueConstraint(columnNames = {"cache_name", "project_id"}))
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class CacheDefinitionEntity {
+
+    @Id
+    @NanoId
+    private String id;
+
+    @Column(name = "cache_name", nullable = false)
+    private String name;
+
+    private String description;
+
+    @Builder.Default
+    private int maxSize = 1000;
+
+    @Builder.Default
+    private long ttlSeconds = 3600;
+
+    private String projectId;
+
+    private Instant createdAt;
+
+    private Instant updatedAt;
+
+    @PrePersist
+    void prePersist() {
+        createdAt = updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = Instant.now();
+    }
+}

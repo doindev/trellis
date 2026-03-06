@@ -3,8 +3,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 20px;
-  background: var(--trellis-card-bg);
-  border: 1px solid var(--trellis-border);
+  background: var(--cwc-card-bg);
+  border: 1px solid var(--cwc-border);
   border-radius: 8px;
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
@@ -43,7 +43,7 @@
 .card-name {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -57,7 +57,7 @@
 
 .card-tag {
   font-size: 0.6875rem;
-  color: var(--trellis-text-secondary);
+  color: var(--cwc-text-secondary);
   white-space: nowrap;
 
   &.tag-mcp {
@@ -67,7 +67,7 @@
 
 .card-meta {
   font-size: 0.75rem;
-  color: var(--trellis-text-secondary);
+  color: var(--cwc-text-secondary);
   margin-top: 3px;
   display: flex;
   align-items: center;
@@ -91,7 +91,7 @@
   align-items: center;
   gap: 5px;
   font-size: 0.6875rem;
-  color: var(--trellis-text-secondary);
+  color: var(--cwc-text-secondary);
   background: hsla(0, 0%, 50%, 0.1);
   padding: 3px 10px;
   border-radius: 12px;
@@ -113,7 +113,7 @@
   }
 
   &.inactive {
-    color: var(--trellis-text-secondary);
+    color: var(--cwc-text-secondary);
     background: hsla(0, 0%, 50%, 0.1);
   }
 }
@@ -132,7 +132,7 @@
 .btn-actions {
   background: none;
   border: none;
-  color: var(--trellis-text-secondary);
+  color: var(--cwc-text-secondary);
   padding: 6px;
   border-radius: 6px;
   cursor: pointer;
@@ -140,14 +140,14 @@
   align-items: center;
 
   &:hover {
-    background: var(--trellis-hover-bg);
-    color: var(--trellis-text-primary);
+    background: var(--cwc-hover-bg);
+    color: var(--cwc-text-primary);
   }
 }
 
 .actions-dropdown {
   background: hsl(0, 0%, 17%);
-  border: 1px solid var(--trellis-border);
+  border: 1px solid var(--cwc-border);
   border-radius: 8px;
   min-width: 160px;
   padding: 4px;
@@ -162,18 +162,18 @@
   padding: 8px 12px;
   background: none;
   border: none;
-  color: var(--trellis-text-primary);
+  color: var(--cwc-text-primary);
   font-size: 0.8125rem;
   border-radius: 6px;
   cursor: pointer;
   text-align: left;
 
   &:hover {
-    background: var(--trellis-hover-bg);
+    background: var(--cwc-hover-bg);
   }
 
   &.danger {
-    color: var(--trellis-error-color);
+    color: var(--cwc-error-color);
 
     &:hover {
       background: hsla(355, 83%, 52%, 0.1);
@@ -181,7 +181,7 @@
   }
 
   &.disabled {
-    color: var(--trellis-text-secondary);
+    color: var(--cwc-text-secondary);
     opacity: 0.5;
     cursor: default;
 
@@ -193,6 +193,6 @@
 
 .dropdown-divider {
   height: 1px;
-  background: var(--trellis-border);
+  background: var(--cwc-border);
   margin: 4px 0;
 }

@@ -241,7 +241,7 @@ export class HomeComponent implements OnInit {
       // Select project from query param (e.g. after creating a project or clicking sidebar link)
       if (params['projectId'] && params['projectId'] !== this.selectedProjectId()) {
         this.selectedProjectId.set(params['projectId']);
-        localStorage.setItem('trellis.selectedProjectId', params['projectId']);
+        localStorage.setItem('cwc.selectedProjectId', params['projectId']);
         const knownProject = this.allProjects().some(p => p.id === params['projectId']);
         if (knownProject) {
           this.reloadAllData();
@@ -311,17 +311,17 @@ export class HomeComponent implements OnInit {
         // If a project is already selected (e.g. from query param), validate it exists
         const current = this.selectedProjectId();
         if (current && list.some(p => p.id === current)) {
-          localStorage.setItem('trellis.selectedProjectId', current);
+          localStorage.setItem('cwc.selectedProjectId', current);
           this.reloadAllData();
         } else {
           // Try restoring from localStorage
-          const stored = localStorage.getItem('trellis.selectedProjectId');
+          const stored = localStorage.getItem('cwc.selectedProjectId');
           if (stored && list.some(p => p.id === stored)) {
             this.selectedProjectId.set(stored);
             this.reloadAllData();
           } else if (personal?.id) {
             this.selectedProjectId.set(personal.id);
-            localStorage.setItem('trellis.selectedProjectId', personal.id);
+            localStorage.setItem('cwc.selectedProjectId', personal.id);
             this.reloadAllData();
           }
         }
@@ -331,7 +331,7 @@ export class HomeComponent implements OnInit {
 
   onProjectScopeChange(projectId: string): void {
     this.selectedProjectId.set(projectId);
-    localStorage.setItem('trellis.selectedProjectId', projectId);
+    localStorage.setItem('cwc.selectedProjectId', projectId);
     this.reloadAllData();
   }
 
@@ -350,7 +350,7 @@ export class HomeComponent implements OnInit {
   onProjectDeleted(): void {
     // Project was deleted — reload projects and select the first available
     this.selectedProjectId.set('');
-    localStorage.removeItem('trellis.selectedProjectId');
+    localStorage.removeItem('cwc.selectedProjectId');
     this.loadProjects();
   }
 

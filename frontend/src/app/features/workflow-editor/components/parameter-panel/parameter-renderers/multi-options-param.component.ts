@@ -30,7 +30,7 @@ import { NodeParameter } from '../../../../../core/models';
   `,
   styles: [`
     .param-label { display: block; font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin-bottom: 4px; }
-    .required { color: var(--trellis-error-color); }
+    .required { color: var(--cwc-error-color); }
     .param-description { font-size: 0.6875rem; color: hsl(0,0%,58%); margin-bottom: 6px; }
     .multi-options-list {
       display: flex;
