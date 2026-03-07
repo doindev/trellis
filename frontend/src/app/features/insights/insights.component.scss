@@ -68,6 +68,25 @@
   }
 }
 
+.control-btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid var(--cwc-border);
+  border-radius: 6px;
+  color: var(--cwc-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: hsl(0, 0%, 40%);
+    color: var(--cwc-text-primary);
+  }
+}
+
 /* Date Picker Dropdown */
 .date-picker-dropdown {
   position: absolute;
