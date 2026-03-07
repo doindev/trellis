@@ -914,15 +914,20 @@
 .exec-table-wrapper {
   border: 1px solid var(--cwc-border);
   border-radius: 8px;
-  overflow: hidden;
 }
 
 .exec-table {
   width: 100%;
   border-collapse: collapse;
 
-  thead tr {
-    background: hsl(0, 0%, 11%);
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+
+    tr {
+      background: hsl(0, 0%, 11%);
+    }
   }
 
   th {
