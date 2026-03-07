@@ -148,6 +148,7 @@ public class McpSettingsService {
                     Map<String, Object> map = new LinkedHashMap<>();
                     map.put("id", wf.getId());
                     map.put("name", wf.getName());
+                    map.put("type", wf.getType());
                     map.put("description", wf.getDescription());
                     map.put("mcpEnabled", wf.isMcpEnabled());
                     map.put("mcpDescription", wf.getMcpDescription());

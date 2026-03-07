@@ -1116,6 +1116,13 @@
   }
 }
 
+.exec-load-more {
+  text-align: center;
+  padding: 12px 0;
+  font-size: 0.75rem;
+  color: var(--cwc-text-secondary);
+}
+
 /* Embedded component overrides - reduce padding when inside tabs */
 :host ::ng-deep .page-container {
   padding: 0;

@@ -93,6 +93,7 @@ export interface McpOutputSchema {
 export interface McpWorkflow {
   id: string;
   name: string;
+  type: string;
   description: string;
   mcpEnabled: boolean;
   mcpDescription: string;

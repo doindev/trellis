@@ -194,10 +194,12 @@ export class HomeComponent implements OnInit {
   private agentScrollListener: (() => void) | null = null;
 
   // Execution tab state
-  execAutoRefresh = signal(true);
+  execAutoRefresh = signal(false);
   execFilters = signal<ExecutionFilters>(defaultExecutionFilters());
   showExecFilterModal = signal(false);
   loadingExecutions = signal(true);
+  execDisplayCount = signal(20);
+  execLoadingMore = signal(false);
   filteredExecutions = computed(() => {
     const execs = this.executions();
     if (!Array.isArray(execs)) return [];
@@ -228,6 +230,7 @@ export class HomeComponent implements OnInit {
     }
     return result;
   });
+  pagedExecutions = computed(() => this.filteredExecutions().slice(0, this.execDisplayCount()));
   execFilterActive = computed(() => isFilterActive(this.execFilters()));
   private execRefreshInterval: any = null;
 
@@ -878,8 +881,24 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  refreshExecutions(): void {
+    this.loadExecutions();
+  }
+
+  onExecScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
+      const current = this.execDisplayCount();
+      const total = this.filteredExecutions().length;
+      if (current < total) {
+        this.execDisplayCount.set(Math.min(current + 20, total));
+      }
+    }
+  }
+
   onExecFiltersChange(filters: ExecutionFilters): void {
     this.execFilters.set(filters);
+    this.execDisplayCount.set(20);
   }
 
   deleteExecution(id: string, event: Event): void {

@@ -282,7 +282,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       error: () => {}
     });
     this.settingsService.getMcpWorkflows().subscribe({
-      next: workflows => this.mcpWorkflows = workflows,
+      next: workflows => this.mcpWorkflows = workflows.filter(wf => wf.type === 'WORKFLOW'),
       error: () => this.mcpWorkflows = []
     });
   }
