@@ -90,6 +90,7 @@ public class BaserowNode extends AbstractApiNode {
 					}
 					case "delete" -> {
 						String rowId = context.getParameter("rowId", "");
+						@SuppressWarnings("unused")
 						HttpResponse<String> response = delete(apiBase + "/" + rowId + "/", headers);
 						yield Map.<String, Object>of("success", true, "rowId", rowId);
 					}
