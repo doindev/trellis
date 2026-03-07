@@ -121,6 +121,11 @@ public class ExecuteWorkflowNode extends AbstractNode {
 			List<Map<String, Object>> inputData = context.getInputData();
 			if (inputData == null) inputData = List.of();
 
+			// Map the node-level execution mode to the entity-level execution mode
+			// so sub-workflow executions inherit the parent's mode for metrics tracking
+			io.cwc.entity.ExecutionEntity.ExecutionMode parentMode =
+				io.cwc.entity.ExecutionEntity.ExecutionMode.valueOf(context.getExecutionMode().name());
+
 			if (!waitForCompletion) {
 				// Fire and forget - just trigger the sub-workflow without waiting
 				log.info("Execute Sub-Workflow (fire-and-forget): triggering workflow {} with {} items",
@@ -137,13 +142,13 @@ public class ExecuteWorkflowNode extends AbstractNode {
 				result = new ArrayList<>();
 				for (Map<String, Object> item : inputData) {
 					List<Map<String, Object>> itemResult = workflowEngine.executeSubWorkflow(
-						workflowId, List.of(item));
+						workflowId, List.of(item), parentMode);
 					result.addAll(itemResult);
 				}
 			} else {
 				log.debug("Execute Sub-Workflow: running workflow {} once with all {} items",
 					workflowId, inputData.size());
-				result = workflowEngine.executeSubWorkflow(workflowId, inputData);
+				result = workflowEngine.executeSubWorkflow(workflowId, inputData, parentMode);
 			}
 
 			log.debug("Execute Sub-Workflow: workflow {} returned {} items", workflowId, result.size());

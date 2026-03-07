@@ -501,7 +501,7 @@ public class CwcMcpServerManager {
             }
 
             List<Map<String, Object>> result = workflowEngine.executeSubWorkflow(
-                    tool.workflowId, inputItems);
+                    tool.workflowId, inputItems, io.cwc.entity.ExecutionEntity.ExecutionMode.INTERNAL);
 
             String resultText = objectMapper.writeValueAsString(result);
 

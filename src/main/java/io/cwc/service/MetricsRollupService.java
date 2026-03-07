@@ -37,7 +37,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class MetricsRollupService {
 
-    private static final List<ExecutionMode> EXCLUDED_MODES = List.of(ExecutionMode.MANUAL);
     private static final Duration FIVE_MINUTES = Duration.ofMinutes(5);
     private static final Duration RETENTION_5MIN = Duration.ofHours(48);
 
@@ -116,7 +115,7 @@ public class MetricsRollupService {
         Instant bucketEnd = truncateTo5min(windowEnd).plus(FIVE_MINUTES);
 
         List<ExecutionEntity> executions = executionRepository.findForRollup(
-                windowStart, windowEnd, EXCLUDED_MODES);
+                windowStart, windowEnd, ExecutionMode.MANUAL);
         Map<String, String> workflowProjectMap = loadWorkflowProjectMap();
 
         Map<String, Map<Instant, int[]>> grouped = groupIntoBuckets(
@@ -154,7 +153,7 @@ public class MetricsRollupService {
         Instant bucketEnd = windowEnd.truncatedTo(ChronoUnit.HOURS).plus(Duration.ofHours(1));
 
         List<ExecutionEntity> executions = executionRepository.findForRollup(
-                windowStart, windowEnd, EXCLUDED_MODES);
+                windowStart, windowEnd, ExecutionMode.MANUAL);
         Map<String, String> workflowProjectMap = loadWorkflowProjectMap();
 
         Map<String, Map<Instant, int[]>> grouped = groupIntoBuckets(

@@ -32,7 +32,7 @@ public interface ExecutionRepository extends JpaRepository<ExecutionEntity, Stri
     Page<ExecutionEntity> findByProjectIdAndStatus(@Param("projectId") String projectId,
                                                     @Param("status") ExecutionStatus status, Pageable pageable);
 
-    // Production metrics: published workflows only, exclude specified mode
+    // Production metrics: exclude manual executions, published workflows only
     @Query("SELECT e FROM ExecutionEntity e WHERE e.mode <> :excludeMode " +
            "AND e.workflowId IN (SELECT w.id FROM WorkflowEntity w WHERE w.published = true AND w.projectId = :projectId)")
     Page<ExecutionEntity> findProductionByProjectId(@Param("projectId") String projectId,
@@ -46,8 +46,8 @@ public interface ExecutionRepository extends JpaRepository<ExecutionEntity, Stri
                                                      Pageable pageable);
 
     @Query("SELECT e FROM ExecutionEntity e WHERE e.startedAt >= :start AND e.startedAt < :end " +
-           "AND e.mode NOT IN :excludedModes")
+           "AND e.mode <> :excludeMode")
     List<ExecutionEntity> findForRollup(@Param("start") Instant start,
                                         @Param("end") Instant end,
-                                        @Param("excludedModes") List<ExecutionMode> excludedModes);
+                                        @Param("excludeMode") ExecutionEntity.ExecutionMode excludeMode);
 }

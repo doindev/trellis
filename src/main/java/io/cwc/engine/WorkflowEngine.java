@@ -186,7 +186,7 @@ public class WorkflowEngine {
      * Called by ExecuteWorkflowNode to run another workflow inline.
      * Includes recursion depth protection to prevent infinite loops.
      */
-    public List<Map<String, Object>> executeSubWorkflow(String workflowId, List<Map<String, Object>> inputItems) {
+    public List<Map<String, Object>> executeSubWorkflow(String workflowId, List<Map<String, Object>> inputItems, ExecutionMode parentMode) {
         int depth = SUB_WORKFLOW_DEPTH.get();
         if (depth >= MAX_SUB_WORKFLOW_DEPTH) {
             throw new RuntimeException("Maximum sub-workflow depth (" + MAX_SUB_WORKFLOW_DEPTH
@@ -204,7 +204,7 @@ public class WorkflowEngine {
             workflowSnapshot.put("connections", workflow.getConnections());
 
             var execution = executionService.createExecution(
-                    workflowId, workflowSnapshot, ExecutionMode.INTERNAL);
+                    workflowId, workflowSnapshot, parentMode);
 
             executionService.updateStatus(execution.getId(), ExecutionStatus.RUNNING);
 
