@@ -64,7 +64,7 @@ public class WebSocketService {
         send("/topic/execution/" + executionId, Map.of(
                 "event", "executionFinished",
                 "executionId", executionId,
-                "status", status
+                "status", status.toLowerCase()
         ));
     }
 

@@ -142,7 +142,7 @@
         [viewingExecution]="activeTab === 'executions' ? !!executionWorkflow : !!store.executionData()"
         [executionNodes]="activeTab === 'executions' ? (executionWorkflow?.nodes || []) : (store.executionData() ? store.nodes() : [])"
         [nodeTypeMap]="nodeTypeStore.nodeTypes()"
-        [executionStatus]="activeTab === 'executions' ? (viewingExecution?.status || '') : (store.isExecuting() ? 'RUNNING' : (store.executionData() ? 'SUCCESS' : ''))"
+        [executionStatus]="activeTab === 'executions' ? (viewingExecution?.status || '') : (store.isExecuting() ? 'running' : (store.executionData() ? 'success' : ''))"
         [autoExpandOnView]="activeTab === 'executions'"
         (expandedChange)="drawerExpanded = $event"
         (openNodeDetail)="store.selectNode($event)"

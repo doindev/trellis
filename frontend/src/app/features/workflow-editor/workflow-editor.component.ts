@@ -283,7 +283,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       }
       this.executionService.get(execId).subscribe({
         next: (exec) => {
-          if (exec.status !== 'RUNNING' && exec.status !== 'NEW' && exec.status !== 'WAITING') {
+          if (exec.status !== 'running' && exec.status !== 'new' && exec.status !== 'waiting') {
             this.ngZone.run(() => {
               // Clean up any nodes still marked as 'running'
               const current = this.store.executionData() || {};
@@ -291,7 +291,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
               for (const [nid, val] of Object.entries(current)) {
                 const entry = Array.isArray(val) ? val[0] : val;
                 if (entry?.status === 'running') {
-                  cleaned[nid] = [{ status: exec.status === 'ERROR' ? 'error' : 'success' }];
+                  cleaned[nid] = [{ status: exec.status === 'error' ? 'error' : 'success' }];
                 } else {
                   cleaned[nid] = val;
                 }
@@ -759,7 +759,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
               for (const [nid, val] of Object.entries(current)) {
                 const entry = Array.isArray(val) ? val[0] : val;
                 if (entry?.status === 'running') {
-                  cleaned[nid] = [{ status: event.status === 'ERROR' ? 'error' : 'success' }];
+                  cleaned[nid] = [{ status: event.status === 'error' ? 'error' : 'success' }];
                 } else {
                   cleaned[nid] = val;
                 }

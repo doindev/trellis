@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
+import { Component, OnInit, ViewChild, signal, computed, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -189,6 +189,9 @@ export class HomeComponent implements OnInit {
 
   // Agent actions dropdown
   agentActionsOpenId = signal<string | null>(null);
+  agentDropdownStyle: Record<string, string> = {};
+  private agentActionsCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private agentScrollListener: (() => void) | null = null;
 
   // Execution tab state
   execAutoRefresh = signal(true);
@@ -244,7 +247,8 @@ export class HomeComponent implements OnInit {
     private executionService: ExecutionService,
     private credentialService: CredentialService,
     private projectService: ProjectService,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private elRef: ElementRef
   ) {}
 
   ngOnInit(): void {
@@ -436,13 +440,13 @@ export class HomeComponent implements OnInit {
   }
 
   moveAgent(agent: Workflow): void {
-    this.agentActionsOpenId.set(null);
+    this.closeAgentDropdown();
     this.moveTarget.set(agent);
     this.showMoveModal.set(true);
   }
 
   shareAgent(agent: Workflow): void {
-    this.agentActionsOpenId.set(null);
+    this.closeAgentDropdown();
     if (agent.published) return;
     this.shareTarget.set(agent);
     this.showShareModal.set(true);
@@ -463,7 +467,67 @@ export class HomeComponent implements OnInit {
 
   toggleAgentActions(id: string, event: Event): void {
     event.stopPropagation();
-    this.agentActionsOpenId.set(this.agentActionsOpenId() === id ? null : id);
+    this.cancelAgentActionsClose();
+    if (this.agentActionsOpenId() === id) {
+      this.closeAgentDropdown();
+      return;
+    }
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+    const dropdownHeight = 260;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+    this.agentDropdownStyle = {
+      position: 'fixed',
+      right: (window.innerWidth - rect.right) + 'px',
+      ...(openUp
+        ? { bottom: (window.innerHeight - rect.top + 4) + 'px' }
+        : { top: (rect.bottom + 4) + 'px' }),
+      'z-index': '9999'
+    };
+    this.agentActionsOpenId.set(id);
+    this.addAgentScrollListener();
+  }
+
+  scheduleAgentActionsClose(): void {
+    this.cancelAgentActionsClose();
+    this.agentActionsCloseTimer = setTimeout(() => {
+      this.closeAgentDropdown();
+    }, 400);
+  }
+
+  cancelAgentActionsClose(): void {
+    if (this.agentActionsCloseTimer) {
+      clearTimeout(this.agentActionsCloseTimer);
+      this.agentActionsCloseTimer = null;
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClickAgent(event: Event): void {
+    if (this.agentActionsOpenId() && !this.elRef.nativeElement.querySelector('.agent-card-append')?.contains(event.target)) {
+      this.closeAgentDropdown();
+    }
+  }
+
+  private closeAgentDropdown(): void {
+    this.agentActionsOpenId.set(null);
+    this.removeAgentScrollListener();
+  }
+
+  private addAgentScrollListener(): void {
+    this.removeAgentScrollListener();
+    const handler = () => this.closeAgentDropdown();
+    document.addEventListener('scroll', handler, true);
+    this.agentScrollListener = () => document.removeEventListener('scroll', handler, true);
+  }
+
+  private removeAgentScrollListener(): void {
+    if (this.agentScrollListener) {
+      this.agentScrollListener();
+      this.agentScrollListener = null;
+    }
   }
 
   agentTimeAgo(agent: Workflow): string {
