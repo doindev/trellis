@@ -9,6 +9,8 @@ import {
   isFilterActive
 } from '../../../../shared/components/execution-filter-modal/execution-filter-modal.component';
 
+const PAGE_SIZE = 25;
+
 @Component({
   selector: 'app-executions-sidebar',
   standalone: true,
@@ -18,10 +20,18 @@ import {
       <div class="sidebar-header">
         <h3>Executions</h3>
         <div class="sidebar-header-controls">
-          <label class="auto-refresh-toggle">
-            <input type="checkbox" [(ngModel)]="autoRefresh" (ngModelChange)="onAutoRefreshChange()">
-            Auto-refresh
-          </label>
+          <div class="refresh-controls">
+            <button class="btn-refresh" (click)="manualRefresh()" title="Refresh">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.spinning]="refreshing">
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+              </svg>
+            </button>
+            <label class="auto-refresh-toggle">
+              <input type="checkbox" [(ngModel)]="autoRefresh" (ngModelChange)="onAutoRefreshChange()">
+              Auto-refresh
+            </label>
+          </div>
           <button class="btn-filter" [class.active]="filterActive" (click)="filterButtonClicked.emit()" title="Filter executions">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>
@@ -30,7 +40,7 @@ import {
         </div>
       </div>
 
-      <div class="executions-list" *ngIf="displayedExecutions.length > 0; else emptyState">
+      <div class="executions-list" *ngIf="displayedExecutions.length > 0; else emptyState" (scroll)="onScroll($event)">
         <div
           class="execution-card"
           *ngFor="let exec of displayedExecutions"
@@ -60,6 +70,7 @@ import {
             Retry
           </button>
         </div>
+        <div class="loading-more" *ngIf="loadingMore">Loading more...</div>
       </div>
 
       <ng-template #emptyState>
@@ -104,6 +115,40 @@ import {
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    .refresh-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-refresh {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: none;
+      border: 1px solid hsl(0, 0%, 20%);
+      border-radius: 6px;
+      color: hsl(0, 0%, 60%);
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: hsl(0, 0%, 17%);
+        color: hsl(0, 0%, 90%);
+      }
+
+      .spinning {
+        animation: spin 0.6s linear infinite;
+      }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
 
     .auto-refresh-toggle {
@@ -264,6 +309,13 @@ import {
       }
     }
 
+    .loading-more {
+      text-align: center;
+      padding: 12px;
+      font-size: 12px;
+      color: hsl(0, 0%, 50%);
+    }
+
     .empty-state {
       flex: 1;
       display: flex;
@@ -309,7 +361,11 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy, OnChanges 
   @Output() filtersChanged = new EventEmitter<ExecutionFilters>();
 
   executions: Execution[] = [];
-  autoRefresh = true;
+  autoRefresh = false;
+  refreshing = false;
+  loadingMore = false;
+  private currentPage = 0;
+  private totalPages = 1;
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
   get filterActive(): boolean {
@@ -348,13 +404,11 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy, OnChanges 
 
   ngOnInit(): void {
     this.loadExecutions(true);
-    this.startAutoRefresh();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedExecutionId'] && this.selectedExecutionId) {
       this.pendingScrollToExecution = true;
-      // Try immediately in case cards are already rendered
       setTimeout(() => this.scrollToSelectedExecution());
     }
   }
@@ -378,16 +432,76 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy, OnChanges 
 
   private loadExecutions(autoSelect = false): void {
     if (!this.workflowId) return;
-    this.executionService.list({ workflowId: this.workflowId }).subscribe({
-      next: (execs) => {
-        this.executions = execs;
-        if (autoSelect && execs.length > 0 && !this.selectedExecutionId) {
-          this.selectExecution(execs[0]);
+    this.currentPage = 0;
+    this.executionService.listPaged({
+      workflowId: this.workflowId,
+      page: '0',
+      size: String(PAGE_SIZE),
+    }).subscribe({
+      next: (page) => {
+        this.executions = page.content;
+        this.totalPages = page.totalPages;
+        this.currentPage = 0;
+        if (autoSelect && page.content.length > 0 && !this.selectedExecutionId) {
+          this.selectExecution(page.content[0]);
         }
-        // Scroll after DOM updates with the new list
         if (this.pendingScrollToExecution && this.selectedExecutionId) {
           setTimeout(() => this.scrollToSelectedExecution());
         }
+      }
+    });
+  }
+
+  private loadMore(): void {
+    if (!this.workflowId || this.loadingMore) return;
+    const nextPage = this.currentPage + 1;
+    if (nextPage >= this.totalPages) return;
+    this.loadingMore = true;
+    this.executionService.listPaged({
+      workflowId: this.workflowId,
+      page: String(nextPage),
+      size: String(PAGE_SIZE),
+    }).subscribe({
+      next: (page) => {
+        this.executions = [...this.executions, ...page.content];
+        this.currentPage = nextPage;
+        this.totalPages = page.totalPages;
+        this.loadingMore = false;
+      },
+      error: () => {
+        this.loadingMore = false;
+      }
+    });
+  }
+
+  onScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    const threshold = 100;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold) {
+      this.loadMore();
+    }
+  }
+
+  manualRefresh(): void {
+    this.refreshing = true;
+    if (!this.workflowId) {
+      this.refreshing = false;
+      return;
+    }
+    this.currentPage = 0;
+    this.executionService.listPaged({
+      workflowId: this.workflowId,
+      page: '0',
+      size: String(PAGE_SIZE),
+    }).subscribe({
+      next: (page) => {
+        this.executions = page.content;
+        this.totalPages = page.totalPages;
+        this.currentPage = 0;
+        this.refreshing = false;
+      },
+      error: () => {
+        this.refreshing = false;
       }
     });
   }
@@ -418,7 +532,7 @@ export class ExecutionsSidebarComponent implements OnInit, OnDestroy, OnChanges 
   private startAutoRefresh(): void {
     this.stopAutoRefresh();
     if (this.autoRefresh) {
-      this.refreshInterval = setInterval(() => this.loadExecutions(), 5000);
+      this.refreshInterval = setInterval(() => this.manualRefresh(), 5000);
     }
   }
 

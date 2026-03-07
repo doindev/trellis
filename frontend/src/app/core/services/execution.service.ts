@@ -3,7 +3,7 @@ import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { Execution } from '../models';
 
-interface Page<T> {
+export interface ExecutionPage<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
@@ -42,9 +42,13 @@ export class ExecutionService {
   constructor(private api: ApiService) {}
 
   list(params?: Record<string, string>): Observable<Execution[]> {
-    return this.api.get<Page<Execution>>(this.path, params).pipe(
+    return this.api.get<ExecutionPage<Execution>>(this.path, params).pipe(
       map(page => page.content)
     );
+  }
+
+  listPaged(params?: Record<string, string>): Observable<ExecutionPage<Execution>> {
+    return this.api.get<ExecutionPage<Execution>>(this.path, params);
   }
 
   getMetrics(params: Record<string, string>): Observable<MetricsResponse> {
