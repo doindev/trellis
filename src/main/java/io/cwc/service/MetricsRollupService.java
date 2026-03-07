@@ -37,7 +37,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class MetricsRollupService {
 
-    private static final List<ExecutionMode> EXCLUDED_MODES = List.of(ExecutionMode.MANUAL, ExecutionMode.INTERNAL);
+    private static final List<ExecutionMode> EXCLUDED_MODES = List.of(ExecutionMode.MANUAL);
     private static final Duration FIVE_MINUTES = Duration.ofMinutes(5);
     private static final Duration RETENTION_5MIN = Duration.ofHours(48);
 
