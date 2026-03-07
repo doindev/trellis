@@ -1161,7 +1161,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const mcpEnabled = data.mcpEnabled;
     const mcpDescription = data.mcpDescription;
     const mcpInputSchema = data.mcpInputSchema;
-    this.store.importWorkflowData({ nodes, connections, settings, mcpEnabled, mcpDescription, mcpInputSchema });
+    const name = data.name;
+    this.store.importWorkflowData({ name, nodes, connections, settings, mcpEnabled, mcpDescription, mcpInputSchema });
   }
 
   private onPushToGit(): void {

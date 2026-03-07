@@ -364,7 +364,10 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
     const warnings: string[] = [];
 
     // 1. Missing credentials — at least one credential must be set and reference a valid credential
-    if (typeDesc.credentials?.length) {
+    //    Skip if the node has an 'authentication' parameter set to 'none'
+    const authValue = node.parameters?.['authentication'];
+    const credentialsRequired = authValue !== 'none';
+    if (typeDesc.credentials?.length && credentialsRequired) {
       let hasValidCredential = false;
       if (node.credentials) {
         for (const val of Object.values(node.credentials)) {

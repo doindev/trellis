@@ -292,6 +292,7 @@ export class WorkflowEditorStore {
       nodes: data.nodes || wf.nodes,
       connections: data.connections || wf.connections,
     };
+    if (data.name) updated.name = data.name;
     if (data.settings) updated.settings = data.settings;
     if (data.mcpEnabled !== undefined) updated.mcpEnabled = data.mcpEnabled;
     if (data.mcpDescription !== undefined) updated.mcpDescription = data.mcpDescription;

@@ -696,18 +696,22 @@ public class WorkflowService {
             var reg = nodeRegistry.getNode(nodeType).orElse(null);
             if (reg == null) continue;
 
-            // Check credentials
-            Map<String, Object> credentials = (Map<String, Object>) nodeMap.get("credentials");
-            for (String credType : reg.getCredentials()) {
-                if (credentials == null || !credentials.containsKey(credType)
-                        || credentials.get(credType) == null || credentials.get(credType).toString().isBlank()) {
-                    errors.add(nodeName + ": missing credential '" + credType + "'");
+            // Check credentials — skip if node has 'authentication' param set to 'none'
+            Map<String, Object> params = (Map<String, Object>) nodeMap.get("parameters");
+            if (params == null) params = Map.of();
+            Object authParam = params.get("authentication");
+            boolean credentialsRequired = !"none".equals(authParam);
+            if (credentialsRequired) {
+                Map<String, Object> credentials = (Map<String, Object>) nodeMap.get("credentials");
+                for (String credType : reg.getCredentials()) {
+                    if (credentials == null || !credentials.containsKey(credType)
+                            || credentials.get(credType) == null || credentials.get(credType).toString().isBlank()) {
+                        errors.add(nodeName + ": missing credential '" + credType + "'");
+                    }
                 }
             }
 
             // Check required parameters
-            Map<String, Object> params = (Map<String, Object>) nodeMap.get("parameters");
-            if (params == null) params = Map.of();
             for (NodeParameter param : reg.getParameters()) {
                 if (!param.isRequired()) continue;
                 if (param.getDefaultValue() != null && !"".equals(param.getDefaultValue())) continue;

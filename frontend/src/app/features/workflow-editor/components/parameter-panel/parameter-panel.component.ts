@@ -16,6 +16,7 @@ import { NoticeParamComponent } from './parameter-renderers/notice-param.compone
 import { CredentialParamComponent } from './parameter-renderers/credential-param.component';
 import { ModelParamComponent } from './parameter-renderers/model-param.component';
 import { CacheNameParamComponent } from './parameter-renderers/cache-name-param.component';
+import { WorkflowIdParamComponent } from './parameter-renderers/workflow-id-param.component';
 import { ExpressionEditorModalComponent, ExpressionAncestorNode } from './expression-editor-modal.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
@@ -78,6 +79,7 @@ export class HighlightPipe implements PipeTransform {
     CredentialParamComponent,
     ModelParamComponent,
     CacheNameParamComponent,
+    WorkflowIdParamComponent,
     ExpressionEditorModalComponent,
   ],
   providers: [{

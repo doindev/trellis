@@ -155,7 +155,9 @@
       "mcp__cwc-agent__cwc_update_workflow",
       "Bash(claude mcp call:*)",
       "Bash(claude mcp list:*)",
-      "Bash(claude:*)"
+      "Bash(claude:*)",
+      "mcp__cwc-agent__cwc_create_workflow",
+      "mcp__cwc-agent__cwc_list_projects"
     ]
   }
 }
