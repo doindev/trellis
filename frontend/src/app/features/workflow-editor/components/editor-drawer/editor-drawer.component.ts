@@ -74,9 +74,6 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
         }
       }
     } else if (!value && this._viewingExecution) {
-      if (this.activeTab === 'logs') {
-        this.activeTab = 'output';
-      }
       this.selectedLogsNodeId = null;
     }
     this._viewingExecution = value;
@@ -84,9 +81,11 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   get viewingExecution(): boolean { return this._viewingExecution; }
   private _viewingExecution = false;
 
+  @Input() aiChatEnabled = false;
+  @ViewChild('drawerChatInput') drawerChatInput?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('chatMessages') chatMessagesEl?: ElementRef<HTMLDivElement>;
 
-  activeTab: 'output' | 'chat' | 'logs' = 'output';
+  activeTab: 'chat' | 'logs' = 'logs';
   drawerHeight = 300;
   private minHeight = 150;
   private maxHeightPercent = 0.8;
@@ -99,6 +98,8 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   isTyping = false;
   private shouldScrollChat = false;
   private chatSessionId: string | null = null;
+  private chatConnecting = false;
+  private pendingChatMessage: string | null = null;
 
   logsOverviewWidth = 280;
   private logsResizing = false;
@@ -127,6 +128,10 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
       if (nodes.length > 0) {
         this.selectedLogsNodeId = nodes[0].node.id;
       }
+    }
+    // Auto-focus chat input when drawer expands while Chat tab is active
+    if (changes['expanded'] && this.expanded && this.activeTab === 'chat') {
+      setTimeout(() => this.drawerChatInput?.nativeElement.focus(), 100);
     }
   }
 
@@ -559,7 +564,13 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     this.expandedChange.emit(this.expanded);
   }
 
-  selectTab(tab: 'output' | 'chat' | 'logs'): void {
+  selectTab(tab: 'chat' | 'logs'): void {
+    if (this.expanded && this.activeTab === tab) {
+      // Clicking the active tab when expanded collapses the drawer
+      this.expanded = false;
+      this.expandedChange.emit(false);
+      return;
+    }
     this.activeTab = tab;
     if (!this.expanded) {
       this.expanded = true;
@@ -568,6 +579,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     if (tab === 'chat') {
       this.connectChat();
       this.shouldScrollChat = true;
+      setTimeout(() => this.drawerChatInput?.nativeElement.focus(), 100);
     }
   }
 
@@ -621,11 +633,12 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
 
   // Chat methods
   private connectChat(): void {
-    if (!this.workflowId) return;
-    // Create a session for this workflow's chat drawer
+    if (!this.workflowId || this.chatSessionId || this.chatConnecting) return;
+    this.chatConnecting = true;
     this.chatService.createSession('Workflow Chat').subscribe({
       next: (session) => {
         this.chatSessionId = session.id;
+        this.chatConnecting = false;
         this.chatService.connect(session.id);
         this.chatService.messages$.subscribe(msg => {
           if (msg.sessionId === this.chatSessionId) {
@@ -634,18 +647,37 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
             this.shouldScrollChat = true;
           }
         });
+        // Flush any message the user sent while the session was being created
+        if (this.pendingChatMessage) {
+          const pending = this.pendingChatMessage;
+          this.pendingChatMessage = null;
+          this.chatService.sendMessage(this.chatSessionId, pending).subscribe({
+            error: () => { this.isTyping = false; }
+          });
+        }
+      },
+      error: () => {
+        this.chatConnecting = false;
       }
     });
   }
 
   sendMessage(): void {
     const content = this.chatInput.trim();
-    if (!content || !this.chatSessionId) return;
+    if (!content) return;
 
-    this.messages.push({ id: 'temp-' + Date.now(), sessionId: this.chatSessionId, role: 'user', content, createdAt: new Date().toISOString() });
+    // Show the user message immediately regardless of session state
+    this.messages.push({ id: 'temp-' + Date.now(), sessionId: this.chatSessionId || '', role: 'user', content, createdAt: new Date().toISOString() });
     this.chatInput = '';
     this.isTyping = true;
     this.shouldScrollChat = true;
+
+    if (!this.chatSessionId) {
+      // Session still being created — queue the message
+      this.pendingChatMessage = content;
+      this.connectChat();
+      return;
+    }
 
     this.chatService.sendMessage(this.chatSessionId, content).subscribe({
       error: () => {

@@ -4,10 +4,13 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.service.AiServices;
 import io.cwc.dto.ChatMessageResponse;
 import io.cwc.entity.ChatMessageEntity;
 import io.cwc.entity.ChatSessionEntity;
@@ -30,6 +33,10 @@ import java.util.*;
 @Service
 public class ChatService {
 
+    interface ChatAgent {
+        String chat(String message);
+    }
+
     private final Optional<ChatModel> chatModel;
     private final Optional<StreamingChatModel> streamingModel;
     private final SimpMessagingTemplate messagingTemplate;
@@ -39,10 +46,37 @@ public class ChatService {
     private final AgentConfigService agentConfigService;
     private final CredentialService credentialService;
     private final NodeRegistry nodeRegistry;
+    private final AiSettingsService aiSettingsService;
+    private final ChatToolProvider chatToolProvider;
 
-    private static final String DEFAULT_SYSTEM_PROMPT = "You are a helpful workflow automation assistant for CWC" +
-            ". Help users build, debug, and optimize their workflows. " +
-            "Be concise and practical.";
+    private static final String DEFAULT_SYSTEM_PROMPT = """
+            You are a helpful workflow automation assistant for CWC. You have tools to:
+            - Discover node types (cwc_list_node_categories, cwc_list_node_types, cwc_get_node_type)
+            - Manage workflows (cwc_list_workflows, cwc_get_workflow, cwc_create_workflow, cwc_update_workflow)
+            - Manage agents (cwc_list_agents, cwc_get_agent, cwc_create_agent, cwc_update_agent)
+            - Push workflow changes to the user's canvas (cwc_push_to_canvas)
+            - View executions (cwc_list_executions, cwc_get_execution)
+            - Access workflow building guides (cwc_workflow_guide)
+            - Publish workflows (cwc_publish_workflow)
+
+            When building workflows or agents, ALWAYS use cwc_workflow_guide first to understand \
+            the correct node wiring format. Be concise and practical.""";
+
+    /** Maps settings provider names to their corresponding node type IDs in the registry. */
+    private static final Map<String, String> PROVIDER_TO_NODE_TYPE = Map.ofEntries(
+            Map.entry("openai", "openAiChatModel"),
+            Map.entry("anthropic", "anthropicChatModel"),
+            Map.entry("google", "geminiChatModel"),
+            Map.entry("ollama", "ollamaChatModel"),
+            Map.entry("mistral", "mistralChatModel"),
+            Map.entry("azure-openai", "azureOpenAiChatModel"),
+            Map.entry("bedrock", "bedrockChatModel"),
+            Map.entry("cohere", "cohereChatModel"),
+            Map.entry("deepseek", "deepSeekChatModel"),
+            Map.entry("groq", "groqChatModel"),
+            Map.entry("openrouter", "openRouterChatModel"),
+            Map.entry("xai", "xAiGrokChatModel")
+    );
 
     public ChatService(
             Optional<ChatModel> chatModel,
@@ -53,7 +87,9 @@ public class ChatService {
             WorkflowRepository workflowRepository,
             AgentConfigService agentConfigService,
             CredentialService credentialService,
-            NodeRegistry nodeRegistry) {
+            NodeRegistry nodeRegistry,
+            AiSettingsService aiSettingsService,
+            ChatToolProvider chatToolProvider) {
         this.chatModel = chatModel;
         this.streamingModel = streamingModel;
         this.messagingTemplate = messagingTemplate;
@@ -63,6 +99,8 @@ public class ChatService {
         this.agentConfigService = agentConfigService;
         this.credentialService = credentialService;
         this.nodeRegistry = nodeRegistry;
+        this.aiSettingsService = aiSettingsService;
+        this.chatToolProvider = chatToolProvider;
     }
 
     @Transactional
@@ -91,13 +129,19 @@ public class ChatService {
         // Try agent-specific model first (from canvas-configured credentials)
         ChatModel agentModel = resolveAgentChatModel(session.getAgentId());
         if (agentModel != null) {
-            syncResponseWithModel(sessionId, systemPrompt, history, agentModel);
-        } else if (streamingModel.isPresent()) {
-            streamResponse(sessionId, systemPrompt, history);
-        } else if (chatModel.isPresent()) {
-            syncResponse(sessionId, systemPrompt, history);
+            respondWithTools(sessionId, systemPrompt, history, agentModel);
         } else {
-            saveAndSend(sessionId, "AI chat is not configured. Set `cwc.ai.openai.api-key` in application.properties to enable it, or create an Agent with a chat model node configured on the canvas.");
+            // Try user-configured AI settings from /settings/chat
+            ChatModel settingsModel = resolveSettingsChatModel();
+            if (settingsModel != null) {
+                respondWithTools(sessionId, systemPrompt, history, settingsModel);
+            } else if (streamingModel.isPresent()) {
+                streamResponse(sessionId, systemPrompt, history);
+            } else if (chatModel.isPresent()) {
+                syncResponse(sessionId, systemPrompt, history);
+            } else {
+                saveAndSend(sessionId, "AI chat is not configured. Enable it in Settings > Chat with a provider and API key, or create an Agent with a chat model node configured on the canvas.");
+            }
         }
 
         return toResponse(userMsg);
@@ -190,14 +234,92 @@ public class ChatService {
         }
     }
 
-    private void syncResponseWithModel(String sessionId, String systemPrompt, List<ChatMessageEntity> history, ChatModel model) {
+    /**
+     * Build a ChatModel from the user's AI settings configured in /settings/chat.
+     * Maps the provider name to the corresponding chat model node and uses its
+     * supplyData() to construct the model instance.
+     */
+    private ChatModel resolveSettingsChatModel() {
         try {
-            var messages = buildMessages(systemPrompt, history);
-            ChatResponse response = model.chat(messages);
-            String text = response.aiMessage().text();
-            saveAndSend(sessionId, text);
+            if (!aiSettingsService.isEnabled()) return null;
+
+            var entity = aiSettingsService.getEntity();
+            if (entity == null) return null;
+
+            // Decrypt the API key
+            String apiKey = aiSettingsService.getDecryptedApiKey();
+            if (apiKey == null || apiKey.isBlank()) return null;
+
+            String provider = entity.getProvider();
+            String nodeType = PROVIDER_TO_NODE_TYPE.get(provider);
+            if (nodeType == null) {
+                log.warn("No chat model node mapping for provider '{}'", provider);
+                return null;
+            }
+
+            var registration = nodeRegistry.getNode(nodeType).orElse(null);
+            if (registration == null || !(registration.getNodeInstance() instanceof AiSubNodeInterface subNode)) {
+                log.warn("Chat model node '{}' not found in registry for provider '{}'", nodeType, provider);
+                return null;
+            }
+
+            // Build credentials map with decrypted apiKey (and optional baseUrl)
+            Map<String, Object> credentials = new HashMap<>();
+            credentials.put("apiKey", apiKey);
+            if (entity.getBaseUrl() != null && !entity.getBaseUrl().isBlank()) {
+                credentials.put("baseUrl", entity.getBaseUrl());
+            }
+
+            // Build parameters map with model name
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("model", entity.getModel());
+
+            NodeExecutionContext context = NodeExecutionContext.builder()
+                    .parameters(parameters)
+                    .credentials(credentials)
+                    .executionMode(NodeExecutionContext.ExecutionMode.INTERNAL)
+                    .build();
+
+            Object model = subNode.supplyData(context);
+            return model instanceof ChatModel cm ? cm : null;
         } catch (Exception e) {
-            log.error("Chat error for session {}: {}", sessionId, e.getMessage());
+            log.error("Failed to resolve chat model from AI settings: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private void respondWithTools(String sessionId, String systemPrompt,
+                                   List<ChatMessageEntity> history, ChatModel model) {
+        try {
+            // Build memory from prior history (exclude latest user message —
+            // AiServices will add it when we call agent.chat())
+            ChatMemory memory = MessageWindowChatMemory.withMaxMessages(50);
+            for (int i = 0; i < history.size() - 1; i++) {
+                ChatMessageEntity entry = history.get(i);
+                if ("user".equals(entry.getRole())) {
+                    memory.add(UserMessage.from(entry.getContent()));
+                } else if ("assistant".equals(entry.getRole())) {
+                    memory.add(AiMessage.from(entry.getContent()));
+                }
+            }
+
+            var builder = AiServices.builder(ChatAgent.class)
+                    .chatModel(model)
+                    .chatMemory(memory)
+                    .tools(chatToolProvider.getTools());
+
+            if (systemPrompt != null && !systemPrompt.isBlank()) {
+                builder.systemMessageProvider(memoryId -> systemPrompt);
+            }
+
+            ChatAgent agent = builder.build();
+
+            String userContent = history.get(history.size() - 1).getContent();
+            String response = agent.chat(userContent);
+
+            saveAndSend(sessionId, response);
+        } catch (Exception e) {
+            log.error("Chat error for session {}: {}", sessionId, e.getMessage(), e);
             saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
         }
     }

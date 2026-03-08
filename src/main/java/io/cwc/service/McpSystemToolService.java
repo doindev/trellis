@@ -278,8 +278,36 @@ public class McpSystemToolService {
             "cwc_update_agent"
     );
 
+    private static final Set<String> BROWSER_SESSION_TOOLS = Set.of(
+            "cwc_browser_control",
+            "cwc_push_to_canvas"
+    );
+
     private boolean requiresConsent(String toolName) {
         return CONSENT_REQUIRED_TOOLS.contains(toolName);
+    }
+
+    private boolean needsBrowserSession(String toolName) {
+        return BROWSER_SESSION_TOOLS.contains(toolName);
+    }
+
+    /**
+     * Execute a tool directly without consent checks.
+     * Used by the chat agent where the user's message IS the consent.
+     */
+    public String executeTool(String name, Map<String, Object> arguments) {
+        if (arguments == null) arguments = Map.of();
+        try {
+            String targetSession = null;
+            if (needsBrowserSession(name)) {
+                targetSession = resolveTargetSession((String) arguments.get("browserSessionId"));
+            }
+            Object result = dispatchTool(name, arguments, targetSession);
+            return objectMapper.writeValueAsString(result);
+        } catch (Exception e) {
+            log.error("Error executing tool directly: {}", name, e);
+            return "{\"error\": \"" + e.getMessage().replace("\"", "'") + "\"}";
+        }
     }
 
     public Map<String, Object> handleToolCall(String name, Map<String, Object> arguments) {
@@ -301,32 +329,11 @@ public class McpSystemToolService {
                     return Map.of("content", List.of(Map.of("type", "text", "text",
                             "User denied the request to execute " + name + ".")));
                 }
+            } else if (needsBrowserSession(name)) {
+                targetSession = resolveTargetSession((String) arguments.get("browserSessionId"));
             }
 
-            // Dispatch to handler
-            Object result = switch (name) {
-                case "cwc_list_node_categories" -> handleListNodeCategories(arguments);
-                case "cwc_list_node_types" -> handleListNodeTypes(arguments);
-                case "cwc_get_node_type" -> handleGetNodeType(arguments);
-                case "cwc_list_projects" -> handleListProjects(arguments);
-                case "cwc_get_project" -> handleGetProject(arguments);
-                case "cwc_list_workflows" -> handleListWorkflows(arguments);
-                case "cwc_get_workflow" -> handleGetWorkflow(arguments);
-                case "cwc_create_workflow" -> handleCreateWorkflow(arguments);
-                case "cwc_update_workflow" -> handleUpdateWorkflow(arguments);
-                case "cwc_list_executions" -> handleListExecutions(arguments);
-                case "cwc_get_execution" -> handleGetExecution(arguments);
-                case "cwc_workflow_guide" -> handleWorkflowGuide(arguments);
-                case "cwc_list_browser_sessions" -> handleListBrowserSessions(arguments);
-                case "cwc_browser_control" -> handleBrowserControl(arguments, targetSession);
-                case "cwc_push_to_canvas" -> handlePushToCanvas(arguments, targetSession);
-                case "cwc_publish_workflow" -> handlePublishWorkflow(arguments);
-                case "cwc_list_agents" -> handleListAgents(arguments);
-                case "cwc_get_agent" -> handleGetAgent(arguments);
-                case "cwc_create_agent" -> handleCreateAgent(arguments);
-                case "cwc_update_agent" -> handleUpdateAgent(arguments);
-                default -> throw new IllegalArgumentException("Unknown system tool: " + name);
-            };
+            Object result = dispatchTool(name, arguments, targetSession);
 
             String text = objectMapper.writeValueAsString(result);
             return Map.of("content", List.of(Map.of("type", "text", "text", text)));
@@ -336,6 +343,32 @@ public class McpSystemToolService {
                     "content", List.of(Map.of("type", "text", "text", "Error: " + e.getMessage())),
                     "isError", true);
         }
+    }
+
+    private Object dispatchTool(String name, Map<String, Object> arguments, String targetSession) {
+        return switch (name) {
+            case "cwc_list_node_categories" -> handleListNodeCategories(arguments);
+            case "cwc_list_node_types" -> handleListNodeTypes(arguments);
+            case "cwc_get_node_type" -> handleGetNodeType(arguments);
+            case "cwc_list_projects" -> handleListProjects(arguments);
+            case "cwc_get_project" -> handleGetProject(arguments);
+            case "cwc_list_workflows" -> handleListWorkflows(arguments);
+            case "cwc_get_workflow" -> handleGetWorkflow(arguments);
+            case "cwc_create_workflow" -> handleCreateWorkflow(arguments);
+            case "cwc_update_workflow" -> handleUpdateWorkflow(arguments);
+            case "cwc_list_executions" -> handleListExecutions(arguments);
+            case "cwc_get_execution" -> handleGetExecution(arguments);
+            case "cwc_workflow_guide" -> handleWorkflowGuide(arguments);
+            case "cwc_list_browser_sessions" -> handleListBrowserSessions(arguments);
+            case "cwc_browser_control" -> handleBrowserControl(arguments, targetSession);
+            case "cwc_push_to_canvas" -> handlePushToCanvas(arguments, targetSession);
+            case "cwc_publish_workflow" -> handlePublishWorkflow(arguments);
+            case "cwc_list_agents" -> handleListAgents(arguments);
+            case "cwc_get_agent" -> handleGetAgent(arguments);
+            case "cwc_create_agent" -> handleCreateAgent(arguments);
+            case "cwc_update_agent" -> handleUpdateAgent(arguments);
+            default -> throw new IllegalArgumentException("Unknown tool: " + name);
+        };
     }
 
     private String generateToolDescription(String name, Map<String, Object> args) {

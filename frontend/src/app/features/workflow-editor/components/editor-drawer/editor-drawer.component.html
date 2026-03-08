@@ -1,7 +1,26 @@
 <div class="editor-drawer" [class.expanded]="expanded" [style.height.px]="expanded ? drawerHeight : null">
   @if (!expanded) {
     <div class="drawer-collapsed-bar">
-      <span class="collapsed-label">LOGS</span>
+      <div class="drawer-tab-strip">
+        @if (aiChatEnabled) {
+          <button class="drawer-tab" [class.active]="activeTab === 'chat'"
+                  (click)="selectTab('chat'); $event.stopPropagation()">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <path d="M12 17h.01"/>
+              <circle cx="12" cy="12" r="10"/>
+            </svg>
+            Chat
+          </button>
+        }
+        <button class="drawer-tab" [class.active]="activeTab === 'logs'"
+                (click)="selectTab('logs'); $event.stopPropagation()">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 12H3"/><path d="M16 6H3"/><path d="M12 18H3"/><path d="m16 12 5 3-5 3v-6Z"/>
+          </svg>
+          Logs
+        </button>
+      </div>
       @if (executionData) {
         <div class="logs-summary" [class]="'status-' + (executionStatus || 'success').toLowerCase()">
           <span>{{ overallSummaryText }}</span>
@@ -30,207 +49,290 @@
       <div class="grip"></div>
     </div>
 
+    <div class="drawer-tab-strip expanded">
+      @if (aiChatEnabled) {
+        <button class="drawer-tab" [class.active]="activeTab === 'chat'"
+                (click)="selectTab('chat')">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <path d="M12 17h.01"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          Chat
+        </button>
+      }
+      <button class="drawer-tab" [class.active]="activeTab === 'logs'"
+              (click)="selectTab('logs')">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 12H3"/><path d="M16 6H3"/><path d="M12 18H3"/><path d="m16 12 5 3-5 3v-6Z"/>
+        </svg>
+        Logs
+      </button>
+      @if (activeTab === 'logs') {
+        <div class="logs-summary" [class]="'status-' + (executionStatus || 'success').toLowerCase()">
+          <span>{{ overallSummaryText }}</span>
+        </div>
+      }
+      <div class="tab-strip-spacer"></div>
+      @if (showClearExecution) {
+        <button class="btn-clear-execution" (click)="onClearExecution()" title="Clear execution">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+          </svg>
+          <span>Clear execution</span>
+        </button>
+      }
+      <button class="btn-collapse" (click)="toggleExpanded()" title="Collapse drawer (L)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+    </div>
+
     <div class="drawer-body">
-      <div class="logs-content">
-        <!-- Left: node list (always visible) -->
-        <div class="logs-overview" [style.width.px]="logsOverviewWidth">
-          <div class="logs-overview-header">
-            <span class="logs-title">Logs</span>
-            <div class="logs-summary" [class]="'status-' + (executionStatus || 'success').toLowerCase()">
-              <span>{{ overallSummaryText }}</span>
-            </div>
-          </div>
-          <div class="logs-overview-body">
-            <div class="logs-node-list">
-              @for (item of logsNodeList; track item.node.id) {
-                <div class="logs-node-item"
-                     [class.selected]="item.node.id === selectedLogsNodeId"
-                     [class.has-error]="item.status === 'error'"
-                     [title]="item.errorMessage || ''"
-                     (click)="onLogsNodeClick(item.node.id)">
-                  <span class="node-status-dot" [class]="'dot-' + item.status"></span>
-                  <span class="node-icon" [innerHTML]="getNodeIconHtml(item.iconName)"></span>
-                  <span class="node-name">{{ item.displayName }}</span>
-                  <span class="node-duration">{{ formatMs(item.duration) }}</span>
-                  <button class="btn-open-node" (click)="openNodeDetail.emit(item.node.id); $event.stopPropagation()" title="Open node details">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
-                    </svg>
-                  </button>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-
-        <!-- Resize handle between overview and detail -->
-        <div class="logs-resize-handle" (mousedown)="onLogsResizeStart($event)">
-          <div class="logs-resize-grip"></div>
-        </div>
-
-        <!-- Right: detail panel (always visible) -->
-        <div class="logs-detail">
-          <div class="logs-detail-header">
-            @if (selectedLogsEntry) {
-              <div class="detail-title">
-                <span class="node-icon" [innerHTML]="getNodeIconHtml(selectedLogsEntry.iconName)"></span>
-                <span class="detail-node-name">{{ selectedLogsEntry.displayName }}</span>
-                <span class="detail-summary" [class]="'status-text-' + selectedLogsEntry.status">{{ selectedNodeSummary }}</span>
-              </div>
-              <div class="detail-actions">
-                <button class="btn-io-toggle" [class.active]="detailView === 'input'" (click)="detailView = 'input'">Input</button>
-                <button class="btn-io-toggle" [class.active]="detailView === 'output'" (click)="detailView = 'output'">Output</button>
+      @if (activeTab === 'chat') {
+        <div class="drawer-chat">
+          <div class="drawer-chat-messages" #chatMessages>
+            @if (messages.length === 0 && !isTyping) {
+              <div class="drawer-chat-empty">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                  <path d="M12 17h.01"/>
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+                <p>Ask me anything about your workflow</p>
               </div>
             }
-            <div class="header-right-actions">
-              @if (showClearExecution) {
-                <button class="btn-clear-execution" (click)="onClearExecution()" title="Clear execution">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+            @for (msg of messages; track msg.id) {
+              <div class="drawer-chat-msg" [class.msg-user]="msg.role === 'user'" [class.msg-assistant]="msg.role === 'assistant'">
+                <div class="drawer-chat-avatar" [class.avatar-user]="msg.role === 'user'" [class.avatar-assistant]="msg.role === 'assistant'">
+                  @if (msg.role === 'user') {
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  } @else {
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                      <path d="M12 17h.01"/>
+                      <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                  }
+                </div>
+                <div class="drawer-chat-body">
+                  <span class="drawer-chat-role">{{ msg.role === 'user' ? 'You' : 'CWC' }}</span>
+                  <div class="drawer-chat-content">{{ msg.content }}</div>
+                </div>
+              </div>
+            }
+            @if (isTyping) {
+              <div class="drawer-chat-msg msg-assistant">
+                <div class="drawer-chat-avatar avatar-assistant">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <path d="M12 17h.01"/>
+                    <circle cx="12" cy="12" r="10"/>
                   </svg>
-                  <span>Clear execution</span>
-                </button>
-              }
-              <button class="btn-collapse" [class.expanded]="expanded" (click)="toggleExpanded()" [title]="expanded ? 'Collapse drawer (L)' : 'Expand drawer (L)'">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
+                </div>
+                <div class="drawer-chat-body">
+                  <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+          <div class="drawer-chat-input-area">
+            <textarea #drawerChatInput class="drawer-chat-input" [(ngModel)]="chatInput"
+              (keydown)="onChatKeydown($event)" placeholder="Ask about your workflow..." rows="1"></textarea>
+            <button class="drawer-chat-send" (click)="sendMessage()" [disabled]="!chatInput.trim() || isTyping">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="logs-content">
+          <!-- Left: node list -->
+          <div class="logs-overview" [style.width.px]="logsOverviewWidth">
+            <div class="logs-overview-body">
+              <div class="logs-node-list">
+                @for (item of logsNodeList; track item.node.id) {
+                  <div class="logs-node-item"
+                       [class.selected]="item.node.id === selectedLogsNodeId"
+                       [class.has-error]="item.status === 'error'"
+                       [title]="item.errorMessage || ''"
+                       (click)="onLogsNodeClick(item.node.id)">
+                    <span class="node-status-dot" [class]="'dot-' + item.status"></span>
+                    <span class="node-icon" [innerHTML]="getNodeIconHtml(item.iconName)"></span>
+                    <span class="node-name">{{ item.displayName }}</span>
+                    <span class="node-duration">{{ formatMs(item.duration) }}</span>
+                    <button class="btn-open-node" (click)="openNodeDetail.emit(item.node.id); $event.stopPropagation()" title="Open node details">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>
+                      </svg>
+                    </button>
+                  </div>
+                }
+              </div>
             </div>
           </div>
 
-          @if (selectedLogsEntry) {
-            <div class="logs-detail-body">
-              @if (selectedNodeErrorMessage) {
-                <div class="node-error-banner">
-                  <svg class="error-banner-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                  </svg>
-                  <span class="error-banner-text">{{ selectedNodeErrorMessage }}</span>
+          <!-- Resize handle between overview and detail -->
+          <div class="logs-resize-handle" (mousedown)="onLogsResizeStart($event)">
+            <div class="logs-resize-grip"></div>
+          </div>
+
+          <!-- Right: detail panel -->
+          <div class="logs-detail">
+            <div class="logs-detail-header">
+              @if (selectedLogsEntry) {
+                <div class="detail-title">
+                  <span class="node-icon" [innerHTML]="getNodeIconHtml(selectedLogsEntry.iconName)"></span>
+                  <span class="detail-node-name">{{ selectedLogsEntry.displayName }}</span>
+                  <span class="detail-summary" [class]="'status-text-' + selectedLogsEntry.status">{{ selectedNodeSummary }}</span>
+                </div>
+                <div class="detail-actions">
+                  <button class="btn-io-toggle" [class.active]="detailView === 'input'" (click)="detailView = 'input'">Input</button>
+                  <button class="btn-io-toggle" [class.active]="detailView === 'output'" (click)="detailView = 'output'">Output</button>
                 </div>
               }
-              <div class="detail-output-bar">
-                <div class="display-mode-toggle">
-                  <button class="btn-display-mode" [class.active]="displayMode === 'schema'" (click)="displayMode = 'schema'" title="Schema view">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M16 12H3"/><path d="M16 6H3"/><path d="M10 18H3"/><path d="M21 6l-3-3v6"/><path d="M21 18l-3-3v6"/>
-                    </svg>
-                  </button>
-                  <button class="btn-display-mode" [class.active]="displayMode === 'table'" (click)="displayMode = 'table'" title="Table view">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18"/>
-                    </svg>
-                  </button>
-                  <button class="btn-display-mode" [class.active]="displayMode === 'json'" (click)="displayMode = 'json'" title="JSON view">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1m8 0h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>
-                    </svg>
-                  </button>
-                </div>
-                <div class="header-search" [class.expanded]="searchExpanded">
-                  <button class="search-toggle" (click)="toggleSearch()" title="Search">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                    </svg>
-                  </button>
-                  @if (searchExpanded) {
-                    <div class="search-input-wrapper">
-                      <input #drawerSearchEl class="search-input" type="text" placeholder="Search..." [(ngModel)]="schemaSearch" (blur)="onSearchBlur()"/>
-                      @if (schemaSearch) {
-                        <button class="search-clear" (mousedown)="clearSearch($event)" title="Clear search">
-                          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-                          </svg>
-                        </button>
-                      }
-                    </div>
-                  }
-                </div>
-                <span class="output-item-count">{{ activeDetailItemCount }} item{{ activeDetailItemCount !== 1 ? 's' : '' }}</span>
-              </div>
+            </div>
 
-              @if (displayMode === 'schema') {
-                @if (activeDetailSchemaNodes.length === 0) {
-                  <div class="schema-empty">{{ schemaSearch ? 'No matching fields' : 'No data' }}</div>
-                } @else {
-                  <div class="schema-tree-wrapper">
-                    <div class="schema-tree">
-                      @for (node of activeDetailSchemaNodes; track node.path) {
-                        <div class="schema-row" [style.padding-left.px]="node.level * 16 + 8">
-                          @if (node.children && node.children.length > 0) {
-                            <button class="schema-expand" (click)="toggleSchemaNode(node.path)"
-                                    [class.collapsed]="isSchemaCollapsed(node.path)">
-                              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"/>
-                              </svg>
-                            </button>
-                          } @else {
-                            <span class="schema-expand-spacer"></span>
-                          }
-                          <span class="schema-type-pill" [attr.data-type]="node.type">{{ typeIcon(node.type) }}</span>
-                          <span class="schema-key" [innerHTML]="highlightText(node.key)"></span>
-                          <span class="schema-value" [innerHTML]="highlightText(node.value)"></span>
-                        </div>
-                      }
-                    </div>
+            @if (selectedLogsEntry) {
+              <div class="logs-detail-body">
+                @if (selectedNodeErrorMessage) {
+                  <div class="node-error-banner">
+                    <svg class="error-banner-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    <span class="error-banner-text">{{ selectedNodeErrorMessage }}</span>
                   </div>
                 }
-              } @else if (displayMode === 'json') {
-                <pre class="output-json" [innerHTML]="activeDetailJsonHighlighted"></pre>
-              } @else if (activeDetailColumns.length > 0) {
-                <div class="output-table-wrapper">
-                  <table class="output-table">
-                    <thead>
-                      <tr>
-                        @for (col of activeDetailColumns; track col) {
-                          <th [innerHTML]="highlightText(col)"></th>
+                <div class="detail-output-bar">
+                  <div class="display-mode-toggle">
+                    <button class="btn-display-mode" [class.active]="displayMode === 'schema'" (click)="displayMode = 'schema'" title="Schema view">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 12H3"/><path d="M16 6H3"/><path d="M10 18H3"/><path d="M21 6l-3-3v6"/><path d="M21 18l-3-3v6"/>
+                      </svg>
+                    </button>
+                    <button class="btn-display-mode" [class.active]="displayMode === 'table'" (click)="displayMode = 'table'" title="Table view">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18"/>
+                      </svg>
+                    </button>
+                    <button class="btn-display-mode" [class.active]="displayMode === 'json'" (click)="displayMode = 'json'" title="JSON view">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1m8 0h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="header-search" [class.expanded]="searchExpanded">
+                    <button class="search-toggle" (click)="toggleSearch()" title="Search">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                      </svg>
+                    </button>
+                    @if (searchExpanded) {
+                      <div class="search-input-wrapper">
+                        <input #drawerSearchEl class="search-input" type="text" placeholder="Search..." [(ngModel)]="schemaSearch" (blur)="onSearchBlur()"/>
+                        @if (schemaSearch) {
+                          <button class="search-clear" (mousedown)="clearSearch($event)" title="Clear search">
+                            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                            </svg>
+                          </button>
                         }
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (item of activeDetailItems; track $index) {
+                      </div>
+                    }
+                  </div>
+                  <span class="output-item-count">{{ activeDetailItemCount }} item{{ activeDetailItemCount !== 1 ? 's' : '' }}</span>
+                </div>
+
+                @if (displayMode === 'schema') {
+                  @if (activeDetailSchemaNodes.length === 0) {
+                    <div class="schema-empty">{{ schemaSearch ? 'No matching fields' : 'No data' }}</div>
+                  } @else {
+                    <div class="schema-tree-wrapper">
+                      <div class="schema-tree">
+                        @for (node of activeDetailSchemaNodes; track node.path) {
+                          <div class="schema-row" [style.padding-left.px]="node.level * 16 + 8">
+                            @if (node.children && node.children.length > 0) {
+                              <button class="schema-expand" (click)="toggleSchemaNode(node.path)"
+                                      [class.collapsed]="isSchemaCollapsed(node.path)">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                  <polyline points="9 18 15 12 9 6"/>
+                                </svg>
+                              </button>
+                            } @else {
+                              <span class="schema-expand-spacer"></span>
+                            }
+                            <span class="schema-type-pill" [attr.data-type]="node.type">{{ typeIcon(node.type) }}</span>
+                            <span class="schema-key" [innerHTML]="highlightText(node.key)"></span>
+                            <span class="schema-value" [innerHTML]="highlightText(node.value)"></span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                } @else if (displayMode === 'json') {
+                  <pre class="output-json" [innerHTML]="activeDetailJsonHighlighted"></pre>
+                } @else if (activeDetailColumns.length > 0) {
+                  <div class="output-table-wrapper">
+                    <table class="output-table">
+                      <thead>
                         <tr>
                           @for (col of activeDetailColumns; track col) {
-                            <td>
-                              @if (isEmptyObject(item[col])) {
-                                <span class="empty-value">{{ '{' }}empty object{{ '}' }}</span>
-                              } @else if (isArray(item[col])) {
-                                @if (item[col].length === 0) {
-                                  <span class="empty-value">[empty array]</span>
+                            <th [innerHTML]="highlightText(col)"></th>
+                          }
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of activeDetailItems; track $index) {
+                          <tr>
+                            @for (col of activeDetailColumns; track col) {
+                              <td>
+                                @if (isEmptyObject(item[col])) {
+                                  <span class="empty-value">{{ '{' }}empty object{{ '}' }}</span>
+                                } @else if (isArray(item[col])) {
+                                  @if (item[col].length === 0) {
+                                    <span class="empty-value">[empty array]</span>
+                                  } @else {
+                                    <span class="cell-value" [innerHTML]="highlightText(formatCellValue(item[col]))"></span>
+                                  }
+                                } @else if (isObjectValue(item[col])) {
+                                  <div class="cell-tree">
+                                    @for (entry of getObjectEntries(item[col]); track entry[0]) {
+                                      <div class="tree-row">
+                                        <span class="tree-key" [innerHTML]="highlightText(entry[0])"></span><span class="tree-sep">:</span>
+                                        <span class="tree-value" [innerHTML]="highlightText(formatCellValue(entry[1]))"></span>
+                                      </div>
+                                    }
+                                  </div>
                                 } @else {
                                   <span class="cell-value" [innerHTML]="highlightText(formatCellValue(item[col]))"></span>
                                 }
-                              } @else if (isObjectValue(item[col])) {
-                                <div class="cell-tree">
-                                  @for (entry of getObjectEntries(item[col]); track entry[0]) {
-                                    <div class="tree-row">
-                                      <span class="tree-key" [innerHTML]="highlightText(entry[0])"></span><span class="tree-sep">:</span>
-                                      <span class="tree-value" [innerHTML]="highlightText(formatCellValue(entry[1]))"></span>
-                                    </div>
-                                  }
-                                </div>
-                              } @else {
-                                <span class="cell-value" [innerHTML]="highlightText(formatCellValue(item[col]))"></span>
-                              }
-                            </td>
-                          }
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              } @else {
-                <pre class="output-json" [innerHTML]="activeDetailJsonHighlighted"></pre>
-              }
-            </div>
-          } @else {
-            <div class="empty-state">
-              <p>Select a node to see its output</p>
-            </div>
-          }
+                              </td>
+                            }
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <pre class="output-json" [innerHTML]="activeDetailJsonHighlighted"></pre>
+                }
+              </div>
+            } @else {
+              <div class="empty-state">
+                <p>Select a node to see its output</p>
+              </div>
+            }
+          </div>
         </div>
-      </div>
+      }
     </div>
   }
 </div>

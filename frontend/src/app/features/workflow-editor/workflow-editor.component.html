@@ -144,6 +144,7 @@
         [nodeTypeMap]="nodeTypeStore.nodeTypes()"
         [executionStatus]="activeTab === 'executions' ? (viewingExecution?.status || '') : (store.isExecuting() ? 'running' : (store.executionData() ? 'success' : ''))"
         [autoExpandOnView]="activeTab === 'executions'"
+        [aiChatEnabled]="aiChatEnabled"
         (expandedChange)="drawerExpanded = $event"
         (openNodeDetail)="store.selectNode($event)"
         (clearExecution)="store.setExecutionData(null)" />

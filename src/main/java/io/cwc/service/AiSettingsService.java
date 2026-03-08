@@ -1,6 +1,7 @@
 package io.cwc.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -8,11 +9,13 @@ import io.cwc.dto.AiSettingsDto;
 import io.cwc.entity.AiSettingsEntity;
 import io.cwc.repository.AiSettingsRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiSettingsService {
 
     private final AiSettingsRepository repository;
+    private final CredentialEncryptionService encryptionService;
 
     public AiSettingsDto getSettings() {
         return repository.findFirstByOrderByCreatedAtAsc()
@@ -26,6 +29,19 @@ public class AiSettingsService {
 
     public AiSettingsEntity getEntity() {
         return repository.findFirstByOrderByCreatedAtAsc().orElse(null);
+    }
+
+    /** Returns the decrypted API key for the current AI settings, or null if not configured. */
+    public String getDecryptedApiKey() {
+        var entity = getEntity();
+        if (entity == null || entity.getApiKey() == null || entity.getApiKey().isBlank()) return null;
+        try {
+            return encryptionService.decryptString(entity.getApiKey());
+        } catch (Exception e) {
+            // Key may be stored unencrypted (legacy) — return as-is
+            log.debug("Could not decrypt AI settings API key, using raw value");
+            return entity.getApiKey();
+        }
     }
 
     public boolean isEnabled() {
@@ -48,18 +64,28 @@ public class AiSettingsService {
         entity.setBaseUrl(dto.getBaseUrl());
         entity.setEnabled(dto.isEnabled());
 
-        // Only update API key if provided (non-null, non-blank)
+        // Only update API key if provided (non-null, non-blank); encrypt before storing
         if (dto.getApiKey() != null && !dto.getApiKey().isBlank()) {
-            entity.setApiKey(dto.getApiKey());
+            entity.setApiKey(encryptionService.encryptString(dto.getApiKey()));
         }
 
         return toDto(repository.save(entity));
     }
 
     private AiSettingsDto toDto(AiSettingsEntity entity) {
+        String displayKey = null;
+        if (entity.getApiKey() != null && !entity.getApiKey().isBlank()) {
+            try {
+                String decrypted = encryptionService.decryptString(entity.getApiKey());
+                displayKey = maskApiKey(decrypted);
+            } catch (Exception e) {
+                // Legacy unencrypted key — mask raw value
+                displayKey = maskApiKey(entity.getApiKey());
+            }
+        }
         return AiSettingsDto.builder()
                 .provider(entity.getProvider())
-                .apiKey(maskApiKey(entity.getApiKey()))
+                .apiKey(displayKey)
                 .model(entity.getModel())
                 .baseUrl(entity.getBaseUrl())
                 .enabled(entity.isEnabled())

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { WorkflowService, WebSocketService, ExecutionService, TagService, CredentialService, ProjectService } from '../../core/services';
+import { SettingsService } from '../../core/services/settings.service';
 import { WorkflowEditorStore } from '../../core/state/workflow-editor.store';
 import { NodeTypeStore } from '../../core/state/node-type.store';
 import { ExecutionsSidebarComponent } from './components/executions-sidebar/executions-sidebar.component';
@@ -87,6 +88,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   isPersonalProject = false;
   projectName = 'Personal';
   knownCredentialIds = new Set<string>();
+  aiChatEnabled = false;
   /** AI input types (e.g. 'ai_languageModel') needed by nodes currently on the canvas. */
   canvasNeededAiTypes = computed(() => {
     const nodes = this.store.nodes();
@@ -123,6 +125,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     private agentControlService: AgentControlService,
     private credentialService: CredentialService,
     private projectService: ProjectService,
+    private settingsService: SettingsService,
     public store: WorkflowEditorStore,
     public nodeTypeStore: NodeTypeStore
   ) {}
@@ -131,6 +134,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.nodeTypeStore.loadNodeTypes();
     this.loadCredentialIds();
     this.wsService.connect();
+    this.settingsService.getAiSettings().subscribe({
+      next: (ai) => this.aiChatEnabled = ai.enabled,
+      error: () => {}
+    });
 
     // Detect agent mode from the route path
     const urlPath = this.route.snapshot.url.map(s => s.path).join('/');

@@ -77,4 +77,43 @@ public class CredentialEncryptionService {
             throw new RuntimeException("Failed to decrypt credential data", e);
         }
     }
+
+    /** Encrypt a single plaintext string value. */
+    public String encryptString(String plaintext) {
+        try {
+            byte[] iv = new byte[IV_LENGTH];
+            secureRandom.nextBytes(iv);
+
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, new GCMParameterSpec(GCM_TAG_LENGTH, iv));
+            byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
+
+            byte[] combined = new byte[IV_LENGTH + encrypted.length];
+            System.arraycopy(iv, 0, combined, 0, IV_LENGTH);
+            System.arraycopy(encrypted, 0, combined, IV_LENGTH, encrypted.length);
+
+            return Base64.getEncoder().encodeToString(combined);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to encrypt string", e);
+        }
+    }
+
+    /** Decrypt a single encrypted string value back to plaintext. */
+    public String decryptString(String encryptedData) {
+        try {
+            byte[] combined = Base64.getDecoder().decode(encryptedData);
+            byte[] iv = new byte[IV_LENGTH];
+            byte[] encrypted = new byte[combined.length - IV_LENGTH];
+            System.arraycopy(combined, 0, iv, 0, IV_LENGTH);
+            System.arraycopy(combined, IV_LENGTH, encrypted, 0, encrypted.length);
+
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, new GCMParameterSpec(GCM_TAG_LENGTH, iv));
+            byte[] decrypted = cipher.doFinal(encrypted);
+
+            return new String(decrypted, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to decrypt string", e);
+        }
+    }
 }
