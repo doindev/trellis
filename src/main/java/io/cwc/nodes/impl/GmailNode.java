@@ -175,8 +175,17 @@ public class GmailNode extends AbstractApiNode {
 				String body = context.getParameter("body", "");
 				String threadId = context.getParameter("threadId", "");
 
-				String rawMessage = buildRfc2822Message(to, "Re: ", body, "", "");
-				String encoded = base64UrlEncode(rawMessage);
+				StringBuilder sb = new StringBuilder();
+				sb.append("To: ").append(to).append("\r\n");
+				sb.append("Subject: Re: \r\n");
+				if (!messageId.isBlank()) {
+					sb.append("In-Reply-To: ").append(messageId).append("\r\n");
+					sb.append("References: ").append(messageId).append("\r\n");
+				}
+				sb.append("Content-Type: text/html; charset=UTF-8\r\n");
+				sb.append("\r\n");
+				sb.append(body);
+				String encoded = base64UrlEncode(sb.toString());
 
 				Map<String, Object> requestBody = new LinkedHashMap<>();
 				requestBody.put("raw", encoded);
