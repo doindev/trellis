@@ -32,15 +32,15 @@ public interface ExecutionRepository extends JpaRepository<ExecutionEntity, Stri
     Page<ExecutionEntity> findByProjectIdAndStatus(@Param("projectId") String projectId,
                                                     @Param("status") ExecutionStatus status, Pageable pageable);
 
-    // Production metrics: exclude manual executions, published workflows only
+    // Production metrics: exclude manual executions, all workflows in project
     @Query("SELECT e FROM ExecutionEntity e WHERE e.mode <> :excludeMode " +
-           "AND e.workflowId IN (SELECT w.id FROM WorkflowEntity w WHERE w.published = true AND w.projectId = :projectId)")
+           "AND e.workflowId IN (SELECT w.id FROM WorkflowEntity w WHERE w.projectId = :projectId)")
     Page<ExecutionEntity> findProductionByProjectId(@Param("projectId") String projectId,
                                                     @Param("excludeMode") ExecutionEntity.ExecutionMode excludeMode,
                                                     Pageable pageable);
 
     @Query("SELECT e FROM ExecutionEntity e WHERE e.mode <> :excludeMode " +
-           "AND e.workflowId IN (SELECT w.id FROM WorkflowEntity w WHERE w.published = true AND w.projectId IN :projectIds)")
+           "AND e.workflowId IN (SELECT w.id FROM WorkflowEntity w WHERE w.projectId IN :projectIds)")
     Page<ExecutionEntity> findProductionByProjectIds(@Param("projectIds") java.util.List<String> projectIds,
                                                      @Param("excludeMode") ExecutionEntity.ExecutionMode excludeMode,
                                                      Pageable pageable);
