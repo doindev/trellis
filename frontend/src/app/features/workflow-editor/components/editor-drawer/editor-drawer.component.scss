@@ -392,6 +392,7 @@
 .logs-summary {
   font-size: 0.6875rem;
   font-weight: 500;
+  margin-left: 10px;
 
   &.status-success { color: hsl(147, 60%, 50%); }
   &.status-error { color: hsl(355, 83%, 60%); }
