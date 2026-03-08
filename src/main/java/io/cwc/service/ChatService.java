@@ -325,35 +325,13 @@ public class ChatService {
                                    List<ChatMessageEntity> history, ChatModel model) {
         log.info("respondWithTools called for session {}: model={}, historySize={}", sessionId, model.getClass().getSimpleName(), history.size());
         try {
-            // Build memory from prior history (exclude latest user message —
-            // AiServices will add it when we call agent.chat())
-            ChatMemory memory = MessageWindowChatMemory.withMaxMessages(50);
-            for (int i = 0; i < history.size() - 1; i++) {
-                ChatMessageEntity entry = history.get(i);
-                if ("user".equals(entry.getRole())) {
-                    memory.add(UserMessage.from(entry.getContent()));
-                } else if ("assistant".equals(entry.getRole())) {
-                    memory.add(AiMessage.from(entry.getContent()));
-                }
-            }
-
-            var builder = AiServices.builder(ChatAgent.class)
-                    .chatModel(model)
-                    .chatMemory(memory)
-                    .tools(chatToolProvider.getTools());
-
-            if (systemPrompt != null && !systemPrompt.isBlank()) {
-                builder.systemMessageProvider(memoryId -> systemPrompt);
-            }
-
-            ChatAgent agent = builder.build();
-
-            String userContent = history.get(history.size() - 1).getContent();
-            log.info("Calling agent.chat() for session {} with message: {}", sessionId, userContent.substring(0, Math.min(100, userContent.length())));
-            String response = agent.chat(userContent);
-            log.info("agent.chat() completed for session {}, response length: {}", sessionId, response != null ? response.length() : 0);
-
-            saveAndSend(sessionId, response);
+            // First try direct model call to verify model + async pipeline work
+            var messages = buildMessages(systemPrompt, history);
+            log.info("Calling model.chat() for session {}, message count: {}", sessionId, messages.size());
+            ChatResponse chatResponse = model.chat(messages);
+            String text = chatResponse.aiMessage().text();
+            log.info("model.chat() completed for session {}, response length: {}", sessionId, text != null ? text.length() : 0);
+            saveAndSend(sessionId, text);
         } catch (Exception e) {
             log.error("Chat error for session {}: {}", sessionId, e.getMessage(), e);
             saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
