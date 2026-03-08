@@ -35,10 +35,16 @@ public class ContentfulNode extends AbstractApiNode {
 		String environmentId = context.getParameter("environmentId", "master");
 
 		// Use delivery API for read operations, management API for write operations
-		String baseUrl = DELIVERY_BASE_URL;
+		boolean isWrite = List.of("create", "update", "delete", "publish", "unpublish").contains(operation);
+		String baseUrl = isWrite ? MANAGEMENT_BASE_URL : DELIVERY_BASE_URL;
 
 		Map<String, String> headers = new HashMap<>();
-		headers.put("Authorization", "Bearer " + accessToken);
+		if (isWrite) {
+			String managementToken = context.getCredentialString("managementToken", "");
+			headers.put("Authorization", "Bearer " + (managementToken.isEmpty() ? accessToken : managementToken));
+		} else {
+			headers.put("Authorization", "Bearer " + accessToken);
+		}
 		headers.put("Accept", "application/json");
 		headers.put("Content-Type", "application/json");
 
@@ -107,6 +113,45 @@ public class ContentfulNode extends AbstractApiNode {
 					url.append("&skip=").append(skip);
 				}
 				HttpResponse<String> response = get(url.toString(), headers);
+				yield parseResponse(response);
+			}
+			case "create" -> {
+				String contentTypeId = context.getParameter("contentTypeId", "");
+				String fieldsJson = context.getParameter("fieldsJson", "{}");
+				@SuppressWarnings("unchecked")
+				Map<String, Object> body = objectMapper.readValue(fieldsJson, Map.class);
+				Map<String, String> reqHeaders = new HashMap<>(headers);
+				reqHeaders.put("X-Contentful-Content-Type", contentTypeId);
+				HttpResponse<String> response = post(baseUrl + envPath + "/entries", body, reqHeaders);
+				yield parseResponse(response);
+			}
+			case "update" -> {
+				String entryId = context.getParameter("entryId", "");
+				String fieldsJson = context.getParameter("fieldsJson", "{}");
+				int version = toInt(context.getParameters().get("version"), 1);
+				@SuppressWarnings("unchecked")
+				Map<String, Object> body = objectMapper.readValue(fieldsJson, Map.class);
+				Map<String, String> reqHeaders = new HashMap<>(headers);
+				reqHeaders.put("X-Contentful-Version", String.valueOf(version));
+				HttpResponse<String> response = put(baseUrl + envPath + "/entries/" + encode(entryId), body, reqHeaders);
+				yield parseResponse(response);
+			}
+			case "delete" -> {
+				String entryId = context.getParameter("entryId", "");
+				HttpResponse<String> response = delete(baseUrl + envPath + "/entries/" + encode(entryId), headers);
+				yield parseResponse(response);
+			}
+			case "publish" -> {
+				String entryId = context.getParameter("entryId", "");
+				int version = toInt(context.getParameters().get("version"), 1);
+				Map<String, String> reqHeaders = new HashMap<>(headers);
+				reqHeaders.put("X-Contentful-Version", String.valueOf(version));
+				HttpResponse<String> response = put(baseUrl + envPath + "/entries/" + encode(entryId) + "/published", Map.of(), reqHeaders);
+				yield parseResponse(response);
+			}
+			case "unpublish" -> {
+				String entryId = context.getParameter("entryId", "");
+				HttpResponse<String> response = delete(baseUrl + envPath + "/entries/" + encode(entryId) + "/published", headers);
 				yield parseResponse(response);
 			}
 			default -> throw new IllegalArgumentException("Unknown entry operation: " + operation);
@@ -178,7 +223,12 @@ public class ContentfulNode extends AbstractApiNode {
 						.type(ParameterType.OPTIONS).defaultValue("getAll")
 						.options(List.of(
 								ParameterOption.builder().name("Get").value("get").build(),
-								ParameterOption.builder().name("Get All").value("getAll").build()
+								ParameterOption.builder().name("Get All").value("getAll").build(),
+								ParameterOption.builder().name("Create").value("create").description("Create a new entry (Management API)").build(),
+								ParameterOption.builder().name("Update").value("update").description("Update an existing entry (Management API)").build(),
+								ParameterOption.builder().name("Delete").value("delete").description("Delete an entry (Management API)").build(),
+								ParameterOption.builder().name("Publish").value("publish").description("Publish an entry (Management API)").build(),
+								ParameterOption.builder().name("Unpublish").value("unpublish").description("Unpublish an entry (Management API)").build()
 						)).build(),
 				NodeParameter.builder()
 						.name("spaceId").displayName("Space ID")
@@ -201,6 +251,16 @@ public class ContentfulNode extends AbstractApiNode {
 						.name("assetId").displayName("Asset ID")
 						.type(ParameterType.STRING).defaultValue("")
 						.description("The ID of the asset.").build(),
+				NodeParameter.builder()
+						.name("fieldsJson").displayName("Fields (JSON)")
+						.type(ParameterType.STRING).defaultValue("{}")
+						.description("Entry fields as JSON. Contentful requires locale-keyed values, e.g. {\"fields\":{\"title\":{\"en-US\":\"Hello\"}}}")
+						.displayOptions(Map.of("show", Map.of("operation", List.of("create", "update")))).build(),
+				NodeParameter.builder()
+						.name("version").displayName("Version")
+						.type(ParameterType.NUMBER).defaultValue(1)
+						.description("The current version of the entry (required for update/publish).")
+						.displayOptions(Map.of("show", Map.of("operation", List.of("update", "publish")))).build(),
 				NodeParameter.builder()
 						.name("limit").displayName("Limit")
 						.type(ParameterType.NUMBER).defaultValue(100)
