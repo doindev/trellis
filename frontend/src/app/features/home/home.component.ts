@@ -186,6 +186,7 @@ export class HomeComponent implements OnInit {
 
   // Credential actions dropdown
   credActionsOpenId = signal<string | null>(null);
+  private credActionsCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Agent actions dropdown
   agentActionsOpenId = signal<string | null>(null);
@@ -773,7 +774,22 @@ export class HomeComponent implements OnInit {
 
   toggleCredActions(id: string, event: Event): void {
     event.stopPropagation();
+    this.cancelCredActionsClose();
     this.credActionsOpenId.set(this.credActionsOpenId() === id ? null : id);
+  }
+
+  scheduleCredActionsClose(): void {
+    this.cancelCredActionsClose();
+    this.credActionsCloseTimer = setTimeout(() => {
+      this.credActionsOpenId.set(null);
+    }, 400);
+  }
+
+  cancelCredActionsClose(): void {
+    if (this.credActionsCloseTimer) {
+      clearTimeout(this.credActionsCloseTimer);
+      this.credActionsCloseTimer = null;
+    }
   }
 
   confirmCredDelete(cred: Credential, event: Event): void {

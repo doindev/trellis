@@ -373,7 +373,7 @@
             <!-- Credential cards -->
             <div class="credential-cards">
               @for (cred of filteredCredentials(); track cred.id) {
-                <div class="cred-card" (click)="openEditCredential(cred)">
+                <div class="cred-card">
                   <div class="cred-card-icon">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
@@ -381,7 +381,7 @@
                     </svg>
                   </div>
                   <div class="cred-card-content">
-                    <h4 class="cred-card-name">{{ cred.name }}</h4>
+                    <h4 class="cred-card-name" (click)="openEditCredential(cred)">{{ cred.name }}</h4>
                     <div class="cred-card-meta">
                       <span>{{ cred.type }}</span>
                       @if (credTimeAgo(cred)) {
@@ -402,14 +402,18 @@
                       </svg>
                       Personal
                     </span>
-                    <div class="cred-actions-wrapper">
+                    <div class="cred-actions-wrapper"
+                         (mouseenter)="cancelCredActionsClose()"
+                         (mouseleave)="scheduleCredActionsClose()">
                       <button class="btn-cred-actions" (click)="toggleCredActions(cred.id!, $event)">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                           <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
                         </svg>
                       </button>
                       @if (credActionsOpenId() === cred.id) {
-                        <div class="cred-actions-dropdown">
+                        <div class="cred-actions-dropdown"
+                             (mouseenter)="cancelCredActionsClose()"
+                             (mouseleave)="scheduleCredActionsClose()">
                           <button class="cred-dropdown-item danger" (click)="confirmCredDelete(cred, $event)">
                             @if (isSharedCredential(cred)) {
                               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">

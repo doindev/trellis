@@ -507,7 +507,7 @@
 .cred-card {
   display: flex;
   align-items: center;
-  padding: 14px 20px;
+  padding: 8px 20px;
   background: var(--cwc-card-bg);
   border: 1px solid var(--cwc-border);
   border-radius: 8px;
@@ -545,6 +545,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--bs-primary);
+  }
 }
 
 .cred-card-meta {
