@@ -80,7 +80,7 @@ public class ScheduleTriggerNode extends AbstractTriggerNode {
 				.name("timezone")
 				.displayName("Timezone")
 				.description("The timezone for the schedule (e.g., 'America/New_York').")
-				.type(ParameterType.STRING)
+				.type(ParameterType.TIMEZONE)
 				.defaultValue("UTC")
 				.placeHolder("UTC")
 				.build()

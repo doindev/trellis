@@ -64,7 +64,8 @@ public class NodeParameter {
 		RESOURCE_MAPPER("resourceMapper"),
 		CREDENTIALS("credentials"),
 		NOTICE("notice"),
-		HIDDEN("hidden");
+		HIDDEN("hidden"),
+		TIMEZONE("timezone");
 
 		private final String jsonValue;
 

@@ -501,6 +501,15 @@
                       (valueChange)="onParameterChange(param.name, $event)"
                       (openExpressionEditor)="openFixedCollectionExpressionEditor(param.name, $event)" />
                   }
+                  @case ('timezone') {
+                    <app-timezone-param
+                      [param]="param"
+                      [value]="getParameterValue(param.name, param.defaultValue)"
+                      [readOnly]="readOnly"
+                      (valueChange)="onParameterChange(param.name, $event)"
+                      (blurred)="onParamBlur(param.name)"
+                      (focused)="onParamFocus(param.name)" />
+                  }
                   @case ('notice') {
                     <app-notice-param [param]="param" />
                   }

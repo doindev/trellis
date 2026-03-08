@@ -153,3 +153,10 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(0, 0%, 40%);
 }
+
+/* Global button press effect */
+button, .btn, [role="button"] {
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}

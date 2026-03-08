@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NodeParameter } from '../../../../../core/models';
@@ -51,8 +51,10 @@ import { NodeParameter } from '../../../../../core/models';
     } @else {
       <input type="number"
              class="form-control param-input"
-             [ngModel]="value"
-             (ngModelChange)="valueChange.emit($event)"
+             [ngModel]="displayValue"
+             (ngModelChange)="onInputChange($event)"
+             (focus)="onFocus()"
+             (blur)="onBlur()"
              [placeholder]="param.placeHolder || ''"
              [disabled]="readOnly"
              (dragover)="onDragOver($event)"
@@ -137,7 +139,7 @@ import { NodeParameter } from '../../../../../core/models';
     }
   `]
 })
-export class NumberParamComponent {
+export class NumberParamComponent implements OnChanges {
   @Input() param!: NodeParameter;
   @Input() value: any = 0;
   @Input() readOnly = false;
@@ -147,8 +149,39 @@ export class NumberParamComponent {
   @Output() focused = new EventEmitter<void>();
   @Output() openExpressionEditor = new EventEmitter<void>();
 
+  /** Local display value — allows the field to be empty while the user is editing */
+  displayValue: any = 0;
+  private isFocused = false;
+
   /** Manual toggle — set when user clicks "Expression" on a field that has no {{ }} yet */
   expressionMode = false;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['value'] && !this.isFocused) {
+      this.displayValue = this.value;
+    }
+  }
+
+  onInputChange(val: any): void {
+    this.displayValue = val;
+    if (val !== null && val !== undefined && val !== '') {
+      this.valueChange.emit(val);
+    }
+  }
+
+  onFocus(): void {
+    this.isFocused = true;
+    this.focused.emit();
+  }
+
+  onBlur(): void {
+    this.isFocused = false;
+    if (this.displayValue === null || this.displayValue === undefined || this.displayValue === '') {
+      this.displayValue = this.param.defaultValue ?? 0;
+      this.valueChange.emit(this.displayValue);
+    }
+    this.blurred.emit();
+  }
 
   get isExpression(): boolean {
     const str = String(this.value ?? '');
