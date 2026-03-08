@@ -6,10 +6,9 @@ import { Credential, CredentialSchema } from '../../../../../core/models';
 import { CredentialCreateModalComponent } from '../../../../../shared/components/credential-create-modal/credential-create-modal.component';
 
 @Component({
-  selector: 'app-credential-param',
-  standalone: true,
-  imports: [CommonModule, FormsModule, CredentialCreateModalComponent],
-  template: `
+    selector: 'app-credential-param',
+    imports: [CommonModule, FormsModule, CredentialCreateModalComponent],
+    template: `
     <div class="param-group">
       <div class="param-header">
         <label class="param-label">Credential to connect with</label>
@@ -32,7 +31,7 @@ import { CredentialCreateModalComponent } from '../../../../../shared/components
       (saved)="onCredentialCreated($event)"
       (closed)="onCreateClosed()" />
   `,
-  styles: [`
+    styles: [`
     .param-group { margin-bottom: 12px; }
     .param-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .param-label { font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin: 0; }

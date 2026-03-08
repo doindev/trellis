@@ -21,25 +21,24 @@ import {
 } from '../../shared/components/execution-filter-modal/execution-filter-modal.component';
 
 @Component({
-  selector: 'app-project-detail',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    WorkflowCardComponent,
-    ConfirmDialogComponent,
-    CredentialCreateModalComponent,
-    VariableListComponent,
-    CacheListComponent,
-    ProjectSettingsComponent,
-    LucideAngularModule,
-    ExecutionFilterModalComponent,
-    WorkflowMoveModalComponent,
-    WorkflowShareModalComponent
-  ],
-  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Settings, Workflow: WorkflowIcon, Variable, Layers }) }],
-  templateUrl: './project-detail.component.html',
-  styleUrl: './project-detail.component.scss'
+    selector: 'app-project-detail',
+    imports: [
+        CommonModule,
+        FormsModule,
+        WorkflowCardComponent,
+        ConfirmDialogComponent,
+        CredentialCreateModalComponent,
+        VariableListComponent,
+        CacheListComponent,
+        ProjectSettingsComponent,
+        LucideAngularModule,
+        ExecutionFilterModalComponent,
+        WorkflowMoveModalComponent,
+        WorkflowShareModalComponent
+    ],
+    providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Settings, Workflow: WorkflowIcon, Variable, Layers }) }],
+    templateUrl: './project-detail.component.html',
+    styleUrl: './project-detail.component.scss'
 })
 export class ProjectDetailComponent implements OnInit, OnDestroy {
   @ViewChild('credModal') credModal!: CredentialCreateModalComponent;

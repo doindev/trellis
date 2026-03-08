@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { AgentControlRequest } from '../../../core/services/agent-control.service';
 
 @Component({
-  selector: 'app-agent-consent-modal',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-agent-consent-modal',
+    imports: [CommonModule],
+    template: `
     @if (request) {
       <div class="acm-overlay">
         <div class="acm-dialog" (click)="$event.stopPropagation()">
@@ -42,7 +41,7 @@ import { AgentControlRequest } from '../../../core/services/agent-control.servic
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .acm-overlay {
       position: fixed;
       inset: 0;

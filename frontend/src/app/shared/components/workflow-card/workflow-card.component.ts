@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { Workflow } from '../../../core/models';
 
 @Component({
-  selector: 'app-workflow-card',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './workflow-card.component.html',
-  styleUrl: './workflow-card.component.scss'
+    selector: 'app-workflow-card',
+    imports: [CommonModule],
+    templateUrl: './workflow-card.component.html',
+    styleUrl: './workflow-card.component.scss'
 })
 export class WorkflowCardComponent {
   @Input({ required: true }) workflow!: Workflow;

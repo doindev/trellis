@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-description-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-description-modal',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="modal-backdrop" (click)="onBackdropClick($event)">
       <div class="modal-panel">
         <div class="modal-header">
@@ -35,8 +34,8 @@ import { FormsModule } from '@angular/forms';
       </div>
     </div>
   `,
-  styleUrl: '../publish-modal/publish-modal.component.scss',
-  styles: [`
+    styleUrl: '../publish-modal/publish-modal.component.scss',
+    styles: [`
     .btn-save {
       padding: 7px 16px;
       background: hsl(247, 49%, 53%);

@@ -2,10 +2,9 @@ import { Component, EventEmitter, HostListener, Input, Output } from '@angular/c
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-agent-control-overlay',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-agent-control-overlay',
+    imports: [CommonModule],
+    template: `
     @if (active) {
       <div class="aco-bar">
         <div class="aco-indicator"></div>
@@ -15,7 +14,7 @@ import { CommonModule } from '@angular/common';
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .aco-bar {
       position: fixed;
       top: 0;

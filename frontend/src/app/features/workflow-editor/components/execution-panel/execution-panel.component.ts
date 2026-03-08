@@ -2,11 +2,10 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-execution-panel',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './execution-panel.component.html',
-  styleUrl: './execution-panel.component.scss'
+    selector: 'app-execution-panel',
+    imports: [CommonModule],
+    templateUrl: './execution-panel.component.html',
+    styleUrl: './execution-panel.component.scss'
 })
 export class ExecutionPanelComponent {
   @Input() executionData: Record<string, any> | null = null;

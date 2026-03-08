@@ -8,11 +8,10 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
-  selector: 'app-workflow-list',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
-  templateUrl: './workflow-list.component.html',
-  styleUrl: './workflow-list.component.scss'
+    selector: 'app-workflow-list',
+    imports: [CommonModule, RouterLink, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
+    templateUrl: './workflow-list.component.html',
+    styleUrl: './workflow-list.component.scss'
 })
 export class WorkflowListComponent implements OnInit {
   workflows = signal<Workflow[]>([]);

@@ -2,10 +2,9 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-loading-spinner',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-loading-spinner',
+    imports: [CommonModule],
+    template: `
     <div class="spinner-container" [class.overlay]="overlay">
       <div class="spinner-border" [class]="'text-' + color" [style.width.rem]="size" [style.height.rem]="size" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -15,7 +14,7 @@ import { CommonModule } from '@angular/common';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .spinner-container {
       display: flex;
       flex-direction: column;

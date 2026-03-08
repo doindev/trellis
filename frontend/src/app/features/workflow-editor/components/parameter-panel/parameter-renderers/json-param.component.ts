@@ -4,10 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { NodeParameter } from '../../../../../core/models';
 
 @Component({
-  selector: 'app-json-param',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-json-param',
+    imports: [CommonModule, FormsModule],
+    template: `
     <label class="param-label">
       {{ param.displayName }}
       @if (param.required) { <span class="required">*</span> }
@@ -27,7 +26,7 @@ import { NodeParameter } from '../../../../../core/models';
       <div class="invalid-feedback d-block">Invalid JSON</div>
     }
   `,
-  styles: [`
+    styles: [`
     .param-label { display: block; font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin-bottom: 4px; }
     .required { color: var(--cwc-error-color); }
     .param-description { font-size: 0.6875rem; color: hsl(0,0%,58%); margin-bottom: 6px; }

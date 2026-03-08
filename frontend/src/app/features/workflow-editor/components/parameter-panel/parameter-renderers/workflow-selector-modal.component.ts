@@ -6,10 +6,9 @@ import { Project } from '../../../../../core/models/project.model';
 import { Workflow } from '../../../../../core/models';
 
 @Component({
-  selector: 'app-workflow-selector-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-workflow-selector-modal',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="modal-backdrop" (click)="closed.emit()"></div>
     <div class="modal d-block" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
@@ -54,7 +53,7 @@ import { Workflow } from '../../../../../core/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .modal-backdrop {
       position: fixed;
       top: 0; left: 0;

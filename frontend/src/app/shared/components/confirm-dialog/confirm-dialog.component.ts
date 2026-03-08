@@ -2,10 +2,9 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-confirm-dialog',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-confirm-dialog',
+    imports: [CommonModule],
+    template: `
     @if (isOpen) {
       <div class="modal-backdrop" (click)="onCancel()"></div>
       <div class="modal d-block" tabindex="-1">
@@ -29,7 +28,7 @@ import { CommonModule } from '@angular/common';
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .modal-backdrop {
       position: fixed;
       top: 0;

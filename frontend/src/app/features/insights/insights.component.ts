@@ -66,11 +66,10 @@ interface TimeBucket {
 
 
 @Component({
-  selector: 'app-insights',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
-  templateUrl: './insights.component.html',
-  styleUrl: './insights.component.scss'
+    selector: 'app-insights',
+    imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
+    templateUrl: './insights.component.html',
+    styleUrl: './insights.component.scss'
 })
 export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;

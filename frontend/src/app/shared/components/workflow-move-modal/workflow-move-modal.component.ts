@@ -4,10 +4,9 @@ import { ProjectService } from '../../../core/services';
 import { Project } from '../../../core/models';
 
 @Component({
-  selector: 'app-workflow-move-modal',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-workflow-move-modal',
+    imports: [CommonModule],
+    template: `
     @if (isOpen) {
       <div class="move-overlay" (click)="onOverlayClick($event)">
         <div class="move-dialog">
@@ -48,7 +47,7 @@ import { Project } from '../../../core/models';
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .move-overlay {
       position: fixed;
       inset: 0;

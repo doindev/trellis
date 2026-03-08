@@ -53,10 +53,9 @@ const AUTO_DESCRIPTIONS: Record<string, string> = {
 };
 
 @Component({
-  selector: 'app-mcp-param-editor-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-mcp-param-editor-modal',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="modal-backdrop" (click)="onBackdropClick($event)">
       <div class="modal-panel param-editor-modal">
         <div class="modal-header">
@@ -229,8 +228,8 @@ const AUTO_DESCRIPTIONS: Record<string, string> = {
       </div>
     </div>
   `,
-  styleUrl: '../.././../features/workflow-editor/components/publish-modal/publish-modal.component.scss',
-  styles: [`
+    styleUrl: '../.././../features/workflow-editor/components/publish-modal/publish-modal.component.scss',
+    styles: [`
     .param-editor-modal {
       width: 680px;
     }

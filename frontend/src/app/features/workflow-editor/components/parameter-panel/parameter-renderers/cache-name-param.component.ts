@@ -5,10 +5,9 @@ import { CacheService, CacheDefinition } from '../../../../../core/services/cach
 import { NodeParameter } from '../../../../../core/models';
 
 @Component({
-  selector: 'app-cache-name-param',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-cache-name-param',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="param-group">
       <div class="param-header">
         <label class="param-label">{{ param.displayName }}</label>
@@ -35,7 +34,7 @@ import { NodeParameter } from '../../../../../core/models';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .param-group { margin-bottom: 12px; }
     .param-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .param-label { font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin: 0; }

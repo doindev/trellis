@@ -16,10 +16,9 @@ export interface ExpressionAncestorNode {
 }
 
 @Component({
-  selector: 'app-expression-editor-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-expression-editor-modal',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="expr-modal-backdrop" (click)="onBackdropClick($event)">
       <div class="expr-modal">
         <!-- Header -->
@@ -141,7 +140,7 @@ export interface ExpressionAncestorNode {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .expr-modal-backdrop {
       position: fixed;
       inset: 0;

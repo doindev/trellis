@@ -5,11 +5,10 @@ import { TagService } from '../../../core/services';
 import { Tag } from '../../../core/models';
 
 @Component({
-  selector: 'app-tag-selector',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './tag-selector.component.html',
-  styleUrl: './tag-selector.component.scss'
+    selector: 'app-tag-selector',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './tag-selector.component.html',
+    styleUrl: './tag-selector.component.scss'
 })
 export class TagSelectorComponent implements OnInit {
   @Input() selectedTags: Tag[] = [];

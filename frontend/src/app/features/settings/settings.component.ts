@@ -7,11 +7,10 @@ import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, AiModelI
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
 
 @Component({
-  selector: 'app-settings',
-  standalone: true,
-  imports: [CommonModule, FormsModule, McpParamEditorModalComponent],
-  templateUrl: './settings.component.html',
-  styleUrl: './settings.component.scss'
+    selector: 'app-settings',
+    imports: [CommonModule, FormsModule, McpParamEditorModalComponent],
+    templateUrl: './settings.component.html',
+    styleUrl: './settings.component.scss'
 })
 export class SettingsComponent implements OnInit, OnDestroy {
   activeSection = 'personal';

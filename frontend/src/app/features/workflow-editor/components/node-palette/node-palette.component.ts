@@ -28,16 +28,15 @@ interface ActionPanel {
 }
 
 @Component({
-  selector: 'app-node-palette',
-  standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
-  providers: [{
-    provide: LUCIDE_ICONS,
-    multi: true,
-    useValue: new LucideIconProvider(NODE_ICON_SET)
-  }],
-  templateUrl: './node-palette.component.html',
-  styleUrl: './node-palette.component.scss'
+    selector: 'app-node-palette',
+    imports: [CommonModule, FormsModule, LucideAngularModule],
+    providers: [{
+            provide: LUCIDE_ICONS,
+            multi: true,
+            useValue: new LucideIconProvider(NODE_ICON_SET)
+        }],
+    templateUrl: './node-palette.component.html',
+    styleUrl: './node-palette.component.scss'
 })
 export class NodePaletteComponent implements OnInit {
   supportEmail = '';

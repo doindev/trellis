@@ -9,11 +9,10 @@ import { ChatMessage } from '../../core/models/chat.model';
 import { Workflow } from '../../core/models/workflow.model';
 
 @Component({
-  selector: 'app-chat',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './chat.component.html',
-  styleUrl: './chat.component.scss'
+    selector: 'app-chat',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './chat.component.html',
+    styleUrl: './chat.component.scss'
 })
 export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   view: string = '';

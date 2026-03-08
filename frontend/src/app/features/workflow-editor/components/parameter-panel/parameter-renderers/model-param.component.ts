@@ -6,10 +6,9 @@ import { NodeParameter, ModelInfo } from '../../../../../core/models';
 import { CredentialService } from '../../../../../core/services';
 
 @Component({
-  selector: 'app-model-param',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-model-param',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="param-header">
       <label class="param-label">
         {{ param.displayName }}
@@ -55,7 +54,7 @@ import { CredentialService } from '../../../../../core/services';
       }
     }
   `,
-  styles: [`
+    styles: [`
     .param-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .param-label { font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin: 0; }
     .required { color: var(--cwc-error-color); }

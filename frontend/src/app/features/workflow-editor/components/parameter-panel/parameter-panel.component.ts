@@ -61,38 +61,37 @@ export class HighlightPipe implements PipeTransform {
 }
 
 @Component({
-  selector: 'app-parameter-panel',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    LucideAngularModule,
-    HighlightPipe,
-    StringParamComponent,
-    NumberParamComponent,
-    BooleanParamComponent,
-    OptionsParamComponent,
-    MultiOptionsParamComponent,
-    JsonParamComponent,
-    CollectionParamComponent,
-    FixedCollectionParamComponent,
-    NoticeParamComponent,
-    CredentialParamComponent,
-    ModelParamComponent,
-    CacheNameParamComponent,
-    WorkflowIdParamComponent,
-    TimezoneParamComponent,
-    ExpressionEditorModalComponent,
-  ],
-  providers: [{
-    provide: LUCIDE_ICONS,
-    multi: true,
-    useValue: new LucideIconProvider({
-      ...NODE_ICON_SET, CheckCircle, Copy, Square, Search, ChevronRight, Pin, PinOff, Pencil
-    })
-  }],
-  templateUrl: './parameter-panel.component.html',
-  styleUrl: './parameter-panel.component.scss'
+    selector: 'app-parameter-panel',
+    imports: [
+        CommonModule,
+        FormsModule,
+        LucideAngularModule,
+        HighlightPipe,
+        StringParamComponent,
+        NumberParamComponent,
+        BooleanParamComponent,
+        OptionsParamComponent,
+        MultiOptionsParamComponent,
+        JsonParamComponent,
+        CollectionParamComponent,
+        FixedCollectionParamComponent,
+        NoticeParamComponent,
+        CredentialParamComponent,
+        ModelParamComponent,
+        CacheNameParamComponent,
+        WorkflowIdParamComponent,
+        TimezoneParamComponent,
+        ExpressionEditorModalComponent,
+    ],
+    providers: [{
+            provide: LUCIDE_ICONS,
+            multi: true,
+            useValue: new LucideIconProvider({
+                ...NODE_ICON_SET, CheckCircle, Copy, Square, Search, ChevronRight, Pin, PinOff, Pencil
+            })
+        }],
+    templateUrl: './parameter-panel.component.html',
+    styleUrl: './parameter-panel.component.scss'
 })
 export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Input() node!: WorkflowNode;

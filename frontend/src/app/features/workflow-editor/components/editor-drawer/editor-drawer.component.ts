@@ -42,11 +42,10 @@ const ICON_PATHS: Record<string, string> = {
 };
 
 @Component({
-  selector: 'app-editor-drawer',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './editor-drawer.component.html',
-  styleUrl: './editor-drawer.component.scss'
+    selector: 'app-editor-drawer',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './editor-drawer.component.html',
+    styleUrl: './editor-drawer.component.scss'
 })
 export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   @Input() executionData: Record<string, any> | null = null;

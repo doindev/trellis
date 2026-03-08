@@ -18,16 +18,15 @@ export type ToolbarAction =
   | 'archive';
 
 @Component({
-  selector: 'app-toolbar',
-  standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
-  providers: [{
-    provide: LUCIDE_ICONS,
-    multi: true,
-    useValue: new LucideIconProvider({ ClockCheck, ClockPlus, ClockFading, Aperture })
-  }],
-  templateUrl: './toolbar.component.html',
-  styleUrl: './toolbar.component.scss'
+    selector: 'app-toolbar',
+    imports: [CommonModule, FormsModule, LucideAngularModule],
+    providers: [{
+            provide: LUCIDE_ICONS,
+            multi: true,
+            useValue: new LucideIconProvider({ ClockCheck, ClockPlus, ClockFading, Aperture })
+        }],
+    templateUrl: './toolbar.component.html',
+    styleUrl: './toolbar.component.scss'
 })
 export class ToolbarComponent {
   @Input() workflowName = '';

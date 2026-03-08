@@ -7,11 +7,10 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
-  selector: 'app-variable-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
-  templateUrl: './variable-list.component.html',
-  styleUrl: './variable-list.component.scss'
+    selector: 'app-variable-list',
+    imports: [CommonModule, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
+    templateUrl: './variable-list.component.html',
+    styleUrl: './variable-list.component.scss'
 })
 export class VariableListComponent implements OnInit, OnChanges {
   @Input() projectId?: string;

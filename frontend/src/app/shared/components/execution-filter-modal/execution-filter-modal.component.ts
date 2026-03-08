@@ -44,10 +44,9 @@ export function isFilterActive(f: ExecutionFilters): boolean {
 }
 
 @Component({
-  selector: 'app-execution-filter-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-execution-filter-modal',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="filter-modal-backdrop" (click)="closed.emit()"></div>
     <div class="filter-modal">
       <div class="filter-modal-header">
@@ -157,7 +156,7 @@ export function isFilterActive(f: ExecutionFilters): boolean {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .filter-modal-backdrop {
       position: fixed;
       top: 0;

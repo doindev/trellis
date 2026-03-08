@@ -12,10 +12,9 @@ import {
 const PAGE_SIZE = 25;
 
 @Component({
-  selector: 'app-executions-sidebar',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-executions-sidebar',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="executions-sidebar">
       <div class="sidebar-header">
         <h3>Executions</h3>
@@ -87,7 +86,7 @@ const PAGE_SIZE = 25;
     </div>
 
   `,
-  styles: [`
+    styles: [`
     .executions-sidebar {
       width: 280px;
       height: 100%;

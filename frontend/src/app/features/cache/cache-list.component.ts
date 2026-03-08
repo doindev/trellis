@@ -5,11 +5,10 @@ import { CacheService, CacheDefinition } from '../../core/services/cache.service
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
-  selector: 'app-cache-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmDialogComponent],
-  templateUrl: './cache-list.component.html',
-  styleUrl: './cache-list.component.scss'
+    selector: 'app-cache-list',
+    imports: [CommonModule, FormsModule, ConfirmDialogComponent],
+    templateUrl: './cache-list.component.html',
+    styleUrl: './cache-list.component.scss'
 })
 export class CacheListComponent implements OnInit, OnChanges {
   @Input() projectId?: string;

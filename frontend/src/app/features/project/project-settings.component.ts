@@ -6,11 +6,10 @@ import { Project, ProjectMember } from '../../core/models';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
-  selector: 'app-project-settings',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmDialogComponent],
-  templateUrl: './project-settings.component.html',
-  styleUrl: './project-settings.component.scss'
+    selector: 'app-project-settings',
+    imports: [CommonModule, FormsModule, ConfirmDialogComponent],
+    templateUrl: './project-settings.component.html',
+    styleUrl: './project-settings.component.scss'
 })
 export class ProjectSettingsComponent {
   @Input() projectId = '';

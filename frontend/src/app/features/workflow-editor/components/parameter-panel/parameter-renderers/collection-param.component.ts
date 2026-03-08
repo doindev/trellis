@@ -4,10 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { NodeParameter } from '../../../../../core/models';
 
 @Component({
-  selector: 'app-collection-param',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-collection-param',
+    imports: [CommonModule, FormsModule],
+    template: `
     @if (isExpression) {
       <div class="param-header">
         <label class="param-label">{{ param.displayName }}</label>
@@ -117,7 +116,7 @@ import { NodeParameter } from '../../../../../core/models';
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .collection-param { border: 1px solid hsl(0,0%,24%); border-radius: 6px; overflow: hidden; }
     .collection-header {
       display: flex; align-items: center; justify-content: space-between;

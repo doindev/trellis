@@ -6,10 +6,9 @@ import { WorkflowVersion, Page } from '../../../../core/models';
 type VersionFilter = 'all' | 'published' | 'saves';
 
 @Component({
-  selector: 'app-version-history-panel',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-version-history-panel',
+    imports: [CommonModule],
+    template: `
     <div class="version-panel">
       <div class="version-panel-header">
         <h3>Version History</h3>
@@ -93,7 +92,7 @@ type VersionFilter = 'all' | 'published' | 'saves';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .version-panel {
       width: 385px;
       height: 100%;

@@ -6,11 +6,10 @@ import { Execution } from '../../core/models';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
-  selector: 'app-execution-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule, LoadingSpinnerComponent],
-  templateUrl: './execution-list.component.html',
-  styleUrl: './execution-list.component.scss'
+    selector: 'app-execution-list',
+    imports: [CommonModule, FormsModule, LoadingSpinnerComponent],
+    templateUrl: './execution-list.component.html',
+    styleUrl: './execution-list.component.scss'
 })
 export class ExecutionListComponent implements OnInit, OnDestroy {
   executions = signal<Execution[]>([]);

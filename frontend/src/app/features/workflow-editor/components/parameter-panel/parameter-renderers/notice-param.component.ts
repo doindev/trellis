@@ -3,15 +3,14 @@ import { CommonModule } from '@angular/common';
 import { NodeParameter } from '../../../../../core/models';
 
 @Component({
-  selector: 'app-notice-param',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-notice-param',
+    imports: [CommonModule],
+    template: `
     <div class="notice-block">
       <span class="notice-text" [innerHTML]="cleanDescription"></span>
     </div>
   `,
-  styles: [`
+    styles: [`
     .notice-block {
       padding: 10px 14px;
       background: hsla(36, 60%, 50%, 0.08);

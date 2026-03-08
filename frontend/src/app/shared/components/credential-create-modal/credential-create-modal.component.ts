@@ -7,11 +7,10 @@ import { Credential, CredentialProperty, CredentialSchema } from '../../../core/
 import { Project } from '../../../core/models/project.model';
 
 @Component({
-  selector: 'app-credential-create-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule, KeyValuePipe],
-  templateUrl: './credential-create-modal.component.html',
-  styleUrl: './credential-create-modal.component.scss'
+    selector: 'app-credential-create-modal',
+    imports: [CommonModule, FormsModule, KeyValuePipe],
+    templateUrl: './credential-create-modal.component.html',
+    styleUrl: './credential-create-modal.component.scss'
 })
 export class CredentialCreateModalComponent implements OnInit {
   @Input() projectId?: string;

@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-publish-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './publish-modal.component.html',
-  styleUrl: './publish-modal.component.scss'
+    selector: 'app-publish-modal',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './publish-modal.component.html',
+    styleUrl: './publish-modal.component.scss'
 })
 export class PublishModalComponent implements OnInit {
   @Input() currentVersion = 0;

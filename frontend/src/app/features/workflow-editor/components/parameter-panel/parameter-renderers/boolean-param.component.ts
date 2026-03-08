@@ -4,10 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { NodeParameter } from '../../../../../core/models';
 
 @Component({
-  selector: 'app-boolean-param',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-boolean-param',
+    imports: [CommonModule, FormsModule],
+    template: `
     @if (isExpression) {
       <div class="param-header">
         <label class="param-label">{{ param.displayName }}</label>
@@ -76,7 +75,7 @@ import { NodeParameter } from '../../../../../core/models';
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .boolean-param { padding: 2px 0; }
     .bool-row { display: flex; align-items: center; justify-content: space-between; }
     .param-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }

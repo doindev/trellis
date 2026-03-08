@@ -7,10 +7,9 @@ import { UserInfo } from '../../../core/services/settings.service';
 import { WorkflowShare } from '../../../core/models';
 
 @Component({
-  selector: 'app-workflow-share-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-workflow-share-modal',
+    imports: [CommonModule, FormsModule],
+    template: `
     @if (isOpen) {
       <div class="modal-backdrop" (click)="closed.emit()"></div>
       <div class="modal-dialog">
@@ -91,7 +90,7 @@ import { WorkflowShare } from '../../../core/models';
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; }
     .modal-dialog {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);

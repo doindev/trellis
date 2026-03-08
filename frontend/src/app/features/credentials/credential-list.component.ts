@@ -7,11 +7,10 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
-  selector: 'app-credential-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
-  templateUrl: './credential-list.component.html',
-  styleUrl: './credential-list.component.scss'
+    selector: 'app-credential-list',
+    imports: [CommonModule, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
+    templateUrl: './credential-list.component.html',
+    styleUrl: './credential-list.component.scss'
 })
 export class CredentialListComponent implements OnInit {
   credentials = signal<Credential[]>([]);

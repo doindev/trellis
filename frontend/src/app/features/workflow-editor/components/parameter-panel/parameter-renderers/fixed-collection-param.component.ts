@@ -10,10 +10,9 @@ export interface FixedCollectionExpressionEvent {
 }
 
 @Component({
-  selector: 'app-fixed-collection-param',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-fixed-collection-param',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="fixed-collection">
       <label class="param-label">{{ param.displayName }}</label>
       @if (param.description) {
@@ -102,7 +101,7 @@ export interface FixedCollectionExpressionEvent {
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .fixed-collection { }
     .param-label { display: block; font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin-bottom: 4px; }
     .param-description { font-size: 0.6875rem; color: hsl(0,0%,58%); margin-bottom: 8px; }

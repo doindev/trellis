@@ -11,10 +11,9 @@ export interface WorkflowSettings {
 }
 
 @Component({
-  selector: 'app-settings-modal',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-settings-modal',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="modal-backdrop" (click)="onBackdropClick($event)">
       <div class="modal-panel">
         <div class="modal-header">
@@ -84,8 +83,8 @@ export interface WorkflowSettings {
       </div>
     </div>
   `,
-  styleUrl: '../publish-modal/publish-modal.component.scss',
-  styles: [`
+    styleUrl: '../publish-modal/publish-modal.component.scss',
+    styles: [`
     .modal-panel {
       width: 480px;
       max-height: 85vh;

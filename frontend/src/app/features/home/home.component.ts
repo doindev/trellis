@@ -21,27 +21,26 @@ import {
 } from '../../shared/components/execution-filter-modal/execution-filter-modal.component';
 
 @Component({
-  selector: 'app-home',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterLink,
-    RouterLinkActive,
-    WorkflowCardComponent,
-    VariableListComponent,
-    ConfirmDialogComponent,
-    CredentialCreateModalComponent,
-    LucideAngularModule,
-    ExecutionFilterModalComponent,
-    CacheListComponent,
-    WorkflowMoveModalComponent,
-    WorkflowShareModalComponent,
-    ProjectSettingsComponent
-  ],
-  providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Layers, Bot }) }],
-  templateUrl: './home.component.html',
-  styleUrl: './home.component.scss'
+    selector: 'app-home',
+    imports: [
+        CommonModule,
+        FormsModule,
+        RouterLink,
+        RouterLinkActive,
+        WorkflowCardComponent,
+        VariableListComponent,
+        ConfirmDialogComponent,
+        CredentialCreateModalComponent,
+        LucideAngularModule,
+        ExecutionFilterModalComponent,
+        CacheListComponent,
+        WorkflowMoveModalComponent,
+        WorkflowShareModalComponent,
+        ProjectSettingsComponent
+    ],
+    providers: [{ provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider({ KeyRound, Layers, Bot }) }],
+    templateUrl: './home.component.html',
+    styleUrl: './home.component.scss'
 })
 export class HomeComponent implements OnInit {
   @ViewChild('credModal') credModal!: CredentialCreateModalComponent;

@@ -31,28 +31,27 @@ import { NodeTypeDescription, Workflow, WorkflowNode, WorkflowVersion, Execution
 import { AgentControlService } from '../../core/services/agent-control.service';
 
 @Component({
-  selector: 'app-workflow-editor',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ToolbarComponent,
-    NodePaletteComponent,
-    ReactFlowWrapperComponent,
-    ParameterPanelComponent,
-    EditorDrawerComponent,
-    PublishModalComponent,
-    DescriptionModalComponent,
-    ImportUriModalComponent,
-    SettingsModalComponent,
-    ConfirmDialogComponent,
-    ExecutionsSidebarComponent,
-    ExecutionFilterModalComponent,
-    TagSelectorComponent,
-    McpParamEditorModalComponent,
-    VersionHistoryPanelComponent
-  ],
-  templateUrl: './workflow-editor.component.html',
-  styleUrl: './workflow-editor.component.scss'
+    selector: 'app-workflow-editor',
+    imports: [
+        CommonModule,
+        ToolbarComponent,
+        NodePaletteComponent,
+        ReactFlowWrapperComponent,
+        ParameterPanelComponent,
+        EditorDrawerComponent,
+        PublishModalComponent,
+        DescriptionModalComponent,
+        ImportUriModalComponent,
+        SettingsModalComponent,
+        ConfirmDialogComponent,
+        ExecutionsSidebarComponent,
+        ExecutionFilterModalComponent,
+        TagSelectorComponent,
+        McpParamEditorModalComponent,
+        VersionHistoryPanelComponent
+    ],
+    templateUrl: './workflow-editor.component.html',
+    styleUrl: './workflow-editor.component.scss'
 })
 export class WorkflowEditorComponent implements OnInit, OnDestroy {
   @ViewChild(ReactFlowWrapperComponent) canvasWrapper!: ReactFlowWrapperComponent;

@@ -6,10 +6,9 @@ import { WorkflowService, ProjectService } from '../../../../../core/services';
 import { WorkflowSelectorModalComponent } from './workflow-selector-modal.component';
 
 @Component({
-  selector: 'app-workflow-id-param',
-  standalone: true,
-  imports: [CommonModule, FormsModule, WorkflowSelectorModalComponent],
-  template: `
+    selector: 'app-workflow-id-param',
+    imports: [CommonModule, FormsModule, WorkflowSelectorModalComponent],
+    template: `
     <div class="param-header">
       <label class="param-label">
         {{ param.displayName }}
@@ -45,7 +44,7 @@ import { WorkflowSelectorModalComponent } from './workflow-selector-modal.compon
         (closed)="showModal = false" />
     }
   `,
-  styles: [`
+    styles: [`
     .param-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .param-label { font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin: 0; }
     .required { color: var(--cwc-error-color); }

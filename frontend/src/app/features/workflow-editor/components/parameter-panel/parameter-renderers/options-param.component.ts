@@ -5,10 +5,9 @@ import { NodeParameter, ParameterOption } from '../../../../../core/models';
 import { NodeTypeService } from '../../../../../core/services/node-type.service';
 
 @Component({
-  selector: 'app-options-param',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-options-param',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="param-header">
       <label class="param-label">
         {{ param.displayName }}
@@ -66,7 +65,7 @@ import { NodeTypeService } from '../../../../../core/services/node-type.service'
       }
     }
   `,
-  styles: [`
+    styles: [`
     .param-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .param-label { font-size: 0.8125rem; font-weight: 500; color: hsl(0,0%,96%); margin: 0; }
     .required { color: var(--cwc-error-color); }
