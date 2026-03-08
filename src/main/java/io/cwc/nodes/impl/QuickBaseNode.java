@@ -88,7 +88,7 @@ public class QuickBaseNode extends AbstractApiNode {
 			case "delete" -> {
 				String where = context.getParameter("where", "");
 				Map<String, Object> body = Map.of("from", tableId, "where", where);
-				HttpResponse<String> response = delete(BASE_URL + "/records", headers);
+				HttpResponse<String> response = deleteWithBody(BASE_URL + "/records", body, headers);
 				yield parseResponse(response);
 			}
 			case "getAll" -> {

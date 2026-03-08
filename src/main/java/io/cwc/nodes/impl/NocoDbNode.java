@@ -86,7 +86,7 @@ public class NocoDbNode extends AbstractApiNode {
 					case "delete" -> {
 						String id = context.getParameter("rowId", "");
 						Map<String, Object> body = Map.of("Id", toInt(id, 0));
-						HttpResponse<String> response = delete(apiBase, headers);
+						HttpResponse<String> response = deleteWithBody(apiBase, body, headers);
 						yield Map.<String, Object>of("success", true, "rowId", id);
 					}
 					default -> throw new IllegalArgumentException("Unknown operation: " + operation);
