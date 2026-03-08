@@ -29,11 +29,6 @@
                 <small class="form-hint">Optional. Webhook URLs will use /<em>path</em>/... instead of /webhook/...</small>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="projectIcon">Icon (emoji)</label>
-                <input id="projectIcon" class="form-input form-input-small" type="text" [(ngModel)]="iconEmoji" [disabled]="isReadOnly()" placeholder="e.g. &#x1F4C1;">
-              </div>
-
               @if (saveError) {
                 <div class="save-error">{{ saveError }}</div>
               }

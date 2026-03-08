@@ -37,6 +37,12 @@
     "tslib": "^2.3.0",
     "zone.js": "~0.14.10"
   },
+  "overrides": {
+    "ajv": "8.18.0",
+    "serialize-javascript": "7.0.3",
+    "minimatch": "9.0.9",
+    "tar": "7.5.10"
+  },
   "devDependencies": {
     "@angular-devkit/build-angular": "^18.2.21",
     "@angular/cli": "^18.2.21",

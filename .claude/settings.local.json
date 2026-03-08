@@ -157,7 +157,8 @@
       "Bash(claude mcp list:*)",
       "Bash(claude:*)",
       "mcp__cwc-agent__cwc_create_workflow",
-      "mcp__cwc-agent__cwc_list_projects"
+      "mcp__cwc-agent__cwc_list_projects",
+      "Bash(npm audit:*)"
     ]
   }
 }

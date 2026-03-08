@@ -26,7 +26,6 @@ export class ProjectSettingsComponent {
   name = '';
   description = '';
   contextPath = '';
-  iconEmoji = '';
 
   // Add member form
   newMemberEmail = '';
@@ -52,7 +51,6 @@ export class ProjectSettingsComponent {
       this.name = p.name;
       this.description = p.description || '';
       this.contextPath = p.contextPath || '';
-      this.iconEmoji = p.icon?.value || '';
     }
     this.loadProject();
     this.loadMembers();
@@ -71,7 +69,6 @@ export class ProjectSettingsComponent {
         this.name = project.name;
         this.description = project.description || '';
         this.contextPath = project.contextPath || '';
-        this.iconEmoji = project.icon?.value || '';
       }
     });
   }
@@ -91,19 +88,16 @@ export class ProjectSettingsComponent {
   saveGeneral(): void {
     this.saving = true;
     this.saveError = '';
-    const icon = this.iconEmoji ? { type: 'emoji', value: this.iconEmoji } : undefined;
     this.projectService.update(this.projectId, {
       name: this.name,
       description: this.description,
-      contextPath: this.contextPath,
-      icon: icon as any
+      contextPath: this.contextPath
     }).subscribe({
       next: (updated) => {
         this.project.set(updated);
         this.name = updated.name;
         this.description = updated.description || '';
         this.contextPath = updated.contextPath || '';
-        this.iconEmoji = updated.icon?.value || '';
         this.saving = false;
         this.saved.emit(updated);
       },
