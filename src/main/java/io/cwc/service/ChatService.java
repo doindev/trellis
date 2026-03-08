@@ -150,10 +150,20 @@ public class ChatService {
                     try {
                         processAiResponse(sessionId, systemPrompt, history,
                                 agentModel, settingsModel);
+                    } catch (Exception e) {
+                        log.error("Async chat processing failed for session {}: {}", sessionId, e.getMessage(), e);
+                        try {
+                            saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
+                        } catch (Exception sendErr) {
+                            log.error("Failed to send error message for session {}: {}", sessionId, sendErr.getMessage());
+                        }
                     } finally {
                         SecurityContextHolder.clearContext();
                     }
-                }, workflowExecutor);
+                }, workflowExecutor).exceptionally(t -> {
+                    log.error("Uncaught error in chat async task for session {}: {}", sessionId, t.getMessage(), t);
+                    return null;
+                });
             }
         });
 
@@ -163,6 +173,8 @@ public class ChatService {
     private void processAiResponse(String sessionId, String systemPrompt,
                                     List<ChatMessageEntity> history,
                                     ChatModel agentModel, ChatModel settingsModel) {
+        log.info("processAiResponse called for session {}: agentModel={}, settingsModel={}, historySize={}",
+                sessionId, agentModel != null, settingsModel != null, history.size());
         if (agentModel != null) {
             respondWithTools(sessionId, systemPrompt, history, agentModel);
         } else if (settingsModel != null) {
