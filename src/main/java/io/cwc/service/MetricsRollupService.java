@@ -114,8 +114,10 @@ public class MetricsRollupService {
         Instant bucketStart = truncateTo5min(windowStart);
         Instant bucketEnd = truncateTo5min(windowEnd).plus(FIVE_MINUTES);
 
+        // Query using bucket-aligned boundaries so we recapture ALL executions
+        // belonging to any bucket we're about to delete and recreate
         List<ExecutionEntity> executions = executionRepository.findForRollup(
-                windowStart, windowEnd, ExecutionMode.MANUAL);
+                bucketStart, bucketEnd, ExecutionMode.MANUAL);
         Map<String, String> workflowProjectMap = loadWorkflowProjectMap();
 
         Map<String, Map<Instant, int[]>> grouped = groupIntoBuckets(
@@ -152,8 +154,10 @@ public class MetricsRollupService {
         Instant bucketStart = windowStart.truncatedTo(ChronoUnit.HOURS);
         Instant bucketEnd = windowEnd.truncatedTo(ChronoUnit.HOURS).plus(Duration.ofHours(1));
 
+        // Query using bucket-aligned boundaries so we recapture ALL executions
+        // belonging to any bucket we're about to delete and recreate
         List<ExecutionEntity> executions = executionRepository.findForRollup(
-                windowStart, windowEnd, ExecutionMode.MANUAL);
+                bucketStart, bucketEnd, ExecutionMode.MANUAL);
         Map<String, String> workflowProjectMap = loadWorkflowProjectMap();
 
         Map<String, Map<Instant, int[]>> grouped = groupIntoBuckets(
