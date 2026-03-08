@@ -158,7 +158,10 @@
       "Bash(claude:*)",
       "mcp__cwc-agent__cwc_create_workflow",
       "mcp__cwc-agent__cwc_list_projects",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(git stash:*)",
+      "Bash(git add:*)",
+      "Bash(npm view:*)"
     ]
   }
 }
