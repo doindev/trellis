@@ -216,7 +216,6 @@ public class GoogleAnalyticsNode extends AbstractApiNode {
 	@Override
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String resource = context.getParameter("resource", "report");
-		String operation = context.getParameter("operation", "get");
 		Map<String, Object> credentials = context.getCredentials();
 
 		try {
