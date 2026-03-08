@@ -231,7 +231,6 @@ public class CloudflareNode extends AbstractApiNode {
 	private NodeExecutionResult executeZoneCertificate(NodeExecutionContext context, Map<String, String> headers) throws Exception {
 		String operation = context.getParameter("operation", "getAll");
 		String zoneId = context.getParameter("zoneId", "");
-		String baseUrl = BASE_URL + "/zones/" + encode(zoneId) + "/ssl/certificate_packs";
 
 		switch (operation) {
 			case "create": {
