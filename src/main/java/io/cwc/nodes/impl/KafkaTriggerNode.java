@@ -148,7 +148,6 @@ public class KafkaTriggerNode extends AbstractTriggerNode {
 
 		// Load KafkaConsumer via reflection
 		Class<?> consumerClass = Class.forName("org.apache.kafka.clients.consumer.KafkaConsumer");
-		Class<?> consumerRecordsClass = Class.forName("org.apache.kafka.clients.consumer.ConsumerRecords");
 		Class<?> consumerRecordClass = Class.forName("org.apache.kafka.clients.consumer.ConsumerRecord");
 
 		Object consumer = consumerClass.getDeclaredConstructor(Properties.class).newInstance(props);

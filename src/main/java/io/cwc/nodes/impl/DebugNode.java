@@ -130,7 +130,6 @@ public class DebugNode extends AbstractNode {
 			return NodeExecutionResult.empty();
 		}
 
-		String logLevel = context.getParameter("logLevel", "info");
 		String logMessage = context.getParameter("logMessage", "");
 		boolean showItemCount = toBoolean(context.getParameter("showItemCount", true), true);
 		boolean showFieldNames = toBoolean(context.getParameter("showFieldNames", true), true);

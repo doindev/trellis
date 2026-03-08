@@ -80,11 +80,13 @@ public class OnfleetTriggerNode extends AbstractApiNode {
 				? ((Number) staticData.get("lastPollTimestamp")).longValue()
 				: now - 300000;
 
-			// Fetch tasks
-			String url = BASE_URL + "/tasks";
+			// Fetch tasks created/updated since last poll
+			Map<String, Object> queryParams = new LinkedHashMap<>();
+			queryParams.put("from", lastPoll);
 			if ("completedTask".equals(triggerResource)) {
-				url = buildUrl(url, Map.of("state", "3")); // State 3 = completed
+				queryParams.put("state", "3"); // State 3 = completed
 			}
+			String url = buildUrl(BASE_URL + "/tasks", queryParams);
 
 			HttpResponse<String> response = get(url, headers);
 
