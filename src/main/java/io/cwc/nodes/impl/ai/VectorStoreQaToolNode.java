@@ -129,7 +129,12 @@ public class VectorStoreQaToolNode extends AbstractAiToolNode {
 						.filter(t -> !t.isBlank())
 						.collect(Collectors.joining("\n\n---\n\n"));
 
-				String prompt = "Use the following documents to answer the question. " +
+				String dataContext = (description != null && !description.isBlank())
+						? "The documents are about: " + description + "\n\n"
+						: "";
+
+				String prompt = dataContext +
+						"Use the following documents to answer the question. " +
 						"If the answer is not in the documents, say so.\n\n" +
 						"Documents:\n" + context + "\n\nQuestion: " + question;
 
