@@ -274,17 +274,21 @@ public class ChatService {
      */
     private ChatModel resolveSettingsChatModel() {
         try {
-            if (!aiSettingsService.isEnabled()) return null;
+            boolean enabled = aiSettingsService.isEnabled();
+            log.info("resolveSettingsChatModel: enabled={}", enabled);
+            if (!enabled) return null;
 
             var entity = aiSettingsService.getEntity();
-            if (entity == null) return null;
+            if (entity == null) { log.info("resolveSettingsChatModel: entity is null"); return null; }
 
             // Decrypt the API key
             String apiKey = aiSettingsService.getDecryptedApiKey();
-            if (apiKey == null || apiKey.isBlank()) return null;
+            if (apiKey == null || apiKey.isBlank()) { log.info("resolveSettingsChatModel: apiKey is null/blank"); return null; }
 
             String provider = entity.getProvider();
+            String modelName = entity.getModel();
             String nodeType = PROVIDER_TO_NODE_TYPE.get(provider);
+            log.info("resolveSettingsChatModel: provider={}, model={}, nodeType={}", provider, modelName, nodeType);
             if (nodeType == null) {
                 log.warn("No chat model node mapping for provider '{}'", provider);
                 return null;
@@ -305,7 +309,7 @@ public class ChatService {
 
             // Build parameters map with model name
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("model", entity.getModel());
+            parameters.put("model", modelName);
 
             NodeExecutionContext context = NodeExecutionContext.builder()
                     .parameters(parameters)
@@ -314,6 +318,7 @@ public class ChatService {
                     .build();
 
             Object model = subNode.supplyData(context);
+            log.info("resolveSettingsChatModel: supplyData returned {}", model != null ? model.getClass().getSimpleName() : "null");
             return model instanceof ChatModel cm ? cm : null;
         } catch (Exception e) {
             log.error("Failed to resolve chat model from AI settings: {}", e.getMessage(), e);
