@@ -77,7 +77,6 @@ class CompressionNodeTest {
 
         assertThat(output(result)).hasSize(1);
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> json = firstJson(result);
         assertThat(json).containsKey("binary");
 
@@ -112,7 +111,6 @@ class CompressionNodeTest {
 
         assertThat(output(result)).hasSize(1);
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> json = firstJson(result);
         @SuppressWarnings("unchecked")
         Map<String, Object> binary = (Map<String, Object>) json.get("binary");
@@ -147,7 +145,6 @@ class CompressionNodeTest {
 
         assertThat(output(result)).hasSize(1);
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> json = firstJson(result);
         @SuppressWarnings("unchecked")
         Map<String, Object> binary = (Map<String, Object>) json.get("binary");
@@ -187,7 +184,6 @@ class CompressionNodeTest {
 
         assertThat(output(result)).hasSize(1);
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> json = firstJson(result);
         @SuppressWarnings("unchecked")
         Map<String, Object> binary = (Map<String, Object>) json.get("binary");
@@ -217,7 +213,6 @@ class CompressionNodeTest {
 
         NodeExecutionResult result = node.execute(ctx(input, params));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> json = firstJson(result);
         @SuppressWarnings("unchecked")
         Map<String, Object> binary = (Map<String, Object>) json.get("binary");
@@ -244,7 +239,6 @@ class CompressionNodeTest {
 
         NodeExecutionResult result = node.execute(ctx(input, params));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> json = firstJson(result);
         @SuppressWarnings("unchecked")
         Map<String, Object> binary = (Map<String, Object>) json.get("binary");
@@ -270,7 +264,6 @@ class CompressionNodeTest {
 
         NodeExecutionResult result = node.execute(ctx(input, params));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> json = firstJson(result);
         @SuppressWarnings("unchecked")
         Map<String, Object> binary = (Map<String, Object>) json.get("binary");
@@ -297,7 +290,6 @@ class CompressionNodeTest {
 
         NodeExecutionResult result = node.execute(ctx(input, params));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> json = firstJson(result);
         @SuppressWarnings("unchecked")
         Map<String, Object> binary = (Map<String, Object>) json.get("binary");
@@ -325,7 +317,6 @@ class CompressionNodeTest {
 
         NodeExecutionResult compressResult = node.execute(ctx(compressInput, compressParams));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> compressedJson = firstJson(compressResult);
         @SuppressWarnings("unchecked")
         Map<String, Object> compressedBinary = (Map<String, Object>) compressedJson.get("binary");
@@ -344,7 +335,6 @@ class CompressionNodeTest {
 
         NodeExecutionResult decompressResult = node.execute(ctx(decompressInput, decompressParams));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> decompressedJson = firstJson(decompressResult);
         @SuppressWarnings("unchecked")
         Map<String, Object> decompressedBinary = (Map<String, Object>) decompressedJson.get("binary");
@@ -373,7 +363,6 @@ class CompressionNodeTest {
 
         NodeExecutionResult compressResult = node.execute(ctx(compressInput, compressParams));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> compressedJson = firstJson(compressResult);
         @SuppressWarnings("unchecked")
         Map<String, Object> compressedBinary = (Map<String, Object>) compressedJson.get("binary");
@@ -392,7 +381,6 @@ class CompressionNodeTest {
 
         NodeExecutionResult decompressResult = node.execute(ctx(decompressInput, decompressParams));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> decompressedJson = firstJson(decompressResult);
         @SuppressWarnings("unchecked")
         Map<String, Object> decompressedBinary = (Map<String, Object>) decompressedJson.get("binary");
@@ -420,7 +408,6 @@ class CompressionNodeTest {
 
         NodeExecutionResult result = node.execute(ctx(input, params));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> json = firstJson(result);
         @SuppressWarnings("unchecked")
         Map<String, Object> binary = (Map<String, Object>) json.get("binary");

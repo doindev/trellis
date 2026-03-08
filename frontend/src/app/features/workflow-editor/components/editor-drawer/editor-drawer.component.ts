@@ -65,13 +65,11 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
 
   @Input() set viewingExecution(value: boolean) {
     if (value && !this._viewingExecution) {
-      if (this.autoExpandOnView) {
-        this.activeTab = 'logs';
-        this.selectedLogsNodeId = null;
-        if (!this.expanded) {
-          this.expanded = true;
-          this.expandedChange.emit(true);
-        }
+      this.activeTab = 'logs';
+      this.selectedLogsNodeId = null;
+      if (this.autoExpandOnView && !this.expanded) {
+        this.expanded = true;
+        this.expandedChange.emit(true);
       }
     } else if (!value && this._viewingExecution) {
       this.selectedLogsNodeId = null;
@@ -576,7 +574,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
       this.expanded = true;
       this.expandedChange.emit(true);
     }
-    if (tab === 'chat') {
+    if (tab === 'chat' && this.aiChatEnabled) {
       this.connectChat();
       this.shouldScrollChat = true;
       setTimeout(() => this.drawerChatInput?.nativeElement.focus(), 100);

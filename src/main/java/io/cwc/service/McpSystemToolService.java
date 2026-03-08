@@ -306,7 +306,8 @@ public class McpSystemToolService {
             return objectMapper.writeValueAsString(result);
         } catch (Exception e) {
             log.error("Error executing tool directly: {}", name, e);
-            return "{\"error\": \"" + e.getMessage().replace("\"", "'") + "\"}";
+            String msg = e.getMessage() != null ? e.getMessage().replace("\"", "'") : e.getClass().getSimpleName();
+            return "{\"error\": \"" + msg + "\"}";
         }
     }
 

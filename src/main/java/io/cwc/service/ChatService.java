@@ -23,11 +23,17 @@ import io.cwc.repository.ChatSessionRepository;
 import io.cwc.repository.WorkflowRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 @Slf4j
 @Service
@@ -48,6 +54,7 @@ public class ChatService {
     private final NodeRegistry nodeRegistry;
     private final AiSettingsService aiSettingsService;
     private final ChatToolProvider chatToolProvider;
+    private final Executor workflowExecutor;
 
     private static final String DEFAULT_SYSTEM_PROMPT = """
             You are a helpful workflow automation assistant for CWC. You have tools to:
@@ -89,7 +96,8 @@ public class ChatService {
             CredentialService credentialService,
             NodeRegistry nodeRegistry,
             AiSettingsService aiSettingsService,
-            ChatToolProvider chatToolProvider) {
+            ChatToolProvider chatToolProvider,
+            @org.springframework.beans.factory.annotation.Qualifier("workflowExecutor") Executor workflowExecutor) {
         this.chatModel = chatModel;
         this.streamingModel = streamingModel;
         this.messagingTemplate = messagingTemplate;
@@ -101,6 +109,7 @@ public class ChatService {
         this.nodeRegistry = nodeRegistry;
         this.aiSettingsService = aiSettingsService;
         this.chatToolProvider = chatToolProvider;
+        this.workflowExecutor = workflowExecutor;
     }
 
     @Transactional
@@ -120,31 +129,51 @@ public class ChatService {
         session.setUpdatedAt(Instant.now());
         chatSessionRepository.save(session);
 
-        // Resolve system prompt from agent
+        // Resolve everything needed for the LLM response while still in transaction
         String systemPrompt = resolveSystemPrompt(session.getAgentId());
-
-        // Load full history
         List<ChatMessageEntity> history = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
-
-        // Try agent-specific model first (from canvas-configured credentials)
         ChatModel agentModel = resolveAgentChatModel(session.getAgentId());
-        if (agentModel != null) {
-            respondWithTools(sessionId, systemPrompt, history, agentModel);
-        } else {
-            // Try user-configured AI settings from /settings/chat
-            ChatModel settingsModel = resolveSettingsChatModel();
-            if (settingsModel != null) {
-                respondWithTools(sessionId, systemPrompt, history, settingsModel);
-            } else if (streamingModel.isPresent()) {
-                streamResponse(sessionId, systemPrompt, history);
-            } else if (chatModel.isPresent()) {
-                syncResponse(sessionId, systemPrompt, history);
-            } else {
-                saveAndSend(sessionId, "AI chat is not configured. Enable it in Settings > Chat with a provider and API key, or create an Agent with a chat model node configured on the canvas.");
+        ChatModel settingsModel = agentModel == null ? resolveSettingsChatModel() : null;
+
+        // Capture security context for the async thread (tool handlers need it)
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+
+        // Schedule the LLM response to run asynchronously AFTER the transaction commits.
+        // This ensures: (1) the HTTP response returns immediately, (2) the user message
+        // is committed before the LLM reads history, (3) tool handlers that access the DB
+        // run in their own transaction context.
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                CompletableFuture.runAsync(() -> {
+                    SecurityContextHolder.setContext(securityContext);
+                    try {
+                        processAiResponse(sessionId, systemPrompt, history,
+                                agentModel, settingsModel);
+                    } finally {
+                        SecurityContextHolder.clearContext();
+                    }
+                }, workflowExecutor);
             }
-        }
+        });
 
         return toResponse(userMsg);
+    }
+
+    private void processAiResponse(String sessionId, String systemPrompt,
+                                    List<ChatMessageEntity> history,
+                                    ChatModel agentModel, ChatModel settingsModel) {
+        if (agentModel != null) {
+            respondWithTools(sessionId, systemPrompt, history, agentModel);
+        } else if (settingsModel != null) {
+            respondWithTools(sessionId, systemPrompt, history, settingsModel);
+        } else if (streamingModel.isPresent()) {
+            streamResponse(sessionId, systemPrompt, history);
+        } else if (chatModel.isPresent()) {
+            syncResponse(sessionId, systemPrompt, history);
+        } else {
+            saveAndSend(sessionId, "AI chat is not configured. Enable it in Settings > Chat with a provider and API key, or create an Agent with a chat model node configured on the canvas.");
+        }
     }
 
     public List<ChatMessageResponse> getHistory(String sessionId) {
