@@ -48,6 +48,6 @@ public class ChatController {
     @PostMapping("/sessions/{id}/messages")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ChatMessageResponse sendMessage(@PathVariable String id, @RequestBody ChatMessageRequest request) {
-        return chatService.sendMessage(id, request.getContent());
+        return chatService.sendMessage(id, request.getContent(), request.getCanvasState());
     }
 }

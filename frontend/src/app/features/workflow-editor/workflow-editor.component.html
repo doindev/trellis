@@ -145,6 +145,8 @@
         [executionStatus]="activeTab === 'executions' ? (viewingExecution?.status || '') : (store.isExecuting() ? 'running' : (store.executionData() ? 'success' : ''))"
         [autoExpandOnView]="activeTab === 'executions'"
         [aiChatEnabled]="aiChatEnabled"
+        [canvasNodes]="store.nodes()"
+        [canvasConnections]="store.workflow()?.connections || {}"
         (expandedChange)="drawerExpanded = $event"
         (openNodeDetail)="store.selectNode($event)"
         (clearExecution)="store.setExecutionData(null)" />

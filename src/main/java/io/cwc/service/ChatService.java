@@ -1,16 +1,18 @@
 package io.cwc.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.memory.ChatMemory;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
-import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.tool.ToolExecutor;
 import io.cwc.dto.ChatMessageResponse;
 import io.cwc.entity.ChatMessageEntity;
 import io.cwc.entity.ChatSessionEntity;
@@ -37,10 +39,6 @@ import java.util.concurrent.Executor;
 @Service
 public class ChatService {
 
-    interface ChatAgent {
-        String chat(String message);
-    }
-
     private final Optional<ChatModel> chatModel;
     private final Optional<StreamingChatModel> streamingModel;
     private final SimpMessagingTemplate messagingTemplate;
@@ -52,6 +50,7 @@ public class ChatService {
     private final NodeRegistry nodeRegistry;
     private final AiSettingsService aiSettingsService;
     private final ChatToolProvider chatToolProvider;
+    private final ObjectMapper objectMapper;
     private final Executor workflowExecutor;
 
     private static final String DEFAULT_SYSTEM_PROMPT = """
@@ -60,9 +59,21 @@ public class ChatService {
             - Manage workflows (cwc_list_workflows, cwc_get_workflow, cwc_create_workflow, cwc_update_workflow)
             - Manage agents (cwc_list_agents, cwc_get_agent, cwc_create_agent, cwc_update_agent)
             - Push workflow changes to the user's canvas (cwc_push_to_canvas)
+            - Execute workflows (cwc_execute_workflow)
             - View executions (cwc_list_executions, cwc_get_execution)
             - Access workflow building guides (cwc_workflow_guide)
             - Publish workflows (cwc_publish_workflow)
+
+            WORKFLOW ANALYSIS:
+            When the user's current canvas state is provided, you can analyze it to:
+            - Identify missing or misconfigured node parameters
+            - Check that node connections are valid (output types match input types)
+            - Detect nodes missing required credentials
+            - Suggest fixes or auto-correct by pushing updated workflows to canvas
+
+            WORKFLOW EXECUTION:
+            Use cwc_execute_workflow to run a saved workflow, then examine the results for errors.
+            If execution fails, analyze the error and suggest corrections.
 
             When building workflows or agents, ALWAYS use cwc_workflow_guide first to understand \
             the correct node wiring format. Be concise and practical.""";
@@ -95,6 +106,7 @@ public class ChatService {
             NodeRegistry nodeRegistry,
             AiSettingsService aiSettingsService,
             ChatToolProvider chatToolProvider,
+            ObjectMapper objectMapper,
             @org.springframework.beans.factory.annotation.Qualifier("workflowExecutor") Executor workflowExecutor) {
         this.chatModel = chatModel;
         this.streamingModel = streamingModel;
@@ -107,11 +119,12 @@ public class ChatService {
         this.nodeRegistry = nodeRegistry;
         this.aiSettingsService = aiSettingsService;
         this.chatToolProvider = chatToolProvider;
+        this.objectMapper = objectMapper;
         this.workflowExecutor = workflowExecutor;
     }
 
     @Transactional
-    public ChatMessageResponse sendMessage(String sessionId, String content) {
+    public ChatMessageResponse sendMessage(String sessionId, String content, Map<String, Object> canvasState) {
         ChatSessionEntity session = chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new io.cwc.exception.NotFoundException("Chat session not found: " + sessionId));
 
@@ -133,8 +146,21 @@ public class ChatService {
         ChatModel agentModel = resolveAgentChatModel(session.getAgentId());
         ChatModel settingsModel = agentModel == null ? resolveSettingsChatModel() : null;
 
+        // Inject canvas state into system prompt when present
+        String finalSystemPrompt = systemPrompt;
+        if (canvasState != null && !canvasState.isEmpty()) {
+            try {
+                String canvasJson = objectMapper.writeValueAsString(canvasState);
+                finalSystemPrompt = systemPrompt + "\n\nCURRENT CANVAS STATE (the user's unsaved workflow currently open in the editor):\n```json\n"
+                        + canvasJson + "\n```\nAnalyze this when the user asks about their current workflow, errors, or configuration issues.";
+            } catch (Exception e) {
+                log.warn("Failed to serialize canvas state: {}", e.getMessage());
+            }
+        }
+
         // Capture security context for the async thread (tool handlers need it)
         SecurityContext securityContext = SecurityContextHolder.getContext();
+        String promptForAsync = finalSystemPrompt;
 
         // Run LLM response asynchronously so the HTTP response returns immediately.
         // History is already loaded (includes the just-saved user message), so no need
@@ -142,7 +168,7 @@ public class ChatService {
         CompletableFuture.runAsync(() -> {
             SecurityContextHolder.setContext(securityContext);
             try {
-                processAiResponse(sessionId, systemPrompt, history,
+                processAiResponse(sessionId, promptForAsync, history,
                         agentModel, settingsModel);
             } catch (Exception e) {
                 log.error("Async chat processing failed for session {}: {}", sessionId, e.getMessage(), e);
@@ -322,10 +348,41 @@ public class ChatService {
     private void respondWithTools(String sessionId, String systemPrompt,
                                    List<ChatMessageEntity> history, ChatModel model) {
         try {
-            var messages = buildMessages(systemPrompt, history);
-            ChatResponse chatResponse = model.chat(messages);
-            String text = chatResponse.aiMessage().text();
-            saveAndSend(sessionId, text);
+            var toolMap = chatToolProvider.getTools();
+            List<ToolSpecification> toolSpecs = new ArrayList<>(toolMap.keySet());
+            List<ChatMessage> currentMessages = new ArrayList<>(buildMessages(systemPrompt, history));
+
+            // Manual tool loop — max 10 iterations
+            for (int i = 0; i < 10; i++) {
+                ChatRequest request = ChatRequest.builder()
+                        .messages(currentMessages)
+                        .toolSpecifications(toolSpecs)
+                        .build();
+
+                ChatResponse response = model.chat(request);
+                AiMessage aiMessage = response.aiMessage();
+                currentMessages.add(aiMessage);
+
+                if (!aiMessage.hasToolExecutionRequests()) {
+                    saveAndSend(sessionId, aiMessage.text());
+                    return;
+                }
+
+                for (var toolRequest : aiMessage.toolExecutionRequests()) {
+                    ToolExecutor executor = toolMap.entrySet().stream()
+                            .filter(e -> e.getKey().name().equals(toolRequest.name()))
+                            .map(Map.Entry::getValue)
+                            .findFirst().orElse(null);
+
+                    String result = executor != null
+                            ? executor.execute(toolRequest, null)
+                            : "{\"error\": \"Unknown tool: " + toolRequest.name() + "\"}";
+
+                    currentMessages.add(ToolExecutionResultMessage.from(toolRequest, result));
+                }
+            }
+            // Hit max iterations
+            saveAndSend(sessionId, "I ran out of tool iterations. Please try a more specific request.");
         } catch (Exception e) {
             log.error("Chat error for session {}: {}", sessionId, e.getMessage(), e);
             saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");

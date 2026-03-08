@@ -80,6 +80,8 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   private _viewingExecution = false;
 
   @Input() aiChatEnabled = false;
+  @Input() canvasNodes: any[] = [];
+  @Input() canvasConnections: any = {};
   @ViewChild('drawerChatInput') drawerChatInput?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('chatMessages') chatMessagesEl?: ElementRef<HTMLDivElement>;
 
@@ -649,7 +651,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
         if (this.pendingChatMessage) {
           const pending = this.pendingChatMessage;
           this.pendingChatMessage = null;
-          this.chatService.sendMessage(this.chatSessionId, pending).subscribe({
+          this.chatService.sendMessage(this.chatSessionId, pending, this.buildCanvasState()).subscribe({
             error: () => { this.isTyping = false; }
           });
         }
@@ -677,7 +679,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
       return;
     }
 
-    this.chatService.sendMessage(this.chatSessionId, content).subscribe({
+    this.chatService.sendMessage(this.chatSessionId, content, this.buildCanvasState()).subscribe({
       error: () => {
         this.isTyping = false;
       }
@@ -689,5 +691,10 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
       event.preventDefault();
       this.sendMessage();
     }
+  }
+
+  private buildCanvasState(): any | undefined {
+    if (!this.canvasNodes || this.canvasNodes.length === 0) return undefined;
+    return { nodes: this.canvasNodes, connections: this.canvasConnections || {} };
   }
 }

@@ -38,8 +38,10 @@ export class ChatService implements OnDestroy {
     return this.api.get<ChatMessage[]>(`/chat/sessions/${sessionId}/messages`);
   }
 
-  sendMessage(sessionId: string, content: string): Observable<ChatMessage> {
-    return this.api.post<ChatMessage>(`/chat/sessions/${sessionId}/messages`, { content });
+  sendMessage(sessionId: string, content: string, canvasState?: any): Observable<ChatMessage> {
+    const body: any = { content };
+    if (canvasState) body.canvasState = canvasState;
+    return this.api.post<ChatMessage>(`/chat/sessions/${sessionId}/messages`, body);
   }
 
   // WebSocket

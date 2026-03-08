@@ -3,6 +3,7 @@ package io.cwc.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cwc.dto.*;
+import io.cwc.engine.WorkflowEngine;
 import io.cwc.nodes.core.NodeRegistry;
 import io.cwc.nodes.core.NodeRegistry.NodeRegistration;
 import io.cwc.util.SecurityContextHelper;
@@ -22,6 +23,7 @@ public class McpSystemToolService {
     private final NodeRegistry nodeRegistry;
     private final WorkflowService workflowService;
     private final ExecutionService executionService;
+    private final WorkflowEngine workflowEngine;
     private final ProjectService projectService;
     private final ObjectMapper objectMapper;
     private final RemoteControlService remoteControlService;
@@ -129,6 +131,18 @@ public class McpSystemToolService {
                                 "id", prop("string", "The execution ID")
                         ),
                         "required", List.of("id")
+                )));
+
+        tools.add(toolDef("cwc_execute_workflow",
+                "Execute a saved workflow and return the results. The workflow must be saved first. " +
+                "Returns execution status, result data, and any errors. Use cwc_get_execution for detailed results if needed.",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap(
+                                "workflowId", prop("string", "The workflow ID to execute (required)"),
+                                "inputData", Map.of("type", "object", "description", "Optional input data to pass to the workflow trigger")
+                        ),
+                        "required", List.of("workflowId")
                 )));
 
         tools.add(toolDef("cwc_workflow_guide",
@@ -275,7 +289,8 @@ public class McpSystemToolService {
             "cwc_update_workflow",
             "cwc_publish_workflow",
             "cwc_create_agent",
-            "cwc_update_agent"
+            "cwc_update_agent",
+            "cwc_execute_workflow"
     );
 
     private static final Set<String> BROWSER_SESSION_TOOLS = Set.of(
@@ -359,6 +374,7 @@ public class McpSystemToolService {
             case "cwc_update_workflow" -> handleUpdateWorkflow(arguments);
             case "cwc_list_executions" -> handleListExecutions(arguments);
             case "cwc_get_execution" -> handleGetExecution(arguments);
+            case "cwc_execute_workflow" -> handleExecuteWorkflow(arguments);
             case "cwc_workflow_guide" -> handleWorkflowGuide(arguments);
             case "cwc_list_browser_sessions" -> handleListBrowserSessions(arguments);
             case "cwc_browser_control" -> handleBrowserControl(arguments, targetSession);
@@ -398,6 +414,7 @@ public class McpSystemToolService {
                 yield wfId != null ? "List executions for workflow " + wfId : "List recent workflow executions";
             }
             case "cwc_get_execution" -> "Get execution details for '" + args.getOrDefault("id", "?") + "'";
+            case "cwc_execute_workflow" -> "Execute workflow '" + args.getOrDefault("workflowId", "?") + "'";
             case "cwc_workflow_guide" -> "Get workflow building guide" +
                     (args.get("topic") != null ? " (topic: " + args.get("topic") + ")" : "");
             case "cwc_list_node_categories" -> "List all node categories with counts";
@@ -822,6 +839,42 @@ public class McpSystemToolService {
         result.put("errorMessage", ex.getErrorMessage());
         result.put("resultData", ex.getResultData());
         return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object handleExecuteWorkflow(Map<String, Object> args) {
+        String workflowId = (String) args.get("workflowId");
+        if (workflowId == null || workflowId.isBlank()) {
+            throw new IllegalArgumentException("'workflowId' is required");
+        }
+
+        Map<String, Object> inputData = (Map<String, Object>) args.get("inputData");
+        String executionId = workflowEngine.startExecution(workflowId, inputData);
+
+        // Poll for completion (max 60 seconds)
+        ExecutionResponse result = null;
+        for (int i = 0; i < 60; i++) {
+            try { Thread.sleep(1000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); break; }
+            result = executionService.getExecution(executionId);
+            if (!"running".equalsIgnoreCase(result.getStatus()) && !"new".equalsIgnoreCase(result.getStatus())) {
+                break;
+            }
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("executionId", executionId);
+        response.put("workflowId", workflowId);
+        if (result != null && !"running".equalsIgnoreCase(result.getStatus()) && !"new".equalsIgnoreCase(result.getStatus())) {
+            response.put("status", result.getStatus());
+            response.put("resultData", result.getResultData());
+            response.put("errorMessage", result.getErrorMessage());
+            response.put("startedAt", result.getStartedAt());
+            response.put("finishedAt", result.getFinishedAt());
+        } else {
+            response.put("status", "timeout");
+            response.put("message", "Execution did not complete within 60 seconds. Use cwc_get_execution with id '" + executionId + "' to check later.");
+        }
+        return response;
     }
 
     private Object handleWorkflowGuide(Map<String, Object> args) {
