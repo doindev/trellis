@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, signal, computed, HostListener, ViewChild, ElementRef, AfterViewInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ExecutionService, ProjectService } from '../../core/services';
 import { MetricsResponse, MetricsBucket } from '../../core/services/execution.service';
 import { Project } from '../../core/models';
@@ -67,7 +67,7 @@ interface TimeBucket {
 
 @Component({
     selector: 'app-insights',
-    imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
+    imports: [CommonModule, FormsModule, RouterLink],
     templateUrl: './insights.component.html',
     styleUrl: './insights.component.scss'
 })

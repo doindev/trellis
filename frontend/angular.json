@@ -60,7 +60,21 @@
               "node_modules/@xyflow/react/dist/style.css",
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "react",
+              "react-dom",
+              "react-dom/client",
+              "react/jsx-runtime",
+              "@stomp/stompjs",
+              "sockjs-client",
+              "use-sync-external-store/shim/with-selector.js"
+            ],
+            "stylePreprocessorOptions": {
+              "sass": {
+                "silenceDeprecations": ["import"]
+              }
+            }
           },
           "configurations": {
             "production": {

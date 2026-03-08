@@ -66,7 +66,7 @@
                 @if (workflow.updatedAt) {
                   <span class="meta-item">Updated {{ workflow.updatedAt | date:'short' }}</span>
                 }
-                <span class="meta-item">{{ workflow.nodes?.length || 0 }} nodes</span>
+                <span class="meta-item">{{ workflow.nodes.length || 0 }} nodes</span>
               </div>
             </div>
           </div>

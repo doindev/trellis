@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, signal, computed, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { WorkflowService, ExecutionService, CredentialService, ProjectService, SettingsService } from '../../core/services';
 import { Workflow, Execution, Credential } from '../../core/models';
@@ -25,8 +25,6 @@ import {
     imports: [
         CommonModule,
         FormsModule,
-        RouterLink,
-        RouterLinkActive,
         WorkflowCardComponent,
         VariableListComponent,
         ConfirmDialogComponent,

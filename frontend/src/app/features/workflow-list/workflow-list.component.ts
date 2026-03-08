@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { WorkflowService } from '../../core/services';
 import { Workflow } from '../../core/models';
@@ -9,7 +9,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
 
 @Component({
     selector: 'app-workflow-list',
-    imports: [CommonModule, RouterLink, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
+    imports: [CommonModule, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
     templateUrl: './workflow-list.component.html',
     styleUrl: './workflow-list.component.scss'
 })

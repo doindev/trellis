@@ -4,11 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { VariableService } from '../../core/services';
 import { Variable } from '../../core/models';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
-
 @Component({
     selector: 'app-variable-list',
-    imports: [CommonModule, FormsModule, ConfirmDialogComponent, LoadingSpinnerComponent],
+    imports: [CommonModule, FormsModule, ConfirmDialogComponent],
     templateUrl: './variable-list.component.html',
     styleUrl: './variable-list.component.scss'
 })
