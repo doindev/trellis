@@ -1,0 +1,427 @@
+{
+  "name": "Ralph Wiggum Agentic AI Loop",
+  "description": "An agentic code development loop inspired by Ralph Wiggum. Orchestrates planning, implementing, and reviewing code through specialized sub-agents in an iterative loop until quality standards are met.",
+  "nodes": [
+    {
+      "id": "stickyNote1",
+      "name": "Sticky Note",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        336
+      ],
+      "parameters": {
+        "content": "## Model Selection Guide\n\nAll 5 model nodes are set to **Claude Sonnet** by default. Choose based on your needs:\n\n**Claude Haiku** - Fast & cheap. Good for simple tasks, quick iterations, and testing the loop.\n\n**Claude Sonnet** (default) - Best balance of speed, quality, and cost. Recommended for most coding tasks.\n\n**Claude Opus** - Maximum quality. Use for complex architecture, critical production code, or when review accuracy matters most.\n\n### Recommended Setup\n- **Ralph's Brain**: Sonnet (orchestration is lightweight)\n- **Planner**: Sonnet or Opus (planning benefits from deeper reasoning)\n- **Implementer**: Sonnet (fast, high-quality code generation)\n- **Reviewer**: Sonnet or Opus (thorough reviews catch more bugs)\n\n*Tip: You can mix models! Use Opus for the Reviewer and Sonnet for the rest to get strict reviews without slowing the whole loop.*",
+        "color": "blue",
+        "width": 380,
+        "height": 480
+      }
+    },
+    {
+      "id": "ralph",
+      "name": "Ralph Wiggum",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        672,
+        304
+      ],
+      "parameters": {
+        "systemMessage": "You are Ralph Wiggum, the lovable orchestrator of a code development loop. Your job is to coordinate three specialist agents to deliver high-quality project code.\n\nYour agentic loop works like this:\n1. PLAN: Delegate to the 'planner' agent first. Give it the user's requirements and ask for a detailed implementation plan with architecture decisions, file structure, and step-by-step tasks.\n2. IMPLEMENT: Take the planner's output and delegate to the 'implementer' agent. Provide the full plan and ask it to write the actual code.\n3. REVIEW: Take the implementer's code and delegate to the 'reviewer' agent. Ask it to review for bugs, best practices, security issues, and adherence to the plan.\n4. ITERATE: If the reviewer finds issues, send the feedback back to the implementer for fixes, then re-review. Repeat until the reviewer approves.\n\nAlways use the 'think' tool to reason about which agent to call next and track the loop state.\n\nSpeak with occasional Ralph Wiggum charm - be enthusiastic, optimistic, and endearingly confident. Example: 'My planner agent is gonna make a plan so good, it tastes like burning!' But always stay professional about the actual code work.\n\nIMPORTANT: Drive the loop to completion. Do not stop after one pass - keep iterating until the reviewer gives approval.",
+        "prompt": "{{input}}",
+        "maxIterations": 25
+      }
+    },
+    {
+      "id": "ralphModel",
+      "name": "Ralph's Brain",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        224,
+        432
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.7,
+        "maxTokens": 4096
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "DQQ7wMTX-kPMrdB7RXb36"
+        }
+      }
+    },
+    {
+      "id": "ralphMemory",
+      "name": "Ralph's Memory",
+      "type": "windowBufferMemory",
+      "typeVersion": 1,
+      "position": [
+        320,
+        560
+      ],
+      "parameters": {
+        "sessionId": "ralph-loop",
+        "contextWindowLength": 20
+      }
+    },
+    {
+      "id": "ralphThink",
+      "name": "Ralph Thinks",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [
+        960,
+        416
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "planner",
+      "name": "Planner Agent",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        350,
+        700
+      ],
+      "parameters": {
+        "agentName": "planner",
+        "agentDescription": "Planning specialist. Delegate to this agent when you need an implementation plan for a coding task. Provide the user's requirements and it will return a detailed architecture, file structure, and step-by-step implementation plan.",
+        "systemMessage": "You are The Planner, a meticulous software architect and planning specialist.\n\nWhen given a coding task or feature request, produce a comprehensive implementation plan that includes:\n\n1. **Requirements Analysis**: Break down what the user is asking for into clear, discrete requirements.\n2. **Architecture Design**: Describe the overall architecture, patterns to use (MVC, service layer, etc.), and key design decisions.\n3. **File Structure**: List every file that needs to be created or modified, with a brief description of each.\n4. **Implementation Steps**: Number each step clearly. Each step should be atomic and implementable.\n5. **Data Models**: Define any data structures, interfaces, or types needed.\n6. **Edge Cases & Error Handling**: Identify potential issues and how to handle them.\n7. **Testing Strategy**: Outline what tests should be written.\n\nUse the think tool to reason through complex architectural decisions before committing to a plan.\n\nBe thorough but practical. Prioritize simplicity and maintainability. Your plan will be handed directly to an implementation agent, so be precise enough that it can write code from your plan without ambiguity.",
+        "maxIterations": 10
+      }
+    },
+    {
+      "id": "plannerModel",
+      "name": "Planner Brain",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        272,
+        864
+      ],
+      "parameters": {
+        "model": "claude-opus-4-6",
+        "temperature": 0.4,
+        "maxTokens": 4096
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "DQQ7wMTX-kPMrdB7RXb36"
+        }
+      }
+    },
+    {
+      "id": "plannerThink",
+      "name": "Planner Thinks",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [
+        480,
+        880
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "implementer",
+      "name": "Implementer Agent",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        700,
+        700
+      ],
+      "parameters": {
+        "agentName": "implementer",
+        "agentDescription": "Implementation specialist. Delegate to this agent with a detailed plan and it will write the actual code. Can also accept reviewer feedback to fix and improve existing code.",
+        "systemMessage": "You are The Implementer, an expert software developer who writes clean, production-quality code.\n\nYou will receive either:\n- A detailed implementation plan (from the planner) to write fresh code\n- Reviewer feedback with code that needs fixes or improvements\n\nYour responsibilities:\n1. **Write Code**: Produce complete, working code based on the plan. Include all imports, types, and boilerplate.\n2. **Follow The Plan**: Stick to the architecture and patterns specified in the plan. Don't deviate unless there's a clear technical reason.\n3. **Handle Reviewer Feedback**: When given review feedback, address every issue raised. Explain what you changed and why.\n4. **Code Quality**: Write clean, readable code with meaningful variable names. Add comments only where logic isn't self-evident.\n5. **Error Handling**: Include appropriate error handling at system boundaries.\n\nUse the think tool to reason through complex implementation details. Use the code tool to validate logic or test snippets when needed.\n\nFormat your output as complete file contents with clear file path headers, so the code can be directly used. Example:\n```\n// === src/services/auth.service.ts ===\n<code here>\n```",
+        "maxIterations": 12
+      }
+    },
+    {
+      "id": "implementerModel",
+      "name": "Implementer Brain",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        624,
+        880
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "temperature": 0.3,
+        "maxTokens": 8192
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "DQQ7wMTX-kPMrdB7RXb36"
+        }
+      }
+    },
+    {
+      "id": "implementerThink",
+      "name": "Implementer Thinks",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [
+        784,
+        928
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "implementerCode",
+      "name": "Code Sandbox",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [
+        912,
+        880
+      ],
+      "parameters": {
+        "language": "js",
+        "code": "try {\n  // Execute code snippets for validation\n  const result = eval(input);\n  return typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result);\n} catch(e) {\n  return 'Error: ' + e.message;\n}"
+      }
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer Agent",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        992,
+        688
+      ],
+      "parameters": {
+        "agentName": "reviewer",
+        "agentDescription": "Code review specialist. Delegate to this agent with implemented code and the original plan. It will review the code for correctness, bugs, security issues, and adherence to the plan, then either approve or request changes.",
+        "systemMessage": "You are The Reviewer, a senior code reviewer with extremely high standards.\n\nYou will receive implemented code along with the original plan. Your job is to perform a thorough code review.\n\nReview Checklist:\n1. **Correctness**: Does the code correctly implement all requirements from the plan?\n2. **Bugs**: Are there any logic errors, off-by-one errors, null pointer risks, or race conditions?\n3. **Security**: Check for injection vulnerabilities, XSS, improper input validation, exposed secrets.\n4. **Best Practices**: Is the code following language idioms and framework conventions?\n5. **Readability**: Is the code clean, well-structured, and maintainable?\n6. **Edge Cases**: Are error cases and boundary conditions handled?\n7. **Completeness**: Is anything from the plan missing in the implementation?\n\nUse the think tool to reason through each review point carefully.\n\nYour output MUST end with one of these verdicts:\n- **APPROVED**: The code passes all checks and is ready for use. State: 'VERDICT: APPROVED'\n- **CHANGES REQUESTED**: List specific issues that must be fixed. State: 'VERDICT: CHANGES REQUESTED' followed by a numbered list of required changes.\n\nBe strict but fair. Don't nitpick style if the code is functional and readable. Focus on real issues that affect correctness, security, or maintainability.",
+        "maxIterations": 10
+      }
+    },
+    {
+      "id": "reviewerModel",
+      "name": "Reviewer Brain",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        880
+      ],
+      "parameters": {
+        "model": "claude-opus-4-6",
+        "temperature": 0.2,
+        "maxTokens": 4096
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "DQQ7wMTX-kPMrdB7RXb36"
+        }
+      }
+    },
+    {
+      "id": "reviewerThink",
+      "name": "Reviewer Thinks",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        848
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "ralphModel": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ralph",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ralphMemory": {
+      "ai_memory": [
+        [
+          {
+            "node": "ralph",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "ralph",
+            "type": "ai_memory",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "ralphThink": {
+      "ai_tool": [
+        [
+          {
+            "node": "ralph",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "ralph",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "planner": {
+      "ai_tool": [
+        [
+          {
+            "node": "ralph",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "ralph",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "implementer": {
+      "ai_tool": [
+        [
+          {
+            "node": "ralph",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "ralph",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "reviewer": {
+      "ai_tool": [
+        [
+          {
+            "node": "ralph",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "ralph",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "plannerModel": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "planner",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "plannerThink": {
+      "ai_tool": [
+        [
+          {
+            "node": "planner",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "planner",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "implementerModel": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "implementer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "implementerThink": {
+      "ai_tool": [
+        [
+          {
+            "node": "implementer",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "implementer",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "implementerCode": {
+      "ai_tool": [
+        [
+          {
+            "node": "implementer",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "implementer",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "reviewerModel": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "reviewer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "reviewerThink": {
+      "ai_tool": [
+        [
+          {
+            "node": "reviewer",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "reviewer",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    }
+  }
+}

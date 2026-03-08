@@ -1,0 +1,300 @@
+{
+  "name": "Time API Logger",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Manual Trigger",
+      "type": "manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        48,
+        224
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "subTrigger",
+      "name": "When Called by Workflow",
+      "type": "executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        48,
+        400
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "httpGetTime",
+      "name": "Get UTC Time",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        256,
+        304
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://timeapi.io/api/v1/time/current/utc",
+        "authentication": "none",
+        "options": {
+          "neverError": true,
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "debugHttpResult",
+      "name": "Log HTTP Result",
+      "type": "debug",
+      "typeVersion": 1,
+      "position": [
+        448,
+        304
+      ],
+      "parameters": {
+        "logLevel": "info",
+        "logMessage": "Time API response received",
+        "showFieldValues": true
+      }
+    },
+    {
+      "id": "checkTableExists",
+      "name": "Check Table Exists",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        640,
+        304
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'workflow_results'"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "l0ie_VpLV_c8EUTfEfOO0"
+        }
+      }
+    },
+    {
+      "id": "ifTableExists",
+      "name": "Table Exists?",
+      "type": "if",
+      "typeVersion": 1,
+      "position": [
+        832,
+        304
+      ],
+      "parameters": {
+        "conditions": [
+          {
+            "value1": "{{$json.table_count}}",
+            "operation": "greaterThan",
+            "value2": "0"
+          }
+        ]
+      }
+    },
+    {
+      "id": "createTable",
+      "name": "Create Table",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        384
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "CREATE TABLE IF NOT EXISTS workflow_results (\n  id SERIAL PRIMARY KEY,\n  check_time TIMESTAMP,\n  result_data TEXT,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n)"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "l0ie_VpLV_c8EUTfEfOO0"
+        }
+      }
+    },
+    {
+      "id": "debugTableCreated",
+      "name": "Table Created",
+      "type": "debug",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        384
+      ],
+      "parameters": {
+        "logLevel": "info",
+        "logMessage": "Table 'workflow_results' created successfully",
+        "showFieldValues": false
+      }
+    },
+    {
+      "id": "insertResult",
+      "name": "Log Response to DB",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        304
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO workflow_results (check_time, result_data) VALUES (CURRENT_TIMESTAMP, '={{ JSON.stringify($('Get UTC Time').item.json) }}')",
+        "table": "INSERT INTO workflow_results (check_time, result_data) VALUES (CURRENT_TIMESTAMP, ?)",
+        "columns": [
+          {
+            "column": "result_data",
+            "value": "{{$node[\"Get UTC Time\"].json.utc_time}}"
+          }
+        ]
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "l0ie_VpLV_c8EUTfEfOO0"
+        }
+      }
+    },
+    {
+      "id": "debugLogResult",
+      "name": "Log Time Result",
+      "type": "debug",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        304
+      ],
+      "parameters": {
+        "logLevel": "info",
+        "logMessage": "Logging HTTP time result to output",
+        "showFieldValues": true
+      }
+    },
+    {
+      "id": "stickyNote1",
+      "name": "Sticky Note",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        160
+      ],
+      "parameters": {
+        "content": "## Credentials Required\n\n### PostgreSQL\nConfigure a **PostgreSQL** credential for the database nodes.\n- Host, port, database, user, password\n- Used by \"Check Table Exists\" and \"Create Table\" nodes\n\n### How It Works\n1. Called by another workflow or manually\n2. HTTP GET to `timeapi.io` for current UTC time\n3. Logs the API response at INFO level\n4. Queries PostgreSQL to check if `workflow_results` table exists\n5. If table exists: logs the HTTP result\n6. If not: creates the table first, then logs the HTTP result\n\nBoth paths converge to log the time result.",
+        "color": "yellow",
+        "width": 340,
+        "height": 370
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "httpGetTime",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "subTrigger": {
+      "main": [
+        [
+          {
+            "node": "httpGetTime",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "httpGetTime": {
+      "main": [
+        [
+          {
+            "node": "debugHttpResult",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "debugHttpResult": {
+      "main": [
+        [
+          {
+            "node": "checkTableExists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "checkTableExists": {
+      "main": [
+        [
+          {
+            "node": "ifTableExists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ifTableExists": {
+      "main": [
+        [
+          {
+            "node": "insertResult",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "createTable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "createTable": {
+      "main": [
+        [
+          {
+            "node": "debugTableCreated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "debugTableCreated": {
+      "main": [
+        [
+          {
+            "node": "insertResult",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insertResult": {
+      "main": [
+        [
+          {
+            "node": "debugLogResult",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

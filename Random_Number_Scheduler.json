@@ -1,0 +1,144 @@
+{
+  "name": "Random Number Scheduler",
+  "nodes": [
+    {
+      "id": "schedule",
+      "name": "Every Minute",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        224,
+        144
+      ],
+      "parameters": {
+        "rule": "interval",
+        "interval": 60,
+        "timezone": "UTC"
+      }
+    },
+    {
+      "id": "genRandom",
+      "name": "Generate Random Number",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        416,
+        144
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const randomNumber = Math.floor(Math.random() * 1000);\nconst isEven = randomNumber % 2 === 0;\n\nreturn [{\n  json: {\n    randomNumber,\n    isEven,\n    parity: isEven ? 'even' : 'odd',\n    generatedAt: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "ifEven",
+      "name": "Is Even?",
+      "type": "if",
+      "typeVersion": 1,
+      "position": [
+        608,
+        144
+      ],
+      "parameters": {
+        "conditions": [
+          {
+            "value1": "{{$json.isEven}}",
+            "operation": "equals",
+            "value2": "true"
+          }
+        ]
+      }
+    },
+    {
+      "id": "execWorkflow1",
+      "name": "Execute Time API Logger",
+      "type": "executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        800,
+        64
+      ],
+      "parameters": {
+        "workflowId": "dUdaU4CC1RkLBKBGgh4Ck",
+        "mode": "runOnceWithAllItems",
+        "options": {
+          "waitForCompletion": true
+        }
+      }
+    },
+    {
+      "id": "debugOdd",
+      "name": "Odd Number - Skip",
+      "type": "debug",
+      "typeVersion": 1,
+      "position": [
+        800,
+        224
+      ],
+      "parameters": {
+        "logLevel": "info",
+        "logMessage": "Odd number generated - skipping workflow execution",
+        "showFieldValues": true
+      }
+    },
+    {
+      "id": "stickyNote1",
+      "name": "Sticky Note",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        16
+      ],
+      "parameters": {
+        "content": "## Random Number Scheduler\n\nNo credentials required for this workflow.\n\n### How It Works\n1. Triggers every 60 seconds\n2. Generates a random number (0-999)\n3. If **even**: executes the \"Time API Logger\" workflow\n4. If **odd**: logs an info message and skips\n\n### Linked Workflow\nThis workflow calls **Time API Logger** (ID: `6_-8RoaxFk44JBb0fvUfE`)\n\nMake sure that workflow exists and is saved before activating this one.",
+        "color": "blue",
+        "width": 340,
+        "height": 320
+      }
+    }
+  ],
+  "connections": {
+    "schedule": {
+      "main": [
+        [
+          {
+            "node": "genRandom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "genRandom": {
+      "main": [
+        [
+          {
+            "node": "ifEven",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ifEven": {
+      "main": [
+        [
+          {
+            "node": "execWorkflow1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "debugOdd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
