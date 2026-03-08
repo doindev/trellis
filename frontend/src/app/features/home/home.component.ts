@@ -569,6 +569,12 @@ export class HomeComponent implements OnInit {
     return this.projectMap.get(projectId) || '';
   }
 
+  getCredentialProjectLabel(projectId?: string): string {
+    if (!projectId) return 'Personal';
+    const proj = this.allProjects().find(p => p.id === projectId);
+    return proj?.name || 'Personal';
+  }
+
   scheduleCreateDropdownClose(): void {
     this.cancelCreateDropdownClose();
     this.createDropdownTimer = setTimeout(() => {

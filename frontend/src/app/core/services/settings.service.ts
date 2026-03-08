@@ -40,6 +40,11 @@ export interface AiSettings {
   enabled: boolean;
 }
 
+export interface AiModelInfo {
+  id: string;
+  name: string;
+}
+
 export interface McpEndpoint {
   id: string;
   name: string;
@@ -179,6 +184,12 @@ export class SettingsService {
 
   updateAiSettings(settings: Partial<AiSettings>): Observable<AiSettings> {
     return this.api.put<AiSettings>('/settings/ai', settings);
+  }
+
+  listAiModels(provider: string, apiKey: string, baseUrl?: string | null): Observable<AiModelInfo[]> {
+    const body: any = { provider, apiKey };
+    if (baseUrl) body.baseUrl = baseUrl;
+    return this.api.post<AiModelInfo[]>('/settings/ai/models', body);
   }
 
   // MCP Settings

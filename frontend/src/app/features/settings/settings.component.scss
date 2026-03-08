@@ -125,6 +125,11 @@ select.form-input {
   option { background: hsl(0, 0%, 13%); }
 }
 
+.ai-model-loading {
+  color: var(--cwc-text-secondary);
+  font-style: italic;
+}
+
 .form-row-inline {
   display: flex;
   gap: 12px;

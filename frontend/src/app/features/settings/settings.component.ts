@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter, McpOutputSchema, SwaggerSettings, SwaggerWorkflow } from '../../core/services/settings.service';
+import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, AiModelInfo, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter, McpOutputSchema, SwaggerSettings, SwaggerWorkflow } from '../../core/services/settings.service';
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
 
 @Component({
@@ -41,6 +41,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // AI / Chat
   aiSettings: AiSettings = { provider: 'openai', apiKey: '', model: 'gpt-4o-mini', baseUrl: null, enabled: false };
   aiSettingsSaving = false;
+  aiModels: AiModelInfo[] = [];
+  aiModelsLoading = false;
 
   // MCP
   mcpSettings: McpSettings | null = null;
@@ -259,6 +261,38 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   showBaseUrl(): boolean {
     return ['ollama', 'azure-openai', 'bedrock'].includes(this.aiSettings.provider);
+  }
+
+  onApiKeyBlur(): void {
+    const key = this.aiSettings.apiKey;
+    if (!key || key.includes('...')) return; // skip masked keys
+    this.fetchAiModels();
+  }
+
+  onProviderChange(): void {
+    this.aiModels = [];
+    const key = this.aiSettings.apiKey;
+    if (key && !key.includes('...')) {
+      this.fetchAiModels();
+    }
+  }
+
+  private fetchAiModels(): void {
+    this.aiModelsLoading = true;
+    this.settingsService.listAiModels(
+      this.aiSettings.provider,
+      this.aiSettings.apiKey,
+      this.aiSettings.baseUrl
+    ).subscribe({
+      next: models => {
+        this.aiModels = models;
+        this.aiModelsLoading = false;
+      },
+      error: () => {
+        this.aiModels = [];
+        this.aiModelsLoading = false;
+      }
+    });
   }
 
   // MCP Settings

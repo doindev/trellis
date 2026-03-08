@@ -206,7 +206,7 @@
 
           <div class="form-row">
             <label class="form-label">Provider</label>
-            <select class="form-input" [(ngModel)]="aiSettings.provider">
+            <select class="form-input" [(ngModel)]="aiSettings.provider" (ngModelChange)="onProviderChange()">
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
               <option value="google">Google</option>
@@ -221,12 +221,22 @@
 
           <div class="form-row">
             <label class="form-label">API Key</label>
-            <input class="form-input" type="password" [(ngModel)]="aiSettings.apiKey" placeholder="sk-...">
+            <input class="form-input" type="password" [(ngModel)]="aiSettings.apiKey" placeholder="sk-..." (blur)="onApiKeyBlur()">
           </div>
 
           <div class="form-row">
             <label class="form-label">Model</label>
-            <input class="form-input" type="text" [(ngModel)]="aiSettings.model" placeholder="gpt-4o-mini">
+            @if (aiModelsLoading) {
+              <div class="form-input ai-model-loading">Loading models...</div>
+            } @else if (aiModels.length > 0) {
+              <select class="form-input" [(ngModel)]="aiSettings.model">
+                @for (m of aiModels; track m.id) {
+                  <option [value]="m.id">{{ m.name }}</option>
+                }
+              </select>
+            } @else {
+              <input class="form-input" type="text" [(ngModel)]="aiSettings.model" placeholder="gpt-4o-mini">
+            }
           </div>
 
           @if (showBaseUrl()) {
