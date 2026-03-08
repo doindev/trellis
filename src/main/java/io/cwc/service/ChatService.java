@@ -331,6 +331,7 @@ public class ChatService {
 
     private void respondWithTools(String sessionId, String systemPrompt,
                                    List<ChatMessageEntity> history, ChatModel model) {
+        log.info("respondWithTools called for session {}: model={}, historySize={}", sessionId, model.getClass().getSimpleName(), history.size());
         try {
             // Build memory from prior history (exclude latest user message —
             // AiServices will add it when we call agent.chat())
@@ -356,7 +357,9 @@ public class ChatService {
             ChatAgent agent = builder.build();
 
             String userContent = history.get(history.size() - 1).getContent();
+            log.info("Calling agent.chat() for session {} with message: {}", sessionId, userContent.substring(0, Math.min(100, userContent.length())));
             String response = agent.chat(userContent);
+            log.info("agent.chat() completed for session {}, response length: {}", sessionId, response != null ? response.length() : 0);
 
             saveAndSend(sessionId, response);
         } catch (Exception e) {
