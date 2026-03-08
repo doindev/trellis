@@ -104,7 +104,6 @@ public class ThrottleNode extends AbstractNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		List<Map<String, Object>> inputData = context.getInputData();
 		Map<String, Object> staticData = context.getWorkflowStaticData();

@@ -114,7 +114,6 @@ public class ContentClassifierNode extends AbstractNode {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		List<Map<String, Object>> inputData = context.getInputData();
 		if (inputData == null || inputData.isEmpty()) {

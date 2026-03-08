@@ -210,7 +210,6 @@ public class ChatService {
                 .toList();
     }
 
-    @SuppressWarnings("unchecked")
     private String resolveSystemPrompt(String agentId) {
         if (agentId == null) {
             return DEFAULT_SYSTEM_PROMPT;

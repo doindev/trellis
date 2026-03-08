@@ -153,7 +153,6 @@ public class SentimentNode extends AbstractNode {
 		return result;
 	}
 
-	@SuppressWarnings("java:S3776")
 	private static Map<String, Integer> buildLexicon() {
 		Map<String, Integer> lex = new LinkedHashMap<>();
 

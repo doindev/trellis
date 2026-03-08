@@ -2,14 +2,18 @@ package io.cwc.nodes.impl;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractTriggerNode;
 import io.cwc.nodes.core.NodeExecutionContext;
 import io.cwc.nodes.core.NodeExecutionResult;
 import io.cwc.nodes.core.NodeParameter;
-import io.cwc.nodes.core.NodeParameter.ParameterOption;
 import io.cwc.nodes.core.NodeParameter.ParameterType;
 import lombok.extern.slf4j.Slf4j;
 

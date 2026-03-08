@@ -1,16 +1,19 @@
 package io.cwc.nodes.impl;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractTriggerNode;
 import io.cwc.nodes.core.NodeExecutionContext;
 import io.cwc.nodes.core.NodeExecutionResult;
 import io.cwc.nodes.core.NodeParameter;
-import io.cwc.nodes.core.NodeParameter.ParameterOption;
 import io.cwc.nodes.core.NodeParameter.ParameterType;
-import lombok.extern.slf4j.Slf4j;
-
 import jakarta.mail.Folder;
 import jakarta.mail.Message;
 import jakarta.mail.Session;
@@ -19,6 +22,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.search.ComparisonTerm;
 import jakarta.mail.search.ReceivedDateTerm;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Email Read IMAP Node -- polls an IMAP server for new emails.

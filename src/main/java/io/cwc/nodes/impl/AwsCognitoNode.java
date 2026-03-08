@@ -156,7 +156,7 @@ public class AwsCognitoNode extends AbstractNode {
 
 		Map<String, Object> result = new LinkedHashMap<>();
 		result.put("username", response.username());
-		result.put("userStatus", response.userStatusAsString());
+		result.put("userStatus", response.userStatus() != null ? response.userStatus().toString() : null);
 		result.put("enabled", response.enabled());
 		result.put("userCreateDate", response.userCreateDate() != null ? response.userCreateDate().toString() : null);
 		result.put("userLastModifiedDate", response.userLastModifiedDate() != null ? response.userLastModifiedDate().toString() : null);
@@ -478,11 +478,10 @@ public class AwsCognitoNode extends AbstractNode {
 		Map<String, Object> result = new LinkedHashMap<>();
 		result.put("id", pool.id());
 		result.put("name", pool.name());
-		result.put("status", pool.statusAsString());
 		result.put("creationDate", pool.creationDate() != null ? pool.creationDate().toString() : null);
 		result.put("lastModifiedDate", pool.lastModifiedDate() != null ? pool.lastModifiedDate().toString() : null);
 		result.put("estimatedNumberOfUsers", pool.estimatedNumberOfUsers());
-		result.put("mfaConfiguration", pool.mfaConfigurationAsString());
+		result.put("mfaConfiguration", pool.mfaConfiguration() != null ? pool.mfaConfiguration().toString() : null);
 		return result;
 	}
 
@@ -505,7 +504,6 @@ public class AwsCognitoNode extends AbstractNode {
 				Map<String, Object> p = new LinkedHashMap<>();
 				p.put("id", pool.id());
 				p.put("name", pool.name());
-				p.put("status", pool.statusAsString());
 				p.put("creationDate", pool.creationDate() != null ? pool.creationDate().toString() : null);
 				p.put("lastModifiedDate", pool.lastModifiedDate() != null ? pool.lastModifiedDate().toString() : null);
 				pools.add(p);
@@ -524,7 +522,7 @@ public class AwsCognitoNode extends AbstractNode {
 	private Map<String, Object> userToMap(UserType user) {
 		Map<String, Object> result = new LinkedHashMap<>();
 		result.put("username", user.username());
-		result.put("userStatus", user.userStatusAsString());
+		result.put("userStatus", user.userStatus() != null ? user.userStatus().toString() : null);
 		result.put("enabled", user.enabled());
 		result.put("userCreateDate", user.userCreateDate() != null ? user.userCreateDate().toString() : null);
 		result.put("userLastModifiedDate", user.userLastModifiedDate() != null ? user.userLastModifiedDate().toString() : null);

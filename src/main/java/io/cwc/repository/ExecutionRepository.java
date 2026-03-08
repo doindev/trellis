@@ -1,5 +1,8 @@
 package io.cwc.repository;
 
+import java.time.Instant;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,11 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import io.cwc.entity.ExecutionEntity;
-import io.cwc.entity.ExecutionEntity.ExecutionMode;
 import io.cwc.entity.ExecutionEntity.ExecutionStatus;
-
-import java.time.Instant;
-import java.util.List;
 
 @Repository
 public interface ExecutionRepository extends JpaRepository<ExecutionEntity, String> {

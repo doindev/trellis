@@ -1,15 +1,20 @@
 package io.cwc.nodes.impl;
 
-import lombok.extern.slf4j.Slf4j;
-
-import java.net.http.HttpResponse;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractApiNode;
-import io.cwc.nodes.core.*;
+import io.cwc.nodes.core.NodeExecutionContext;
+import io.cwc.nodes.core.NodeExecutionResult;
+import io.cwc.nodes.core.NodeInput;
+import io.cwc.nodes.core.NodeOutput;
+import io.cwc.nodes.core.NodeParameter;
 import io.cwc.nodes.core.NodeParameter.ParameterOption;
 import io.cwc.nodes.core.NodeParameter.ParameterType;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Mailchimp Trigger — starts the workflow when Mailchimp webhook events occur,

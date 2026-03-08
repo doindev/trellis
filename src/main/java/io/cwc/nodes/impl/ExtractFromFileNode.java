@@ -1,19 +1,29 @@
 package io.cwc.nodes.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractNode;
-import io.cwc.nodes.core.*;
+import io.cwc.nodes.core.NodeExecutionContext;
+import io.cwc.nodes.core.NodeExecutionResult;
+import io.cwc.nodes.core.NodeParameter;
 import io.cwc.nodes.core.NodeParameter.ParameterOption;
 import io.cwc.nodes.core.NodeParameter.ParameterType;
-
-import org.apache.poi.ss.usermodel.*;
-
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
 
 /**
  * Extract from File — converts binary file data to JSON output

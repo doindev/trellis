@@ -1,9 +1,13 @@
 package io.cwc.nodes.impl;
 
-import static io.cwc.nodes.impl.NodeTestHelper.*;
-import static org.assertj.core.api.Assertions.*;
+import static io.cwc.nodes.impl.NodeTestHelper.condition;
+import static io.cwc.nodes.impl.NodeTestHelper.ctx;
+import static io.cwc.nodes.impl.NodeTestHelper.items;
+import static io.cwc.nodes.impl.NodeTestHelper.jsonAt;
+import static io.cwc.nodes.impl.NodeTestHelper.mutableMap;
+import static io.cwc.nodes.impl.NodeTestHelper.output;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
