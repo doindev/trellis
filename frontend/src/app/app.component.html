@@ -428,10 +428,6 @@
           <label class="cp-label" for="cpDesc">Description <span class="cp-optional">optional</span></label>
           <textarea id="cpDesc" class="cp-textarea" rows="3" [(ngModel)]="newProjectDescription" placeholder="What is this project about?"></textarea>
         </div>
-        <div class="cp-field">
-          <label class="cp-label" for="cpIcon">Icon <span class="cp-optional">optional</span></label>
-          <input id="cpIcon" class="cp-input cp-input-icon" type="text" [(ngModel)]="newProjectIcon" placeholder="e.g. &#128640;">
-        </div>
       </div>
       <div class="cp-footer">
         <button class="cp-btn-cancel" (click)="onCreateProjectCancel()">Cancel</button>

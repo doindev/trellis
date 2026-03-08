@@ -31,7 +31,6 @@ export class AppComponent implements OnInit, OnDestroy {
   showCreateProjectModal = false;
   newProjectName = '';
   newProjectDescription = '';
-  newProjectIcon = '';
   creatingProject = false;
   private addDropdownTimer: ReturnType<typeof setTimeout> | null = null;
   private createMenuTimer: ReturnType<typeof setTimeout> | null = null;
@@ -166,20 +165,15 @@ export class AppComponent implements OnInit, OnDestroy {
     this.showCreateMenu = false;
     this.newProjectName = '';
     this.newProjectDescription = '';
-    this.newProjectIcon = '';
     this.showCreateProjectModal = true;
   }
 
   onCreateProjectConfirm(): void {
     if (!this.newProjectName.trim() || this.creatingProject) return;
     this.creatingProject = true;
-    const icon = this.newProjectIcon.trim()
-      ? { type: 'emoji', value: this.newProjectIcon.trim() } as any
-      : undefined;
     this.projectService.create({
       name: this.newProjectName.trim(),
-      description: this.newProjectDescription.trim() || undefined,
-      icon
+      description: this.newProjectDescription.trim() || undefined
     }).subscribe({
       next: (project) => {
         this.creatingProject = false;
