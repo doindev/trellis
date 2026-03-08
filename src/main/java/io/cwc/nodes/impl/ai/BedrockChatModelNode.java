@@ -48,6 +48,8 @@ public class BedrockChatModelNode extends AbstractChatModelNode {
 		return BedrockChatModel.builder()
 				.client(client)
 				.modelId(model)
+				.temperature(temperature)
+				.maxTokens(maxTokens)
 				.build();
 	}
 
