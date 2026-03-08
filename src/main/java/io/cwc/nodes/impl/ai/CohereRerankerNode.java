@@ -1,7 +1,6 @@
 package io.cwc.nodes.impl.ai;
 
 import dev.langchain4j.model.cohere.CohereScoringModel;
-import dev.langchain4j.model.scoring.ScoringModel;
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractAiSubNode;
 import io.cwc.nodes.core.NodeExecutionContext;
@@ -31,14 +30,11 @@ public class CohereRerankerNode extends AbstractAiSubNode {
 	public Object supplyData(NodeExecutionContext context) {
 		String apiKey = context.getCredentialString("apiKey");
 		String model = context.getParameter("model", "rerank-v3.5");
-		int topN = toInt(context.getParameters().get("topN"), 3);
 
-		ScoringModel scoringModel = CohereScoringModel.builder()
+		return CohereScoringModel.builder()
 				.apiKey(apiKey)
 				.modelName(model)
 				.build();
-
-		return scoringModel;
 	}
 
 	@Override

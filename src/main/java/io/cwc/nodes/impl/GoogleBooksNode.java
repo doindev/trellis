@@ -130,7 +130,7 @@ public class GoogleBooksNode extends AbstractApiNode {
 				String volumeId = context.getParameter("volumeId", "");
 				int position = toInt(context.getParameters().get("volumePosition"), 0);
 				HttpResponse<String> response = post(base + "/moveVolume?volumeId=" + encode(volumeId) + "&volumePosition=" + position, Map.of(), headers);
-				yield Map.of("success", true, "volumeId", volumeId, "position", position);
+				yield Map.of("success", true, "volumeId", volumeId, "position", position, "statusCode", response.statusCode());
 			}
 			case "remove" -> {
 				String volumeId = context.getParameter("volumeId", "");

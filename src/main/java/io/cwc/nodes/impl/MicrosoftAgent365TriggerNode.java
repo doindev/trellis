@@ -133,7 +133,11 @@ public class MicrosoftAgent365TriggerNode extends AbstractApiNode {
 		int sinceMinutes = toInt(context.getParameter("sinceMinutes", 60), 60);
 
 		// Build the URL with $top and filter by recent activity
-		String url = BASE_URL + "/me/activities/recent?$top=" + limit;
+		java.time.Instant since = java.time.Instant.now().minusSeconds(sinceMinutes * 60L);
+		String sinceStr = since.toString();
+
+		String url = BASE_URL + "/me/activities/recent?$top=" + limit
+			+ "&$filter=lastModifiedDateTime ge " + encode(sinceStr);
 
 		HttpResponse<String> response = get(url, headers);
 		return toListResult(response, "value");

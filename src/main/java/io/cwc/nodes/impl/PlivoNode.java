@@ -27,7 +27,6 @@ public class PlivoNode extends AbstractApiNode {
 		String authId = context.getCredentialString("authId", "");
 		String authToken = context.getCredentialString("authToken", "");
 		String resource = context.getParameter("resource", "sms");
-		String operation = context.getParameter("operation", "send");
 
 		String baseUrl = "https://api.plivo.com/v1/Account/" + encode(authId);
 

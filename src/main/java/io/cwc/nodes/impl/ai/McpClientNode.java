@@ -36,7 +36,6 @@ public class McpClientNode extends AbstractApiNode {
 	@Override
 	public NodeExecutionResult execute(NodeExecutionContext context) {
 		String serverUrl = context.getParameter("serverUrl", "");
-		String transport = context.getParameter("transport", "sse");
 		String operation = context.getParameter("operation", "listTools");
 
 		if (serverUrl.isBlank()) {

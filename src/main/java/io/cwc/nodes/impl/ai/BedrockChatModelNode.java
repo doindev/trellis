@@ -1,6 +1,7 @@
 package io.cwc.nodes.impl.ai;
 
 import dev.langchain4j.model.bedrock.BedrockChatModel;
+import dev.langchain4j.model.bedrock.BedrockChatRequestParameters;
 import dev.langchain4j.model.chat.ChatModel;
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractChatModelNode;
@@ -48,8 +49,10 @@ public class BedrockChatModelNode extends AbstractChatModelNode {
 		return BedrockChatModel.builder()
 				.client(client)
 				.modelId(model)
-				.temperature(temperature)
-				.maxTokens(maxTokens)
+				.defaultRequestParameters(BedrockChatRequestParameters.builder()
+						.temperature(temperature)
+						.maxOutputTokens(maxTokens)
+						.build())
 				.build();
 	}
 

@@ -31,7 +31,6 @@ public class ProfitWellNode extends AbstractApiNode {
 		String apiToken = (String) credentials.getOrDefault("accessToken", "");
 
 		String resource = context.getParameter("resource", "metric");
-		String operation = context.getParameter("operation", "get");
 
 		Map<String, String> headers = new HashMap<>();
 		headers.put("Authorization", apiToken);

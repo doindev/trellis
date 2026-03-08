@@ -41,22 +41,6 @@ class CompressionNodeTest {
         return List.of(item);
     }
 
-    private List<Map<String, Object>> binaryInputCustomField(String base64Data, String fileName,
-                                                              String mimeType, String fieldName) {
-        Map<String, Object> binaryFile = new HashMap<>();
-        binaryFile.put("data", base64Data);
-        binaryFile.put("fileName", fileName);
-        binaryFile.put("mimeType", mimeType);
-
-        Map<String, Object> binary = new HashMap<>();
-        binary.put(fieldName, binaryFile);
-
-        Map<String, Object> item = new HashMap<>();
-        item.put("json", Map.of());
-        item.put("binary", binary);
-
-        return List.of(item);
-    }
 
     // ── Compress with gzip produces gzip output ──
 

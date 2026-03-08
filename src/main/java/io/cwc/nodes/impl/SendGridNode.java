@@ -171,6 +171,7 @@ public class SendGridNode extends AbstractApiNode {
 				HttpResponse<String> response = delete(url, headers);
 				Map<String, Object> result = new LinkedHashMap<>();
 				result.put("success", true);
+				result.put("statusCode", response.statusCode());
 				yield result;
 			}
 			case "update" -> {

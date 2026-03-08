@@ -37,8 +37,6 @@ public class StackbyNode extends AbstractApiNode {
 		headers.put("Accept", "application/json");
 		headers.put("Content-Type", "application/json");
 
-		String tableUrl = BASE_URL + "/" + encode(stackId) + "/" + encode(table);
-
 		List<Map<String, Object>> inputData = context.getInputData();
 		List<Map<String, Object>> results = new ArrayList<>();
 
