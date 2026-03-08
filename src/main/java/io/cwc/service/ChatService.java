@@ -165,8 +165,6 @@ public class ChatService {
     private void processAiResponse(String sessionId, String systemPrompt,
                                     List<ChatMessageEntity> history,
                                     ChatModel agentModel, ChatModel settingsModel) {
-        log.info("processAiResponse called for session {}: agentModel={}, settingsModel={}, historySize={}",
-                sessionId, agentModel != null, settingsModel != null, history.size());
         if (agentModel != null) {
             respondWithTools(sessionId, systemPrompt, history, agentModel);
         } else if (settingsModel != null) {
@@ -274,21 +272,17 @@ public class ChatService {
      */
     private ChatModel resolveSettingsChatModel() {
         try {
-            boolean enabled = aiSettingsService.isEnabled();
-            log.info("resolveSettingsChatModel: enabled={}", enabled);
-            if (!enabled) return null;
+            if (!aiSettingsService.isEnabled()) return null;
 
             var entity = aiSettingsService.getEntity();
-            if (entity == null) { log.info("resolveSettingsChatModel: entity is null"); return null; }
+            if (entity == null) return null;
 
             // Decrypt the API key
             String apiKey = aiSettingsService.getDecryptedApiKey();
-            if (apiKey == null || apiKey.isBlank()) { log.info("resolveSettingsChatModel: apiKey is null/blank"); return null; }
+            if (apiKey == null || apiKey.isBlank()) return null;
 
             String provider = entity.getProvider();
-            String modelName = entity.getModel();
             String nodeType = PROVIDER_TO_NODE_TYPE.get(provider);
-            log.info("resolveSettingsChatModel: provider={}, model={}, nodeType={}", provider, modelName, nodeType);
             if (nodeType == null) {
                 log.warn("No chat model node mapping for provider '{}'", provider);
                 return null;
@@ -309,7 +303,7 @@ public class ChatService {
 
             // Build parameters map with model name
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("model", modelName);
+            parameters.put("model", entity.getModel());
 
             NodeExecutionContext context = NodeExecutionContext.builder()
                     .parameters(parameters)
@@ -318,7 +312,6 @@ public class ChatService {
                     .build();
 
             Object model = subNode.supplyData(context);
-            log.info("resolveSettingsChatModel: supplyData returned {}", model != null ? model.getClass().getSimpleName() : "null");
             return model instanceof ChatModel cm ? cm : null;
         } catch (Exception e) {
             log.error("Failed to resolve chat model from AI settings: {}", e.getMessage(), e);
@@ -328,14 +321,10 @@ public class ChatService {
 
     private void respondWithTools(String sessionId, String systemPrompt,
                                    List<ChatMessageEntity> history, ChatModel model) {
-        log.info("respondWithTools called for session {}: model={}, historySize={}", sessionId, model.getClass().getSimpleName(), history.size());
         try {
-            // First try direct model call to verify model + async pipeline work
             var messages = buildMessages(systemPrompt, history);
-            log.info("Calling model.chat() for session {}, message count: {}", sessionId, messages.size());
             ChatResponse chatResponse = model.chat(messages);
             String text = chatResponse.aiMessage().text();
-            log.info("model.chat() completed for session {}, response length: {}", sessionId, text != null ? text.length() : 0);
             saveAndSend(sessionId, text);
         } catch (Exception e) {
             log.error("Chat error for session {}: {}", sessionId, e.getMessage(), e);

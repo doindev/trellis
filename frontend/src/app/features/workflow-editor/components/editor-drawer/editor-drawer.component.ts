@@ -631,7 +631,7 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
 
   // Chat methods
   private connectChat(): void {
-    if (!this.workflowId || this.chatSessionId || this.chatConnecting) return;
+    if (this.chatSessionId || this.chatConnecting) return;
     this.chatConnecting = true;
     this.chatService.createSession('Workflow Chat').subscribe({
       next: (session) => {
