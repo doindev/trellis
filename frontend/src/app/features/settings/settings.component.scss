@@ -761,55 +761,6 @@ select.form-input {
   margin-left: 4px;
 }
 
-/* Community nodes grid */
-.nodes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.node-card {
-  background: hsl(0, 0%, 13%);
-  border: 1px solid hsl(0, 0%, 22%);
-  border-radius: 8px;
-  padding: 14px 16px;
-}
-
-.node-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.node-card-name {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: hsl(0, 0%, 90%);
-}
-
-.node-card-version {
-  font-size: 0.6875rem;
-  color: hsl(0, 0%, 44%);
-}
-
-.node-card-meta {
-  display: flex;
-  gap: 8px;
-  font-size: 0.6875rem;
-}
-
-.node-card-type {
-  color: hsl(0, 0%, 44%);
-  font-family: monospace;
-}
-
-.node-card-category {
-  color: hsl(247, 30%, 60%);
-  background: hsla(247, 30%, 50%, 0.1);
-  padding: 1px 6px;
-  border-radius: 3px;
-}
 
 // --- Endpoint mode radio options ---
 

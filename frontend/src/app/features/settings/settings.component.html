@@ -758,25 +758,4 @@
       </div>
     }
 
-    <!-- COMMUNITY NODES -->
-    @if (activeSection === 'community-nodes') {
-      <div class="section-page">
-        <h1 class="section-title">Community Nodes</h1>
-        <p class="section-subtitle">Installed workflow nodes ({{ nodeTypes.length }} total)</p>
-        <div class="nodes-grid">
-          @for (node of nodeTypes; track node.type) {
-            <div class="node-card">
-              <div class="node-card-header">
-                <span class="node-card-name">{{ node.displayName }}</span>
-                <span class="node-card-version">v{{ node.version }}</span>
-              </div>
-              <div class="node-card-meta">
-                <span class="node-card-type">{{ node.type }}</span>
-                <span class="node-card-category">{{ node.category }}</span>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-    }
 </div>

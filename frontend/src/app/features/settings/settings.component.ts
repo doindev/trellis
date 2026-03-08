@@ -4,8 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter, McpOutputSchema, SwaggerSettings, SwaggerWorkflow } from '../../core/services/settings.service';
-import { NodeTypeService } from '../../core/services/node-type.service';
-import { NodeTypeDescription } from '../../core/models';
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
 
 @Component({
@@ -84,14 +82,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return this.swaggerWorkflows.some(wf => !!wf.projectId);
   }
 
-  // Community Nodes
-  nodeTypes: NodeTypeDescription[] = [];
-
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private settingsService: SettingsService,
-    private nodeTypeService: NodeTypeService
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
@@ -133,11 +127,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
         break;
       case 'swagger':
         this.loadSwaggerSettings();
-        break;
-      case 'community-nodes':
-        this.nodeTypeService.getAll().subscribe({
-          next: types => this.nodeTypes = types
-        });
         break;
     }
   }
