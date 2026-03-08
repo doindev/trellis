@@ -27,8 +27,6 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.*;
@@ -138,33 +136,27 @@ public class ChatService {
         // Capture security context for the async thread (tool handlers need it)
         SecurityContext securityContext = SecurityContextHolder.getContext();
 
-        // Schedule the LLM response to run asynchronously AFTER the transaction commits.
-        // This ensures: (1) the HTTP response returns immediately, (2) the user message
-        // is committed before the LLM reads history, (3) tool handlers that access the DB
-        // run in their own transaction context.
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                CompletableFuture.runAsync(() -> {
-                    SecurityContextHolder.setContext(securityContext);
-                    try {
-                        processAiResponse(sessionId, systemPrompt, history,
-                                agentModel, settingsModel);
-                    } catch (Exception e) {
-                        log.error("Async chat processing failed for session {}: {}", sessionId, e.getMessage(), e);
-                        try {
-                            saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
-                        } catch (Exception sendErr) {
-                            log.error("Failed to send error message for session {}: {}", sessionId, sendErr.getMessage());
-                        }
-                    } finally {
-                        SecurityContextHolder.clearContext();
-                    }
-                }, workflowExecutor).exceptionally(t -> {
-                    log.error("Uncaught error in chat async task for session {}: {}", sessionId, t.getMessage(), t);
-                    return null;
-                });
+        // Run LLM response asynchronously so the HTTP response returns immediately.
+        // History is already loaded (includes the just-saved user message), so no need
+        // to wait for transaction commit.
+        CompletableFuture.runAsync(() -> {
+            SecurityContextHolder.setContext(securityContext);
+            try {
+                processAiResponse(sessionId, systemPrompt, history,
+                        agentModel, settingsModel);
+            } catch (Exception e) {
+                log.error("Async chat processing failed for session {}: {}", sessionId, e.getMessage(), e);
+                try {
+                    saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
+                } catch (Exception sendErr) {
+                    log.error("Failed to send error message for session {}: {}", sessionId, sendErr.getMessage());
+                }
+            } finally {
+                SecurityContextHolder.clearContext();
             }
+        }, workflowExecutor).exceptionally(t -> {
+            log.error("Uncaught error in chat async task for session {}: {}", sessionId, t.getMessage(), t);
+            return null;
         });
 
         return toResponse(userMsg);
