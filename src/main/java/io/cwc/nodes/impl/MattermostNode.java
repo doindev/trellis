@@ -264,7 +264,6 @@ public class MattermostNode extends AbstractApiNode {
 					String trimmed = e.trim();
 					if (!trimmed.isEmpty()) emailList.add(trimmed);
 				}
-				Map<String, Object> body = new LinkedHashMap<>();
 				HttpResponse<String> response = post(apiUrl + "/teams/" + encode(teamId) + "/invite/email",
 						emailList, headers);
 				yield parseResponse(response);

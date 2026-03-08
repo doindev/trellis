@@ -980,7 +980,7 @@ public class ClickUpNode extends AbstractApiNode {
 					if (!t.trim().isEmpty()) tags.add(Map.of("name", t.trim()));
 				}
 				Map<String, Object> body = Map.of("tags", tags);
-				HttpResponse<String> response = delete(BASE_URL + "/team/" + teamId + "/time_entries/" + timeEntryId + "/tags", headers);
+				HttpResponse<String> response = deleteWithBody(BASE_URL + "/team/" + teamId + "/time_entries/" + timeEntryId + "/tags", body, headers);
 				return toResult(response);
 			}
 			default:
