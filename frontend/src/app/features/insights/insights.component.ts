@@ -283,6 +283,17 @@ export class InsightsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.chart?.destroy();
   }
 
+  refreshMetrics(): void {
+    const preset = this.presets.find(p => p.label === this.selectedPreset());
+    if (preset?.rollingMinutes != null) {
+      const now = new Date();
+      this.rangeStart.set(new Date(now.getTime() - preset.rollingMinutes * 60000));
+      this.rangeEnd.set(now);
+    } else {
+      this.loadMetrics();
+    }
+  }
+
   loadMetrics(): void {
     const start = this.rangeStart();
     const end = this.rollingHours() ? this.rangeEnd() : new Date(this.rangeEnd().getTime() + 86400000);
