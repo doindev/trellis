@@ -65,7 +65,8 @@ public class GoogleDriveNode extends AbstractApiNode {
 				ParameterOption.builder().name("List").value("list").description("List files and folders").build(),
 				ParameterOption.builder().name("Move").value("move").description("Move a file to a different folder").build(),
 				ParameterOption.builder().name("Share").value("share").description("Share a file").build(),
-				ParameterOption.builder().name("Update").value("update").description("Update a file's metadata").build()
+				ParameterOption.builder().name("Update").value("update").description("Update a file's metadata").build(),
+				ParameterOption.builder().name("Upload").value("upload").description("Upload a new file").build()
 			)).build());
 
 		// Drive operations
@@ -208,6 +209,34 @@ public class GoogleDriveNode extends AbstractApiNode {
 		params.add(NodeParameter.builder()
 			.name("updateStarred").displayName("Starred").type(ParameterType.BOOLEAN).defaultValue(false)
 			.displayOptions(Map.of("show", Map.of("resource", List.of("file"), "operation", List.of("update"))))
+			.build());
+
+		// Upload: file name
+		params.add(NodeParameter.builder()
+			.name("uploadName").displayName("File Name").type(ParameterType.STRING).required(true)
+			.description("The name for the uploaded file (e.g., report.txt).")
+			.displayOptions(Map.of("show", Map.of("resource", List.of("file"), "operation", List.of("upload"))))
+			.build());
+
+		// Upload: content
+		params.add(NodeParameter.builder()
+			.name("uploadContent").displayName("File Content").type(ParameterType.STRING).required(true)
+			.description("The text content to upload.")
+			.displayOptions(Map.of("show", Map.of("resource", List.of("file"), "operation", List.of("upload"))))
+			.build());
+
+		// Upload: MIME type
+		params.add(NodeParameter.builder()
+			.name("uploadMimeType").displayName("MIME Type").type(ParameterType.STRING).defaultValue("text/plain")
+			.description("The MIME type of the file content (e.g., text/plain, application/json, text/csv).")
+			.displayOptions(Map.of("show", Map.of("resource", List.of("file"), "operation", List.of("upload"))))
+			.build());
+
+		// Upload: parent folder
+		params.add(NodeParameter.builder()
+			.name("uploadParentId").displayName("Parent Folder ID").type(ParameterType.STRING)
+			.description("The ID of the folder to upload into. Leave empty for root.")
+			.displayOptions(Map.of("show", Map.of("resource", List.of("file"), "operation", List.of("upload"))))
 			.build());
 	}
 
@@ -408,6 +437,46 @@ public class GoogleDriveNode extends AbstractApiNode {
 				body.put("starred", starred);
 
 				HttpResponse<String> response = patch(BASE_URL + "/files/" + encode(fileId), body, headers);
+				return toResult(response);
+			}
+			case "upload": {
+				String fileName = context.getParameter("uploadName", "");
+				String content = context.getParameter("uploadContent", "");
+				String mimeType = context.getParameter("uploadMimeType", "text/plain");
+				String parentId = context.getParameter("uploadParentId", "");
+
+				// Build metadata
+				Map<String, Object> metadata = new LinkedHashMap<>();
+				metadata.put("name", fileName);
+				metadata.put("mimeType", mimeType);
+				if (!parentId.isEmpty()) metadata.put("parents", List.of(parentId));
+
+				// Multipart upload: metadata JSON + file content
+				String boundary = "cwc_upload_" + UUID.randomUUID().toString().replace("-", "");
+				String multipartBody = "--" + boundary + "\r\n"
+					+ "Content-Type: application/json; charset=UTF-8\r\n\r\n"
+					+ objectMapper.writeValueAsString(metadata) + "\r\n"
+					+ "--" + boundary + "\r\n"
+					+ "Content-Type: " + mimeType + "\r\n\r\n"
+					+ content + "\r\n"
+					+ "--" + boundary + "--";
+
+				Map<String, String> uploadHeaders = new LinkedHashMap<>(headers);
+				uploadHeaders.put("Content-Type", "multipart/related; boundary=" + boundary);
+
+				String url = UPLOAD_URL + "/files?uploadType=multipart";
+
+				java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+					.uri(java.net.URI.create(url))
+					.POST(java.net.http.HttpRequest.BodyPublishers.ofString(multipartBody))
+					.headers(uploadHeaders.entrySet().stream()
+						.flatMap(e -> java.util.stream.Stream.of(e.getKey(), e.getValue()))
+						.toArray(String[]::new))
+					.build();
+
+				HttpResponse<String> response = java.net.http.HttpClient.newHttpClient()
+					.send(request, HttpResponse.BodyHandlers.ofString());
+
 				return toResult(response);
 			}
 			default:

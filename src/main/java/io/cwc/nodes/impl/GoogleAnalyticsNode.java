@@ -47,7 +47,13 @@ public class GoogleAnalyticsNode extends AbstractApiNode {
 						ParameterOption.builder().name("Report").value("report")
 								.description("Get analytics reports").build(),
 						ParameterOption.builder().name("User Activity").value("userActivity")
-								.description("Search user activity").build()
+								.description("Search user activity").build(),
+						ParameterOption.builder().name("Account").value("account")
+								.description("List analytics accounts (Management API)").build(),
+						ParameterOption.builder().name("Property").value("property")
+								.description("List web properties for an account (Management API)").build(),
+						ParameterOption.builder().name("View").value("view")
+								.description("List views (profiles) for a property (Management API)").build()
 				)).build());
 
 		// Report operations
@@ -69,6 +75,31 @@ public class GoogleAnalyticsNode extends AbstractApiNode {
 						ParameterOption.builder().name("Search").value("search")
 								.description("Search user activity").build()
 				)).build());
+
+		// Management resource operations
+		params.add(NodeParameter.builder()
+				.name("operation").displayName("Operation")
+				.type(ParameterType.OPTIONS).required(true).defaultValue("getAll")
+				.displayOptions(Map.of("show", Map.of("resource", List.of("account", "property", "view"))))
+				.options(List.of(
+						ParameterOption.builder().name("Get All").value("getAll")
+								.description("List all items").build()
+				)).build());
+
+		// Management parameters
+		params.add(NodeParameter.builder()
+				.name("accountId").displayName("Account ID")
+				.type(ParameterType.STRING).required(true)
+				.description("The Analytics account ID.")
+				.displayOptions(Map.of("show", Map.of("resource", List.of("property", "view"))))
+				.build());
+
+		params.add(NodeParameter.builder()
+				.name("propertyId").displayName("Web Property ID")
+				.type(ParameterType.STRING).required(true)
+				.description("The web property ID (e.g., UA-XXXXX-Y).")
+				.displayOptions(Map.of("show", Map.of("resource", List.of("view"))))
+				.build());
 
 		// Report > Get parameters
 		params.add(NodeParameter.builder()
@@ -192,6 +223,9 @@ public class GoogleAnalyticsNode extends AbstractApiNode {
 			return switch (resource) {
 				case "report" -> executeReport(context, credentials);
 				case "userActivity" -> executeUserActivity(context, credentials);
+				case "account" -> executeListAccounts(credentials);
+				case "property" -> executeListProperties(context, credentials);
+				case "view" -> executeListViews(context, credentials);
 				default -> NodeExecutionResult.error("Unknown resource: " + resource);
 			};
 		} catch (Exception e) {
@@ -279,6 +313,34 @@ public class GoogleAnalyticsNode extends AbstractApiNode {
 		}
 
 		HttpResponse<String> response = post(REPORTING_BASE_URL + "/userActivity:search", body, headers);
+		Map<String, Object> result = parseResponse(response);
+		return NodeExecutionResult.success(List.of(wrapInJson(result)));
+	}
+
+	private NodeExecutionResult executeListAccounts(Map<String, Object> credentials) throws Exception {
+		String accessToken = (String) credentials.getOrDefault("accessToken", "");
+		Map<String, String> headers = getAuthHeaders(accessToken);
+		HttpResponse<String> response = get(MANAGEMENT_BASE_URL + "/management/accountSummaries", headers);
+		Map<String, Object> result = parseResponse(response);
+		return NodeExecutionResult.success(List.of(wrapInJson(result)));
+	}
+
+	private NodeExecutionResult executeListProperties(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
+		String accessToken = (String) credentials.getOrDefault("accessToken", "");
+		String accountId = context.getParameter("accountId", "");
+		Map<String, String> headers = getAuthHeaders(accessToken);
+		HttpResponse<String> response = get(MANAGEMENT_BASE_URL + "/management/accounts/" + encode(accountId) + "/webproperties", headers);
+		Map<String, Object> result = parseResponse(response);
+		return NodeExecutionResult.success(List.of(wrapInJson(result)));
+	}
+
+	private NodeExecutionResult executeListViews(NodeExecutionContext context, Map<String, Object> credentials) throws Exception {
+		String accessToken = (String) credentials.getOrDefault("accessToken", "");
+		String accountId = context.getParameter("accountId", "");
+		String propertyId = context.getParameter("propertyId", "");
+		Map<String, String> headers = getAuthHeaders(accessToken);
+		HttpResponse<String> response = get(MANAGEMENT_BASE_URL + "/management/accounts/" + encode(accountId)
+				+ "/webproperties/" + encode(propertyId) + "/profiles", headers);
 		Map<String, Object> result = parseResponse(response);
 		return NodeExecutionResult.success(List.of(wrapInJson(result)));
 	}
