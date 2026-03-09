@@ -52,11 +52,15 @@ export interface SchemaNode {
 export class HighlightPipe implements PipeTransform {
   constructor(private sanitizer: DomSanitizer) {}
   transform(text: string, search: string): SafeHtml {
-    if (!search || !text) return text;
+    if (!search || !text) return this.escapeHtml(String(text));
+    const html = this.escapeHtml(String(text));
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escaped})`, 'gi');
-    const highlighted = text.replace(regex, '<mark class="search-highlight">$1</mark>');
+    const highlighted = html.replace(regex, '<mark class="search-highlight">$1</mark>');
     return this.sanitizer.bypassSecurityTrustHtml(highlighted);
+  }
+  private escapeHtml(text: string): string {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 }
 

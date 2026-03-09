@@ -130,7 +130,7 @@ export interface ExpressionAncestorNode {
               } @else if (evaluationError) {
                 <div class="expr-error">{{ evaluationError }}</div>
               } @else if (displayMode === 'html' && evaluationResult != null) {
-                <div class="expr-result-html" [innerHTML]="formatResult()"></div>
+                <div class="expr-result-html" [innerHTML]="formatResultHtml()"></div>
               } @else {
                 <pre class="expr-result-text">{{ formatResult() }}</pre>
               }
@@ -620,6 +620,11 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
       return JSON.stringify(this.evaluationResult, null, 2);
     }
     return String(this.evaluationResult);
+  }
+
+  formatResultHtml(): string {
+    const text = this.formatResult();
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   // --- Autocomplete ---
