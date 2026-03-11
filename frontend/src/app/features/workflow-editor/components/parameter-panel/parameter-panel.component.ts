@@ -19,6 +19,8 @@ import { CacheNameParamComponent } from './parameter-renderers/cache-name-param.
 import { WorkflowIdParamComponent } from './parameter-renderers/workflow-id-param.component';
 import { TimezoneParamComponent } from './parameter-renderers/timezone-param.component';
 import { ExpressionEditorModalComponent, ExpressionAncestorNode } from './expression-editor-modal.component';
+import { CodeEditorModalComponent } from './code-editor-modal.component';
+import { JsonSchemaEditorModalComponent } from '../../../../shared/components/json-schema-editor-modal/json-schema-editor-modal.component';
 import {
   LucideAngularModule, LucideIconProvider, LUCIDE_ICONS,
   CheckCircle, Copy, Square, Search, ChevronRight, Pin, PinOff, Pencil,
@@ -86,6 +88,8 @@ export class HighlightPipe implements PipeTransform {
         WorkflowIdParamComponent,
         TimezoneParamComponent,
         ExpressionEditorModalComponent,
+        CodeEditorModalComponent,
+        JsonSchemaEditorModalComponent,
     ],
     providers: [{
             provide: LUCIDE_ICONS,
@@ -110,6 +114,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Input() projectContextPath = '';
   @Input() webhookTestData: Record<string, any> = {};
   @Input() pinData: Record<string, any> = {};
+  @Input() mcpInputSchema: any[] | Record<string, any> | null = null;
   @Output() parameterChanged = new EventEmitter<Record<string, any>>();
   @Output() pinDataChanged = new EventEmitter<{ nodeId: string; items: any[] | null }>();
   @Output() credentialChanged = new EventEmitter<Record<string, any>>();
@@ -188,10 +193,11 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     return this.webhookTestData?.[this.node?.id] ?? null;
   }
 
-  // Column resize state
-  leftWidthPercent = 100 / 3;
-  centerWidthPercent = 100 / 3;
-  rightWidthPercent = 100 / 3;
+  // Column resize state (restored from localStorage)
+  private _initColWidths = this.loadColWidths();
+  leftWidthPercent = this._initColWidths[0];
+  centerWidthPercent = this._initColWidths[1];
+  rightWidthPercent = this._initColWidths[2];
   private readonly MIN_COL_PCT = 15;
 
   private dragType: 'left-border' | 'right-border' | 'center-handle' | null = null;
@@ -494,6 +500,142 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     }
     const updated = { ...this.node.parameters, [name]: value };
     this.parameterChanged.emit(updated);
+  }
+
+  /** Whether the "Use workflow schema" button should appear for this param */
+  hasWorkflowSchema(paramName: string): boolean {
+    if (!this.mcpInputSchema) return false;
+    if (this.node?.type !== 'schemaValidator') return false;
+    if (paramName !== 'schema') return false;
+    const mode = this.node?.parameters?.['mode'];
+    if (mode !== 'jsonSchema' && mode !== 'both') return false;
+    // Must have actual content
+    if (Array.isArray(this.mcpInputSchema)) return this.mcpInputSchema.length > 0;
+    return Object.keys(this.mcpInputSchema).length > 0;
+  }
+
+  /**
+   * Convert workflow MCP schema into a validation schema that tests
+   * body, queryParams, and pathParams based on the payload convention.
+   *
+   * - "payload" property → body validation schema
+   * - Properties matching webhook URL path params → pathParams schema
+   * - Everything else → queryParams schema
+   */
+  applyWorkflowSchema(): void {
+    if (!this.mcpInputSchema) return;
+
+    // Step 1: Convert MCP schema to flat JSON Schema properties
+    const convert = (params: any[]): { properties: Record<string, any>; required: string[] } => {
+      const props: Record<string, any> = {};
+      const req: string[] = [];
+      for (const p of params) {
+        if (!p.name?.trim()) continue;
+        const prop: any = { type: p.type || 'string' };
+        if (p.description) prop.description = p.description;
+        if (p.enum?.length) prop.enum = [...p.enum];
+        if (p.minimum != null) prop.minimum = p.minimum;
+        if (p.maximum != null) prop.maximum = p.maximum;
+        if (p.minLength != null) prop.minLength = p.minLength;
+        if (p.maxLength != null) prop.maxLength = p.maxLength;
+        if (p.pattern) prop.pattern = p.pattern;
+        if (p.default != null) prop.default = p.default;
+        if (p.type === 'object' && p.properties?.length) {
+          const nested = convert(p.properties);
+          prop.properties = nested.properties;
+          if (nested.required.length) prop.required = nested.required;
+        }
+        if (p.type === 'array' && p.items) prop.items = { type: p.items.type };
+        props[p.name] = prop;
+        if (p.required) req.push(p.name);
+      }
+      return { properties: props, required: req };
+    };
+
+    let allProps: Record<string, any>;
+    let allRequired: string[];
+
+    if (Array.isArray(this.mcpInputSchema)) {
+      const result = convert(this.mcpInputSchema);
+      allProps = result.properties;
+      allRequired = result.required;
+    } else {
+      // Already a JSON Schema object
+      allProps = { ...(this.mcpInputSchema['properties'] || {}) };
+      allRequired = [...(this.mcpInputSchema['required'] || [])];
+    }
+
+    // Step 2: Extract path param names from the webhook node's URL
+    const pathParamNames = new Set<string>();
+    const webhookNode = this.allNodes.find(n => n.type === 'webhook');
+    if (webhookNode?.parameters?.['path']) {
+      const pathStr: string = webhookNode.parameters['path'];
+      const re = /\{([^:}]+)(?::[^}]+)?\}/g;
+      let match: RegExpExecArray | null;
+      while ((match = re.exec(pathStr)) !== null) {
+        pathParamNames.add(match[1]);
+      }
+    }
+
+    // Step 3: Route properties into body / pathParams / queryParams
+    const bodyProps: Record<string, any> = {};
+    const bodyRequired: string[] = [];
+    const pathProps: Record<string, any> = {};
+    const pathRequired: string[] = [];
+    const queryProps: Record<string, any> = {};
+    const queryRequired: string[] = [];
+    const hasPayload = 'payload' in allProps;
+
+    for (const [name, propDef] of Object.entries(allProps)) {
+      const isReq = allRequired.includes(name);
+      if (name === 'payload') {
+        // payload → body: use its nested properties directly
+        if (propDef.properties) {
+          Object.assign(bodyProps, propDef.properties);
+          if (propDef.required) bodyRequired.push(...propDef.required);
+        }
+      } else if (pathParamNames.has(name)) {
+        pathProps[name] = propDef;
+        if (isReq) pathRequired.push(name);
+      } else if (hasPayload) {
+        // With payload convention, non-payload/non-path go to queryParams
+        queryProps[name] = propDef;
+        if (isReq) queryRequired.push(name);
+      } else {
+        // No payload convention — everything goes to body (legacy)
+        bodyProps[name] = propDef;
+        if (isReq) bodyRequired.push(name);
+      }
+    }
+
+    // Step 4: Build the validation schema for the webhook-like structure
+    const rootProps: Record<string, any> = {};
+    const rootRequired: string[] = [];
+
+    if (Object.keys(bodyProps).length > 0) {
+      const bodySchema: any = { type: 'object', properties: bodyProps };
+      if (bodyRequired.length) bodySchema.required = bodyRequired;
+      rootProps['body'] = bodySchema;
+      rootRequired.push('body');
+    }
+
+    if (Object.keys(pathProps).length > 0) {
+      const pathSchema: any = { type: 'object', properties: pathProps };
+      if (pathRequired.length) pathSchema.required = pathRequired;
+      rootProps['pathParams'] = pathSchema;
+      rootRequired.push('pathParams');
+    }
+
+    if (Object.keys(queryProps).length > 0) {
+      const querySchema: any = { type: 'object', properties: queryProps };
+      if (queryRequired.length) querySchema.required = queryRequired;
+      rootProps['queryParams'] = querySchema;
+    }
+
+    const schema: any = { type: 'object', properties: rootProps };
+    if (rootRequired.length) schema.required = rootRequired;
+
+    this.onParameterChange('schema', schema);
   }
 
   onParamBlur(name: string): void {
@@ -1278,11 +1420,42 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
 
   @HostListener('document:mouseup')
   onDragEnd(): void {
-    this.dragType = null;
+    if (this.dragType) {
+      this.dragType = null;
+      this.saveColWidths();
+    }
+  }
+
+  private saveColWidths(): void {
+    localStorage.setItem('cwc_nodeModal_colWidths', JSON.stringify([
+      this.leftWidthPercent, this.centerWidthPercent, this.rightWidthPercent
+    ]));
+  }
+
+  private loadColWidths(): [number, number, number] {
+    try {
+      const stored = localStorage.getItem('cwc_nodeModal_colWidths');
+      if (stored) {
+        const [l, c, r] = JSON.parse(stored);
+        if (typeof l === 'number' && typeof c === 'number' && typeof r === 'number') {
+          return [l, c, r];
+        }
+      }
+    } catch {}
+    const d = 100 / 3;
+    return [d, d, d];
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.jsonSchemaEditorOpen) {
+      this.jsonSchemaEditorOpen = false;
+      return;
+    }
+    if (this.codeEditorOpen) {
+      this.codeEditorOpen = false;
+      return;
+    }
     if (this.expressionEditorOpen) {
       this.expressionEditorOpen = false;
       return;
@@ -1406,6 +1579,44 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
 
   onExpressionEditorClose(): void {
     this.expressionEditorOpen = false;
+  }
+
+  // --- Code editor modal ---
+
+  codeEditorOpen = false;
+  codeEditorParam = '';
+  codeEditorValue = '';
+  codeEditorLanguage = 'javaScript';
+
+  openCodeEditor(paramName: string, currentValue: any): void {
+    this.codeEditorParam = paramName;
+    this.codeEditorValue = String(currentValue ?? '');
+    this.codeEditorLanguage = this.getParameterValue('language', 'javaScript');
+    this.codeEditorOpen = true;
+  }
+
+  onCodeEditorSave(code: string): void {
+    this.onParameterChange(this.codeEditorParam, code);
+    this.codeEditorOpen = false;
+  }
+
+  onCodeEditorClose(): void {
+    this.codeEditorOpen = false;
+  }
+
+  // --- JSON Schema editor modal ---
+
+  jsonSchemaEditorOpen = false;
+  jsonSchemaEditorValue: any = null;
+
+  openJsonSchemaEditor(paramName: string, currentValue: any): void {
+    this.jsonSchemaEditorValue = currentValue || null;
+    this.jsonSchemaEditorOpen = true;
+  }
+
+  onJsonSchemaEditorSave(schema: any): void {
+    this.onParameterChange('schema', schema);
+    this.jsonSchemaEditorOpen = false;
   }
 
   /** Returns the expression prefix for the currently selected input node */

@@ -121,6 +121,7 @@
             [pinData]="store.workflow()?.pinData || {}"
             [nodeTypeMap]="nodeTypeStore.nodeTypes()"
             [readOnly]="activeTab === 'executions'"
+            [mcpInputSchema]="store.workflow()?.mcpInputSchema || null"
             (pinDataChanged)="onPinDataChanged($event)"
             (parameterChanged)="store.updateNode(store.selectedNodeId()!, { parameters: $event })"
             (credentialChanged)="store.updateNode(store.selectedNodeId()!, { credentials: $event }); loadCredentialIds()"

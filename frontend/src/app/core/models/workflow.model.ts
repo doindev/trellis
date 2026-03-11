@@ -23,7 +23,7 @@ export interface Workflow {
   pinData?: Record<string, any>;
   mcpEnabled?: boolean;
   mcpDescription?: string;
-  mcpInputSchema?: any[];
+  mcpInputSchema?: any[] | Record<string, any>;
   mcpOutputSchema?: any;
   swaggerEnabled?: boolean;
   tags?: Tag[];

@@ -123,6 +123,10 @@ export class WorkflowService {
     return this.api.post<{ result: any; error: string }>('/expressions/evaluate', body);
   }
 
+  validateCode(code: string, language: string): Observable<{ valid: boolean; errors: string[] }> {
+    return this.api.post<{ valid: boolean; errors: string[] }>('/code/validate', { code, language });
+  }
+
   startExecution(executionId: string, triggerNodeId?: string): Observable<any> {
     const body: any = {};
     if (triggerNodeId) { body.triggerNodeId = triggerNodeId; }

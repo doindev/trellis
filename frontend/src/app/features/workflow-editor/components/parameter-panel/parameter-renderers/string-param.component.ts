@@ -38,7 +38,7 @@ import { NodeParameter } from '../../../../../core/models';
                [disabled]="readOnly"
                (dragover)="onDragOver($event)"
                (drop)="onDrop($event)">
-        <button class="expr-editor-btn" (click)="openExpressionEditor.emit()" title="Open expression editor">
+        <button class="expr-editor-btn" (mousedown)="$event.preventDefault(); openExpressionEditor.emit()" title="Open expression editor">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/>
           </svg>
@@ -48,15 +48,24 @@ import { NodeParameter } from '../../../../../core/models';
         <div class="expr-error-msg">{{ expressionError }}</div>
       }
     } @else if (isMultiline) {
-      <textarea class="form-control param-input"
-                [ngModel]="value"
-                (ngModelChange)="valueChange.emit($event)"
-                (blur)="blurred.emit()"
-                [placeholder]="param.placeHolder || ''"
-                [disabled]="readOnly"
-                rows="4"
-                (dragover)="onDragOver($event)"
-                (drop)="onDrop($event)"></textarea>
+      <div class="code-textarea-wrapper">
+        @if (isCodeEditor) {
+          <button class="code-editor-btn" (click)="openCodeEditor.emit()" title="Open code editor">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9l-2 3 2 3"/><path d="M15 9l2 3-2 3"/>
+            </svg>
+          </button>
+        }
+        <textarea class="form-control param-input"
+                  [ngModel]="value"
+                  (ngModelChange)="valueChange.emit($event)"
+                  (blur)="blurred.emit()"
+                  [placeholder]="param.placeHolder || ''"
+                  [disabled]="readOnly"
+                  [attr.rows]="param.typeOptions?.rows || 4"
+                  (dragover)="onDragOver($event)"
+                  (drop)="onDrop($event)"></textarea>
+      </div>
     } @else {
       <input type="text"
              class="form-control param-input"
@@ -146,6 +155,39 @@ import { NodeParameter } from '../../../../../core/models';
       margin-top: 3px;
       font-family: 'Consolas','Monaco',monospace;
     }
+    .code-textarea-wrapper {
+      position: relative;
+    }
+    .code-textarea-wrapper .param-input {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      padding-right: 36px;
+    }
+    .code-editor-btn {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: hsl(0,0%,15%);
+      border: 1px solid hsl(0,0%,28%);
+      border-radius: 4px;
+      color: hsl(0,0%,70%);
+      cursor: pointer;
+      opacity: 0.7;
+      transition: all 0.15s;
+      z-index: 1;
+    }
+    .code-editor-btn:hover {
+      opacity: 1;
+      background: hsl(0,0%,20%);
+      color: hsl(0,0%,96%);
+      border-color: hsl(247,49%,53%);
+    }
   `]
 })
 export class StringParamComponent {
@@ -157,6 +199,7 @@ export class StringParamComponent {
   @Output() blurred = new EventEmitter<void>();
   @Output() focused = new EventEmitter<void>();
   @Output() openExpressionEditor = new EventEmitter<void>();
+  @Output() openCodeEditor = new EventEmitter<void>();
 
   /** Manual toggle — set when user clicks "Expression" on a field that has no {{ }} yet */
   expressionMode = false;
@@ -168,6 +211,10 @@ export class StringParamComponent {
 
   get isMultiline(): boolean {
     return this.param.typeOptions?.rows > 1 || this.param.type === 'string' && this.param.typeOptions?.editor === 'code';
+  }
+
+  get isCodeEditor(): boolean {
+    return this.param.typeOptions?.editor === 'codeNodeEditor';
   }
 
   setFixed(): void {

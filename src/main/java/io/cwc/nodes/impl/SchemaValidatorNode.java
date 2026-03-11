@@ -63,7 +63,9 @@ public class SchemaValidatorNode extends AbstractNode {
 					ParameterOption.builder().name("Field Checks").value("fieldChecks")
 						.description("Validate specific fields with built-in checks").build(),
 					ParameterOption.builder().name("JSON Schema").value("jsonSchema")
-						.description("Validate against a JSON schema definition").build()
+						.description("Validate against a JSON schema definition").build(),
+					ParameterOption.builder().name("Field Checks + JSON Schema").value("both")
+						.description("Run both field checks and JSON schema validation").build()
 				))
 				.build(),
 
@@ -72,7 +74,7 @@ public class SchemaValidatorNode extends AbstractNode {
 				.displayName("JSON Schema")
 				.description("The JSON schema to validate against.")
 				.type(ParameterType.JSON)
-				.displayOptions(Map.of("show", Map.of("mode", List.of("jsonSchema"))))
+				.displayOptions(Map.of("show", Map.of("mode", List.of("jsonSchema", "both"))))
 				.required(true)
 				.placeHolder("{\"type\": \"object\", \"required\": [\"name\", \"email\"]}")
 				.build(),
@@ -82,7 +84,7 @@ public class SchemaValidatorNode extends AbstractNode {
 				.displayName("Field Checks")
 				.description("Field validation rules.")
 				.type(ParameterType.FIXED_COLLECTION)
-				.displayOptions(Map.of("show", Map.of("mode", List.of("fieldChecks"))))
+				.displayOptions(Map.of("show", Map.of("mode", List.of("fieldChecks", "both"))))
 				.nestedParameters(List.of(
 					NodeParameter.builder()
 						.name("fieldName")
@@ -145,7 +147,10 @@ public class SchemaValidatorNode extends AbstractNode {
 			Map<String, Object> json = unwrapJson(item);
 			List<String> errors;
 
-			if ("jsonSchema".equals(mode)) {
+			if ("both".equals(mode)) {
+				errors = validateFieldChecks(json, context);
+				errors.addAll(validateJsonSchema(json, context));
+			} else if ("jsonSchema".equals(mode)) {
 				errors = validateJsonSchema(json, context);
 			} else {
 				errors = validateFieldChecks(json, context);
@@ -189,45 +194,119 @@ public class SchemaValidatorNode extends AbstractNode {
 			return errors;
 		}
 
-		// Basic JSON schema validation (type, required, properties)
+		validateObjectSchema(json, schema, "", errors);
+		return errors;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void validateObjectSchema(Map<String, Object> data, Map<String, Object> schema,
+									  String pathPrefix, List<String> errors) {
 		Object typeObj = schema.get("type");
-		if ("object".equals(typeObj)) {
-			if (!(json instanceof Map)) {
-				errors.add("Expected object type");
-				return errors;
-			}
+		if (!"object".equals(typeObj)) return;
 
-			// Check required fields
-			Object requiredObj = schema.get("required");
-			if (requiredObj instanceof List) {
-				for (Object req : (List<?>) requiredObj) {
-					String fieldName = String.valueOf(req);
-					if (!json.containsKey(fieldName) || json.get(fieldName) == null) {
-						errors.add("Missing required field: " + fieldName);
-					}
-				}
-			}
+		String prefix = pathPrefix.isEmpty() ? "" : pathPrefix + ".";
 
-			// Check properties
-			Object propsObj = schema.get("properties");
-			if (propsObj instanceof Map) {
-				Map<String, Object> properties = (Map<String, Object>) propsObj;
-				for (Map.Entry<String, Object> entry : properties.entrySet()) {
-					String fieldName = entry.getKey();
-					Object value = json.get(fieldName);
-					if (value != null && entry.getValue() instanceof Map) {
-						Map<String, Object> propSchema = (Map<String, Object>) entry.getValue();
-						String expectedType = (String) propSchema.get("type");
-						if (expectedType != null && !matchesType(value, expectedType)) {
-							errors.add("Field '" + fieldName + "' expected type '" + expectedType
-								+ "' but got '" + value.getClass().getSimpleName() + "'");
-						}
-					}
+		// Check required fields
+		Object requiredObj = schema.get("required");
+		if (requiredObj instanceof List) {
+			for (Object req : (List<?>) requiredObj) {
+				String fieldName = String.valueOf(req);
+				if (!data.containsKey(fieldName) || data.get(fieldName) == null) {
+					errors.add("Missing required field: " + prefix + fieldName);
 				}
 			}
 		}
 
-		return errors;
+		// Check properties
+		Object propsObj = schema.get("properties");
+		if (propsObj instanceof Map) {
+			Map<String, Object> properties = (Map<String, Object>) propsObj;
+			for (Map.Entry<String, Object> entry : properties.entrySet()) {
+				String fieldName = entry.getKey();
+				Object value = data.get(fieldName);
+				if (value != null && entry.getValue() instanceof Map) {
+					Map<String, Object> propSchema = (Map<String, Object>) entry.getValue();
+					Object propTypeObj = propSchema.get("type");
+					if (propTypeObj != null && !matchesType(value, propTypeObj)) {
+						errors.add("Field '" + prefix + fieldName + "' expected type '" + propTypeObj
+							+ "' but got '" + value.getClass().getSimpleName() + "'");
+					}
+					validatePropertyConstraints(prefix + fieldName, value, propSchema, errors);
+
+					// Recurse into nested object properties
+					if (typeIncludes(propTypeObj, "object") && value instanceof Map
+							&& propSchema.get("properties") != null) {
+						validateObjectSchema((Map<String, Object>) value, propSchema,
+							prefix + fieldName, errors);
+					}
+				}
+			}
+		}
+	}
+
+	private void validatePropertyConstraints(String fieldName, Object value, Map<String, Object> propSchema, List<String> errors) {
+		String strVal = String.valueOf(value);
+
+		// pattern
+		Object patternObj = propSchema.get("pattern");
+		if (patternObj instanceof String patternStr && !patternStr.isEmpty()) {
+			try {
+				if (!Pattern.matches(patternStr, strVal)) {
+					errors.add("Field '" + fieldName + "' does not match pattern '" + patternStr + "'");
+				}
+			} catch (Exception e) {
+				errors.add("Field '" + fieldName + "' has invalid pattern '" + patternStr + "': " + e.getMessage());
+			}
+		}
+
+		// minLength
+		Object minLenObj = propSchema.get("minLength");
+		if (minLenObj instanceof Number && value instanceof String) {
+			int minLen = ((Number) minLenObj).intValue();
+			if (((String) value).length() < minLen) {
+				errors.add("Field '" + fieldName + "' must be at least " + minLen + " characters");
+			}
+		}
+
+		// maxLength
+		Object maxLenObj = propSchema.get("maxLength");
+		if (maxLenObj instanceof Number && value instanceof String) {
+			int maxLen = ((Number) maxLenObj).intValue();
+			if (((String) value).length() > maxLen) {
+				errors.add("Field '" + fieldName + "' must not exceed " + maxLen + " characters");
+			}
+		}
+
+		// minimum
+		Object minObj = propSchema.get("minimum");
+		if (minObj instanceof Number && value instanceof Number) {
+			if (((Number) value).doubleValue() < ((Number) minObj).doubleValue()) {
+				errors.add("Field '" + fieldName + "' must be >= " + minObj);
+			}
+		}
+
+		// maximum
+		Object maxObj = propSchema.get("maximum");
+		if (maxObj instanceof Number && value instanceof Number) {
+			if (((Number) value).doubleValue() > ((Number) maxObj).doubleValue()) {
+				errors.add("Field '" + fieldName + "' must be <= " + maxObj);
+			}
+		}
+
+		// enum
+		Object enumObj = propSchema.get("enum");
+		if (enumObj instanceof List<?> enumList && !enumList.isEmpty()) {
+			boolean found = false;
+			for (Object allowed : enumList) {
+				if (strVal.equals(String.valueOf(allowed))) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				errors.add("Field '" + fieldName + "' must be one of: " + enumList);
+			}
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -251,7 +330,7 @@ public class SchemaValidatorNode extends AbstractNode {
 
 			if (fieldName == null || fieldName.isEmpty()) continue;
 
-			Object value = json.get(fieldName);
+			Object value = resolveValue(json, fieldName);
 			String fieldError = validateField(fieldName, value, checkType, checkValue);
 			if (fieldError != null) {
 				errors.add(fieldError);
@@ -259,6 +338,22 @@ public class SchemaValidatorNode extends AbstractNode {
 		}
 
 		return errors;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Object resolveValue(Map<String, Object> json, String fieldName) {
+		if (!fieldName.contains(".")) return json.get(fieldName);
+		String[] parts = fieldName.split("\\.");
+		Object current = json;
+		for (String part : parts) {
+			if (current instanceof Map) {
+				current = ((Map<String, Object>) current).get(part);
+			} else {
+				return null;
+			}
+			if (current == null) return null;
+		}
+		return current;
 	}
 
 	private String validateField(String fieldName, Object value, String checkType, String checkValue) {
@@ -344,8 +439,16 @@ public class SchemaValidatorNode extends AbstractNode {
 		return null;
 	}
 
-	private boolean matchesType(Object value, String expectedType) {
+	private boolean matchesType(Object value, Object expectedType) {
 		if (expectedType == null) return true;
+		if (expectedType instanceof String s) return matchesSingleType(value, s);
+		if (expectedType instanceof List<?> types) {
+			return types.stream().anyMatch(t -> t instanceof String s && matchesSingleType(value, s));
+		}
+		return true;
+	}
+
+	private boolean matchesSingleType(Object value, String expectedType) {
 		return switch (expectedType.toLowerCase()) {
 			case "string" -> value instanceof String;
 			case "number", "integer" -> value instanceof Number;
@@ -354,5 +457,12 @@ public class SchemaValidatorNode extends AbstractNode {
 			case "object" -> value instanceof Map;
 			default -> true;
 		};
+	}
+
+	private boolean typeIncludes(Object typeObj, String typeName) {
+		if (typeObj instanceof String s) return typeName.equalsIgnoreCase(s);
+		if (typeObj instanceof List<?> list) return list.stream()
+			.anyMatch(t -> typeName.equalsIgnoreCase(String.valueOf(t)));
+		return false;
 	}
 }

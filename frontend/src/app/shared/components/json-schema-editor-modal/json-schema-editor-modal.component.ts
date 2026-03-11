@@ -4,9 +4,9 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  McpParameter, McpParamType, McpOutputSchema, JsonSchemaObject
+  McpParameter, McpParamType, JsonSchemaObject
 } from '../../../core/services/settings.service';
-import { SettingsService } from '../../../core/services/settings.service';
+import { WorkflowNode } from '../../../core/models';
 
 // ─── Constants ───────────────────────────────────────────────────
 
@@ -27,35 +27,15 @@ const AUTO_DESCRIPTIONS: Record<string, string> = {
   body: 'The body content',
   subject: 'The subject line',
   description: 'A description',
-  input: 'The input data',
-  output: 'The output data',
   key: 'The key',
   value: 'The value',
-  token: 'The authentication token',
-  password: 'The password',
-  username: 'The username',
-  firstName: 'The first name',
-  lastName: 'The last name',
-  phone: 'The phone number',
-  address: 'The address',
-  city: 'The city',
-  country: 'The country',
   status: 'The status',
   type: 'The type',
   category: 'The category',
-  tag: 'The tag',
-  tags: 'The tags',
   date: 'The date',
-  startDate: 'The start date',
-  endDate: 'The end date',
   page: 'The page number',
-  pageSize: 'The number of items per page',
   sort: 'The sort criteria',
-  order: 'The sort order',
   format: 'The format',
-  language: 'The language',
-  source: 'The source',
-  target: 'The target'
 };
 
 const PARAM_TYPES: McpParamType[] = ['string', 'number', 'integer', 'boolean', 'object', 'array'];
@@ -68,11 +48,9 @@ const REGEX_PRESETS: { name: string; pattern: string }[] = [
   { name: 'IPv4', pattern: '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$' },
   { name: 'UUID', pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' },
   { name: 'Date (YYYY-MM-DD)', pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$' },
-  { name: 'Time (HH:MM:SS)', pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$' },
   { name: 'Hex Color', pattern: '^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$' },
   { name: 'Alphanumeric', pattern: '^[a-zA-Z0-9]+$' },
   { name: 'Slug', pattern: '^[a-z0-9]+(-[a-z0-9]+)*$' },
-  { name: 'ZIP Code (US)', pattern: '^[0-9]{5}(-[0-9]{4})?$' },
 ];
 
 // ─── Conversion Utilities ────────────────────────────────────────
@@ -149,11 +127,6 @@ function jsonSchemaToParams(schema: any): McpParameter[] {
   return params;
 }
 
-function isJsonSchemaObject(val: any): val is JsonSchemaObject {
-  return val && typeof val === 'object' && !Array.isArray(val) && val.type === 'object';
-}
-
-/** Generate an example JSON object that matches a JSON Schema */
 function generateExample(schema: any): any {
   if (!schema || typeof schema !== 'object') return null;
   const effectiveType = Array.isArray(schema.type) ? schema.type[0] : schema.type;
@@ -190,67 +163,28 @@ function generateExample(schema: any): any {
   }
 }
 
-/** Check if a JSON Schema has constructs the visual editor can't represent */
-function hasUnsupportedConstructs(schema: any): string[] {
-  const warnings: string[] = [];
-  const check = (obj: any, path: string) => {
-    if (!obj || typeof obj !== 'object') return;
-    for (const key of ['oneOf', 'anyOf', 'allOf', '$ref', 'if', 'then', 'else', 'not', 'patternProperties', 'additionalProperties']) {
-      if (obj[key] !== undefined) {
-        warnings.push(`"${key}" at ${path || 'root'} is not supported in Visual mode and will be removed`);
-      }
-    }
-    if (obj.properties) {
-      for (const [k, v] of Object.entries(obj.properties)) {
-        check(v, path ? `${path}.${k}` : k);
-      }
-    }
-    if (obj.items && typeof obj.items === 'object') {
-      check(obj.items, `${path}[]`);
-    }
-  };
-  check(schema, '');
-  return warnings;
-}
-
 // ─── Component ───────────────────────────────────────────────────
 
 @Component({
-    selector: 'app-mcp-param-editor-modal',
+    selector: 'app-json-schema-editor-modal',
     imports: [CommonModule, FormsModule],
-    templateUrl: './mcp-param-editor-modal.component.html',
-    styleUrl: './mcp-param-editor-modal.component.scss'
+    templateUrl: './json-schema-editor-modal.component.html',
+    styleUrl: './json-schema-editor-modal.component.scss'
 })
-export class McpParamEditorModalComponent implements OnInit {
-  @Input() workflowId = '';
-  @Input() workflowName = '';
-  @Input() mcpInputSchema: McpParameter[] | JsonSchemaObject | Record<string, any> | null = null;
-  @Input() mcpOutputSchema: McpOutputSchema | null = null;
+export class JsonSchemaEditorModalComponent implements OnInit {
+  @Input() schema: any = null;
+  @Input() allNodes: WorkflowNode[] = [];
+  @Input() mcpInputSchema: any = null;
 
-  @Output() saved = new EventEmitter<{ inputSchema: McpParameter[]; outputSchema: McpOutputSchema | null }>();
+  @Output() saved = new EventEmitter<any>();
   @Output() cancelled = new EventEmitter<void>();
 
   @ViewChild('splitContainer') splitContainer?: ElementRef<HTMLDivElement>;
 
   // State
-  activeTab: 'input' | 'output' = 'input';
-  saving = false;
-  autoDetecting = false;
-  copySuccess = false;
-
-  // Input params
   params: McpParameter[] = [];
   expandedParams = new Set<number>();
-
-  // Output tab state
-  outputFormat: 'json' | 'text' | 'html' | 'xml' = 'json';
-  outputDescription = '';
-  outputProperties: McpParameter[] = [];
-  outputExpandedParams = new Set<number>();
-  outputPreviewTab: 'schema' | 'example' = 'schema';
-  outputJsonPreview = '';
-  outputExamplePreview = '';
-  outputCopySuccess = false;
+  copySuccess = false;
 
   // Preview (right pane)
   previewTab: 'schema' | 'example' = 'schema';
@@ -272,51 +206,25 @@ export class McpParamEditorModalComponent implements OnInit {
   typeDropdownTarget: McpParameter | null = null;
   private typeDropdownTimer: any = null;
 
-  constructor(private settingsService: SettingsService) {}
+  /** Whether the "Use workflow schema" button should appear */
+  get showWorkflowSchemaBtn(): boolean {
+    if (!this.mcpInputSchema) return false;
+    if (Array.isArray(this.mcpInputSchema)) return this.mcpInputSchema.length > 0;
+    return typeof this.mcpInputSchema === 'object' && Object.keys(this.mcpInputSchema).length > 0;
+  }
 
   ngOnInit(): void {
-    // Initialize input schema — always convert to params for visual mode
-    if (this.mcpInputSchema) {
-      if (isJsonSchemaObject(this.mcpInputSchema)) {
-        this.params = jsonSchemaToParams(this.mcpInputSchema);
-      } else if (Array.isArray(this.mcpInputSchema)) {
-        this.params = this.mcpInputSchema.map(p => this.deepCloneParam(p));
-      }
+    if (this.schema && typeof this.schema === 'object' && this.schema.type === 'object') {
+      this.params = jsonSchemaToParams(this.schema);
     }
-
-    // Default template: pre-populate with payload convention structure when empty
-    if (this.params.length === 0) {
-      this.params = [
-        {
-          name: 'payload', type: 'object',
-          description: 'The JSON body content',
-          required: true, properties: []
-        }
-      ];
-    }
-
-    // Initialize output schema
-    if (this.mcpOutputSchema) {
-      this.outputFormat = this.mcpOutputSchema.format || 'json';
-      this.outputDescription = this.mcpOutputSchema.description || '';
-      this.outputProperties = this.mcpOutputSchema.properties
-        ? this.mcpOutputSchema.properties.map(p => ({
-            name: p.name, type: p.type, description: p.description, required: false
-          }))
-        : [];
-    }
-
     this.updateJsonPreview();
-    this.updateOutputJsonPreview();
   }
 
   // ─── Parameters ───────────────────────────────────────────────
 
   addParam(parentParams?: McpParameter[]): void {
     const target = parentParams || this.params;
-    target.push({
-      name: '', type: 'string', description: '', required: true
-    });
+    target.push({ name: '', type: 'string', description: '', required: true });
     this.updateJsonPreview();
   }
 
@@ -478,15 +386,7 @@ export class McpParamEditorModalComponent implements OnInit {
   updateJsonPreview(): void {
     const schema = paramsToJsonSchema(this.params);
     this.jsonPreview = JSON.stringify(schema, null, 2);
-
-    // JSON tab: show only the payload body example (not query/path params)
-    const payloadParam = this.params.find(p => p.name === 'payload' && typesInclude(p.type, 'object'));
-    if (payloadParam && payloadParam.properties) {
-      const payloadSchema = paramsToJsonSchema(payloadParam.properties);
-      this.examplePreview = JSON.stringify(generateExample(payloadSchema), null, 2);
-    } else {
-      this.examplePreview = JSON.stringify(generateExample(schema), null, 2);
-    }
+    this.examplePreview = JSON.stringify(generateExample(schema), null, 2);
   }
 
   copyPreviewContent(): void {
@@ -497,147 +397,120 @@ export class McpParamEditorModalComponent implements OnInit {
     });
   }
 
-  // ─── Auto-detect ─────────────────────────────────────────────
+  // ─── Workflow Schema ──────────────────────────────────────────
 
-  autoDetectParams(): void {
-    if (!this.workflowId) return;
-    this.autoDetecting = true;
-    this.settingsService.autoDetectMcpParams(this.workflowId).subscribe({
-      next: (detected) => {
-        const existingNames = new Set(this.params.map(p => p.name));
-        for (const param of detected) {
-          if (!existingNames.has(param.name)) {
-            this.params.push({ ...param });
-            existingNames.add(param.name);
-          }
+  applyWorkflowSchema(): void {
+    if (!this.mcpInputSchema) return;
+
+    // Convert MCP schema to flat JSON Schema properties
+    const convert = (params: any[]): { properties: Record<string, any>; required: string[] } => {
+      const props: Record<string, any> = {};
+      const req: string[] = [];
+      for (const p of params) {
+        if (!p.name?.trim()) continue;
+        const prop: any = { type: p.type || 'string' };
+        if (p.description) prop.description = p.description;
+        if (p.enum?.length) prop.enum = [...p.enum];
+        if (p.minimum != null) prop.minimum = p.minimum;
+        if (p.maximum != null) prop.maximum = p.maximum;
+        if (p.minLength != null) prop.minLength = p.minLength;
+        if (p.maxLength != null) prop.maxLength = p.maxLength;
+        if (p.pattern) prop.pattern = p.pattern;
+        if (p.default != null) prop.default = p.default;
+        if (p.type === 'object' && p.properties?.length) {
+          const nested = convert(p.properties);
+          prop.properties = nested.properties;
+          if (nested.required.length) prop.required = nested.required;
         }
-        this.updateJsonPreview();
-        this.autoDetecting = false;
-      },
-      error: () => this.autoDetecting = false
-    });
-  }
+        if (p.type === 'array' && p.items) prop.items = { type: p.items.type };
+        props[p.name] = prop;
+        if (p.required) req.push(p.name);
+      }
+      return { properties: props, required: req };
+    };
 
-  // ─── Output Tab ──────────────────────────────────────────────
+    let allProps: Record<string, any>;
+    let allRequired: string[];
 
-  onOutputFormatChange(): void {
-    if (this.outputFormat !== 'json') this.outputProperties = [];
-    this.updateOutputJsonPreview();
-  }
-
-  addOutputProp(parentParams?: McpParameter[]): void {
-    const target = parentParams || this.outputProperties;
-    target.push({ name: '', type: 'string', description: '', required: false });
-    this.updateOutputJsonPreview();
-  }
-
-  removeOutputProp(index: number, parentParams?: McpParameter[]): void {
-    const target = parentParams || this.outputProperties;
-    target.splice(index, 1);
-    this.updateOutputJsonPreview();
-  }
-
-  moveOutputPropUp(index: number, parentParams?: McpParameter[]): void {
-    const target = parentParams || this.outputProperties;
-    if (index <= 0) return;
-    [target[index], target[index - 1]] = [target[index - 1], target[index]];
-    this.updateOutputJsonPreview();
-  }
-
-  moveOutputPropDown(index: number, parentParams?: McpParameter[]): void {
-    const target = parentParams || this.outputProperties;
-    if (index >= target.length - 1) return;
-    [target[index], target[index + 1]] = [target[index + 1], target[index]];
-    this.updateOutputJsonPreview();
-  }
-
-  onOutputParamChange(): void {
-    this.updateOutputJsonPreview();
-  }
-
-  onOutputParamNameBlur(param: McpParameter): void {
-    if (param.description || !param.name) return;
-    const autoDesc = AUTO_DESCRIPTIONS[param.name];
-    if (autoDesc) {
-      param.description = autoDesc;
+    if (Array.isArray(this.mcpInputSchema)) {
+      const result = convert(this.mcpInputSchema);
+      allProps = result.properties;
+      allRequired = result.required;
     } else {
-      const spaced = param.name.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
-      param.description = 'The ' + spaced;
+      allProps = { ...(this.mcpInputSchema['properties'] || {}) };
+      allRequired = [...(this.mcpInputSchema['required'] || [])];
     }
-    this.updateOutputJsonPreview();
-  }
 
-  onOutputTypeChange(param: McpParameter): void {
-    this.onOutputTypesChanged(param);
-  }
-
-  private onOutputTypesChanged(param: McpParameter): void {
-    const has = (t: McpParamType) => typesInclude(param.type, t);
-    if (!has('object')) param.properties = undefined;
-    if (!has('array')) param.items = undefined;
-    if (has('object')) param.properties = param.properties || [];
-    if (has('array')) param.items = param.items || { type: 'string' };
-    if (!has('number') && !has('integer')) {
-      param.minimum = undefined;
-      param.maximum = undefined;
+    // Extract path param names from the webhook node's URL
+    const pathParamNames = new Set<string>();
+    const webhookNode = this.allNodes.find(n => n.type === 'webhook');
+    if (webhookNode?.parameters?.['path']) {
+      const pathStr: string = webhookNode.parameters['path'];
+      const re = /\{([^:}]+)(?::[^}]+)?\}/g;
+      let match: RegExpExecArray | null;
+      while ((match = re.exec(pathStr)) !== null) {
+        pathParamNames.add(match[1]);
+      }
     }
-    if (!has('string')) {
-      param.minLength = undefined;
-      param.maxLength = undefined;
-      param.pattern = undefined;
+
+    // Route properties into body / pathParams / queryParams
+    const bodyProps: Record<string, any> = {};
+    const bodyRequired: string[] = [];
+    const pathProps: Record<string, any> = {};
+    const pathRequired: string[] = [];
+    const queryProps: Record<string, any> = {};
+    const queryRequired: string[] = [];
+    const hasPayload = 'payload' in allProps;
+
+    for (const [name, propDef] of Object.entries(allProps)) {
+      const isReq = allRequired.includes(name);
+      if (name === 'payload') {
+        if (propDef.properties) {
+          Object.assign(bodyProps, propDef.properties);
+          if (propDef.required) bodyRequired.push(...propDef.required);
+        }
+      } else if (pathParamNames.has(name)) {
+        pathProps[name] = propDef;
+        if (isReq) pathRequired.push(name);
+      } else if (hasPayload) {
+        queryProps[name] = propDef;
+        if (isReq) queryRequired.push(name);
+      } else {
+        bodyProps[name] = propDef;
+        if (isReq) bodyRequired.push(name);
+      }
     }
-    this.updateOutputJsonPreview();
-  }
 
-  toggleOutputType(param: McpParameter, type: McpParamType): void {
-    const types = this.getTypesArray(param);
-    const idx = types.indexOf(type);
-    if (idx >= 0) {
-      if (types.length <= 1) return;
-      types.splice(idx, 1);
-    } else {
-      types.push(type);
+    // Build the validation schema
+    const rootProps: Record<string, any> = {};
+    const rootRequired: string[] = [];
+
+    if (Object.keys(bodyProps).length > 0) {
+      const bodySchema: any = { type: 'object', properties: bodyProps };
+      if (bodyRequired.length) bodySchema.required = bodyRequired;
+      rootProps['body'] = bodySchema;
+      rootRequired.push('body');
     }
-    param.type = types.length === 1 ? types[0] : [...types];
-    this.onOutputTypesChanged(param);
-  }
 
-  toggleOutputConstraints(index: number): void {
-    if (this.outputExpandedParams.has(index)) {
-      this.outputExpandedParams.delete(index);
-    } else {
-      this.outputExpandedParams.add(index);
+    if (Object.keys(pathProps).length > 0) {
+      const pathSchema: any = { type: 'object', properties: pathProps };
+      if (pathRequired.length) pathSchema.required = pathRequired;
+      rootProps['pathParams'] = pathSchema;
+      rootRequired.push('pathParams');
     }
-  }
 
-  isOutputConstraintsExpanded(index: number): boolean {
-    return this.outputExpandedParams.has(index);
-  }
+    if (Object.keys(queryProps).length > 0) {
+      const querySchema: any = { type: 'object', properties: queryProps };
+      if (queryRequired.length) querySchema.required = queryRequired;
+      rootProps['queryParams'] = querySchema;
+    }
 
-  addOutputEnumValue(param: McpParameter): void {
-    if (!param.enum) param.enum = [];
-    param.enum.push('');
-    this.updateOutputJsonPreview();
-  }
+    const generatedSchema: any = { type: 'object', properties: rootProps };
+    if (rootRequired.length) generatedSchema.required = rootRequired;
 
-  removeOutputEnumValue(param: McpParameter, index: number): void {
-    param.enum?.splice(index, 1);
-    if (param.enum?.length === 0) param.enum = undefined;
-    this.updateOutputJsonPreview();
-  }
-
-  updateOutputJsonPreview(): void {
-    const schema = paramsToJsonSchema(this.outputProperties);
-    this.outputJsonPreview = JSON.stringify(schema, null, 2);
-    this.outputExamplePreview = JSON.stringify(generateExample(schema), null, 2);
-  }
-
-  copyOutputPreviewContent(): void {
-    const content = this.outputPreviewTab === 'schema' ? this.outputJsonPreview : this.outputExamplePreview;
-    navigator.clipboard.writeText(content).then(() => {
-      this.outputCopySuccess = true;
-      setTimeout(() => this.outputCopySuccess = false, 2000);
-    });
+    // Convert back to visual params and update
+    this.params = jsonSchemaToParams(generatedSchema);
+    this.updateJsonPreview();
   }
 
   // ─── Split Pane Resize ───────────────────────────────────────
@@ -707,19 +580,8 @@ export class McpParamEditorModalComponent implements OnInit {
   // ─── Save / Cancel ───────────────────────────────────────────
 
   onSave(): void {
-    const inputSchema = this.params.filter(p => p.name.trim());
-
-    let outputSchema: McpOutputSchema | null = null;
-    const validProps: McpParameter[] = this.outputProperties.filter(p => p.name.trim());
-    if (this.outputDescription.trim() || validProps.length > 0) {
-      outputSchema = {
-        format: this.outputFormat,
-        description: this.outputDescription.trim() || undefined,
-        properties: this.outputFormat === 'json' ? validProps : undefined
-      };
-    }
-
-    this.saved.emit({ inputSchema, outputSchema });
+    const schema = paramsToJsonSchema(this.params.filter(p => p.name.trim()));
+    this.saved.emit(schema);
   }
 
   onCancel(): void {
@@ -729,15 +591,5 @@ export class McpParamEditorModalComponent implements OnInit {
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.onCancel();
-  }
-
-  // ─── Helpers ─────────────────────────────────────────────────
-
-  private deepCloneParam(p: McpParameter): McpParameter {
-    const clone: McpParameter = { ...p };
-    if (p.enum) clone.enum = [...p.enum];
-    if (p.properties) clone.properties = p.properties.map(c => this.deepCloneParam(c));
-    if (p.items) clone.items = { ...p.items };
-    return clone;
   }
 }

@@ -6,15 +6,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.cwc.entity.SwaggerSettingsEntity;
 import io.cwc.entity.WorkflowEntity;
+import io.cwc.entity.WorkflowVersionEntity;
 import io.cwc.repository.SwaggerSettingsRepository;
 import io.cwc.repository.WorkflowRepository;
+import io.cwc.repository.WorkflowVersionRepository;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,6 +22,7 @@ public class SwaggerSpecController {
 
     private final SwaggerSettingsRepository swaggerSettingsRepository;
     private final WorkflowRepository workflowRepository;
+    private final WorkflowVersionRepository workflowVersionRepository;
 
     @GetMapping("/api/swagger/spec")
     public Map<String, Object> getSpec() {
@@ -44,9 +45,26 @@ public class SwaggerSpecController {
         Map<String, Object> paths = new LinkedHashMap<>();
         List<WorkflowEntity> workflows = workflowRepository.findBySwaggerEnabledTrue();
 
+        // Batch-load latest published versions to resolve schemas from published state
+        List<String> workflowIds = workflows.stream().map(WorkflowEntity::getId).toList();
+        Map<String, WorkflowVersionEntity> publishedVersions = new LinkedHashMap<>();
+        if (!workflowIds.isEmpty()) {
+            workflowVersionRepository.findByWorkflowIdInAndPublishedTrueOrderByVersionNumberDesc(workflowIds)
+                    .forEach(v -> publishedVersions.putIfAbsent(v.getWorkflowId(), v));
+        }
+
         for (WorkflowEntity workflow : workflows) {
-            Object nodesObj = workflow.getNodes();
+            // Use the latest published version's data when available;
+            // fall back to current draft only if the workflow was never published.
+            WorkflowVersionEntity published = publishedVersions.get(workflow.getId());
+
+            Object nodesObj = published != null ? published.getNodes() : workflow.getNodes();
             if (!(nodesObj instanceof List<?> nodeList)) continue;
+
+            Object effectiveInputSchema = published != null
+                    ? published.getMcpInputSchema() : workflow.getMcpInputSchema();
+            Object effectiveOutputSchema = published != null
+                    ? published.getMcpOutputSchema() : workflow.getMcpOutputSchema();
 
             for (Object nodeObj : nodeList) {
                 if (!(nodeObj instanceof Map<?, ?> node)) continue;
@@ -59,8 +77,8 @@ public class SwaggerSpecController {
 
                 String httpMethod = ((String) parameters.getOrDefault("httpMethod", "GET")).toLowerCase();
                 String normalizedPath = webhookPath.startsWith("/") ? webhookPath : "/" + webhookPath;
-                // Strip regex constraints from path params for OpenAPI (e.g. {id:[0-9]+} -> {id})
-                String openApiPath = normalizedPath.replaceAll("\\{([^:}]+):[^}]+\\}", "{$1}");
+                // Strip regex constraints from path params for OpenAPI (e.g. {id:[0-9]{1,10}} -> {id})
+                String openApiPath = normalizedPath.replaceAll("\\{([^:}]+):(?:[^{}]|\\{[^}]*\\})+\\}", "{$1}");
                 String pathKey = "/webhook" + openApiPath;
 
                 String summary = workflow.getMcpDescription() != null ? workflow.getMcpDescription()
@@ -72,34 +90,125 @@ public class SwaggerSpecController {
                 operation.put("operationId", workflow.getId() + "_" + node.get("id"));
                 operation.put("tags", List.of("Workflows"));
 
-                // Extract path parameters from template (e.g. {userId} or {userId:[a-z]+})
-                List<Map<String, Object>> pathParams = new ArrayList<>();
-                Matcher pathParamMatcher = Pattern.compile("\\{([^:}]+)(?::[^}]+)?\\}").matcher(pathKey);
-                while (pathParamMatcher.find()) {
+                // Extract path parameter names from webhook URL template
+                List<String> pathParamNames = io.cwc.util.SchemaUtils.extractPathParamNames(pathKey);
+
+                // Build path parameter entries for OpenAPI
+                List<Map<String, Object>> allParams = new ArrayList<>();
+                for (String ppName : pathParamNames) {
                     Map<String, Object> param = new LinkedHashMap<>();
-                    param.put("name", pathParamMatcher.group(1));
+                    param.put("name", ppName);
                     param.put("in", "path");
                     param.put("required", true);
                     param.put("schema", Map.of("type", "string"));
-                    pathParams.add(param);
-                }
-                if (!pathParams.isEmpty()) {
-                    operation.put("parameters", pathParams);
+                    allParams.add(param);
                 }
 
-                // Request body only for methods that support it
-                if ("post".equals(httpMethod) || "put".equals(httpMethod) || "patch".equals(httpMethod)) {
-                    Map<String, Object> requestSchema = buildInputSchema(workflow.getMcpInputSchema());
-                    Map<String, Object> requestBody = new LinkedHashMap<>();
-                    requestBody.put("required", true);
-                    requestBody.put("content", Map.of(
-                            "application/json", Map.of("schema", requestSchema)
-                    ));
-                    operation.put("requestBody", requestBody);
+                // Build full schema with auto-populated path params
+                Map<String, Object> fullSchema = io.cwc.util.SchemaUtils.buildInputSchemaWithPathParams(
+                        effectiveInputSchema, pathParamNames);
+                Object propsObj = fullSchema.get("properties");
+                List<String> requiredFields = fullSchema.get("required") instanceof List<?> r
+                        ? r.stream().map(Object::toString).toList() : List.of();
+                boolean schemaHasPayload = propsObj instanceof Map<?, ?> p && p.containsKey("payload");
+
+                if (schemaHasPayload && propsObj instanceof Map<?, ?> props) {
+                    // Convention mode: payload → requestBody, path matches → path params, rest → query
+                    for (Map.Entry<?, ?> entry : props.entrySet()) {
+                        String paramName = String.valueOf(entry.getKey());
+                        if ("payload".equals(paramName)) {
+                            // Generate requestBody from payload property
+                            if ("post".equals(httpMethod) || "put".equals(httpMethod) || "patch".equals(httpMethod)) {
+                                Map<String, Object> payloadSchema = entry.getValue() instanceof Map<?, ?> ps
+                                        ? (Map<String, Object>) ps : Map.of("type", "object");
+                                Map<String, Object> requestBody = new LinkedHashMap<>();
+                                requestBody.put("required", requiredFields.contains("payload"));
+                                requestBody.put("content", Map.of(
+                                        "application/json", Map.of("schema", payloadSchema)));
+                                operation.put("requestBody", requestBody);
+                            }
+                        } else if (pathParamNames.contains(paramName)) {
+                            // Enrich existing path param with schema info (description, type)
+                            for (Map<String, Object> pp : allParams) {
+                                if (paramName.equals(pp.get("name"))) {
+                                    if (entry.getValue() instanceof Map<?, ?> propDef) {
+                                        Map<String, Object> paramSchema = new LinkedHashMap<>();
+                                        paramSchema.put("type", propDef.get("type") != null ? propDef.get("type") : "string");
+                                        pp.put("schema", paramSchema);
+                                        if (propDef.get("description") instanceof String desc && !desc.isBlank()) {
+                                            pp.put("description", desc);
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        } else {
+                            // Query param
+                            Map<String, Object> queryParam = new LinkedHashMap<>();
+                            queryParam.put("name", paramName);
+                            queryParam.put("in", "query");
+                            queryParam.put("required", requiredFields.contains(paramName));
+                            if (entry.getValue() instanceof Map<?, ?> propDef) {
+                                Map<String, Object> paramSchema = new LinkedHashMap<>();
+                                paramSchema.put("type", propDef.get("type") != null ? propDef.get("type") : "string");
+                                if (propDef.get("enum") != null) paramSchema.put("enum", propDef.get("enum"));
+                                if (propDef.get("default") != null) paramSchema.put("default", propDef.get("default"));
+                                queryParam.put("schema", paramSchema);
+                                if (propDef.get("description") instanceof String desc && !desc.isBlank()) {
+                                    queryParam.put("description", desc);
+                                }
+                            } else {
+                                queryParam.put("schema", Map.of("type", "string"));
+                            }
+                            allParams.add(queryParam);
+                        }
+                    }
+                } else {
+                    // Legacy mode: no payload property — use method-based split
+                    if ("post".equals(httpMethod) || "put".equals(httpMethod) || "patch".equals(httpMethod)) {
+                        Map<String, Object> requestSchema = buildInputSchema(effectiveInputSchema);
+                        Map<String, Object> requestBody = new LinkedHashMap<>();
+                        requestBody.put("required", true);
+                        requestBody.put("content", Map.of(
+                                "application/json", Map.of("schema", requestSchema)
+                        ));
+                        operation.put("requestBody", requestBody);
+                    } else if (effectiveInputSchema != null) {
+                        // For GET/DELETE, render input schema properties as query parameters
+                        if (propsObj instanceof Map<?, ?> props) {
+                            for (Map.Entry<?, ?> entry : props.entrySet()) {
+                                String paramName = String.valueOf(entry.getKey());
+                                // Skip path params already added above
+                                if (pathParamNames.contains(paramName)) continue;
+                                Map<String, Object> queryParam = new LinkedHashMap<>();
+                                queryParam.put("name", paramName);
+                                queryParam.put("in", "query");
+                                queryParam.put("required", requiredFields.contains(paramName));
+                                if (entry.getValue() instanceof Map<?, ?> propDef) {
+                                    Map<String, Object> paramSchema = new LinkedHashMap<>();
+                                    Object pType = propDef.get("type");
+                                    paramSchema.put("type", pType != null ? pType : "string");
+                                    if (propDef.get("enum") != null) paramSchema.put("enum", propDef.get("enum"));
+                                    if (propDef.get("default") != null) paramSchema.put("default", propDef.get("default"));
+                                    queryParam.put("schema", paramSchema);
+                                    if (propDef.get("description") instanceof String desc && !desc.isBlank()) {
+                                        queryParam.put("description", desc);
+                                    }
+                                } else {
+                                    queryParam.put("schema", Map.of("type", "string"));
+                                }
+                                allParams.add(queryParam);
+                            }
+                        }
+                    }
+                }
+
+                if (!allParams.isEmpty()) {
+                    operation.put("parameters", allParams);
                 }
 
                 // Response from mcpOutputSchema
-                Map<String, Object> responseSchema = buildOutputSchema(workflow.getMcpOutputSchema());
+                Map<String, Object> responseSchema = buildOutputSchema(effectiveOutputSchema);
                 Map<String, Object> response200 = new LinkedHashMap<>();
                 response200.put("description", "Successful response");
                 if (responseSchema != null) {
@@ -117,79 +226,10 @@ public class SwaggerSpecController {
     }
 
     private Map<String, Object> buildInputSchema(Object mcpInputSchema) {
-        if (mcpInputSchema instanceof List<?> paramList && !paramList.isEmpty()) {
-            Map<String, Object> properties = new LinkedHashMap<>();
-            List<String> required = new ArrayList<>();
-            for (Object item : paramList) {
-                if (item instanceof Map<?, ?> param) {
-                    String name = (String) param.get("name");
-                    String type = (String) param.get("type");
-                    String desc = (String) param.get("description");
-                    Boolean isRequired = (Boolean) param.get("required");
-                    if (name == null || name.isBlank()) continue;
-                    Map<String, Object> prop = new LinkedHashMap<>();
-                    prop.put("type", type != null ? type : "string");
-                    if (desc != null && !desc.isBlank()) {
-                        prop.put("description", desc);
-                    }
-                    properties.put(name, prop);
-                    if (Boolean.TRUE.equals(isRequired)) {
-                        required.add(name);
-                    }
-                }
-            }
-            Map<String, Object> schema = new LinkedHashMap<>();
-            schema.put("type", "object");
-            schema.put("properties", properties);
-            if (!required.isEmpty()) {
-                schema.put("required", required);
-            }
-            return schema;
-        }
-        return Map.of(
-                "type", "object",
-                "properties", Map.of(
-                        "input", Map.of(
-                                "type", "string",
-                                "description", "Input data for the workflow"
-                        )
-                )
-        );
+        return io.cwc.util.SchemaUtils.buildInputSchema(mcpInputSchema);
     }
 
     private Map<String, Object> buildOutputSchema(Object mcpOutputSchema) {
-        if (!(mcpOutputSchema instanceof Map<?, ?> schemaMap)) return null;
-        String format = (String) schemaMap.get("format");
-        if (!"json".equals(format)) return null;
-
-        List<?> properties = (List<?>) schemaMap.get("properties");
-        if (properties == null || properties.isEmpty()) return null;
-
-        Map<String, Object> schemaProps = new LinkedHashMap<>();
-        for (Object item : properties) {
-            if (item instanceof Map<?, ?> prop) {
-                String name = (String) prop.get("name");
-                String type = (String) prop.get("type");
-                String desc = (String) prop.get("description");
-                if (name == null || name.isBlank()) continue;
-                Map<String, Object> propSchema = new LinkedHashMap<>();
-                propSchema.put("type", type != null ? type : "string");
-                if (desc != null && !desc.isBlank()) {
-                    propSchema.put("description", desc);
-                }
-                schemaProps.put(name, propSchema);
-            }
-        }
-
-        if (schemaProps.isEmpty()) return null;
-
-        Map<String, Object> schema = new LinkedHashMap<>();
-        schema.put("type", "object");
-        schema.put("properties", schemaProps);
-        String schemaDescription = (String) schemaMap.get("description");
-        if (schemaDescription != null && !schemaDescription.isBlank()) {
-            schema.put("description", schemaDescription);
-        }
-        return schema;
+        return io.cwc.util.SchemaUtils.buildOutputSchema(mcpOutputSchema);
     }
 }

@@ -777,6 +777,29 @@
   margin-bottom: 16px;
 }
 
+.btn-use-workflow-schema {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border: 1px dashed hsl(0, 0%, 28%);
+  border-radius: 5px;
+  background: transparent;
+  color: hsl(0, 0%, 56%);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: hsl(247, 49%, 53%);
+    color: hsl(247, 49%, 70%);
+
+    svg { stroke: hsl(247, 49%, 70%); }
+  }
+}
+
 .param-label {
   display: block;
   font-size: 0.8125rem;

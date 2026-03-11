@@ -422,7 +422,8 @@
                         (valueChange)="onParameterChange(param.name, $event)"
                         (blurred)="onParamBlur(param.name)"
                         (focused)="onParamFocus(param.name)"
-                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
+                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))"
+                        (openCodeEditor)="openCodeEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                   }
                   @case ('number') {
@@ -482,7 +483,9 @@
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
-                      (valueChange)="onParameterChange(param.name, $event)" />
+                      [showEditorBtn]="hasWorkflowSchema(param.name)"
+                      (valueChange)="onParameterChange(param.name, $event)"
+                      (openSchemaEditor)="openJsonSchemaEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
                   @case ('collection') {
                     <app-collection-param
@@ -522,7 +525,8 @@
                       (valueChange)="onParameterChange(param.name, $event)"
                       (blurred)="onParamBlur(param.name)"
                       (focused)="onParamFocus(param.name)"
-                      (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
+                      (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))"
+                      (openCodeEditor)="openCodeEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
                 }
               </div>
@@ -585,7 +589,8 @@
                           (valueChange)="onParameterChange(param.name, $event)"
                           (blurred)="onParamBlur(param.name)"
                           (focused)="onParamFocus(param.name)"
-                          (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
+                          (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))"
+                          (openCodeEditor)="openCodeEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                       }
                     }
                     @case ('number') {
@@ -611,7 +616,8 @@
                         (valueChange)="onParameterChange(param.name, $event)"
                         (blurred)="onParamBlur(param.name)"
                         (focused)="onParamFocus(param.name)"
-                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
+                        (openExpressionEditor)="openExpressionEditor(param.name, getParameterValue(param.name, param.defaultValue))"
+                        (openCodeEditor)="openCodeEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                     }
                   }
                 </div>
@@ -942,4 +948,22 @@
     [nodeOutputs]="expressionEditorNodeOutputs"
     (expressionSaved)="onExpressionEditorSave($event)"
     (closed)="onExpressionEditorClose()" />
+}
+
+@if (codeEditorOpen) {
+  <app-code-editor-modal
+    [code]="codeEditorValue"
+    [language]="codeEditorLanguage"
+    [paramName]="codeEditorParam"
+    (codeSaved)="onCodeEditorSave($event)"
+    (closed)="onCodeEditorClose()" />
+}
+
+@if (jsonSchemaEditorOpen) {
+  <app-json-schema-editor-modal
+    [schema]="jsonSchemaEditorValue"
+    [allNodes]="allNodes"
+    [mcpInputSchema]="mcpInputSchema"
+    (saved)="onJsonSchemaEditorSave($event)"
+    (cancelled)="jsonSchemaEditorOpen = false" />
 }

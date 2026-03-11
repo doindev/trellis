@@ -1,11 +1,12 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NodeParameter } from '../../../../../core/models';
+import { FixedCollectionParamComponent } from './fixed-collection-param.component';
 
 @Component({
     selector: 'app-collection-param',
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, FixedCollectionParamComponent],
     template: `
     @if (isExpression) {
       <div class="param-header">
@@ -31,7 +32,7 @@ import { NodeParameter } from '../../../../../core/models';
                [disabled]="readOnly"
                (dragover)="onDragOver($event)"
                (drop)="onDrop($event)">
-        <button class="expr-editor-btn" (click)="openExpressionEditor.emit()" title="Open expression editor">
+        <button class="expr-editor-btn" (mousedown)="$event.preventDefault(); openExpressionEditor.emit()" title="Open expression editor">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/>
           </svg>
@@ -59,68 +60,111 @@ import { NodeParameter } from '../../../../../core/models';
         <!-- Added properties -->
         @for (nested of addedParams; track nested.name) {
           <div class="added-param">
-            <div class="added-param-header">
-              <label class="nested-label">{{ nested.displayName }}</label>
-              <button class="btn-remove" (click)="removeParam(nested.name)" title="Remove" [disabled]="readOnly">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
+            <div class="added-param-row">
+              @if (!readOnly) {
+                <button class="btn-delete" (click)="removeParam(nested.name)" title="Delete">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                </button>
+              }
+              <div class="added-param-label-row">
+                <label class="nested-label">{{ nested.displayName }}</label>
+                @if (!nested.noDataExpression) {
+                  <div class="nested-expr-toggle" role="radiogroup">
+                    <label class="expr-radio" [class.active]="!isNestedExpression(nested.name)">
+                      <div class="expr-radio-btn">Fixed</div>
+                    </label>
+                    <label class="expr-radio" [class.active]="isNestedExpression(nested.name)">
+                      <div class="expr-radio-btn">Expression</div>
+                    </label>
+                  </div>
+                }
+              </div>
             </div>
             @if (nested.description) {
               <p class="nested-description">{{ nested.description }}</p>
             }
-            @if (nested.type === 'boolean') {
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox"
+            <div class="added-param-input">
+              @if (nested.type === 'boolean') {
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox"
+                         [ngModel]="getNestedValue(nested.name, nested.defaultValue)"
+                         (ngModelChange)="onNestedChange(nested.name, $event)"
+                         [disabled]="readOnly">
+                </div>
+              } @else if (nested.type === 'options' && nested.options) {
+                <select class="form-select param-input"
+                        [ngModel]="getNestedValue(nested.name, nested.defaultValue)"
+                        (ngModelChange)="onNestedChange(nested.name, $event)"
+                        [disabled]="readOnly">
+                  @for (opt of nested.options; track opt.value) {
+                    <option [ngValue]="opt.value">{{ opt.name }}</option>
+                  }
+                </select>
+              } @else if (nested.type === 'number') {
+                <input type="number" class="form-control param-input"
                        [ngModel]="getNestedValue(nested.name, nested.defaultValue)"
                        (ngModelChange)="onNestedChange(nested.name, $event)"
+                       [placeholder]="nested.placeHolder || ''"
+                       [disabled]="readOnly"
+                       [attr.min]="nested.typeOptions?.minValue"
+                       [attr.max]="nested.typeOptions?.maxValue">
+              } @else if (nested.type === 'fixedCollection') {
+                <app-fixed-collection-param
+                  [param]="nested"
+                  [value]="getNestedValue(nested.name, [])"
+                  [readOnly]="readOnly"
+                  (valueChange)="onNestedChange(nested.name, $event)" />
+              } @else {
+                <input type="text" class="form-control param-input"
+                       [ngModel]="getNestedValue(nested.name, nested.defaultValue)"
+                       (ngModelChange)="onNestedChange(nested.name, $event)"
+                       [placeholder]="nested.placeHolder || ''"
                        [disabled]="readOnly">
-              </div>
-            } @else if (nested.type === 'options' && nested.options) {
-              <select class="form-select param-input"
-                      [ngModel]="getNestedValue(nested.name, nested.defaultValue)"
-                      (ngModelChange)="onNestedChange(nested.name, $event)"
-                      [disabled]="readOnly">
-                @for (opt of nested.options; track opt.value) {
-                  <option [ngValue]="opt.value">{{ opt.name }}</option>
-                }
-              </select>
-            } @else {
-              <input type="text" class="form-control param-input"
-                     [ngModel]="getNestedValue(nested.name, nested.defaultValue)"
-                     (ngModelChange)="onNestedChange(nested.name, $event)"
-                     [placeholder]="nested.placeHolder || ''"
-                     [disabled]="readOnly">
-            }
+              }
+            </div>
           </div>
         }
 
-        <!-- No properties message & Add option dropdown -->
+        <!-- No properties message -->
         @if (addedParams.length === 0) {
           <div class="no-properties">No properties</div>
         }
-        @if (availableParams.length > 0) {
-          <div class="add-option-wrapper">
-            <select class="form-select param-input add-option-select"
-                    [ngModel]="null"
-                    (ngModelChange)="addParam($event)"
-                    [disabled]="readOnly">
-              <option [ngValue]="null" disabled>Add option</option>
-              @for (nested of availableParams; track nested.name) {
-                <option [ngValue]="nested.name">{{ nested.displayName }}</option>
-              }
-            </select>
+
+        <!-- Add option dropdown -->
+        @if (availableParams.length > 0 && !readOnly) {
+          <div class="add-option-area">
+            <div class="add-option-trigger" [class.open]="dropdownOpen" (click)="toggleDropdown($event)">
+              <span class="add-option-placeholder">Add option</span>
+              <svg class="add-option-caret" [class.open]="dropdownOpen"
+                   viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+            @if (dropdownOpen) {
+              <div class="add-option-dropdown">
+                @for (nested of availableParams; track nested.name) {
+                  <div class="add-option-item" (click)="selectOption(nested.name)">
+                    {{ nested.displayName }}
+                  </div>
+                }
+              </div>
+            }
           </div>
         }
       </div>
     }
   `,
     styles: [`
-    .collection-param { border: 1px solid hsl(0,0%,24%); border-radius: 6px; overflow: hidden; }
+    .collection-param { border: 1px solid hsl(0,0%,24%); border-radius: 6px; overflow: visible; }
     .collection-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 8px 12px; background: hsl(0,0%,17%);
+      border-radius: 6px 6px 0 0;
     }
     .collection-title { font-size: 0.8125rem; font-weight: 600; color: hsl(0,0%,96%); }
     .param-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
@@ -132,35 +176,111 @@ import { NodeParameter } from '../../../../../core/models';
       font-size: 0.8125rem;
       color: hsl(0,0%,46%);
     }
-    .add-option-wrapper {
+
+    /* Add option styled dropdown */
+    .add-option-area {
       padding: 8px 12px 12px;
+      position: relative;
     }
-    .add-option-select {
+    .add-option-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: hsl(0,0%,9%);
+      border: 1px solid hsl(0,0%,24%);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      user-select: none;
+    }
+    .add-option-trigger:hover {
+      border-color: hsl(0,0%,36%);
+    }
+    .add-option-trigger.open {
+      border-color: hsl(247,49%,53%);
+      box-shadow: 0 0 0 2px hsla(247,49%,53%,0.15);
+    }
+    .add-option-placeholder {
       font-size: 0.8125rem;
+      color: hsl(0,0%,46%);
     }
+    .add-option-caret {
+      color: hsl(0,0%,46%);
+      transition: transform 0.15s;
+      flex-shrink: 0;
+    }
+    .add-option-caret.open {
+      transform: rotate(180deg);
+    }
+    .add-option-dropdown {
+      position: absolute;
+      top: calc(100% - 8px);
+      left: 12px;
+      right: 12px;
+      z-index: 20;
+      background: hsl(0,0%,13%);
+      border: 1px solid hsl(0,0%,26%);
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+    .add-option-item {
+      padding: 7px 12px;
+      font-size: 0.8125rem;
+      color: hsl(0,0%,80%);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .add-option-item:hover {
+      background: hsl(247,49%,53%,0.2);
+      color: hsl(0,0%,96%);
+    }
+
     .added-param {
       padding: 8px 12px;
       border-top: 1px solid hsl(0,0%,20%);
     }
-    .added-param-header {
+    .added-param-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .added-param-label-row {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 4px;
+      min-width: 0;
     }
-    .nested-label { font-size: 0.75rem; color: hsl(0,0%,68%); margin: 0; }
-    .nested-description { font-size: 0.625rem; color: hsl(0,0%,50%); margin: 0 0 4px; }
-    .btn-remove {
-      width: 20px; height: 20px;
+    .added-param-input {
+      /* indent to align with label when delete button present */
+    }
+    .nested-label { font-size: 0.8125rem; font-weight: 400; color: hsl(0,0%,88%); margin: 0; }
+    .nested-description { font-size: 0.625rem; color: hsl(0,0%,50%); margin: 0 0 4px; padding-left: 0; }
+    .nested-expr-toggle {
+      display: inline-flex;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid hsl(0,0%,24%);
+      flex-shrink: 0;
+    }
+    .btn-delete {
+      width: 24px; height: 24px;
       border-radius: 4px;
       border: none;
       background: transparent;
-      color: hsl(0,0%,46%);
+      color: hsl(0,0%,40%);
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       padding: 0;
+      flex-shrink: 0;
+      transition: all 0.15s;
     }
-    .btn-remove:hover { color: hsl(0, 60%, 60%); background: hsla(0, 60%, 60%, 0.1); }
+    .btn-delete:hover { color: hsl(0, 60%, 60%); background: hsla(0, 60%, 60%, 0.08); }
     .param-input { background: hsl(0,0%,9%); border: 1px solid hsl(0,0%,24%); color: hsl(0,0%,96%); font-size: 0.8125rem; border-radius: 6px; }
     .param-input:focus { background: hsl(0,0%,9%); border-color: hsl(247,49%,53%); box-shadow: 0 0 0 2px hsla(247,49%,53%,0.15); color: hsl(0,0%,96%); }
     .param-input option { background: hsl(0,0%,13%); }
@@ -235,26 +355,35 @@ export class CollectionParamComponent {
 
   expressionMode = false;
   expressionPlaceholder = 'e.g. {{$json.options}}';
+  dropdownOpen = false;
+
+  constructor(private elRef: ElementRef) {}
 
   get isExpression(): boolean {
     const str = String(this.value ?? '');
     return str.includes('{{') || this.expressionMode;
   }
 
+  /** Normalize value to a plain object — handles undefined/null/non-object */
+  private get safeValue(): Record<string, any> {
+    return (this.value && typeof this.value === 'object' && !Array.isArray(this.value)) ? this.value : {};
+  }
+
   /** Parameters that have been added (have a value set) */
   get addedParams(): NodeParameter[] {
-    if (!this.param.nestedParameters || !this.value || typeof this.value !== 'object') return [];
+    if (!this.param.nestedParameters) return [];
+    const v = this.safeValue;
     return this.param.nestedParameters.filter(p =>
-      this.isNestedVisible(p) && this.value.hasOwnProperty(p.name)
+      this.isNestedVisible(p) && v.hasOwnProperty(p.name)
     );
   }
 
   /** Parameters available to add (visible but not yet added) */
   get availableParams(): NodeParameter[] {
-    if (!this.param.nestedParameters || typeof this.value !== 'object') return [];
-    const currentValue = this.value || {};
+    if (!this.param.nestedParameters) return [];
+    const v = this.safeValue;
     return this.param.nestedParameters.filter(p =>
-      this.isNestedVisible(p) && !currentValue.hasOwnProperty(p.name)
+      this.isNestedVisible(p) && !v.hasOwnProperty(p.name)
     );
   }
 
@@ -296,6 +425,11 @@ export class CollectionParamComponent {
     return this.value?.[name] ?? defaultValue;
   }
 
+  isNestedExpression(name: string): boolean {
+    const val = this.value?.[name];
+    return typeof val === 'string' && val.includes('{{');
+  }
+
   onNestedChange(name: string, val: any): void {
     const updated = { ...(this.value || {}), [name]: val };
     this.valueChange.emit(updated);
@@ -305,7 +439,19 @@ export class CollectionParamComponent {
     if (!name) return;
     const nested = this.param.nestedParameters?.find(p => p.name === name);
     if (!nested) return;
-    const updated = { ...(this.value || {}), [name]: nested.defaultValue ?? (nested.type === 'boolean' ? false : '') };
+    let defaultVal: any;
+    if (nested.defaultValue !== undefined && nested.defaultValue !== null) {
+      defaultVal = nested.defaultValue;
+    } else if (nested.type === 'boolean') {
+      defaultVal = false;
+    } else if (nested.type === 'fixedCollection') {
+      defaultVal = [];
+    } else if (nested.type === 'number') {
+      defaultVal = 0;
+    } else {
+      defaultVal = '';
+    }
+    const updated = { ...(this.value || {}), [name]: defaultVal };
     this.valueChange.emit(updated);
   }
 
@@ -314,6 +460,27 @@ export class CollectionParamComponent {
     delete updated[name];
     this.valueChange.emit(updated);
   }
+
+  // --- Custom dropdown ---
+
+  toggleDropdown(event: MouseEvent): void {
+    event.stopPropagation();
+    this.dropdownOpen = !this.dropdownOpen;
+  }
+
+  selectOption(name: string): void {
+    this.dropdownOpen = false;
+    this.addParam(name);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.dropdownOpen && !this.elRef.nativeElement.contains(event.target)) {
+      this.dropdownOpen = false;
+    }
+  }
+
+  // --- Expression mode ---
 
   setFixed(): void {
     this.expressionMode = false;

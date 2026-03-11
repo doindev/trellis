@@ -11,8 +11,12 @@ import io.cwc.engine.WorkflowEngine;
 import io.cwc.service.ExecutionService;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.HostAccess;
 
 @RestController
 @RequiredArgsConstructor
@@ -77,6 +81,35 @@ public class ExecutionController {
         String triggerNodeId = body != null ? body.get("triggerNodeId") : null;
         workflowEngine.triggerExecution(id, triggerNodeId);
         return Map.of("status", "started");
+    }
+
+    @PostMapping("/api/code/validate")
+    public Map<String, Object> validateCode(@RequestBody Map<String, Object> request) {
+        String code = (String) request.get("code");
+        String language = (String) request.get("language");
+        String langId = "python".equals(language) ? "python" : "js";
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        try (Context graalContext = Context.newBuilder(langId)
+                .allowHostAccess(HostAccess.SCOPED)
+                .allowExperimentalOptions(true)
+                .option("engine.WarnInterpreterOnly", "false")
+                .build()) {
+            String checkCode;
+            if ("js".equals(langId)) {
+                checkCode = "(function(){" + code + "\n})";
+            } else {
+                checkCode = "compile('''" + code.replace("'''", "\\'\\'\\'") + "''', '<code>', 'exec')";
+            }
+            graalContext.eval(langId, checkCode);
+            result.put("valid", true);
+            result.put("errors", List.of());
+        } catch (Exception e) {
+            result.put("valid", false);
+            String msg = e.getMessage() != null ? e.getMessage() : "Unknown error";
+            result.put("errors", List.of(msg));
+        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")

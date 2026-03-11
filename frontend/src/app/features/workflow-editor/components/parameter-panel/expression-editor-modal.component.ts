@@ -1,5 +1,5 @@
 import {
-  Component, Input, Output, EventEmitter, OnInit, OnDestroy, ViewChild, ElementRef
+  Component, Input, Output, EventEmitter, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, NgZone
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,9 +31,9 @@ export interface ExpressionAncestorNode {
         </div>
 
         <!-- Body: 3 columns -->
-        <div class="expr-modal-body">
+        <div class="expr-modal-body" #modalBody [class.resizing]="resizingSide">
           <!-- Left: Input Schema -->
-          <div class="expr-col expr-col-schema">
+          <div class="expr-col expr-col-schema" [style.width.px]="colSchemaWidth">
             <div class="expr-col-header">
               <span class="expr-col-label">Input Data</span>
             </div>
@@ -83,6 +83,9 @@ export interface ExpressionAncestorNode {
             </div>
           </div>
 
+          <!-- Resize handle: left|center -->
+          <div class="resize-handle" (mousedown)="onResizeStart($event, 'left')"></div>
+
           <!-- Center: Expression textarea -->
           <div class="expr-col expr-col-editor">
             <div class="expr-col-header">
@@ -115,8 +118,11 @@ export interface ExpressionAncestorNode {
             </div>
           </div>
 
+          <!-- Resize handle: center|right -->
+          <div class="resize-handle" (mousedown)="onResizeStart($event, 'right')"></div>
+
           <!-- Right: Result -->
-          <div class="expr-col expr-col-result">
+          <div class="expr-col expr-col-result" [style.width.px]="colResultWidth">
             <div class="expr-col-header">
               <span class="expr-col-label">Result</span>
               <div class="expr-display-toggle">
@@ -205,14 +211,31 @@ export interface ExpressionAncestorNode {
       display: flex;
       overflow: hidden;
     }
+    .expr-modal-body.resizing {
+      user-select: none;
+      cursor: col-resize;
+    }
     .expr-col {
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
-    .expr-col-schema { width: 25%; border-right: 1px solid hsl(0, 0%, 22%); }
-    .expr-col-editor { width: 50%; border-right: 1px solid hsl(0, 0%, 22%); }
-    .expr-col-result { width: 25%; }
+    .expr-col-schema { flex-shrink: 0; }
+    .expr-col-editor { flex: 1; min-width: 100px; }
+    .expr-col-result { flex-shrink: 0; }
+    .resize-handle {
+      width: 5px;
+      cursor: col-resize;
+      background: hsl(0, 0%, 22%);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 2;
+      transition: background 0.15s;
+    }
+    .resize-handle:hover,
+    .resize-handle.active {
+      background: hsl(247, 49%, 53%);
+    }
 
     .expr-col-header {
       display: flex;
@@ -477,7 +500,7 @@ export interface ExpressionAncestorNode {
     }
   `]
 })
-export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
+export class ExpressionEditorModalComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() expression = '';
   @Input() inputItems: any[] = [];
   @Input() nodeNames: string[] = [];
@@ -490,6 +513,7 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
 
   @ViewChild('exprTextarea') exprTextarea?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('textMirror') textMirror?: ElementRef<HTMLDivElement>;
+  @ViewChild('modalBody') modalBody?: ElementRef<HTMLDivElement>;
 
   currentExpression = '';
   evaluationResult: any = null;
@@ -512,10 +536,19 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
   autocompleteLeft = 0;
   private autocompleteTokenStart = 0;
 
+  // Column resize state
+  colSchemaWidth = 0;
+  colResultWidth = 0;
+  resizingSide: 'left' | 'right' | null = null;
+  private resizeStartX = 0;
+  private resizeStartWidth = 0;
+  private boundOnMouseMove = this.onResizeMove.bind(this);
+  private boundOnMouseUp = this.onResizeEnd.bind(this);
+
   private evaluateSubject = new Subject<string>();
   private subscription?: Subscription;
 
-  constructor(private workflowService: WorkflowService) {}
+  constructor(private workflowService: WorkflowService, private ngZone: NgZone) {}
 
   ngOnInit(): void {
     this.currentExpression = this.expression;
@@ -561,8 +594,56 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy {
     }
   }
 
+  ngAfterViewInit(): void {
+    // Initialize column widths as 25% / 50% / 25% of the body
+    setTimeout(() => {
+      const bodyW = this.modalBody?.nativeElement.clientWidth ?? 800;
+      const handleSpace = 10; // 2 handles x 5px
+      const available = bodyW - handleSpace;
+      this.colSchemaWidth = Math.round(available * 0.25);
+      this.colResultWidth = Math.round(available * 0.25);
+    });
+  }
+
   ngOnDestroy(): void {
     this.subscription?.unsubscribe();
+    document.removeEventListener('mousemove', this.boundOnMouseMove);
+    document.removeEventListener('mouseup', this.boundOnMouseUp);
+  }
+
+  // --- Column resize ---
+
+  onResizeStart(event: MouseEvent, side: 'left' | 'right'): void {
+    event.preventDefault();
+    this.resizingSide = side;
+    this.resizeStartX = event.clientX;
+    this.resizeStartWidth = side === 'left' ? this.colSchemaWidth : this.colResultWidth;
+    this.ngZone.runOutsideAngular(() => {
+      document.addEventListener('mousemove', this.boundOnMouseMove);
+      document.addEventListener('mouseup', this.boundOnMouseUp);
+    });
+  }
+
+  private onResizeMove(event: MouseEvent): void {
+    if (!this.resizingSide) return;
+    const delta = event.clientX - this.resizeStartX;
+    const bodyW = this.modalBody?.nativeElement.clientWidth ?? 800;
+    const minCol = 80;
+
+    if (this.resizingSide === 'left') {
+      const newWidth = Math.max(minCol, Math.min(this.resizeStartWidth + delta, bodyW - this.colResultWidth - minCol - 10));
+      this.ngZone.run(() => this.colSchemaWidth = newWidth);
+    } else {
+      // Dragging right handle: moving right makes result smaller
+      const newWidth = Math.max(minCol, Math.min(this.resizeStartWidth - delta, bodyW - this.colSchemaWidth - minCol - 10));
+      this.ngZone.run(() => this.colResultWidth = newWidth);
+    }
+  }
+
+  private onResizeEnd(): void {
+    this.resizingSide = null;
+    document.removeEventListener('mousemove', this.boundOnMouseMove);
+    document.removeEventListener('mouseup', this.boundOnMouseUp);
   }
 
   onExpressionChange(value: string): void {

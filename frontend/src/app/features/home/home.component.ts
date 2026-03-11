@@ -110,7 +110,7 @@ export class HomeComponent implements OnInit {
 
   // Pagination
   page = signal(1);
-  pageSize = signal(10);
+  pageSize = signal(this.loadPageSize());
   totalPages = computed(() => Math.max(1, Math.ceil(this.filteredWorkflows().length / this.pageSize())));
   pageNumbers = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
   pagedWorkflows = computed(() => {
@@ -716,8 +716,15 @@ export class HomeComponent implements OnInit {
   }
 
   onPageSizeChange(value: string): void {
-    this.pageSize.set(Number(value));
+    const size = Number(value);
+    this.pageSize.set(size);
     this.page.set(1);
+    localStorage.setItem('cwc_home_pageSize', String(size));
+  }
+
+  private loadPageSize(): number {
+    const stored = localStorage.getItem('cwc_home_pageSize');
+    return stored ? Number(stored) : 10;
   }
 
   resetWfFilters(): void {

@@ -1122,7 +1122,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     };
     if (wf.mcpEnabled) exportData['mcpEnabled'] = wf.mcpEnabled;
     if (wf.mcpDescription) exportData['mcpDescription'] = wf.mcpDescription;
-    if (wf.mcpInputSchema?.length) exportData['mcpInputSchema'] = wf.mcpInputSchema;
+    if (wf.mcpInputSchema) {
+      const schema = wf.mcpInputSchema;
+      const hasContent = Array.isArray(schema) ? schema.length > 0 : Object.keys(schema).length > 0;
+      if (hasContent) exportData['mcpInputSchema'] = schema;
+    }
+    if (wf.mcpOutputSchema) exportData['mcpOutputSchema'] = wf.mcpOutputSchema;
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1167,8 +1172,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const mcpEnabled = data.mcpEnabled;
     const mcpDescription = data.mcpDescription;
     const mcpInputSchema = data.mcpInputSchema;
+    const mcpOutputSchema = data.mcpOutputSchema;
     const name = data.name;
-    this.store.importWorkflowData({ name, nodes, connections, settings, mcpEnabled, mcpDescription, mcpInputSchema });
+    this.store.importWorkflowData({ name, nodes, connections, settings, mcpEnabled, mcpDescription, mcpInputSchema, mcpOutputSchema });
   }
 
   private onPushToGit(): void {

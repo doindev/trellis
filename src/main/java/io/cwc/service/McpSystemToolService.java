@@ -146,12 +146,12 @@ public class McpSystemToolService {
                 )));
 
         tools.add(toolDef("cwc_workflow_guide",
-                "Returns instructional documentation on how to build CWC workflows, including node structure, connections format, expression syntax, common patterns, and AI agent architecture. IMPORTANT: If you are building an AI Agent or working with AI nodes, request the 'ai_agents' topic FIRST.",
+                "Returns instructional documentation on how to build CWC workflows, including node structure, connections format, expression syntax, Code node usage, common patterns, AI agent architecture, and input validation with Schema Validator, MCP schemas, and Swagger. IMPORTANT: If you are building an AI Agent, request the 'ai_agents' topic. If you need expression variables or Code node info, request 'parameters'. If you need validation, schemas, or Swagger docs, request 'validation'.",
                 Map.of(
                         "type", "object",
                         "properties", orderedMap(
                                 "topic", prop("string",
-                                        "Topic to get help on: 'overview', 'node_wiring', 'parameters', 'common_patterns', 'ai_agents', or 'all' (default: 'all')")
+                                        "Topic to get help on: 'overview', 'node_wiring', 'parameters' (expressions, Code node, $json fields), 'common_patterns', 'ai_agents', 'validation' (Schema Validator, MCP schemas, Swagger), or 'all' (default: 'all')")
                         )
                 )));
 
@@ -849,6 +849,19 @@ public class McpSystemToolService {
         }
 
         Map<String, Object> inputData = (Map<String, Object>) args.get("inputData");
+
+        // Wrap inputData in a webhook-like structure so workflows see parameters
+        // under $json.body consistently, regardless of trigger source
+        if (inputData != null && !inputData.containsKey("webhookData") && !inputData.containsKey("_subWorkflowItems")) {
+            Map<String, Object> webhookLike = new LinkedHashMap<>();
+            webhookLike.put("body", inputData);
+            webhookLike.put("headers", Map.of());
+            webhookLike.put("queryParams", Map.of());
+            webhookLike.put("pathParams", Map.of());
+            webhookLike.put("method", "MCP");
+            inputData = webhookLike;
+        }
+
         String executionId = workflowEngine.startExecution(workflowId, inputData);
 
         // Poll for completion (max 60 seconds)
@@ -898,10 +911,13 @@ public class McpSystemToolService {
         if ("all".equals(topic) || "ai_agents".equals(topic)) {
             guide.put("ai_agents", GUIDE_AI_AGENTS);
         }
+        if ("all".equals(topic) || "validation".equals(topic)) {
+            guide.put("validation", GUIDE_VALIDATION_AND_SCHEMAS);
+        }
 
         if (guide.isEmpty()) {
             guide.put("error", "Unknown topic: " + topic
-                    + ". Valid topics: overview, node_wiring, parameters, common_patterns, ai_agents, all");
+                    + ". Valid topics: overview, node_wiring, parameters, common_patterns, ai_agents, validation, all");
         }
 
         return guide;
@@ -1276,18 +1292,114 @@ public class McpSystemToolService {
     private static final String GUIDE_PARAMETERS = """
             Node parameters configure behavior. Set them in the node's "parameters" object.
 
-            Expression syntax:
-            - Use ={{ expression }} to reference data from previous nodes
-            - $json.fieldName — access a field from the current item's JSON data
-            - $('NodeName').item.json.field — access output from a specific node by name
-            - $input.item.json.field — access the direct input to this node
+            ═══════════════════════════════════════════════════════════════════
+            EXPRESSION SYNTAX
+            ═══════════════════════════════════════════════════════════════════
 
-            Common parameter patterns:
-            - String values: "parameters": { "url": "https://api.example.com" }
-            - Expressions: "parameters": { "url": "={{ $json.baseUrl }}/endpoint" }
-            - Options/selects: "parameters": { "method": "POST" }
-            - Boolean: "parameters": { "continueOnFail": true }
-            - JSON body: "parameters": { "body": "={{ JSON.stringify($json) }}" }
+            Use ={{ expression }} to embed dynamic values in parameter strings.
+            Expressions are evaluated as JavaScript via GraalVM before the node runs.
+
+            Full expression: "={{ $json.name }}"         → resolves to the value itself
+            Interpolated:    "Hello ={{ $json.name }}!"   → resolves to a string
+
+            ═══════════════════════════════════════════════════════════════════
+            EXPRESSION VARIABLES REFERENCE
+            ═══════════════════════════════════════════════════════════════════
+
+            ┌────────────────────┬────────────────────────────────────────────┐
+            │ Variable           │ Description                                │
+            ├────────────────────┼────────────────────────────────────────────┤
+            │ $json              │ The current item's JSON data (most used).  │
+            │                    │ Access fields: $json.fieldName             │
+            │                    │ Nested access: $json.user.email            │
+            ├────────────────────┼────────────────────────────────────────────┤
+            │ $input             │ Input to the current node:                 │
+            │                    │   $input.item.json  — current item's data  │
+            │                    │   $input.first()    — first input item     │
+            │                    │   $input.all()      — all input items      │
+            ├────────────────────┼────────────────────────────────────────────┤
+            │ $('Node Name')     │ Access output from a specific node by its  │
+            │                    │ display name:                              │
+            │                    │   $('Webhook').item.json.body              │
+            │                    │   $('HTTP Request').first().json.data      │
+            ├────────────────────┼────────────────────────────────────────────┤
+            │ $execution         │ Current execution metadata:                │
+            │                    │   $execution.id — unique execution ID      │
+            ├────────────────────┼────────────────────────────────────────────┤
+            │ $env               │ Environment variables (key-value map).     │
+            │                    │   $env.MY_API_KEY                          │
+            ├────────────────────┼────────────────────────────────────────────┤
+            │ $vars              │ Workflow variables (key-value map).        │
+            │                    │   $vars.myVariable                         │
+            ├────────────────────┼────────────────────────────────────────────┤
+            │ $now               │ Current ISO timestamp string.              │
+            │ $today             │ Current date string (YYYY-MM-DD).          │
+            │ $runIndex          │ Index of the current item in the batch.    │
+            └────────────────────┴────────────────────────────────────────────┘
+
+            ═══════════════════════════════════════════════════════════════════
+            WEBHOOK DATA SHAPE ($json after a Webhook node)
+            ═══════════════════════════════════════════════════════════════════
+
+            When a Webhook trigger fires, $json contains:
+            - $json.body         — the parsed request body (POST/PUT/PATCH)
+            - $json.queryParams  — query string parameters as key-value map
+            - $json.pathParams   — URL path parameters as key-value map
+            - $json.headers      — HTTP request headers as key-value map
+            - $json.method       — HTTP method string (GET, POST, etc.)
+            - $json.path         — the webhook path
+
+            Examples:
+              POST /webhook/users/{userId}?format=json  with body {"name":"Alice"}
+              → $json.body.name        = "Alice"
+              → $json.pathParams.userId = the path segment value
+              → $json.queryParams.format = "json"
+              → $json.method           = "POST"
+
+            ═══════════════════════════════════════════════════════════════════
+            CODE NODE — JAVASCRIPT & PYTHON
+            ═══════════════════════════════════════════════════════════════════
+
+            The Code node (type: "code") executes user scripts in a GraalVM sandbox.
+
+            IMPORTANT — JavaScript limitations:
+            - Pure JavaScript ONLY (ECMAScript). No Node.js APIs available.
+            - No require(), no import, no fetch(), no Buffer, no process, no fs.
+            - No network access, no file system access from within the sandbox.
+            - Standard JS built-ins work: JSON, Math, Date, RegExp, Array methods,
+              String methods, Object methods, Map, Set, Promise (sync only), etc.
+
+            Available variables inside the Code node:
+            - $input.all()    — array of all input items (Run Once for All mode)
+            - $input.first()  — first input item
+            - $input.item     — current item (Run Once for Each Item mode)
+            - $input.index    — current item index (each-item mode)
+
+            Each item has the shape: { "json": { ...data... } }
+
+            Example (JavaScript, Run Once for All Items):
+              for (const item of $input.all()) {
+                item.json.uppercaseName = item.json.name.toUpperCase();
+              }
+              return $input.all();
+
+            Example (JavaScript, Run Once for Each Item):
+              $input.item.json.processed = true;
+              $input.item.json.timestamp = new Date().toISOString();
+              return $input.item;
+
+            Python mode uses _input instead of $input (same methods).
+
+            ═══════════════════════════════════════════════════════════════════
+            COMMON PARAMETER PATTERNS
+            ═══════════════════════════════════════════════════════════════════
+
+            - String values:  "parameters": { "url": "https://api.example.com" }
+            - Expressions:    "parameters": { "url": "={{ $json.baseUrl }}/endpoint" }
+            - Options/select: "parameters": { "method": "POST" }
+            - Boolean:        "parameters": { "continueOnFail": true }
+            - JSON body:      "parameters": { "body": "={{ JSON.stringify($json.body) }}" }
+            - Execution ID:   "parameters": { "key": "={{ $execution.id }}" }
 
             Use cwc_get_node_type to see all available parameters for a specific node type.
             """;
@@ -1656,6 +1768,317 @@ public class McpSystemToolService {
 
             ❌ MISTAKE: Creating an agent with cwc_create_workflow
             ✅ FIX: Use cwc_create_agent to get type=AGENT and the agent chat UI.
+
+            """;
+
+    // ── Validation, Schemas & Swagger guide ──────────────────────────────────
+    private static final String GUIDE_VALIDATION_AND_SCHEMAS = """
+
+            ╔══════════════════════════════════════════════════════════════════╗
+            ║            VALIDATION, MCP SCHEMAS & SWAGGER                    ║
+            ╚══════════════════════════════════════════════════════════════════╝
+
+            This guide covers input/output validation, the Schema Validator node,
+            MCP JSON Schema configuration, and how to enable auto-generated
+            Swagger/OpenAPI documentation for webhook-based workflows.
+
+
+            ═══════════════════════════════════════════════════════════════════
+            1. SCHEMA VALIDATOR NODE (type: "schemaValidator")
+            ═══════════════════════════════════════════════════════════════════
+
+            The Schema Validator node validates incoming data and routes items to
+            two outputs: "valid" (output 0) and "invalid" (output 1).
+
+            Three validation modes:
+
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ Mode: "fieldChecks" (default)                                   │
+            │                                                                 │
+            │ Validate specific fields with built-in rules. Configure the     │
+            │ "checks" parameter as a FIXED_COLLECTION with entries:          │
+            │   - fieldName:  dot-notation path (e.g. "body.email")          │
+            │   - checkType:  required, type, notEmpty, minLength,           │
+            │                 maxLength, pattern, minValue, maxValue, inList  │
+            │   - checkValue: context-dependent value for the check          │
+            │                                                                 │
+            │ Example checks parameter:                                      │
+            │ [                                                               │
+            │   { "fieldName": "body.name",  "checkType": "required" },      │
+            │   { "fieldName": "body.email", "checkType": "pattern",         │
+            │     "checkValue": "^[^@]+@[^@]+\\.[^@]+$" },                   │
+            │   { "fieldName": "body.age",   "checkType": "minValue",        │
+            │     "checkValue": "18" }                                       │
+            │ ]                                                               │
+            │                                                                 │
+            │ Supports nested field access: "body.address.zipCode"           │
+            └─────────────────────────────────────────────────────────────────┘
+
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ Mode: "jsonSchema"                                              │
+            │                                                                 │
+            │ Validate against a full JSON Schema definition. Set the         │
+            │ "schema" parameter to a JSON Schema object:                     │
+            │ {                                                               │
+            │   "type": "object",                                             │
+            │   "required": ["body"],                                         │
+            │   "properties": {                                               │
+            │     "body": {                                                   │
+            │       "type": "object",                                         │
+            │       "required": ["name", "email"],                            │
+            │       "properties": {                                           │
+            │         "name":  { "type": "string", "minLength": 1 },         │
+            │         "email": { "type": "string", "pattern": "^[^@]+@" }    │
+            │       }                                                         │
+            │     }                                                           │
+            │   }                                                             │
+            │ }                                                               │
+            │                                                                 │
+            │ Supports: required, type (including multi-type arrays like      │
+            │ ["string", "number"]), pattern, minLength, maxLength,           │
+            │ minimum, maximum, enum, and nested object validation.           │
+            └─────────────────────────────────────────────────────────────────┘
+
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ Mode: "both"                                                    │
+            │                                                                 │
+            │ Runs field checks AND JSON Schema validation together.          │
+            │ An item must pass both to be considered valid.                  │
+            └─────────────────────────────────────────────────────────────────┘
+
+            The "includeErrors" parameter (default: true) adds a
+            "_validationErrors" array to invalid items listing all failures.
+
+            IMPORTANT — Webhook data shape for validation:
+            After a Webhook node, $json contains: body, queryParams, pathParams,
+            headers, method, path. When writing field checks or JSON schema for
+            webhook input, validate against these top-level keys.
+
+            Example: validate that POST body has required fields:
+              fieldChecks: [
+                { "fieldName": "body.name",  "checkType": "required" },
+                { "fieldName": "body.email", "checkType": "notEmpty" }
+              ]
+
+            Or with jsonSchema mode, validate the full webhook data shape:
+              {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "object",
+                    "required": ["name", "email"],
+                    "properties": {
+                      "name":  { "type": "string" },
+                      "email": { "type": "string" }
+                    }
+                  },
+                  "pathParams": {
+                    "type": "object",
+                    "required": ["id"],
+                    "properties": {
+                      "id": { "type": ["string", "number"] }
+                    }
+                  }
+                }
+              }
+
+            TIP: Use type arrays like ["string", "number"] when a field may
+            arrive as either type (common for path parameters that may be
+            parsed as numbers).
+
+
+            ═══════════════════════════════════════════════════════════════════
+            2. WEBHOOK VALIDATION PATTERN
+            ═══════════════════════════════════════════════════════════════════
+
+            Recommended workflow pattern for validated webhook APIs:
+
+            Webhook → Schema Validator → [valid branch]  → process → Respond
+                                       → [invalid branch] → Respond with 400
+
+            Node wiring:
+            - Webhook output 0  → Schema Validator input 0
+            - Schema Validator output 0 (valid)   → next processing node
+            - Schema Validator output 1 (invalid) → RespondToWebhook (400 error)
+
+            Connection format for multi-output (Schema Validator has 2 outputs):
+            {
+              "webhookId": { "main": [[{ "node": "validatorId", "type": "main", "index": 0 }]] },
+              "validatorId": {
+                "main": [
+                  [{ "node": "processNodeId", "type": "main", "index": 0 }],
+                  [{ "node": "errorRespondId", "type": "main", "index": 0 }]
+                ]
+              }
+            }
+
+            The first array in "main" is output 0 (valid items).
+            The second array is output 1 (invalid items).
+
+
+            ═══════════════════════════════════════════════════════════════════
+            3. MCP INPUT/OUTPUT SCHEMA (JSON Schema Editor)
+            ═══════════════════════════════════════════════════════════════════
+
+            Each workflow can define an MCP Input Schema and MCP Output Schema.
+            These are JSON Schema definitions that describe the expected input
+            and output structure of the workflow.
+
+            Purpose — MCP schemas serve THREE functions:
+
+            1. MCP TOOL DEFINITION:
+               When a workflow is exposed as an MCP tool (via publish), the
+               input schema defines the tool's parameter structure that AI
+               clients see. The output schema describes what the tool returns.
+
+            2. SWAGGER / OPENAPI DOCUMENTATION:
+               For webhook-triggered workflows with Swagger enabled, the MCP
+               schemas automatically generate OpenAPI 3.0 documentation:
+               - Input schema → request body schema (POST/PUT/PATCH) or
+                 query parameters (GET/DELETE)
+               - Output schema → response body schema (200 response)
+               - A special "payload" property in the input schema is mapped
+                 to the requestBody, while other properties become query params
+               - Path parameters from the webhook URL template (e.g. {id})
+                 are auto-detected and added to the OpenAPI spec
+               The Swagger spec is served at: GET /api/swagger/spec
+
+            3. INPUT VALIDATION REFERENCE:
+               The MCP input schema can serve as your validation reference.
+               Use the JSON Schema Editor to define your expected input shape,
+               then use the same schema (or derive field checks from it) in a
+               Schema Validator node within the workflow.
+
+            Configuring MCP schemas:
+            - In the workflow editor UI, open the MCP settings panel
+            - Use the JSON Schema Editor (visual mode) to define properties
+              with names, types (supports multi-type like ["string", "number"]),
+              descriptions, required flags, and constraints (pattern, minLength,
+              maxLength, minimum, maximum, enum, default)
+            - Or use Code mode to paste a raw JSON Schema directly
+            - The editor shows a live JSON Schema preview and example output
+
+            RECOMMENDED SETUP for a webhook workflow API:
+            1. Define the MCP Input Schema describing expected input fields
+               (body payload, query params, path params as needed)
+            2. Define the MCP Output Schema describing the response shape
+            3. Enable Swagger for the workflow (in workflow settings)
+            4. Add a Schema Validator node after the Webhook to enforce
+               the input contract at runtime
+            5. Publish the workflow — the Swagger spec at /api/swagger/spec
+               will auto-generate documentation from the published schemas
+
+
+            ═══════════════════════════════════════════════════════════════════
+            4. SWAGGER SETUP
+            ═══════════════════════════════════════════════════════════════════
+
+            To enable auto-generated Swagger/OpenAPI docs for a webhook workflow:
+
+            Step 1: Configure the Webhook node with the desired path and method
+            Step 2: Define MCP Input Schema and MCP Output Schema (see above)
+            Step 3: Enable "Swagger" in the workflow settings
+            Step 4: Publish the workflow (Swagger uses the published version)
+
+            The generated OpenAPI spec at /api/swagger/spec will include:
+            - The webhook path as an API endpoint
+            - Request body schema from MCP Input Schema
+            - Response schema from MCP Output Schema
+            - Path parameters auto-extracted from URL templates
+            - Query parameters for non-body, non-path input properties
+
+            Swagger settings (API title, description, version) are configured
+            globally in the Settings page under Swagger configuration.
+
+            INPUT SCHEMA CONVENTION — "payload" property:
+            If your MCP Input Schema includes a property named "payload",
+            Swagger uses convention-based mapping:
+            - "payload" → requestBody (for POST/PUT/PATCH)
+            - Path param matches → path parameters
+            - All other properties → query parameters
+            This gives you fine-grained control over how the OpenAPI spec
+            represents your API's parameters.
+
+
+            ═══════════════════════════════════════════════════════════════════
+            5. COMPLETE EXAMPLE — VALIDATED WEBHOOK API
+            ═══════════════════════════════════════════════════════════════════
+
+            A POST endpoint that validates user creation input:
+
+            Nodes:
+            [
+              { "id": "webhook1", "name": "On webhook call", "type": "webhook",
+                "typeVersion": 1, "position": [250, 300],
+                "parameters": { "httpMethod": "POST", "path": "users",
+                                "responseMode": "responseNode" } },
+              { "id": "validator1", "name": "Validate Input", "type": "schemaValidator",
+                "typeVersion": 1, "position": [500, 300],
+                "parameters": {
+                  "mode": "jsonSchema",
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "type": "object",
+                        "required": ["name", "email"],
+                        "properties": {
+                          "name":  { "type": "string", "minLength": 1 },
+                          "email": { "type": "string", "pattern": "^[^@]+@[^@]+\\\\.[^@]+$" },
+                          "age":   { "type": ["number", "integer"], "minimum": 0 }
+                        }
+                      }
+                    }
+                  },
+                  "includeErrors": true
+                } },
+              { "id": "process1", "name": "Process User", "type": "code",
+                "typeVersion": 1, "position": [750, 200],
+                "parameters": {
+                  "language": "javaScript", "mode": "runOnceForAllItems",
+                  "jsCode": "for (const item of $input.all()) { item.json.result = { success: true, user: item.json.body }; } return $input.all();"
+                } },
+              { "id": "respond1", "name": "Success Response", "type": "respondToWebhook",
+                "typeVersion": 1, "position": [1000, 200],
+                "parameters": { "respondWith": "json",
+                                "responseBody": "={{ JSON.stringify($json.result) }}" } },
+              { "id": "respond2", "name": "Error Response", "type": "respondToWebhook",
+                "typeVersion": 1, "position": [750, 450],
+                "parameters": { "respondWith": "json", "responseCode": 400,
+                                "responseBody": "={{ JSON.stringify({ error: 'Validation failed', details: $json._validationErrors }) }}" } }
+            ]
+
+            Connections:
+            {
+              "webhook1": { "main": [[{ "node": "validator1", "type": "main", "index": 0 }]] },
+              "validator1": {
+                "main": [
+                  [{ "node": "process1", "type": "main", "index": 0 }],
+                  [{ "node": "respond2", "type": "main", "index": 0 }]
+                ]
+              },
+              "process1": { "main": [[{ "node": "respond1", "type": "main", "index": 0 }]] }
+            }
+
+            Then configure the workflow's MCP Input Schema to match:
+            {
+              "type": "object",
+              "required": ["payload"],
+              "properties": {
+                "payload": {
+                  "type": "object",
+                  "description": "User creation payload",
+                  "required": ["name", "email"],
+                  "properties": {
+                    "name":  { "type": "string", "description": "User's full name" },
+                    "email": { "type": "string", "description": "User's email address" },
+                    "age":   { "type": "integer", "description": "User's age" }
+                  }
+                }
+              }
+            }
+
+            Enable Swagger → Publish → the endpoint is documented at /api/swagger/spec.
 
             """;
 }

@@ -272,7 +272,7 @@ export class WorkflowEditorStore {
     this.commitChange({ ...wf, settings: { ...wf.settings, ...settings } }, 'settings');
   }
 
-  updateMcpInputSchema(mcpInputSchema: any[] | undefined): void {
+  updateMcpInputSchema(mcpInputSchema: any[] | Record<string, any> | undefined): void {
     const wf = this.workflow();
     if (!wf) return;
     this.commitChange({ ...wf, mcpInputSchema }, 'mcpInputSchema');
@@ -284,7 +284,7 @@ export class WorkflowEditorStore {
     this.commitChange({ ...wf, mcpOutputSchema }, 'mcpOutputSchema');
   }
 
-  importWorkflowData(data: { name?: string; nodes?: any[]; connections?: any; settings?: any; mcpEnabled?: boolean; mcpDescription?: string; mcpInputSchema?: any[] }): void {
+  importWorkflowData(data: { name?: string; nodes?: any[]; connections?: any; settings?: any; mcpEnabled?: boolean; mcpDescription?: string; mcpInputSchema?: any[]; mcpOutputSchema?: any }): void {
     const wf = this.workflow();
     if (!wf) return;
     const updated: Workflow = {
@@ -297,6 +297,7 @@ export class WorkflowEditorStore {
     if (data.mcpEnabled !== undefined) updated.mcpEnabled = data.mcpEnabled;
     if (data.mcpDescription !== undefined) updated.mcpDescription = data.mcpDescription;
     if (data.mcpInputSchema !== undefined) updated.mcpInputSchema = data.mcpInputSchema;
+    if (data.mcpOutputSchema !== undefined) updated.mcpOutputSchema = data.mcpOutputSchema;
     this.commitChange(updated, 'import');
     this.resetHistory(updated);
   }

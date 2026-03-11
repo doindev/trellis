@@ -172,9 +172,10 @@ public class RespondToWebhookNode extends AbstractNode {
 					NodeParameter.builder()
 						.name("responseCode")
 						.displayName("Response Code")
-						.description("The HTTP status code for the response (100-599).")
+						.description("The HTTP response code to return. Defaults to 200.")
 						.type(ParameterType.NUMBER)
 						.defaultValue(200)
+						.typeOptions(Map.of("minValue", 100, "maxValue", 599))
 						.build(),
 					NodeParameter.builder()
 						.name("responseHeaders")
@@ -200,12 +201,22 @@ public class RespondToWebhookNode extends AbstractNode {
 						.build(),
 					NodeParameter.builder()
 						.name("responseKey")
-						.displayName("Response Key")
-						.description("The key name to wrap the response data in.")
+						.displayName("Put Response in Field")
+						.description("The name of the response field to put all items in.")
 						.type(ParameterType.STRING)
 						.placeHolder("e.g. data")
 						.displayOptions(Map.of("show", Map.of(
 							"/respondWith", List.of("allIncomingItems", "firstIncomingItem")
+						)))
+						.build(),
+					NodeParameter.builder()
+						.name("enableStreaming")
+						.displayName("Enable Streaming")
+						.description("Whether to enable streaming to the response.")
+						.type(ParameterType.BOOLEAN)
+						.defaultValue(true)
+						.displayOptions(Map.of("show", Map.of(
+							"/respondWith", List.of("allIncomingItems", "firstIncomingItem", "text", "json")
 						)))
 						.build()
 				))

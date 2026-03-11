@@ -161,7 +161,8 @@
       "Bash(npm audit:*)",
       "Bash(git stash:*)",
       "Bash(git add:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(xxd:*)"
     ]
   }
 }

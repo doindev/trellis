@@ -218,13 +218,10 @@ public class WebhookController {
 
         Map<String, Object> webhookData = new LinkedHashMap<>();
         webhookData.put("headers", extractHeaders(request));
-        webhookData.put("params", queryParams);
-        webhookData.put("query", queryParams);
+        webhookData.put("queryParams", queryParams);
+        webhookData.put("pathParams", match.pathVariables().isEmpty() ? Map.of() : match.pathVariables());
         webhookData.put("method", method);
         webhookData.put("path", path);
-        if (!match.pathVariables().isEmpty()) {
-            webhookData.put("pathParams", match.pathVariables());
-        }
 
         // rawBody option — store body as JSON string instead of parsed object
         if (Boolean.TRUE.equals(options.get("rawBody"))) {

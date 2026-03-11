@@ -165,6 +165,11 @@ public class WorkflowService {
                 .settings(request.getSettings());
         if (request.getType() != null) builder.type(request.getType());
         if (request.getIcon() != null) builder.icon(request.getIcon());
+        if (request.getMcpEnabled() != null) builder.mcpEnabled(request.getMcpEnabled());
+        if (request.getMcpDescription() != null) builder.mcpDescription(request.getMcpDescription());
+        if (request.getMcpInputSchema() != null) builder.mcpInputSchema(request.getMcpInputSchema());
+        if (request.getMcpOutputSchema() != null) builder.mcpOutputSchema(request.getMcpOutputSchema());
+        if (request.getSwaggerEnabled() != null) builder.swaggerEnabled(request.getSwaggerEnabled());
         return toResponse(workflowRepository.save(builder.build()));
     }
 
@@ -273,6 +278,8 @@ public class WorkflowService {
                 .nodes(entity.getNodes())
                 .connections(entity.getConnections())
                 .settings(entity.getSettings())
+                .mcpInputSchema(entity.getMcpInputSchema())
+                .mcpOutputSchema(entity.getMcpOutputSchema())
                 .publishedAt(Instant.now());
 
         if (request.isIncludePinData() && entity.getPinData() != null) {
@@ -369,6 +376,8 @@ public class WorkflowService {
                 .nodes(version.getNodes())
                 .connections(version.getConnections())
                 .settings(version.getSettings())
+                .mcpInputSchema(entity.getMcpInputSchema())
+                .mcpOutputSchema(entity.getMcpOutputSchema())
                 .publishedAt(Instant.now())
                 .build();
         workflowVersionRepository.save(newVersionEntity);
@@ -725,7 +734,7 @@ public class WorkflowService {
                             Object currentVal = params.get(entry.getKey());
                             Object allowed = entry.getValue();
                             if (allowed instanceof List<?> allowedList) {
-                                if (!allowedList.contains(currentVal)) {
+                                if (currentVal == null || !allowedList.contains(currentVal)) {
                                     conditionsMet = false;
                                     break;
                                 }

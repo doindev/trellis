@@ -12,4 +12,9 @@ public class WorkflowCreateRequest {
     private Object nodes;
     private Object connections;
     private Object settings;
+    private Boolean mcpEnabled;
+    private String mcpDescription;
+    private Object mcpInputSchema;
+    private Object mcpOutputSchema;
+    private Boolean swaggerEnabled;
 }

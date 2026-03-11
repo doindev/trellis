@@ -8,12 +8,14 @@ import io.cwc.entity.McpClientSessionEntity;
 import io.cwc.entity.McpEndpointEntity;
 import io.cwc.entity.McpSettingsEntity;
 import io.cwc.entity.WorkflowEntity;
+import io.cwc.entity.WorkflowVersionEntity;
 import io.cwc.exception.NotFoundException;
 import io.cwc.repository.McpClientSessionRepository;
 import io.cwc.repository.McpEndpointRepository;
 import io.cwc.repository.McpSettingsRepository;
 import io.cwc.repository.ProjectRepository;
 import io.cwc.repository.WorkflowRepository;
+import io.cwc.repository.WorkflowVersionRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.AllArgsConstructor;
@@ -36,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CwcMcpServerManager {
 
     private final WorkflowRepository workflowRepository;
+    private final WorkflowVersionRepository workflowVersionRepository;
     private final ProjectRepository projectRepository;
     private final McpEndpointRepository endpointRepository;
     private final McpSettingsRepository settingsRepository;
@@ -96,6 +99,15 @@ public class CwcMcpServerManager {
         });
 
         List<WorkflowEntity> workflows = workflowRepository.findByMcpEnabledTrue();
+
+        // Batch-load latest published versions to resolve schemas from published state
+        List<String> workflowIds = workflows.stream().map(WorkflowEntity::getId).toList();
+        Map<String, WorkflowVersionEntity> publishedVersions = new HashMap<>();
+        if (!workflowIds.isEmpty()) {
+            workflowVersionRepository.findByWorkflowIdInAndPublishedTrueOrderByVersionNumberDesc(workflowIds)
+                    .forEach(v -> publishedVersions.putIfAbsent(v.getWorkflowId(), v));
+        }
+
         StringBuilder hashInput = new StringBuilder();
         for (WorkflowEntity wf : workflows) {
             String baseName = toSnakeCase(wf.getName());
@@ -112,14 +124,27 @@ public class CwcMcpServerManager {
             String description = wf.getMcpDescription() != null ? wf.getMcpDescription()
                     : wf.getDescription() != null ? wf.getDescription()
                     : "Execute workflow: " + wf.getName();
-            tools.put(toolName, new McpToolDef(toolName, description, wf.getId(), wf.getMcpInputSchema(), wf.getMcpOutputSchema()));
 
-            // Build hash input: tool identity + description + schemas
+            // Use schemas from the latest published version; fall back to current draft if never published
+            WorkflowVersionEntity published = publishedVersions.get(wf.getId());
+            Object inputSchema = published != null && published.getMcpInputSchema() != null
+                    ? published.getMcpInputSchema() : wf.getMcpInputSchema();
+            Object outputSchema = published != null && published.getMcpOutputSchema() != null
+                    ? published.getMcpOutputSchema() : wf.getMcpOutputSchema();
+
+            // Extract webhook path from workflow nodes for path param routing
+            String webhookPath = extractWebhookPath(wf.getNodes());
+
+            tools.put(toolName, new McpToolDef(toolName, description, wf.getId(),
+                    inputSchema, outputSchema, webhookPath));
+
+            // Build hash input: tool identity + description + schemas + webhookPath
             hashInput.append(toolName).append('|')
                     .append(description).append('|')
                     .append(wf.getId()).append('|')
-                    .append(wf.getMcpInputSchema()).append('|')
-                    .append(wf.getMcpOutputSchema()).append('\n');
+                    .append(inputSchema).append('|')
+                    .append(outputSchema).append('|')
+                    .append(webhookPath).append('\n');
         }
 
         String newHash = computeHash(hashInput.toString());
@@ -364,7 +389,12 @@ public class CwcMcpServerManager {
                     Map<String, Object> t = new LinkedHashMap<>();
                     t.put("name", tool.name);
                     t.put("description", tool.description);
-                    t.put("inputSchema", buildInputSchema(tool.mcpInputSchema));
+                    // Auto-populate missing path params into inputSchema
+                    List<String> pathParams = tool.webhookPath != null
+                            ? io.cwc.util.SchemaUtils.extractPathParamNames(tool.webhookPath)
+                            : List.of();
+                    t.put("inputSchema", io.cwc.util.SchemaUtils.buildInputSchemaWithPathParams(
+                            tool.mcpInputSchema, pathParams));
                     Map<String, Object> outputSchema = buildOutputSchema(tool.mcpOutputSchema);
                     if (outputSchema != null) {
                         t.put("outputSchema", outputSchema);
@@ -382,81 +412,11 @@ public class CwcMcpServerManager {
     }
 
     private Map<String, Object> buildInputSchema(Object mcpInputSchema) {
-        if (mcpInputSchema instanceof List<?> paramList && !paramList.isEmpty()) {
-            Map<String, Object> properties = new LinkedHashMap<>();
-            List<String> required = new ArrayList<>();
-            for (Object item : paramList) {
-                if (item instanceof Map<?, ?> param) {
-                    String name = (String) param.get("name");
-                    String type = (String) param.get("type");
-                    String description = (String) param.get("description");
-                    Boolean isRequired = (Boolean) param.get("required");
-                    if (name == null || name.isBlank()) continue;
-                    Map<String, Object> prop = new LinkedHashMap<>();
-                    prop.put("type", type != null ? type : "string");
-                    if (description != null && !description.isBlank()) {
-                        prop.put("description", description);
-                    }
-                    properties.put(name, prop);
-                    if (Boolean.TRUE.equals(isRequired)) {
-                        required.add(name);
-                    }
-                }
-            }
-            Map<String, Object> schema = new LinkedHashMap<>();
-            schema.put("type", "object");
-            schema.put("properties", properties);
-            if (!required.isEmpty()) {
-                schema.put("required", required);
-            }
-            return schema;
-        }
-        // Fallback: generic input string
-        return Map.of(
-                "type", "object",
-                "properties", Map.of(
-                        "input", Map.of(
-                                "type", "string",
-                                "description", "Input data for the workflow"
-                        )
-                )
-        );
+        return io.cwc.util.SchemaUtils.buildInputSchema(mcpInputSchema);
     }
 
     private Map<String, Object> buildOutputSchema(Object mcpOutputSchema) {
-        if (!(mcpOutputSchema instanceof Map<?, ?> schemaMap)) return null;
-        String format = (String) schemaMap.get("format");
-        if (!"json".equals(format)) return null;
-
-        List<?> properties = (List<?>) schemaMap.get("properties");
-        if (properties == null || properties.isEmpty()) return null;
-
-        Map<String, Object> schemaProps = new LinkedHashMap<>();
-        for (Object item : properties) {
-            if (item instanceof Map<?, ?> prop) {
-                String name = (String) prop.get("name");
-                String type = (String) prop.get("type");
-                String description = (String) prop.get("description");
-                if (name == null || name.isBlank()) continue;
-                Map<String, Object> propSchema = new LinkedHashMap<>();
-                propSchema.put("type", type != null ? type : "string");
-                if (description != null && !description.isBlank()) {
-                    propSchema.put("description", description);
-                }
-                schemaProps.put(name, propSchema);
-            }
-        }
-
-        if (schemaProps.isEmpty()) return null;
-
-        Map<String, Object> schema = new LinkedHashMap<>();
-        schema.put("type", "object");
-        schema.put("properties", schemaProps);
-        String schemaDescription = (String) schemaMap.get("description");
-        if (schemaDescription != null && !schemaDescription.isBlank()) {
-            schema.put("description", schemaDescription);
-        }
-        return schema;
+        return io.cwc.util.SchemaUtils.buildOutputSchema(mcpOutputSchema);
     }
 
     private Object extractStructuredContent(List<Map<String, Object>> result) {
@@ -488,17 +448,67 @@ public class CwcMcpServerManager {
         }
 
         try {
-            List<Map<String, Object>> inputItems;
-            if (tool.mcpInputSchema instanceof List<?> paramList && !paramList.isEmpty()) {
-                // Custom schema: pass all arguments directly as the JSON data item
-                inputItems = List.of(Map.of("json", arguments != null ? arguments : Map.of()));
+            // Route arguments based on the payload convention:
+            // - "payload" argument → body
+            // - argument matching webhook URL path param → pathParams
+            // - everything else → queryParams
+            // If no payload property in schema and no path params, fall back to legacy (all → body)
+            List<String> pathParamNames = tool.webhookPath != null
+                    ? io.cwc.util.SchemaUtils.extractPathParamNames(tool.webhookPath)
+                    : List.of();
+            boolean schemaHasPayload = io.cwc.util.SchemaUtils.hasPayloadProperty(tool.mcpInputSchema);
+
+            Map<String, Object> webhookLike = new LinkedHashMap<>();
+
+            if (!schemaHasPayload && pathParamNames.isEmpty()) {
+                // Legacy mode: no payload convention, preserve existing behavior
+                if (tool.mcpInputSchema instanceof List<?> paramList && !paramList.isEmpty()) {
+                    webhookLike.put("body", arguments != null ? arguments : Map.of());
+                } else if (tool.mcpInputSchema instanceof Map<?, ?>) {
+                    // Direct JSON Schema without payload — all args to body
+                    webhookLike.put("body", arguments != null ? arguments : Map.of());
+                } else {
+                    // Fallback: single input string
+                    String input = arguments != null
+                            ? String.valueOf(arguments.getOrDefault("input", ""))
+                            : "";
+                    webhookLike.put("body", Map.of("input", input));
+                }
+                webhookLike.put("headers", Map.of());
+                webhookLike.put("queryParams", Map.of());
+                webhookLike.put("pathParams", Map.of());
             } else {
-                // Legacy: single input string
-                String input = arguments != null
-                        ? String.valueOf(arguments.getOrDefault("input", ""))
-                        : "";
-                inputItems = List.of(Map.of("json", Map.of("input", input)));
+                // New convention: route by payload/path/query
+                Map<String, Object> bodyContent = new LinkedHashMap<>();
+                Map<String, Object> queryArgs = new LinkedHashMap<>();
+                Map<String, Object> pathArgs = new LinkedHashMap<>();
+
+                if (arguments != null) {
+                    for (Map.Entry<String, Object> entry : arguments.entrySet()) {
+                        if ("payload".equals(entry.getKey())) {
+                            Object val = entry.getValue();
+                            if (val instanceof Map<?, ?> mapVal) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> typedMap = (Map<String, Object>) mapVal;
+                                bodyContent.putAll(typedMap);
+                            } else {
+                                bodyContent.put("payload", val);
+                            }
+                        } else if (pathParamNames.contains(entry.getKey())) {
+                            pathArgs.put(entry.getKey(), entry.getValue());
+                        } else {
+                            queryArgs.put(entry.getKey(), entry.getValue());
+                        }
+                    }
+                }
+
+                webhookLike.put("body", bodyContent);
+                webhookLike.put("headers", Map.of());
+                webhookLike.put("queryParams", queryArgs);
+                webhookLike.put("pathParams", pathArgs);
             }
+            webhookLike.put("method", "MCP");
+            List<Map<String, Object>> inputItems = List.of(Map.of("json", webhookLike));
 
             List<Map<String, Object>> result = workflowEngine.executeSubWorkflow(
                     tool.workflowId, inputItems, io.cwc.entity.ExecutionEntity.ExecutionMode.INTERNAL);
@@ -661,11 +671,27 @@ public class CwcMcpServerManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private String extractWebhookPath(Object nodesObj) {
+        if (!(nodesObj instanceof List<?> nodes)) return null;
+        for (Object nodeObj : nodes) {
+            if (!(nodeObj instanceof Map<?, ?> node)) continue;
+            if (!"webhook".equals(node.get("type"))) continue;
+            Object params = node.get("parameters");
+            if (params instanceof Map<?, ?> p) {
+                String path = (String) p.get("path");
+                if (path != null && !path.isEmpty()) return path;
+            }
+        }
+        return null;
+    }
+
     // --- Inner types ---
 
     public record McpHandleResult(Map<String, Object> body, String sessionId) {}
 
-    private record McpToolDef(String name, String description, String workflowId, Object mcpInputSchema, Object mcpOutputSchema) {}
+    private record McpToolDef(String name, String description, String workflowId,
+                               Object mcpInputSchema, Object mcpOutputSchema, String webhookPath) {}
 
     @Data
     @AllArgsConstructor

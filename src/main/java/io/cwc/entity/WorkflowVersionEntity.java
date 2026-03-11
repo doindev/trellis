@@ -51,6 +51,16 @@ public class WorkflowVersionEntity {
     @Column(columnDefinition = "TEXT")
     private Object pinData;
 
+    @Lob
+    @Convert(converter = JsonObjectConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private Object mcpInputSchema;
+
+    @Lob
+    @Convert(converter = JsonObjectConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private Object mcpOutputSchema;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean published = false;

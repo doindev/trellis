@@ -76,23 +76,44 @@ export interface McpSettings {
   endpoints: McpEndpoint[];
 }
 
+export type McpParamType = 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array';
+
 export interface McpParameter {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  type: McpParamType | McpParamType[];
   description: string;
   required: boolean;
+  // Nesting support
+  properties?: McpParameter[];       // For type: 'object'
+  items?: { type: McpParamType };    // For type: 'array'
+  // Constraints
+  enum?: string[];
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  default?: any;
 }
 
 export interface McpOutputProperty {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  type: McpParamType;
   description: string;
+}
+
+/** Raw JSON Schema object — used when storing schema directly from Code mode */
+export interface JsonSchemaObject {
+  type: 'object';
+  properties?: Record<string, any>;
+  required?: string[];
+  [key: string]: any;
 }
 
 export interface McpOutputSchema {
   format: 'json' | 'text' | 'html' | 'xml';
   description?: string;
-  properties?: McpOutputProperty[];
+  properties?: McpParameter[] | McpOutputProperty[];
 }
 
 export interface McpWorkflow {
@@ -102,7 +123,7 @@ export interface McpWorkflow {
   description: string;
   mcpEnabled: boolean;
   mcpDescription: string;
-  mcpInputSchema: McpParameter[] | null;
+  mcpInputSchema: McpParameter[] | JsonSchemaObject | null;
   mcpOutputSchema: McpOutputSchema | null;
   published: boolean;
   hasWebhookNode: boolean;

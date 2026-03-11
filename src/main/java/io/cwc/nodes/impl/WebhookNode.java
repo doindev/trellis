@@ -326,7 +326,8 @@ public class WebhookNode extends AbstractTriggerNode {
 				Map<String, Object> json = unwrapJson(enriched);
 				// Ensure standard webhook fields exist (may be absent in manual execution)
 				json.putIfAbsent("headers", new LinkedHashMap<>());
-				json.putIfAbsent("params", new LinkedHashMap<>());
+				json.putIfAbsent("queryParams", new LinkedHashMap<>());
+				json.putIfAbsent("pathParams", new LinkedHashMap<>());
 				json.putIfAbsent("body", new LinkedHashMap<>());
 				json.putIfAbsent("method", httpMethod);
 				json.putIfAbsent("path", path);
@@ -342,8 +343,8 @@ public class WebhookNode extends AbstractTriggerNode {
 		// No incoming data - produce a trigger item with webhook metadata
 		Map<String, Object> webhookData = new HashMap<>();
 		webhookData.put("headers", new LinkedHashMap<>());
-		webhookData.put("params", new LinkedHashMap<>());
-		webhookData.put("query", new LinkedHashMap<>());
+		webhookData.put("queryParams", new LinkedHashMap<>());
+		webhookData.put("pathParams", new LinkedHashMap<>());
 		webhookData.put("body", new LinkedHashMap<>());
 		webhookData.put("method", httpMethod);
 		webhookData.put("path", path);

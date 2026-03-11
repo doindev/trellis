@@ -1,0 +1,599 @@
+// ─── Full-page modal shell ──────────────────────────────────────
+
+.schema-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1070;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.schema-modal {
+  position: fixed;
+  inset: 60px;
+  z-index: 1071;
+  background: hsl(0, 0%, 11%);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid hsl(0, 0%, 22%);
+  overflow: hidden;
+}
+
+// ─── Header ─────────────────────────────────────────────────────
+
+.schema-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid hsl(0, 0%, 22%);
+  flex-shrink: 0;
+}
+
+.schema-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.schema-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 90%);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.schema-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// ─── Buttons ────────────────────────────────────────────────────
+
+.schema-btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schema-btn-workflow {
+  background: hsl(0, 0%, 20%);
+  color: hsl(0, 0%, 80%);
+  &:hover { background: hsl(0, 0%, 26%); }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.schema-btn-save {
+  background: hsl(147, 64%, 32%);
+  color: hsl(0, 0%, 96%);
+  &:hover { background: hsl(147, 64%, 38%); }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+.schema-btn-close {
+  background: hsl(0, 0%, 20%);
+  color: hsl(0, 0%, 70%);
+  padding: 5px 8px;
+  &:hover { background: hsl(0, 0%, 26%); color: hsl(0, 0%, 90%); }
+}
+
+// ─── Body ───────────────────────────────────────────────────────
+
+.schema-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+// ─── Split Pane ─────────────────────────────────────────────────
+
+.schema-split {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.schema-pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.schema-resize-handle {
+  width: 6px;
+  cursor: col-resize;
+  background: hsl(0, 0%, 15%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+
+  &:hover, &.dragging {
+    background: hsl(247, 49%, 53%);
+  }
+}
+
+.resize-grip {
+  width: 2px;
+  height: 24px;
+  border-radius: 1px;
+  background: hsl(0, 0%, 30%);
+
+  .schema-resize-handle:hover &,
+  .schema-resize-handle.dragging & {
+    background: hsl(0, 0%, 70%);
+  }
+}
+
+// ─── Pane Header ────────────────────────────────────────────────
+
+.pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid hsl(0, 0%, 18%);
+  flex-shrink: 0;
+}
+
+.pane-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 50%);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// ─── Preview Tabs ───────────────────────────────────────────────
+
+.preview-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.preview-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: hsl(0, 0%, 46%);
+  padding: 0 10px 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover { color: hsl(0, 0%, 70%); }
+  &.active {
+    color: hsl(0, 0%, 90%);
+    border-bottom-color: hsl(247, 49%, 53%);
+  }
+}
+
+.pane-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: hsl(0, 0%, 65%);
+  background: hsl(0, 0%, 17%);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { background: hsl(0, 0%, 22%); color: hsl(0, 0%, 90%); }
+  &:disabled { opacity: 0.4; cursor: default; }
+}
+
+.pane-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// ─── Empty state ────────────────────────────────────────────────
+
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+
+  p {
+    font-size: 0.8125rem;
+    color: hsl(0, 0%, 44%);
+    margin: 0 0 4px;
+  }
+}
+
+// ─── Parameter Rows ─────────────────────────────────────────────
+
+.param-row {
+  padding: 10px 12px;
+  background: hsl(0, 0%, 10%);
+  border: 1px solid hsl(0, 0%, 20%);
+  border-radius: 8px;
+}
+
+.param-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.param-index {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: hsl(0, 0%, 44%);
+  background: hsl(0, 0%, 17%);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.param-row-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.param-row-fields {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.param-name-group { flex: 2; }
+.param-type-group { flex: 1.2; }
+.param-desc-group { flex: 3; }
+
+.param-required-group {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 56px;
+}
+
+.param-toggle { margin-top: 2px; }
+
+// ─── Form inputs ────────────────────────────────────────────────
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.form-label {
+  font-size: 0.6875rem;
+  color: hsl(0, 0%, 50%);
+  font-weight: 500;
+}
+
+.form-input {
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  background: hsl(0, 0%, 14%);
+  border: 1px solid hsl(0, 0%, 22%);
+  border-radius: 4px;
+  color: hsl(0, 0%, 90%);
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus { border-color: hsl(247, 49%, 53%); }
+  &::placeholder { color: hsl(0, 0%, 34%); }
+}
+
+select.form-input {
+  appearance: auto;
+  option { background: hsl(0, 0%, 13%); }
+}
+
+// ─── Multi-type selector ───────────────────────────────────────
+
+.type-multi-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  background: hsl(0, 0%, 14%);
+  border: 1px solid hsl(0, 0%, 22%);
+  border-radius: 4px;
+  color: hsl(0, 0%, 90%);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  min-height: 30px;
+
+  &:hover { border-color: hsl(0, 0%, 30%); }
+}
+
+.type-multi-display {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.type-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  margin-top: 2px;
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  padding: 4px 0;
+}
+
+.type-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 85%);
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:hover { background: hsl(0, 0%, 18%); }
+
+  input[type="checkbox"] {
+    accent-color: hsl(247, 49%, 53%);
+    cursor: pointer;
+  }
+}
+
+// ─── Constraints ────────────────────────────────────────────────
+
+.constraints-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6875rem;
+  color: hsl(0, 0%, 46%);
+  cursor: pointer;
+  padding: 6px 0 0;
+  user-select: none;
+
+  &:hover { color: hsl(0, 0%, 70%); }
+
+  svg { transition: transform 0.15s; }
+}
+
+.constraints-section {
+  padding: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.constraint-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.constraint-inline {
+  flex-direction: row;
+  gap: 8px;
+}
+
+.constraint-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.constraint-label {
+  font-size: 0.6875rem;
+  color: hsl(0, 0%, 46%);
+  font-weight: 500;
+}
+
+.constraint-input {
+  max-width: 180px;
+}
+
+// ─── Pattern Presets ──────────────────────────────────────────
+
+.pattern-field {
+  position: relative;
+}
+
+.pattern-input-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pattern-presets-btn {
+  flex-shrink: 0;
+}
+
+.pattern-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  margin-top: 4px;
+  min-width: 280px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  padding: 4px 0;
+}
+
+.pattern-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+
+  &:hover {
+    background: hsl(0, 0%, 18%);
+  }
+}
+
+.pattern-menu-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(0, 0%, 88%);
+}
+
+.pattern-menu-regex {
+  font-size: 0.6875rem;
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: hsl(0, 0%, 48%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.enum-values {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.enum-item {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.enum-input {
+  max-width: 200px;
+}
+
+// ─── Nested properties ─────────────────────────────────────────
+
+.nested-props {
+  margin-top: 8px;
+  padding: 8px;
+  border-left: 2px solid hsl(247, 49%, 30%);
+  border-radius: 0 4px 4px 0;
+}
+
+.nested-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.nested-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: hsl(247, 49%, 53%);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+// ─── Icon buttons ───────────────────────────────────────────────
+
+.btn-icon-sm {
+  background: none;
+  border: none;
+  color: hsl(0, 0%, 50%);
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+
+  &:hover { background: hsl(0, 0%, 20%); color: hsl(0, 0%, 80%); }
+  &.danger:hover { background: hsla(355, 83%, 52%, 0.12); color: hsl(355, 83%, 62%); }
+  &:disabled { opacity: 0.35; cursor: default; }
+}
+
+// ─── Toggle ─────────────────────────────────────────────────────
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+
+  input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: hsl(0, 0%, 24%);
+    border-radius: 22px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      bottom: 3px;
+      background: hsl(0, 0%, 60%);
+      border-radius: 50%;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+  }
+
+  input:checked + .toggle-slider { background: hsl(247, 49%, 53%); }
+  input:checked + .toggle-slider::before { transform: translateX(18px); background: #fff; }
+}
+
+// ─── JSON Preview (right pane) ──────────────────────────────────
+
+.preview-pane {
+  padding: 0;
+}
+
+.json-preview {
+  margin: 0;
+  padding: 12px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: hsl(0, 0%, 70%);
+  background: hsl(0, 0%, 9%);
+  flex: 1;
+  overflow: auto;
+  white-space: pre;
+}

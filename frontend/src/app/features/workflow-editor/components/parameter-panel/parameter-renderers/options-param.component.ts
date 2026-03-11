@@ -39,7 +39,7 @@ import { NodeTypeService } from '../../../../../core/services/node-type.service'
                [disabled]="readOnly"
                (dragover)="onDragOver($event)"
                (drop)="onDrop($event)">
-        <button class="expr-editor-btn" (click)="openExpressionEditor.emit()" title="Open expression editor">
+        <button class="expr-editor-btn" (mousedown)="$event.preventDefault(); openExpressionEditor.emit()" title="Open expression editor">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/>
           </svg>

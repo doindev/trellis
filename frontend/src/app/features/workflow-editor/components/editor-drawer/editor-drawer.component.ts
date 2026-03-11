@@ -520,7 +520,8 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   }
 
   highlightText(text: string): SafeHtml {
-    if (!this.schemaSearch || !text) return text;
+    if (!text) return '';
+    if (!this.schemaSearch) return this.escapeHtml(String(text));
     const html = this.escapeHtml(String(text));
     const escaped = this.schemaSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escaped})`, 'gi');

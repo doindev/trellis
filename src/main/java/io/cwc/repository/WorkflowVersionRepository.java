@@ -18,5 +18,7 @@ public interface WorkflowVersionRepository extends JpaRepository<WorkflowVersion
     Page<WorkflowVersionEntity> findByWorkflowIdAndPublishedOrderByPublishedAtDesc(String workflowId, boolean published, Pageable pageable);
     Optional<WorkflowVersionEntity> findFirstByWorkflowIdOrderByVersionNumberDesc(String workflowId);
     Optional<WorkflowVersionEntity> findFirstByWorkflowIdAndPublishedFalseOrderByPublishedAtDesc(String workflowId);
+    Optional<WorkflowVersionEntity> findFirstByWorkflowIdAndPublishedTrueOrderByVersionNumberDesc(String workflowId);
+    List<WorkflowVersionEntity> findByWorkflowIdInAndPublishedTrueOrderByVersionNumberDesc(List<String> workflowIds);
     void deleteByWorkflowId(String workflowId);
 }

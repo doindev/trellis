@@ -497,13 +497,14 @@ export class SettingsComponent implements OnInit, OnDestroy {
   onParamEditorSaved(event: { inputSchema: McpParameter[]; outputSchema: McpOutputSchema | null }): void {
     if (!this.paramEditorWorkflow) return;
     const validParams = event.inputSchema.filter(p => p.name.trim());
+    const inputSchema = validParams.length > 0 ? validParams : null;
     this.settingsService.updateMcpWorkflow(this.paramEditorWorkflow.id, {
-      mcpInputSchema: validParams,
+      mcpInputSchema: inputSchema,
       mcpOutputSchema: event.outputSchema
     } as any).subscribe({
       next: () => {
         if (this.paramEditorWorkflow) {
-          this.paramEditorWorkflow.mcpInputSchema = validParams.length > 0 ? validParams : null;
+          this.paramEditorWorkflow.mcpInputSchema = inputSchema;
           this.paramEditorWorkflow.mcpOutputSchema = event.outputSchema;
         }
         this.showParamEditorModal = false;
