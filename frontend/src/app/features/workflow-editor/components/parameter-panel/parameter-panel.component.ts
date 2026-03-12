@@ -502,16 +502,12 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     this.parameterChanged.emit(updated);
   }
 
-  /** Whether the "Use workflow schema" button should appear for this param */
-  hasWorkflowSchema(paramName: string): boolean {
-    if (!this.mcpInputSchema) return false;
+  /** Whether the JSON Schema Editor button should appear for this param */
+  shouldShowSchemaEditorBtn(paramName: string): boolean {
     if (this.node?.type !== 'schemaValidator') return false;
     if (paramName !== 'schema') return false;
     const mode = this.node?.parameters?.['mode'];
-    if (mode !== 'jsonSchema' && mode !== 'both') return false;
-    // Must have actual content
-    if (Array.isArray(this.mcpInputSchema)) return this.mcpInputSchema.length > 0;
-    return Object.keys(this.mcpInputSchema).length > 0;
+    return mode === 'jsonSchema' || mode === 'both';
   }
 
   /**

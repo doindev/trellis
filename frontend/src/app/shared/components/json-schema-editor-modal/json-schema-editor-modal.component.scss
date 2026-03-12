@@ -331,6 +331,12 @@ select.form-input {
   min-height: 30px;
 
   &:hover { border-color: hsl(0, 0%, 30%); }
+
+  &.readonly {
+    cursor: default;
+    opacity: 0.6;
+    &:hover { border-color: hsl(0, 0%, 22%); }
+  }
 }
 
 .type-multi-display {

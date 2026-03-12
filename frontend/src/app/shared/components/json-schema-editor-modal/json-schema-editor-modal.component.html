@@ -6,7 +6,7 @@
         <h4 class="schema-title">JSON Schema Editor</h4>
       </div>
       <div class="schema-header-actions">
-        @if (showWorkflowSchemaBtn) {
+        @if (!readOnly && showWorkflowSchemaBtn) {
           <button class="schema-btn schema-btn-workflow" (click)="applyWorkflowSchema()" title="Generate schema from the workflow's MCP input definition">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
@@ -14,9 +14,11 @@
             Use workflow schema
           </button>
         }
-        <button class="schema-btn schema-btn-save" (click)="onSave()" title="Save (Ctrl+Enter)">
-          Save
-        </button>
+        @if (!readOnly) {
+          <button class="schema-btn schema-btn-save" (click)="onSave()" title="Save (Ctrl+Enter)">
+            Save
+          </button>
+        }
         <button class="schema-btn schema-btn-close" (click)="onCancel()" title="Close (Escape)">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6L6 18M6 6l12 12"/>
@@ -32,10 +34,12 @@
         <div class="schema-pane schema-pane-left" [style.width.%]="splitPercent">
           <div class="pane-header">
             <span class="pane-label">Properties</span>
-            <button class="pane-action-btn" (click)="addParam()">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add
-            </button>
+            @if (!readOnly) {
+              <button class="pane-action-btn" (click)="addParam()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add
+              </button>
+            }
           </div>
           <div class="pane-content">
             @if (params.length === 0) {
@@ -90,48 +94,56 @@
   <div class="param-row" [style.marginLeft.px]="depth * 20">
     <div class="param-row-header">
       <span class="param-index">{{ index + 1 }}</span>
-      <div class="param-row-actions">
-        <button class="btn-icon-sm" (click)="moveParamUp(index, parentParams)" [disabled]="index === 0" title="Move up">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
-        </button>
-        <button class="btn-icon-sm" (click)="moveParamDown(index, parentParams)" [disabled]="index === parentParams.length - 1" title="Move down">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <button class="btn-icon-sm danger" (click)="removeParam(index, parentParams)" title="Remove">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
+      @if (!readOnly) {
+        <div class="param-row-actions">
+          <button class="btn-icon-sm" (click)="moveParamUp(index, parentParams)" [disabled]="index === 0" title="Move up">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+          </button>
+          <button class="btn-icon-sm" (click)="moveParamDown(index, parentParams)" [disabled]="index === parentParams.length - 1" title="Move down">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button class="btn-icon-sm danger" (click)="removeParam(index, parentParams)" title="Remove">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      }
     </div>
     <div class="param-row-fields">
       <div class="form-group param-name-group">
         <label class="form-label">Name</label>
-        <input class="form-input" type="text" [(ngModel)]="param.name" placeholder="propertyName" (blur)="onParamNameBlur(param)" (ngModelChange)="onParamChange()">
+        <input class="form-input" type="text" [(ngModel)]="param.name" placeholder="propertyName" (blur)="onParamNameBlur(param)" (ngModelChange)="onParamChange()" [disabled]="readOnly">
       </div>
       <div class="form-group param-type-group">
         <label class="form-label">Type</label>
-        <div class="type-multi-select" (click)="toggleTypeDropdown($event, param)">
-          <span class="type-multi-display">{{ getTypeDisplay(param) }}</span>
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-          @if (typeDropdownTarget === param) {
-            <div class="type-dropdown" (click)="$event.stopPropagation()" (mouseenter)="onTypeDropdownEnter()" (mouseleave)="onTypeDropdownLeave()">
-              @for (t of PARAM_TYPES; track t) {
-                <label class="type-checkbox-item" (click)="$event.stopPropagation()">
-                  <input type="checkbox" [checked]="isTypeSelected(param, t)" (change)="toggleType(param, t)">
-                  <span>{{ t }}</span>
-                </label>
-              }
-            </div>
-          }
-        </div>
+        @if (readOnly) {
+          <div class="type-multi-select readonly">
+            <span class="type-multi-display">{{ getTypeDisplay(param) }}</span>
+          </div>
+        } @else {
+          <div class="type-multi-select" (click)="toggleTypeDropdown($event, param)">
+            <span class="type-multi-display">{{ getTypeDisplay(param) }}</span>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            @if (typeDropdownTarget === param) {
+              <div class="type-dropdown" (click)="$event.stopPropagation()" (mouseenter)="onTypeDropdownEnter()" (mouseleave)="onTypeDropdownLeave()">
+                @for (t of PARAM_TYPES; track t) {
+                  <label class="type-checkbox-item" (click)="$event.stopPropagation()">
+                    <input type="checkbox" [checked]="isTypeSelected(param, t)" (change)="toggleType(param, t)">
+                    <span>{{ t }}</span>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+        }
       </div>
       <div class="form-group param-desc-group">
         <label class="form-label">Description</label>
-        <input class="form-input" type="text" [(ngModel)]="param.description" placeholder="Describe this property" (ngModelChange)="onParamChange()">
+        <input class="form-input" type="text" [(ngModel)]="param.description" placeholder="Describe this property" (ngModelChange)="onParamChange()" [disabled]="readOnly">
       </div>
       <div class="form-group param-required-group">
         <label class="form-label">Required</label>
         <label class="toggle param-toggle">
-          <input type="checkbox" [(ngModel)]="param.required" (ngModelChange)="onParamChange()">
+          <input type="checkbox" [(ngModel)]="param.required" (ngModelChange)="onParamChange()" [disabled]="readOnly">
           <span class="toggle-slider"></span>
         </label>
       </div>
@@ -154,14 +166,18 @@
             @if (param.enum) {
               @for (val of param.enum; track $index) {
                 <div class="enum-item">
-                  <input class="form-input enum-input" type="text" [(ngModel)]="param.enum![$index]" (ngModelChange)="onParamChange()">
-                  <button class="btn-icon-sm danger" (click)="removeEnumValue(param, $index)">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                  </button>
+                  <input class="form-input enum-input" type="text" [(ngModel)]="param.enum![$index]" (ngModelChange)="onParamChange()" [disabled]="readOnly">
+                  @if (!readOnly) {
+                    <button class="btn-icon-sm danger" (click)="removeEnumValue(param, $index)">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                  }
                 </div>
               }
             }
-            <button class="pane-action-btn" (click)="addEnumValue(param)">+ value</button>
+            @if (!readOnly) {
+              <button class="pane-action-btn" (click)="addEnumValue(param)">+ value</button>
+            }
           </div>
         </div>
 
@@ -170,19 +186,21 @@
           <div class="constraint-row constraint-inline">
             <div class="constraint-field">
               <label class="constraint-label">Min Length</label>
-              <input class="form-input constraint-input" type="number" [(ngModel)]="param.minLength" (ngModelChange)="onParamChange()">
+              <input class="form-input constraint-input" type="number" [(ngModel)]="param.minLength" (ngModelChange)="onParamChange()" [disabled]="readOnly">
             </div>
             <div class="constraint-field">
               <label class="constraint-label">Max Length</label>
-              <input class="form-input constraint-input" type="number" [(ngModel)]="param.maxLength" (ngModelChange)="onParamChange()">
+              <input class="form-input constraint-input" type="number" [(ngModel)]="param.maxLength" (ngModelChange)="onParamChange()" [disabled]="readOnly">
             </div>
             <div class="constraint-field pattern-field">
               <label class="constraint-label">Pattern</label>
               <div class="pattern-input-row">
-                <input class="form-input constraint-input" type="text" [(ngModel)]="param.pattern" placeholder="regex" (ngModelChange)="onParamChange()">
-                <button class="btn-icon-sm pattern-presets-btn" (click)="togglePatternMenu($event, param)" title="Common patterns">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
+                <input class="form-input constraint-input" type="text" [(ngModel)]="param.pattern" placeholder="regex" (ngModelChange)="onParamChange()" [disabled]="readOnly">
+                @if (!readOnly) {
+                  <button class="btn-icon-sm pattern-presets-btn" (click)="togglePatternMenu($event, param)" title="Common patterns">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                  </button>
+                }
               </div>
               @if (patternMenuTarget === param) {
                 <div class="pattern-menu" (mouseenter)="onPatternMenuEnter()" (mouseleave)="onPatternMenuLeave()">
@@ -203,11 +221,11 @@
           <div class="constraint-row constraint-inline">
             <div class="constraint-field">
               <label class="constraint-label">Minimum</label>
-              <input class="form-input constraint-input" type="number" [(ngModel)]="param.minimum" (ngModelChange)="onParamChange()">
+              <input class="form-input constraint-input" type="number" [(ngModel)]="param.minimum" (ngModelChange)="onParamChange()" [disabled]="readOnly">
             </div>
             <div class="constraint-field">
               <label class="constraint-label">Maximum</label>
-              <input class="form-input constraint-input" type="number" [(ngModel)]="param.maximum" (ngModelChange)="onParamChange()">
+              <input class="form-input constraint-input" type="number" [(ngModel)]="param.maximum" (ngModelChange)="onParamChange()" [disabled]="readOnly">
             </div>
           </div>
         }
@@ -216,7 +234,7 @@
         @if (paramTypesInclude(param, 'array') && param.items) {
           <div class="constraint-row">
             <label class="constraint-label">Items type</label>
-            <select class="form-input constraint-input" [(ngModel)]="param.items!.type" (ngModelChange)="onParamChange()">
+            <select class="form-input constraint-input" [(ngModel)]="param.items!.type" (ngModelChange)="onParamChange()" [disabled]="readOnly">
               @for (t of PARAM_TYPES; track t) {
                 <option [value]="t">{{ t }}</option>
               }
@@ -227,7 +245,7 @@
         <!-- Default value -->
         <div class="constraint-row">
           <label class="constraint-label">Default</label>
-          <input class="form-input constraint-input" type="text" [(ngModel)]="param.default" placeholder="default value" (ngModelChange)="onParamChange()">
+          <input class="form-input constraint-input" type="text" [(ngModel)]="param.default" placeholder="default value" (ngModelChange)="onParamChange()" [disabled]="readOnly">
         </div>
       </div>
     }
@@ -237,7 +255,9 @@
       <div class="nested-props">
         <div class="nested-header">
           <span class="nested-label">Properties</span>
-          <button class="pane-action-btn" (click)="addParam(param.properties)">+ Add</button>
+          @if (!readOnly) {
+            <button class="pane-action-btn" (click)="addParam(param.properties)">+ Add</button>
+          }
         </div>
         @for (child of param.properties; track trackByIndex($index)) {
           <ng-container *ngTemplateOutlet="paramRow; context: { $implicit: child, index: $index, depth: depth + 1, parentParams: param.properties }"></ng-container>

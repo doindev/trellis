@@ -221,6 +221,19 @@ public class McpSystemToolService {
                         "required", List.of("id")
                 )));
 
+        tools.add(toolDef("cwc_create_project",
+                "Create a new project. Returns the created project details including its ID.",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap(
+                                "name", prop("string", "The project name (required)"),
+                                "description", prop("string", "Optional project description"),
+                                "contextPath", prop("string", "Optional URL context path for the project (must be unique, lowercase, alphanumeric with hyphens)"),
+                                "icon", Map.of("type", "object", "description", "Optional icon object with 'type' and 'value' keys (e.g. {\"type\": \"emoji\", \"value\": \"📁\"})")
+                        ),
+                        "required", List.of("name")
+                )));
+
         // --- Agent Tools ---
 
         tools.add(toolDef("cwc_list_agents",
@@ -368,6 +381,7 @@ public class McpSystemToolService {
             case "cwc_get_node_type" -> handleGetNodeType(arguments);
             case "cwc_list_projects" -> handleListProjects(arguments);
             case "cwc_get_project" -> handleGetProject(arguments);
+            case "cwc_create_project" -> handleCreateProject(arguments);
             case "cwc_list_workflows" -> handleListWorkflows(arguments);
             case "cwc_get_workflow" -> handleGetWorkflow(arguments);
             case "cwc_create_workflow" -> handleCreateWorkflow(arguments);
@@ -420,6 +434,7 @@ public class McpSystemToolService {
             case "cwc_list_node_categories" -> "List all node categories with counts";
             case "cwc_list_projects" -> "List all accessible projects";
             case "cwc_get_project" -> "Get project details for '" + args.getOrDefault("id", "?") + "'";
+            case "cwc_create_project" -> "Create project '" + args.getOrDefault("name", "?") + "'";
             case "cwc_list_browser_sessions" -> "List active browser sessions";
             case "cwc_browser_control" -> {
                 String action = (String) args.getOrDefault("action", "?");
@@ -598,6 +613,37 @@ public class McpSystemToolService {
         }
         result.put("createdAt", project.getCreatedAt());
         result.put("updatedAt", project.getUpdatedAt());
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object handleCreateProject(Map<String, Object> args) {
+        String name = (String) args.get("name");
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("'name' is required");
+        }
+
+        ProjectCreateRequest request = new ProjectCreateRequest();
+        request.setName(name);
+        if (args.containsKey("description")) {
+            request.setDescription((String) args.get("description"));
+        }
+        if (args.containsKey("contextPath")) {
+            request.setContextPath((String) args.get("contextPath"));
+        }
+        if (args.get("icon") instanceof Map) {
+            request.setIcon((Map<String, String>) args.get("icon"));
+        }
+
+        ProjectResponse project = projectService.createProject(request);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", project.getId());
+        result.put("name", project.getName());
+        result.put("type", project.getType());
+        result.put("description", project.getDescription());
+        result.put("contextPath", project.getContextPath());
+        result.put("message", "Project created successfully");
         return result;
     }
 
@@ -1407,30 +1453,180 @@ public class McpSystemToolService {
     private static final String GUIDE_COMMON_PATTERNS = """
             Common workflow patterns:
 
-            1. Webhook -> Process -> Respond:
-               Webhook node receives HTTP request, processing nodes transform data,
-               RespondToWebhook node sends response back.
 
-            2. Schedule -> Fetch -> Store:
+            ═══════════════════════════════════════════════════════════════════
+            1. WEBHOOK WORKFLOWS — ALWAYS USE SCHEMA VALIDATION
+            ═══════════════════════════════════════════════════════════════════
+
+            ⚠ CRITICAL RULE: Every workflow that starts with a Webhook trigger
+            node MUST have a Schema Validator node immediately after the webhook.
+            This enforces input validation and enables proper Swagger/MCP tooling.
+
+            The standard pattern is:
+              Webhook → Schema Validator → [valid] → process → Respond
+                                         → [invalid] → Respond with error
+
+            TWO SCHEMAS MUST BE DEFINED:
+
+            A) MCP Input Schema (on the workflow, in mcpInputSchema):
+               Defines the API contract — what parameters the MCP tool or Swagger
+               endpoint expects. Uses the flat parameter-list format. This schema
+               is what external callers (AI agents, Swagger UI, API clients) see.
+
+               IMPORTANT — MCP Schema format rules:
+               - A property named "payload" becomes the HTTP request body
+                 (for POST/PUT/PATCH endpoints in Swagger)
+               - All other top-level properties become query parameters
+               - "payload" with type "object" should have nested "properties"
+                 defining the body fields
+               - Each property has: name, type, description, required, and
+                 optionally properties (for nested objects)
+
+            B) Validation Schema (on the Schema Validator node, in "schema" param):
+               Validates the actual runtime webhook data shape. The Webhook node
+               outputs $json with: body, queryParams, pathParams, headers, method.
+               The validation schema MUST validate against these top-level keys.
+
+               KEY DIFFERENCE: The MCP schema describes the external API contract
+               (payload → body, top-level strings → query params). The validation
+               schema describes the internal webhook data shape that the Webhook
+               node actually produces ($json.body, $json.queryParams, etc.).
+
+            ─── COMPLETE EXAMPLE ─────────────────────────────────────────────
+
+            A POST endpoint at /test that expects a JSON body with "key_name"
+            and a query parameter "query_param1":
+
+            Nodes:
+            [
+              { "id": "webhook1", "name": "On webhook call", "type": "webhook",
+                "typeVersion": 1, "position": [144, 240],
+                "parameters": { "httpMethod": "POST", "path": "/test",
+                                "responseMode": "responseNode" } },
+              { "id": "validator1", "name": "Schema Validator", "type": "schemaValidator",
+                "typeVersion": 1, "position": [320, 240],
+                "parameters": {
+                  "mode": "jsonSchema",
+                  "schema": {
+                    "type": "object",
+                    "required": ["body", "queryParams"],
+                    "properties": {
+                      "body": {
+                        "type": "object",
+                        "required": ["key_name"],
+                        "properties": {
+                          "key_name": {
+                            "type": "string",
+                            "description": "The key_name"
+                          }
+                        }
+                      },
+                      "queryParams": {
+                        "type": "object",
+                        "required": ["query_param1"],
+                        "properties": {
+                          "query_param1": {
+                            "type": "string",
+                            "description": "The query_param1"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "includeErrors": true
+                } }
+            ]
+
+            Connections:
+            {
+              "webhook1": { "main": [[{ "node": "validator1", "type": "main", "index": 0 }]] }
+            }
+
+            MCP Input Schema (set on the workflow's mcpInputSchema):
+            [
+              {
+                "name": "payload",
+                "type": "object",
+                "description": "Request body payload",
+                "required": true,
+                "properties": [
+                  {
+                    "name": "key_name",
+                    "type": "string",
+                    "description": "The key_name field in the request body",
+                    "required": true
+                  }
+                ]
+              },
+              {
+                "name": "query_param1",
+                "type": "string",
+                "description": "A required query parameter",
+                "required": true
+              }
+            ]
+
+            ─── HOW THE TWO SCHEMAS RELATE ───────────────────────────────────
+
+            MCP Input Schema (API contract):     Validation Schema (runtime check):
+            ┌──────────────────────────┐         ┌──────────────────────────────┐
+            │ "payload" (object)       │ ──────► │ "body" (object)              │
+            │   └─ "key_name" (string) │         │   └─ "key_name" (string)     │
+            │ "query_param1" (string)  │ ──────► │ "queryParams" (object)       │
+            │                          │         │   └─ "query_param1" (string) │
+            └──────────────────────────┘         └──────────────────────────────┘
+
+            - MCP "payload" property → validates as $json.body in the Schema Validator
+            - MCP top-level non-payload properties → validate as $json.queryParams.<name>
+            - MCP path parameters (from URL template) → validate as $json.pathParams.<name>
+
+            The MCP schema is FLAT (parameter list for tool/Swagger definition).
+            The validation schema is NESTED (mirrors the webhook's $json structure).
+
+            ─── WITH PATH PARAMETERS ─────────────────────────────────────────
+
+            For a webhook path like "/users/{userId}":
+            - The Webhook node delivers it as $json.pathParams.userId
+            - In the validation schema, add:
+              "pathParams": {
+                "type": "object",
+                "required": ["userId"],
+                "properties": {
+                  "userId": { "type": ["string", "number"] }
+                }
+              }
+            - In the MCP Input Schema, path params are auto-detected from
+              the webhook URL template — you do NOT need to list them.
+              But if you want to add descriptions, include them as top-level
+              properties matching the path param name.
+            - Use type ["string", "number"] for path params that may arrive
+              as either type depending on the value.
+
+
+            ═══════════════════════════════════════════════════════════════════
+            2. OTHER PATTERNS
+            ═══════════════════════════════════════════════════════════════════
+
+            Schedule -> Fetch -> Store:
                Schedule trigger fires periodically, HTTP Request fetches data,
                result is stored or forwarded.
 
-            3. Branching with If:
+            Branching with If:
                If node evaluates a condition and routes data to "true" or "false" output.
                True path is output index 0, False path is output index 1.
 
-            4. Looping with LoopOverItems:
+            Looping with LoopOverItems:
                Processes items one at a time. Loop body nodes are connected to output index 1.
                When all items are processed, output index 0 fires with collected results.
 
-            5. Error handling:
+            Error handling:
                Set "continueOnFail" in node settings to continue on errors.
                Use If nodes to check for error data.
 
-            6. Sub-workflows:
+            Sub-workflows:
                ExecuteWorkflow node runs another workflow inline, passing data in and receiving results.
 
-            7. AI Agent with tools:
+            AI Agent with tools:
                An aiAgent node needs at minimum a Chat Model (ai_languageModel connection).
                Optionally add Memory (ai_memory) and Tools (ai_tool).
                Sub-nodes connect TO the agent — the sub-node is the source, the agent is the target.

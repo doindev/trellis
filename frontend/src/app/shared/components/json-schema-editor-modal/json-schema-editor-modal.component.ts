@@ -175,6 +175,7 @@ export class JsonSchemaEditorModalComponent implements OnInit {
   @Input() schema: any = null;
   @Input() allNodes: WorkflowNode[] = [];
   @Input() mcpInputSchema: any = null;
+  @Input() readOnly = false;
 
   @Output() saved = new EventEmitter<any>();
   @Output() cancelled = new EventEmitter<void>();

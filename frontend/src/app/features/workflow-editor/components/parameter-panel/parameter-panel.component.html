@@ -483,7 +483,7 @@
                       [param]="param"
                       [value]="getParameterValue(param.name, param.defaultValue)"
                       [readOnly]="readOnly"
-                      [showEditorBtn]="hasWorkflowSchema(param.name)"
+                      [showEditorBtn]="shouldShowSchemaEditorBtn(param.name)"
                       (valueChange)="onParameterChange(param.name, $event)"
                       (openSchemaEditor)="openJsonSchemaEditor(param.name, getParameterValue(param.name, param.defaultValue))" />
                   }
@@ -964,6 +964,7 @@
     [schema]="jsonSchemaEditorValue"
     [allNodes]="allNodes"
     [mcpInputSchema]="mcpInputSchema"
+    [readOnly]="readOnly"
     (saved)="onJsonSchemaEditorSave($event)"
     (cancelled)="jsonSchemaEditorOpen = false" />
 }
