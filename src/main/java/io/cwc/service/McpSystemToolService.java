@@ -85,7 +85,7 @@ public class McpSystemToolService {
                 )));
 
         tools.add(toolDef("cwc_create_workflow",
-                "Create a new workflow. Provide a name and optionally nodes and connections. Returns the created workflow with its ID.",
+                "Create a new workflow. Provide a name and optionally nodes, connections, and MCP schemas. IMPORTANT: For webhook workflows, always include mcpInputSchema and mcpOutputSchema to define the API contract. See cwc_workflow_guide with topic 'common_patterns' for the required schema format.",
                 Map.of(
                         "type", "object",
                         "properties", orderedMap(
@@ -93,13 +93,15 @@ public class McpSystemToolService {
                                 "description", prop("string", "Workflow description"),
                                 "projectId", prop("string", "Project ID to associate the workflow with"),
                                 "nodes", Map.of("type", "array", "description", "Array of workflow node objects"),
-                                "connections", Map.of("type", "object", "description", "Connection map between nodes")
+                                "connections", Map.of("type", "object", "description", "Connection map between nodes"),
+                                "mcpInputSchema", Map.of("type", "array", "description", "MCP input schema — flat parameter list defining the workflow's input contract for MCP tools and Swagger. Use 'payload' (type object) for request body fields, other top-level entries for query params. See cwc_workflow_guide topic 'common_patterns' for format."),
+                                "mcpOutputSchema", Map.of("type", "object", "description", "MCP output schema — defines the workflow's response structure for MCP tools and Swagger. Must include 'format' (e.g. 'json') and 'properties' array. See cwc_workflow_guide topic 'common_patterns' for format.")
                         ),
                         "required", List.of("name")
                 )));
 
         tools.add(toolDef("cwc_update_workflow",
-                "Update an existing workflow. Only provided fields are updated.",
+                "Update an existing workflow. Only provided fields are updated. Use this to add or update MCP schemas on existing workflows.",
                 Map.of(
                         "type", "object",
                         "properties", orderedMap(
@@ -107,7 +109,9 @@ public class McpSystemToolService {
                                 "name", prop("string", "New workflow name"),
                                 "description", prop("string", "New description"),
                                 "nodes", Map.of("type", "array", "description", "Updated node array"),
-                                "connections", Map.of("type", "object", "description", "Updated connections map")
+                                "connections", Map.of("type", "object", "description", "Updated connections map"),
+                                "mcpInputSchema", Map.of("type", "array", "description", "MCP input schema — flat parameter list for MCP tools and Swagger. See cwc_workflow_guide topic 'common_patterns'."),
+                                "mcpOutputSchema", Map.of("type", "object", "description", "MCP output schema — response structure for MCP tools and Swagger. See cwc_workflow_guide topic 'common_patterns'.")
                         ),
                         "required", List.of("id")
                 )));
@@ -773,6 +777,8 @@ public class McpSystemToolService {
         request.setProjectId((String) args.get("projectId"));
         request.setNodes(args.get("nodes"));
         request.setConnections(args.get("connections"));
+        if (args.containsKey("mcpInputSchema")) request.setMcpInputSchema(args.get("mcpInputSchema"));
+        if (args.containsKey("mcpOutputSchema")) request.setMcpOutputSchema(args.get("mcpOutputSchema"));
 
         WorkflowResponse wf = workflowService.createWorkflow(request);
 
@@ -804,6 +810,8 @@ public class McpSystemToolService {
         if (args.containsKey("description")) request.setDescription((String) args.get("description"));
         if (args.containsKey("nodes")) request.setNodes(args.get("nodes"));
         if (args.containsKey("connections")) request.setConnections(args.get("connections"));
+        if (args.containsKey("mcpInputSchema")) request.setMcpInputSchema(args.get("mcpInputSchema"));
+        if (args.containsKey("mcpOutputSchema")) request.setMcpOutputSchema(args.get("mcpOutputSchema"));
 
         WorkflowResponse wf = workflowService.updateWorkflow(id, request);
 
@@ -1601,6 +1609,115 @@ public class McpSystemToolService {
               properties matching the path param name.
             - Use type ["string", "number"] for path params that may arrive
               as either type depending on the value.
+
+            ─── MCP INPUT/OUTPUT SCHEMA FORMAT ─────────────────────────────
+
+            ⚠ MCP Input Schema (mcpInputSchema) and MCP Output Schema
+            (mcpOutputSchema) are ONLY needed for workflows that have a
+            WebhookNode trigger. Non-webhook workflows do NOT need them.
+
+            These schemas define the external API contract for the workflow
+            when it is exposed as an MCP tool or Swagger/OpenAPI endpoint.
+            Set them on the workflow using cwc_create_workflow or
+            cwc_update_workflow (mcpInputSchema and mcpOutputSchema params).
+
+            ▸ mcpInputSchema — Flat parameter-list format (JSON array):
+
+            Each element describes one input parameter:
+            {
+              "name": "<paramName>",       // Property name (required)
+              "type": "<type>",            // string|number|integer|boolean|object|array
+              "description": "<desc>",     // Human-readable description
+              "required": true|false,      // Whether the parameter is required
+              "properties": [...]          // Only for type "object" — nested params
+            }
+
+            Special rules:
+            - A property named "payload" with type "object" becomes the HTTP
+              request body (POST/PUT/PATCH). Its "properties" array defines
+              the body fields.
+            - All other top-level properties become query parameters.
+            - Path parameters are auto-detected from the webhook URL template
+              (e.g., /users/{userId}) — you don't need to list them unless
+              you want to add descriptions.
+
+            Example mcpInputSchema:
+            [
+              {
+                "name": "payload",
+                "type": "object",
+                "description": "Request body payload",
+                "required": true,
+                "properties": [
+                  {
+                    "name": "key_name",
+                    "type": "string",
+                    "description": "The key_name field in the request body",
+                    "required": true
+                  }
+                ]
+              },
+              {
+                "name": "query_param1",
+                "type": "string",
+                "description": "A required query parameter",
+                "required": true
+              }
+            ]
+
+            ▸ mcpOutputSchema — Object with format and properties:
+
+            {
+              "format": "json",            // Response format (typically "json")
+              "properties": [              // Array of output parameters
+                {
+                  "name": "<paramName>",
+                  "type": "<type>",
+                  "description": "<desc>",
+                  "required": true|false,
+                  "properties": [...]      // For nested objects
+                }
+              ]
+            }
+
+            Example mcpOutputSchema:
+            {
+              "format": "json",
+              "properties": [
+                {
+                  "name": "returnObject",
+                  "type": "object",
+                  "description": "The return object",
+                  "required": true,
+                  "properties": [
+                    {
+                      "name": "firstName",
+                      "type": "string",
+                      "description": "The first name",
+                      "required": true
+                    },
+                    {
+                      "name": "lastName",
+                      "type": "string",
+                      "description": "The last name",
+                      "required": true
+                    }
+                  ]
+                }
+              ]
+            }
+
+            The output schema describes the shape of the data returned by
+            the Respond to Webhook node. This is used by Swagger/OpenAPI to
+            document the response body and by MCP clients to parse results.
+
+            ▸ SUMMARY — Webhook workflow checklist:
+            1. Webhook node (trigger)
+            2. Schema Validator node (validates $json at runtime)
+            3. Processing nodes
+            4. Respond to Webhook node (returns result)
+            5. Set mcpInputSchema on the workflow (external input contract)
+            6. Set mcpOutputSchema on the workflow (external output contract)
 
 
             ═══════════════════════════════════════════════════════════════════

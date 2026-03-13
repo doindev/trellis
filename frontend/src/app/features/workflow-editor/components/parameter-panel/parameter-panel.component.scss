@@ -588,6 +588,47 @@
   }
 }
 
+// When a JSON textarea is visible, expand it to fill remaining column-body space
+.column-body:has(app-json-param) {
+  display: flex;
+  flex-direction: column;
+
+  > * { flex-shrink: 0; }
+
+  .param-group:has(app-json-param) {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+
+    app-json-param {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+  }
+}
+
+:host ::ng-deep .column-body:has(app-json-param) .param-group:has(app-json-param) app-json-param {
+  > * { flex-shrink: 0; }
+
+  .json-textarea-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  textarea.json-editor {
+    flex: 1;
+    min-height: 80px;
+    resize: none;
+    margin-bottom: 12px;
+  }
+}
+
 // ── Input node selector ──
 
 .input-node-select {
