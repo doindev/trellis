@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import io.cwc.config.ProjectContextPathFilter;
 import io.cwc.dto.*;
 import io.cwc.service.ClusterSyncService;
+import io.cwc.service.McpSettingsService;
 import io.cwc.service.ProjectService;
 import io.cwc.service.CwcMcpServerManager;
 
@@ -20,6 +21,7 @@ public class ProjectController {
     private final ProjectService projectService;
     private final ProjectContextPathFilter contextPathFilter;
     private final CwcMcpServerManager mcpServerManager;
+    private final McpSettingsService mcpSettingsService;
     private final ClusterSyncService clusterSyncService;
 
     @GetMapping
@@ -82,5 +84,21 @@ public class ProjectController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeMember(@PathVariable String id, @PathVariable String userId) {
         projectService.removeMember(id, userId);
+    }
+
+    @GetMapping("/{id}/mcp")
+    public List<McpEndpointDto> getProjectMcp(@PathVariable String id) {
+        return mcpSettingsService.getProjectMcpEndpoints(id);
+    }
+
+    @PutMapping("/{id}/mcp")
+    public McpEndpointDto updateProjectMcp(@PathVariable String id, @RequestBody ProjectMcpRequest request) {
+        ProjectResponse project = projectService.getProject(id);
+        McpEndpointDto dto = mcpSettingsService.saveProjectMcpEndpoint(
+                id, project.getName(), request.isEnabled(), request.getPath(), request.getTransport());
+        if (dto == null) {
+            return McpEndpointDto.builder().enabled(false).transport(request.getTransport()).build();
+        }
+        return dto;
     }
 }

@@ -11,4 +11,8 @@ public interface McpEndpointRepository extends JpaRepository<McpEndpointEntity, 
     List<McpEndpointEntity> findByEnabledTrue();
     boolean existsByPath(String path);
     Optional<McpEndpointEntity> findByPath(String path);
+    List<McpEndpointEntity> findAllByProjectId(String projectId);
+    Optional<McpEndpointEntity> findByProjectIdAndTransport(String projectId, String transport);
+    Optional<McpEndpointEntity> findByProjectIdIsNullAndTransport(String transport);
+    List<McpEndpointEntity> findByProjectIdIsNull();
 }

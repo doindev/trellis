@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, AiModelInfo, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter, McpOutputSchema, SwaggerSettings, SwaggerWorkflow } from '../../core/services/settings.service';
+import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, AiModelInfo, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter, McpOutputSchema, SwaggerSettings, SwaggerWorkflow, ExecutionSettings } from '../../core/services/settings.service';
+import { WorkflowService } from '../../core/services/workflow.service';
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
 
 @Component({
@@ -83,10 +84,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return this.swaggerWorkflows.some(wf => !!wf.projectId);
   }
 
+  // Execution Settings
+  executionSettings: ExecutionSettings = { saveExecutionProgress: 'yes', saveManualExecutions: 'yes', executionTimeout: -1, errorWorkflow: null };
+  executionSaving = false;
+  executionWorkflows: { id: string; name: string }[] = [];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private workflowService: WorkflowService
   ) {}
 
   ngOnInit(): void {
@@ -128,6 +135,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
         break;
       case 'swagger':
         this.loadSwaggerSettings();
+        break;
+      case 'execution':
+        this.loadExecutionSettings();
         break;
     }
   }
@@ -510,6 +520,29 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.showParamEditorModal = false;
         this.paramEditorWorkflow = null;
       }
+    });
+  }
+
+  // Execution Settings
+  private loadExecutionSettings(): void {
+    this.settingsService.getExecutionSettings().subscribe({
+      next: settings => this.executionSettings = settings,
+      error: () => {}
+    });
+    this.workflowService.list().subscribe({
+      next: workflows => this.executionWorkflows = workflows.map(wf => ({ id: wf.id!, name: wf.name })),
+      error: () => this.executionWorkflows = []
+    });
+  }
+
+  saveExecutionSettings(): void {
+    this.executionSaving = true;
+    this.settingsService.updateExecutionSettings(this.executionSettings).subscribe({
+      next: settings => {
+        this.executionSettings = settings;
+        this.executionSaving = false;
+      },
+      error: () => this.executionSaving = false
     });
   }
 

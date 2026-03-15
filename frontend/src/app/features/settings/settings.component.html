@@ -752,6 +752,58 @@
       </div>
     }
 
+    <!-- EXECUTION SETTINGS -->
+    @if (activeSection === 'execution') {
+      <div class="section-page">
+        <h1 class="section-title">Execution Settings</h1>
+        <p class="section-subtitle">Default execution behavior for all workflows. Projects and workflows can override these values.</p>
+        <div class="settings-card">
+          <h3 class="card-title">Defaults</h3>
+
+          <div class="form-row">
+            <label class="form-label">Error Workflow</label>
+            <select class="form-input" [(ngModel)]="executionSettings.errorWorkflow">
+              <option [ngValue]="null">None</option>
+              @for (wf of executionWorkflows; track wf.id) {
+                <option [value]="wf.id">{{ wf.name }}</option>
+              }
+            </select>
+            <span class="form-hint">Workflow to run when any workflow fails (unless overridden)</span>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Save Execution Progress</label>
+            <select class="form-input" [(ngModel)]="executionSettings.saveExecutionProgress">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+            <span class="form-hint">Save the execution data of each node so you can resume on error</span>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Save Manual Executions</label>
+            <select class="form-input" [(ngModel)]="executionSettings.saveManualExecutions">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+            <span class="form-hint">Whether to save manual test executions</span>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Timeout After (seconds)</label>
+            <input class="form-input" type="number" [(ngModel)]="executionSettings.executionTimeout" min="-1" placeholder="-1 = no timeout">
+            <span class="form-hint">Cancel execution after this many seconds. -1 = no timeout</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary" (click)="saveExecutionSettings()" [disabled]="executionSaving">
+            {{ executionSaving ? 'Saving...' : 'Save changes' }}
+          </button>
+        </div>
+      </div>
+    }
+
     <!-- LOG STREAMING -->
     @if (activeSection === 'log-streaming') {
       <div class="section-page">

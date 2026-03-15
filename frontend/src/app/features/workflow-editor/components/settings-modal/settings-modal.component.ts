@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ResolvedExecutionSettings } from '../../../../core/services/settings.service';
 
 export interface WorkflowSettings {
   errorWorkflow?: string;
@@ -34,6 +35,9 @@ export interface WorkflowSettings {
               }
             </select>
             <span class="form-hint">Workflow to run when this workflow fails</span>
+            @if (!form.errorWorkflow && resolvedSettings?.errorWorkflow?.value) {
+              <span class="inherit-hint">Inherits: {{ getWorkflowName(resolvedSettings!.errorWorkflow!.value) }} (from {{ resolvedSettings!.errorWorkflow!.source }})</span>
+            }
           </div>
 
           <div class="form-group">
@@ -44,6 +48,9 @@ export interface WorkflowSettings {
               <option value="no">No</option>
             </select>
             <span class="form-hint">Save the execution data of each node so you can resume on error</span>
+            @if (form.saveExecutionProgress === 'default' && resolvedSettings?.saveExecutionProgress) {
+              <span class="inherit-hint">Inherits: {{ resolvedSettings!.saveExecutionProgress!.value ? 'Yes' : 'No' }} (from {{ resolvedSettings!.saveExecutionProgress!.source }})</span>
+            }
           </div>
 
           <div class="form-group">
@@ -54,6 +61,9 @@ export interface WorkflowSettings {
               <option value="no">No</option>
             </select>
             <span class="form-hint">Whether to save manual test executions</span>
+            @if (form.saveManualExecutions === 'default' && resolvedSettings?.saveManualExecutions) {
+              <span class="inherit-hint">Inherits: {{ resolvedSettings!.saveManualExecutions!.value ? 'Yes' : 'No' }} (from {{ resolvedSettings!.saveManualExecutions!.source }})</span>
+            }
           </div>
 
           <div class="form-group">
@@ -64,6 +74,9 @@ export interface WorkflowSettings {
                    placeholder="No timeout"
                    min="-1">
             <span class="form-hint">Cancel execution after this many seconds. -1 or empty = no timeout</span>
+            @if ((form.executionTimeout === -1 || form.executionTimeout == null) && resolvedSettings?.executionTimeout?.value > 0) {
+              <span class="inherit-hint">Inherits: {{ resolvedSettings!.executionTimeout!.value }}s (from {{ resolvedSettings!.executionTimeout!.source }})</span>
+            }
           </div>
 
           <div class="form-group">
@@ -127,6 +140,13 @@ export interface WorkflowSettings {
       font-size: 0.75rem;
       color: hsl(0, 0%, 45%);
     }
+    .inherit-hint {
+      display: block;
+      font-size: 0.75rem;
+      color: hsl(247, 49%, 65%);
+      margin-top: 2px;
+      font-style: italic;
+    }
     .form-check-label {
       display: flex;
       align-items: center;
@@ -146,6 +166,7 @@ export interface WorkflowSettings {
 export class SettingsModalComponent implements OnInit {
   @Input() settings: WorkflowSettings = {};
   @Input() availableWorkflows: { id: string; name: string }[] = [];
+  @Input() resolvedSettings?: ResolvedExecutionSettings;
   @Output() saved = new EventEmitter<WorkflowSettings>();
   @Output() cancelled = new EventEmitter<void>();
 
@@ -159,6 +180,11 @@ export class SettingsModalComponent implements OnInit {
       executionTimeout: this.settings.executionTimeout ?? -1,
       parallelExecution: this.settings.parallelExecution ?? false
     };
+  }
+
+  getWorkflowName(id: string): string {
+    const wf = this.availableWorkflows.find(w => w.id === id);
+    return wf?.name || id;
   }
 
   onSave(): void {

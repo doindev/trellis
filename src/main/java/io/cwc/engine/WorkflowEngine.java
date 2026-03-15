@@ -42,6 +42,7 @@ public class WorkflowEngine {
     private final WorkflowRepository workflowRepository;
     private final WorkflowVersionRepository workflowVersionRepository;
     private final io.cwc.service.CacheRegistryService cacheRegistryService;
+    private final io.cwc.service.ExecutionSettingsResolver executionSettingsResolver;
 
     @Resource(name = "branchExecutorService")
     private ExecutorService branchExecutorService;
@@ -620,6 +621,9 @@ public class WorkflowEngine {
     protected void executeAsync(String executionId, WorkflowEntity workflow,
                                  Map<String, Object> inputData, NodeExecutionContext.ExecutionMode mode) {
         try {
+            var resolvedSettings = executionSettingsResolver.resolve(workflow);
+            log.debug("Resolved execution settings for workflow {}: {}", workflow.getId(), resolvedSettings);
+
             executionService.updateStatus(executionId, ExecutionStatus.RUNNING);
 
             WorkflowGraph graph = WorkflowGraph.parse(

@@ -1,5 +1,6 @@
 package io.cwc.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,15 @@ public class McpTransportController {
 
     @GetMapping(value = "/{path}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<SseEmitter> sseConnect(@PathVariable String path) {
+        return doSseConnect(path);
+    }
+
+    @GetMapping(value = "/{path}/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> sseConnectDeep(HttpServletRequest request) {
+        return doSseConnect(extractPath(request));
+    }
+
+    private ResponseEntity<SseEmitter> doSseConnect(String path) {
         // Route to agent MCP server if path matches
         if (agentMcpServer.matchesPath(path)) {
             if (!agentMcpServer.isEnabled()) {
@@ -43,7 +53,20 @@ public class McpTransportController {
             @RequestParam(required = false) String sessionId,
             @RequestHeader(value = "Mcp-Session-Id", required = false) String mcpSessionId,
             @RequestBody Map<String, Object> body) {
+        return doHandleMessage(path, sessionId, mcpSessionId, body);
+    }
 
+    @PostMapping("/{path}/**")
+    public ResponseEntity<Object> handleMessageDeep(
+            HttpServletRequest request,
+            @RequestParam(required = false) String sessionId,
+            @RequestHeader(value = "Mcp-Session-Id", required = false) String mcpSessionId,
+            @RequestBody Map<String, Object> body) {
+        return doHandleMessage(extractPath(request), sessionId, mcpSessionId, body);
+    }
+
+    private ResponseEntity<Object> doHandleMessage(String path, String sessionId,
+                                                    String mcpSessionId, Map<String, Object> body) {
         if (sessionId != null) {
             // SSE transport — check if this session belongs to the agent server
             if (agentMcpServer.hasSession(sessionId)) {
@@ -98,6 +121,17 @@ public class McpTransportController {
     public ResponseEntity<Void> closeSession(
             @PathVariable String path,
             @RequestHeader(value = "Mcp-Session-Id", required = false) String mcpSessionId) {
+        return doCloseSession(mcpSessionId);
+    }
+
+    @DeleteMapping("/{path}/**")
+    public ResponseEntity<Void> closeSessionDeep(
+            HttpServletRequest request,
+            @RequestHeader(value = "Mcp-Session-Id", required = false) String mcpSessionId) {
+        return doCloseSession(mcpSessionId);
+    }
+
+    private ResponseEntity<Void> doCloseSession(String mcpSessionId) {
         if (mcpSessionId != null) {
             // Try agent server first, then fall back to workflow server
             if (agentMcpServer.hasSession(mcpSessionId)) {
@@ -107,5 +141,19 @@ public class McpTransportController {
             }
         }
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Extracts the path after /mcp/ from the request URI.
+     * For SSE endpoints, strips the trailing /sse suffix to get the endpoint path.
+     */
+    private String extractPath(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        String path = uri.substring("/mcp/".length());
+        // Strip trailing /sse for SSE connect requests
+        if (path.endsWith("/sse")) {
+            path = path.substring(0, path.length() - "/sse".length());
+        }
+        return path;
     }
 }

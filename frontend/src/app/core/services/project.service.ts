@@ -47,4 +47,27 @@ export class ProjectService {
   removeMember(projectId: string, userId: string): Observable<void> {
     return this.api.delete<void>(`${this.basePath}/${projectId}/members/${userId}`);
   }
+
+  getProjectMcp(projectId: string): Observable<ProjectMcpEndpoint[]> {
+    return this.api.get<ProjectMcpEndpoint[]>(`${this.basePath}/${projectId}/mcp`);
+  }
+
+  updateProjectMcp(projectId: string, data: ProjectMcpRequest): Observable<ProjectMcpEndpoint> {
+    return this.api.put<ProjectMcpEndpoint>(`${this.basePath}/${projectId}/mcp`, data);
+  }
+}
+
+export interface ProjectMcpEndpoint {
+  id?: string;
+  name?: string;
+  transport: string;
+  path: string | null;
+  url: string | null;
+  enabled: boolean;
+}
+
+export interface ProjectMcpRequest {
+  enabled: boolean;
+  path?: string;
+  transport: string;
 }

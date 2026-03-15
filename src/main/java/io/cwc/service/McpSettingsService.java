@@ -48,7 +48,7 @@ public class McpSettingsService {
         boolean agentToolsDedicated = entity == null || entity.isAgentToolsDedicated();
         String agentToolsPath = entity != null ? entity.getAgentToolsPath() : "agent";
         String agentToolsTransport = entity != null ? entity.getAgentToolsTransport() : "STREAMABLE_HTTP";
-        List<McpEndpointDto> endpoints = endpointRepository.findAll().stream()
+        List<McpEndpointDto> endpoints = endpointRepository.findByProjectIdIsNull().stream()
                 .map(this::toEndpointDto)
                 .toList();
         return McpSettingsDto.builder()
@@ -101,13 +101,18 @@ public class McpSettingsService {
     // --- Endpoint CRUD ---
 
     public List<McpEndpointDto> listEndpoints() {
-        return endpointRepository.findAll().stream()
+        return endpointRepository.findByProjectIdIsNull().stream()
                 .map(this::toEndpointDto)
                 .toList();
     }
 
     @Transactional
     public McpEndpointDto createEndpoint(McpEndpointDto dto) {
+        // Only one endpoint per transport type at app level
+        endpointRepository.findByProjectIdIsNullAndTransport(dto.getTransport()).ifPresent(existing -> {
+            throw new BadRequestException("An endpoint with transport '" + dto.getTransport() + "' already exists");
+        });
+
         McpEndpointEntity entity = McpEndpointEntity.builder()
                 .name(dto.getName())
                 .transport(dto.getTransport())
@@ -122,6 +127,16 @@ public class McpSettingsService {
     public McpEndpointDto updateEndpoint(String id, McpEndpointDto dto) {
         McpEndpointEntity entity = endpointRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Endpoint not found: " + id));
+
+        // If transport is changing, check uniqueness at app level
+        if (dto.getTransport() != null && !dto.getTransport().equals(entity.getTransport())) {
+            endpointRepository.findByProjectIdIsNullAndTransport(dto.getTransport()).ifPresent(existing -> {
+                if (!existing.getId().equals(id)) {
+                    throw new BadRequestException("An endpoint with transport '" + dto.getTransport() + "' already exists");
+                }
+            });
+        }
+
         if (dto.getName() != null) entity.setName(dto.getName());
         if (dto.getTransport() != null) entity.setTransport(dto.getTransport());
         if (dto.getPath() != null) entity.setPath(dto.getPath());
@@ -312,6 +327,69 @@ public class McpSettingsService {
         AUTO_DESCRIPTIONS.put("language", "The language");
         AUTO_DESCRIPTIONS.put("source", "The source");
         AUTO_DESCRIPTIONS.put("target", "The target");
+    }
+
+    // --- Project MCP Endpoint ---
+
+    public List<McpEndpointDto> getProjectMcpEndpoints(String projectId) {
+        return endpointRepository.findAllByProjectId(projectId).stream()
+                .map(this::toEndpointDto)
+                .toList();
+    }
+
+    @Transactional
+    public McpEndpointDto saveProjectMcpEndpoint(String projectId, String projectName, boolean enabled, String path, String transport) {
+        final String resolvedTransport = (transport == null || transport.isBlank()) ? "STREAMABLE_HTTP" : transport;
+
+        if (!enabled) {
+            endpointRepository.findByProjectIdAndTransport(projectId, resolvedTransport).ifPresent(existing -> {
+                endpointRepository.delete(existing);
+            });
+            mcpServerManager.refreshTools();
+            return null;
+        }
+
+        // Build the full endpoint path: {contextPath} or {contextPath}/{userPath}
+        String contextPath = projectRepository.findById(projectId)
+                .map(p -> p.getContextPath())
+                .orElse(null);
+        if (contextPath == null || contextPath.isBlank()) {
+            throw new BadRequestException("Project must have a context path configured to enable MCP");
+        }
+        String userPath = (path != null) ? path.trim() : "";
+        String fullPath = userPath.isEmpty() ? contextPath : contextPath + "/" + userPath;
+
+        // Validate path uniqueness (excluding self)
+        endpointRepository.findByPath(fullPath).ifPresent(existing -> {
+            boolean isSelf = projectId.equals(existing.getProjectId())
+                    && resolvedTransport.equals(existing.getTransport());
+            if (!isSelf) {
+                throw new BadRequestException("Path '" + fullPath + "' is already in use by another endpoint");
+            }
+        });
+
+        // Reject reserved agent tools path
+        McpSettingsEntity settings = repository.findFirstByOrderByCreatedAtAsc().orElse(null);
+        if (settings != null && fullPath.equals(settings.getAgentToolsPath())) {
+            throw new BadRequestException("Path '" + fullPath + "' is reserved for agent tools");
+        }
+
+        McpEndpointEntity entity = endpointRepository.findByProjectIdAndTransport(projectId, resolvedTransport)
+                .orElseGet(() -> McpEndpointEntity.builder()
+                        .projectId(projectId)
+                        .name(projectName != null ? projectName : "Project MCP")
+                        .transport(resolvedTransport)
+                        .path(fullPath)
+                        .enabled(true)
+                        .build());
+
+        entity.setPath(fullPath);
+        entity.setName(projectName != null ? projectName : entity.getName());
+        entity.setEnabled(true);
+
+        entity = endpointRepository.save(entity);
+        mcpServerManager.refreshTools();
+        return toEndpointDto(entity);
     }
 
     // --- Clients ---

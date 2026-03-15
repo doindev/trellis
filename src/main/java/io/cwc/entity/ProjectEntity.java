@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
 
+import io.cwc.util.JsonObjectConverter;
 import io.cwc.util.NanoId;
 
 @Entity
@@ -35,6 +36,11 @@ public class ProjectEntity {
 
     @Column(unique = true, length = 100)
     private String contextPath;
+
+    @Lob
+    @Convert(converter = JsonObjectConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private Object settings;
 
     @Builder.Default
     @Column(nullable = false, updatable = false)

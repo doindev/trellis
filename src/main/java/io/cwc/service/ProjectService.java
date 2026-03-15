@@ -90,6 +90,7 @@ public class ProjectService {
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
         if (request.getIcon() != null) entity.setIcon(serializeIcon(request.getIcon()));
+        if (request.getSettings() != null) entity.setSettings(request.getSettings());
 
         // Handle contextPath update
         if (request.getContextPath() != null) {
@@ -283,6 +284,7 @@ public class ProjectService {
                 .icon(parseIcon(entity.getIcon()))
                 .description(entity.getDescription())
                 .contextPath(entity.getContextPath())
+                .settings(entity.getSettings())
                 .workflowCount(workflowRepository.findByProjectId(entity.getId()).size())
                 .credentialCount(credentialRepository.findByProjectId(entity.getId()).size())
                 .createdAt(entity.getCreatedAt())
@@ -301,6 +303,7 @@ public class ProjectService {
                 .icon(parseIcon(entity.getIcon()))
                 .description(entity.getDescription())
                 .contextPath(entity.getContextPath())
+                .settings(entity.getSettings())
                 .members(members)
                 .workflowCount(workflowRepository.findByProjectId(entity.getId()).size())
                 .credentialCount(credentialRepository.findByProjectId(entity.getId()).size())

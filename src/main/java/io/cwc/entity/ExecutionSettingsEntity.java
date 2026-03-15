@@ -7,31 +7,30 @@ import java.time.Instant;
 import io.cwc.util.NanoId;
 
 @Entity
-@Table(name = "mcp_endpoints")
+@Table(name = "execution_settings")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class McpEndpointEntity {
+public class ExecutionSettingsEntity {
 
     @Id
     @NanoId
     private String id;
 
+    @Builder.Default
     @Column(nullable = false)
-    private String name;
-
-    @Column(nullable = false)
-    private String transport;
-
-    @Column(nullable = false, unique = true)
-    private String path;
-
-    private String projectId;
+    private String saveExecutionProgress = "yes";
 
     @Builder.Default
     @Column(nullable = false)
-    private boolean enabled = true;
+    private String saveManualExecutions = "yes";
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int executionTimeout = -1;
+
+    private String errorWorkflow;
 
     @Builder.Default
     @Column(nullable = false, updatable = false)

@@ -9,4 +9,5 @@ public class ProjectUpdateRequest {
     private String description;
     private Map<String, String> icon;
     private String contextPath;
+    private Object settings;
 }

@@ -70,6 +70,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   showMcpParamEditorModal = false;
   validationErrors: { nodeName: string; warnings: string[] }[] = [];
   availableWorkflows: { id: string; name: string }[] = [];
+  resolvedSettings?: import('../../core/services/settings.service').ResolvedExecutionSettings;
   drawerExpandedEditor = localStorage.getItem('cwc.drawer.editor') === 'true';
   drawerExpandedExecutions = localStorage.getItem('cwc.drawer.executions') === 'true';
   activeTab: 'editor' | 'executions' = 'editor';
@@ -1196,6 +1197,20 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         this.availableWorkflows = [];
         this.showSettingsModal = true;
       }
+    });
+
+    // Load resolved inherited settings via server-side resolution
+    this.loadResolvedSettings();
+  }
+
+  private loadResolvedSettings(): void {
+    const wf = this.store.workflow();
+    this.settingsService.resolveExecutionSettings(
+      wf?.projectId || null,
+      null
+    ).subscribe({
+      next: (resolved) => this.resolvedSettings = resolved,
+      error: () => this.resolvedSettings = undefined
     });
   }
 

@@ -225,6 +225,7 @@
     <app-settings-modal
       [settings]="store.workflow()?.settings || {}"
       [availableWorkflows]="availableWorkflows"
+      [resolvedSettings]="resolvedSettings"
       (saved)="onSettingsSaved($event)"
       (cancelled)="showSettingsModal = false" />
   }

@@ -1,7 +1,8 @@
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ProjectService } from '../../core/services';
+import { ProjectService, WorkflowService } from '../../core/services';
+import { ProjectMcpEndpoint } from '../../core/services/project.service';
 import { Project, ProjectMember } from '../../core/models';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
@@ -35,13 +36,36 @@ export class ProjectSettingsComponent {
   projects = signal<Project[]>([]);
   transferProjectId = '';
 
+  activeTab: 'general' | 'execution' | 'mcp' = 'general';
   saving = false;
   saveError = '';
 
-  constructor(private projectService: ProjectService) {}
+  // MCP Instance — per-transport state
+  httpEnabled = false;
+  httpPath = '';
+  httpUrl: string | null = null;
+  httpSaving = false;
+
+  sseEnabled = false;
+  ssePath = '';
+  sseUrl: string | null = null;
+  sseSaving = false;
+
+  mcpError = '';
+
+  // Execution settings
+  execSaveProgress = 'default';
+  execSaveManual = 'default';
+  execTimeout = -1;
+  execErrorWorkflow = '';
+  execWorkflows: { id: string; name: string }[] = [];
+  execSaving = false;
+
+  constructor(private projectService: ProjectService, private workflowService: WorkflowService) {}
 
   open(): void {
     this.visible.set(true);
+    this.activeTab = 'general';
     this.saveError = '';
     // Populate form immediately from cached project data so it's
     // never stale between save and the next GET response
@@ -54,6 +78,8 @@ export class ProjectSettingsComponent {
     this.loadProject();
     this.loadMembers();
     this.loadProjects();
+    this.loadExecutionWorkflows();
+    this.loadProjectMcp();
   }
 
   close(): void {
@@ -68,7 +94,42 @@ export class ProjectSettingsComponent {
         this.name = project.name;
         this.description = project.description || '';
         this.contextPath = project.contextPath || '';
+        this.populateExecSettings(project);
       }
+    });
+  }
+
+  private populateExecSettings(project: Project): void {
+    const s = project.settings || {};
+    this.execSaveProgress = s['saveExecutionProgress'] || 'default';
+    this.execSaveManual = s['saveManualExecutions'] || 'default';
+    this.execTimeout = s['executionTimeout'] ?? -1;
+    this.execErrorWorkflow = s['errorWorkflow'] || '';
+  }
+
+  private loadExecutionWorkflows(): void {
+    this.workflowService.list().subscribe({
+      next: wfs => this.execWorkflows = wfs.map(wf => ({ id: wf.id!, name: wf.name })),
+      error: () => this.execWorkflows = []
+    });
+  }
+
+  saveExecutionSettings(): void {
+    this.execSaving = true;
+    const settings = {
+      ...(this.project()?.settings || {}),
+      saveExecutionProgress: this.execSaveProgress,
+      saveManualExecutions: this.execSaveManual,
+      executionTimeout: this.execTimeout,
+      errorWorkflow: this.execErrorWorkflow || null
+    };
+    this.projectService.update(this.projectId, { settings }).subscribe({
+      next: (updated) => {
+        this.project.set(updated);
+        this.execSaving = false;
+        this.saved.emit(updated);
+      },
+      error: () => this.execSaving = false
     });
   }
 
@@ -145,6 +206,80 @@ export class ProjectSettingsComponent {
 
   onDeleteCancelled(): void {
     this.showDeleteConfirm.set(false);
+  }
+
+  loadProjectMcp(): void {
+    this.mcpError = '';
+    this.projectService.getProjectMcp(this.projectId).subscribe({
+      next: (endpoints) => {
+        const http = endpoints.find(e => e.transport === 'STREAMABLE_HTTP');
+        const sse = endpoints.find(e => e.transport === 'SSE');
+
+        this.httpEnabled = !!http?.enabled;
+        this.httpPath = http?.path || '';
+        this.httpUrl = http?.url || null;
+
+        this.sseEnabled = !!sse?.enabled;
+        this.ssePath = sse?.path || '';
+        this.sseUrl = sse?.url || null;
+
+        // Auto-suggest paths if not configured
+        if (!this.httpEnabled && !this.httpPath) this.httpPath = '';
+        if (!this.sseEnabled && !this.ssePath) this.ssePath = 'sse';
+      }
+    });
+  }
+
+  saveProjectMcpTransport(transport: 'STREAMABLE_HTTP' | 'SSE'): void {
+    const isHttp = transport === 'STREAMABLE_HTTP';
+    if (isHttp) this.httpSaving = true; else this.sseSaving = true;
+    this.mcpError = '';
+
+    this.projectService.updateProjectMcp(this.projectId, {
+      enabled: isHttp ? this.httpEnabled : this.sseEnabled,
+      path: isHttp ? this.httpPath : this.ssePath,
+      transport
+    }).subscribe({
+      next: (result) => {
+        if (isHttp) {
+          this.httpEnabled = result.enabled;
+          this.httpPath = result.path || '';
+          this.httpUrl = result.url || null;
+          this.httpSaving = false;
+        } else {
+          this.sseEnabled = result.enabled;
+          this.ssePath = result.path || '';
+          this.sseUrl = result.url || null;
+          this.sseSaving = false;
+        }
+      },
+      error: (err) => {
+        if (isHttp) this.httpSaving = false; else this.sseSaving = false;
+        this.mcpError = err.error?.message || err.message || 'Failed to save';
+      }
+    });
+  }
+
+  onHttpPathInput(): void {
+    this.httpPath = this.sanitizePath(this.httpPath);
+  }
+
+  onSsePathInput(): void {
+    this.ssePath = this.sanitizePath(this.ssePath);
+  }
+
+  private sanitizePath(value: string): string {
+    return value
+      .replace(/[^a-zA-Z0-9]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '')
+      .toLowerCase();
+  }
+
+  copyUrl(url: string | null): void {
+    if (url) {
+      navigator.clipboard.writeText(url);
+    }
   }
 
   getRoleLabel(role: string): string {

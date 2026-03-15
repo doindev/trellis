@@ -131,6 +131,13 @@ export interface McpWorkflow {
   projectName?: string;
 }
 
+export interface ExecutionSettings {
+  saveExecutionProgress: string;   // 'yes' | 'no'
+  saveManualExecutions: string;    // 'yes' | 'no'
+  executionTimeout: number;        // seconds, -1 = disabled
+  errorWorkflow: string | null;
+}
+
 export interface SwaggerSettings {
   enabled: boolean;
   apiTitle: string;
@@ -147,6 +154,18 @@ export interface SwaggerWorkflow {
   hasWebhookNode: boolean;
   projectId?: string;
   projectName?: string;
+}
+
+export interface ResolvedSettingValue {
+  value: any;
+  source: 'workflow' | 'project' | 'application';
+}
+
+export interface ResolvedExecutionSettings {
+  saveExecutionProgress: ResolvedSettingValue;
+  saveManualExecutions: ResolvedSettingValue;
+  executionTimeout: ResolvedSettingValue;
+  errorWorkflow: ResolvedSettingValue;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -279,5 +298,21 @@ export class SettingsService {
 
   updateSwaggerWorkflow(workflowId: string, data: Partial<SwaggerWorkflow>): Observable<void> {
     return this.api.put<void>(`/settings/swagger/workflows/${workflowId}`, data);
+  }
+
+  // Execution Settings
+  getExecutionSettings(): Observable<ExecutionSettings> {
+    return this.api.get<ExecutionSettings>('/settings/execution');
+  }
+
+  updateExecutionSettings(settings: Partial<ExecutionSettings>): Observable<ExecutionSettings> {
+    return this.api.put<ExecutionSettings>('/settings/execution', settings);
+  }
+
+  resolveExecutionSettings(projectId: string | null, workflowSettings: Record<string, any> | null): Observable<ResolvedExecutionSettings> {
+    return this.api.post<ResolvedExecutionSettings>('/settings/execution/resolve', {
+      projectId,
+      workflowSettings
+    });
   }
 }

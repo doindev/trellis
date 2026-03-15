@@ -5,6 +5,7 @@ export interface Project {
   icon?: ProjectIcon;
   description?: string;
   contextPath?: string;
+  settings?: Record<string, any>;
   members?: ProjectMember[];
   workflowCount?: number;
   credentialCount?: number;

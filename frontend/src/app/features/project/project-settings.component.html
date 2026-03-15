@@ -7,96 +7,246 @@
           <h5 class="modal-title">Project Settings</h5>
           <button type="button" class="btn-close" (click)="close()"></button>
         </div>
+
+        <nav class="settings-tabs">
+          <button class="settings-tab" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">General</button>
+          <button class="settings-tab" [class.active]="activeTab === 'execution'" (click)="activeTab = 'execution'">Execution</button>
+          @if (!isReadOnly()) {
+            <button class="settings-tab" [class.active]="activeTab === 'mcp'" (click)="activeTab = 'mcp'" [disabled]="!project()?.contextPath">MCP Instance</button>
+          }
+        </nav>
+
         <div class="modal-body">
           @if (project()) {
-            <!-- General Section -->
-            <section class="settings-section">
-              <h3 class="section-title">General</h3>
-
-              <div class="form-group">
-                <label class="form-label" for="projectName">Name</label>
-                <input id="projectName" class="form-input" type="text" [(ngModel)]="name" [disabled]="isReadOnly()">
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="projectDescription">Description</label>
-                <textarea id="projectDescription" class="form-textarea" rows="3" [(ngModel)]="description" [disabled]="isReadOnly()" placeholder="Describe this project..."></textarea>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="projectContextPath">Context Path</label>
-                <input id="projectContextPath" class="form-input" type="text" [(ngModel)]="contextPath" [disabled]="isReadOnly()" placeholder="e.g. billing">
-                <small class="form-hint">Optional. Webhook URLs will use /<em>path</em>/... instead of /webhook/...</small>
-              </div>
-
-              @if (saveError) {
-                <div class="save-error">{{ saveError }}</div>
-              }
-
-              @if (!isReadOnly()) {
-                <button class="btn-save" (click)="saveGeneral()" [disabled]="saving">
-                  {{ saving ? 'Saving...' : 'Save' }}
-                </button>
-              }
-            </section>
-
-            <!-- Members Section -->
-            @if (!isReadOnly()) {
+            <!-- General Tab -->
+            @if (activeTab === 'general') {
               <section class="settings-section">
-                <h3 class="section-title">Members</h3>
+                <div class="form-group">
+                  <label class="form-label" for="projectName">Name</label>
+                  <input id="projectName" class="form-input" type="text" [(ngModel)]="name" [disabled]="isReadOnly()">
+                </div>
 
-                @if (members().length > 0) {
-                  <div class="members-table">
-                    <div class="member-row member-header">
-                      <span class="member-email">User</span>
-                      <span class="member-role">Role</span>
-                      <span class="member-actions"></span>
-                    </div>
-                    @for (member of members(); track member.userId) {
-                      <div class="member-row">
-                        <span class="member-email">
-                          {{ member.email || member.userId }}
-                          @if (member.firstName || member.lastName) {
-                            <span class="member-name">{{ member.firstName }} {{ member.lastName }}</span>
-                          }
-                        </span>
-                        <span class="member-role">
-                          @if (member.role === 'PROJECT_PERSONAL_OWNER') {
-                            <span class="role-badge">{{ getRoleLabel(member.role) }}</span>
-                          } @else {
-                            <select class="role-select" [value]="member.role" (change)="updateMemberRole(member, $any($event.target).value)">
-                              <option value="PROJECT_ADMIN">Admin</option>
-                              <option value="PROJECT_EDITOR">Editor</option>
-                              <option value="PROJECT_VIEWER">Viewer</option>
-                            </select>
-                          }
-                        </span>
-                        <span class="member-actions">
-                          @if (member.role !== 'PROJECT_PERSONAL_OWNER') {
-                            <button class="btn-remove" (click)="removeMember(member)">Remove</button>
-                          }
-                        </span>
-                      </div>
-                    }
-                  </div>
+                <div class="form-group">
+                  <label class="form-label" for="projectDescription">Description</label>
+                  <textarea id="projectDescription" class="form-textarea" rows="3" [(ngModel)]="description" [disabled]="isReadOnly()" placeholder="Describe this project..."></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="projectContextPath">Context Path</label>
+                  <input id="projectContextPath" class="form-input" type="text" [(ngModel)]="contextPath" [disabled]="isReadOnly()" placeholder="e.g. billing">
+                  <small class="form-hint">Optional. Webhook URLs will use /<em>path</em>/... instead of /webhook/...</small>
+                </div>
+
+                @if (saveError) {
+                  <div class="save-error">{{ saveError }}</div>
                 }
 
-                <div class="add-member-form">
-                  <input class="form-input" type="text" [(ngModel)]="newMemberEmail" placeholder="User ID or email">
-                  <select class="role-select" [(ngModel)]="newMemberRole">
-                    <option value="PROJECT_ADMIN">Admin</option>
-                    <option value="PROJECT_EDITOR">Editor</option>
-                    <option value="PROJECT_VIEWER">Viewer</option>
-                  </select>
-                  <button class="btn-add-member" (click)="addMember()" [disabled]="!newMemberEmail.trim()">Add</button>
-                </div>
+                @if (!isReadOnly()) {
+                  <button class="btn-save" (click)="saveGeneral()" [disabled]="saving">
+                    {{ saving ? 'Saving...' : 'Save' }}
+                  </button>
+                }
               </section>
 
-              <!-- Danger Zone -->
-              <section class="settings-section danger-zone">
-                <h3 class="section-title danger">Danger Zone</h3>
-                <p class="danger-description">Deleting this project will permanently remove it and optionally transfer its resources.</p>
-                <button class="btn-danger" (click)="confirmDeleteProject()">Delete Project</button>
+              <!-- Members Section -->
+              @if (!isReadOnly()) {
+                <section class="settings-section">
+                  <h3 class="section-title">Members</h3>
+
+                  @if (members().length > 0) {
+                    <div class="members-table">
+                      <div class="member-row member-header">
+                        <span class="member-email">User</span>
+                        <span class="member-role">Role</span>
+                        <span class="member-actions"></span>
+                      </div>
+                      @for (member of members(); track member.userId) {
+                        <div class="member-row">
+                          <span class="member-email">
+                            {{ member.email || member.userId }}
+                            @if (member.firstName || member.lastName) {
+                              <span class="member-name">{{ member.firstName }} {{ member.lastName }}</span>
+                            }
+                          </span>
+                          <span class="member-role">
+                            @if (member.role === 'PROJECT_PERSONAL_OWNER') {
+                              <span class="role-badge">{{ getRoleLabel(member.role) }}</span>
+                            } @else {
+                              <select class="role-select" [value]="member.role" (change)="updateMemberRole(member, $any($event.target).value)">
+                                <option value="PROJECT_ADMIN">Admin</option>
+                                <option value="PROJECT_EDITOR">Editor</option>
+                                <option value="PROJECT_VIEWER">Viewer</option>
+                              </select>
+                            }
+                          </span>
+                          <span class="member-actions">
+                            @if (member.role !== 'PROJECT_PERSONAL_OWNER') {
+                              <button class="btn-remove" (click)="removeMember(member)">Remove</button>
+                            }
+                          </span>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <div class="add-member-form">
+                    <input class="form-input" type="text" [(ngModel)]="newMemberEmail" placeholder="User ID or email">
+                    <select class="role-select" [(ngModel)]="newMemberRole">
+                      <option value="PROJECT_ADMIN">Admin</option>
+                      <option value="PROJECT_EDITOR">Editor</option>
+                      <option value="PROJECT_VIEWER">Viewer</option>
+                    </select>
+                    <button class="btn-add-member" (click)="addMember()" [disabled]="!newMemberEmail.trim()">Add</button>
+                  </div>
+                </section>
+
+                <!-- Danger Zone -->
+                <section class="settings-section danger-zone">
+                  <h3 class="section-title danger">Danger Zone</h3>
+                  <p class="danger-description">Deleting this project will permanently remove it and optionally transfer its resources.</p>
+                  <button class="btn-danger" (click)="confirmDeleteProject()">Delete Project</button>
+                </section>
+              }
+            }
+
+            <!-- Execution Tab -->
+            @if (activeTab === 'execution') {
+              @if (!isReadOnly()) {
+                <section class="settings-section">
+                  <div class="form-group">
+                    <label class="form-label">Error Workflow</label>
+                    <select class="form-input" [(ngModel)]="execErrorWorkflow">
+                      <option value="">Default (Inherit from application)</option>
+                      @for (wf of execWorkflows; track wf.id) {
+                        <option [value]="wf.id">{{ wf.name }}</option>
+                      }
+                    </select>
+                    <small class="form-hint">Workflow to run when any workflow in this project fails</small>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Save Execution Progress</label>
+                    <select class="form-input" [(ngModel)]="execSaveProgress">
+                      <option value="default">Default (Inherit from application)</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Save Manual Executions</label>
+                    <select class="form-input" [(ngModel)]="execSaveManual">
+                      <option value="default">Default (Inherit from application)</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Timeout After (seconds)</label>
+                    <input class="form-input" type="number" [(ngModel)]="execTimeout" min="-1" placeholder="-1 = inherit from application">
+                    <small class="form-hint">-1 = inherit from application</small>
+                  </div>
+
+                  <button class="btn-save" (click)="saveExecutionSettings()" [disabled]="execSaving">
+                    {{ execSaving ? 'Saving...' : 'Save Execution Settings' }}
+                  </button>
+                </section>
+              } @else {
+                <p class="read-only-hint">Execution settings are not available for personal projects.</p>
+              }
+            }
+
+            <!-- MCP Instance Tab -->
+            @if (activeTab === 'mcp') {
+              <p class="mcp-tab-description">Expose this project's MCP-enabled workflows on dedicated MCP endpoints. You can enable one endpoint per transport type.</p>
+
+              @if (mcpError) {
+                <div class="save-error" style="margin-bottom: 16px">{{ mcpError }}</div>
+              }
+
+              <!-- Streamable HTTP -->
+              <section class="settings-section mcp-transport-card">
+                <div class="mcp-transport-header">
+                  <span class="transport-label">Streamable HTTP</span>
+                  <label class="toggle">
+                    <input type="checkbox" [(ngModel)]="httpEnabled">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                @if (httpEnabled) {
+                  <div class="form-group">
+                    <label class="form-label">Path</label>
+                    <input class="form-input" type="text" [(ngModel)]="httpPath" (input)="onHttpPathInput()" placeholder="Optional">
+                    <small class="form-hint">/mcp/{{ project()?.contextPath || '...' }}{{ httpPath ? '/' + httpPath : '' }}</small>
+                  </div>
+
+                  @if (httpUrl) {
+                    <div class="form-group">
+                      <label class="form-label">Connection URL</label>
+                      <div class="url-display">
+                        <code class="url-text">{{ httpUrl }}</code>
+                        <button class="btn-copy" (click)="copyUrl(httpUrl)" title="Copy URL">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  }
+
+                  <button class="btn-save" (click)="saveProjectMcpTransport('STREAMABLE_HTTP')" [disabled]="httpSaving">
+                    {{ httpSaving ? 'Saving...' : 'Save' }}
+                  </button>
+                } @else if (httpUrl) {
+                  <button class="btn-save btn-disable-mcp" (click)="saveProjectMcpTransport('STREAMABLE_HTTP')" [disabled]="httpSaving">
+                    {{ httpSaving ? 'Removing...' : 'Remove Endpoint' }}
+                  </button>
+                }
+              </section>
+
+              <!-- SSE -->
+              <section class="settings-section mcp-transport-card">
+                <div class="mcp-transport-header">
+                  <span class="transport-label">SSE</span>
+                  <label class="toggle">
+                    <input type="checkbox" [(ngModel)]="sseEnabled">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                @if (sseEnabled) {
+                  <div class="form-group">
+                    <label class="form-label">Path</label>
+                    <input class="form-input" type="text" [(ngModel)]="ssePath" (input)="onSsePathInput()" placeholder="e.g. sse">
+                    <small class="form-hint">/mcp/{{ project()?.contextPath || '...' }}{{ ssePath ? '/' + ssePath : '' }}</small>
+                  </div>
+
+                  @if (sseUrl) {
+                    <div class="form-group">
+                      <label class="form-label">Connection URL</label>
+                      <div class="url-display">
+                        <code class="url-text">{{ sseUrl }}</code>
+                        <button class="btn-copy" (click)="copyUrl(sseUrl)" title="Copy URL">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  }
+
+                  <button class="btn-save" (click)="saveProjectMcpTransport('SSE')" [disabled]="sseSaving">
+                    {{ sseSaving ? 'Saving...' : 'Save' }}
+                  </button>
+                } @else if (sseUrl) {
+                  <button class="btn-save btn-disable-mcp" (click)="saveProjectMcpTransport('SSE')" [disabled]="sseSaving">
+                    {{ sseSaving ? 'Removing...' : 'Remove Endpoint' }}
+                  </button>
+                }
               </section>
             }
           }

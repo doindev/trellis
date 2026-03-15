@@ -53,6 +53,7 @@ public class CwcMcpServerManager {
             "2025-03-26", "2024-11-05");
 
     private final Map<String, McpToolDef> tools = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, McpToolDef>> projectTools = new ConcurrentHashMap<>();
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final Map<String, ClientSessionInfo> clientSessions = new ConcurrentHashMap<>();
 
@@ -85,16 +86,27 @@ public class CwcMcpServerManager {
         clientSessions.forEach((id, session) -> persistDisconnect(id));
         clientSessions.clear();
         tools.clear();
+        projectTools.clear();
         log.info("MCP server stopped");
     }
 
     public void refreshTools() {
         tools.clear();
+        projectTools.clear();
+
         // Pre-load project context paths to avoid N+1 queries
         Map<String, String> contextPaths = new HashMap<>();
         projectRepository.findAll().forEach(p -> {
             if (p.getContextPath() != null && !p.getContextPath().isBlank()) {
                 contextPaths.put(p.getId(), p.getContextPath());
+            }
+        });
+
+        // Determine which projects have their own MCP endpoint
+        Set<String> projectsWithEndpoint = new HashSet<>();
+        endpointRepository.findAll().forEach(ep -> {
+            if (ep.getProjectId() != null && ep.isEnabled()) {
+                projectsWithEndpoint.add(ep.getProjectId());
             }
         });
 
@@ -116,11 +128,6 @@ public class CwcMcpServerManager {
                     ? toSnakeCase(contextPath) + "__" + baseName
                     : baseName;
 
-            if (tools.containsKey(toolName)) {
-                log.warn("Duplicate MCP tool name '{}' — workflow '{}' (id={}) overwrites a previous entry",
-                        toolName, wf.getName(), wf.getId());
-            }
-
             String description = wf.getMcpDescription() != null ? wf.getMcpDescription()
                     : wf.getDescription() != null ? wf.getDescription()
                     : "Execute workflow: " + wf.getName();
@@ -135,8 +142,25 @@ public class CwcMcpServerManager {
             // Extract webhook path from workflow nodes for path param routing
             String webhookPath = extractWebhookPath(wf.getNodes());
 
-            tools.put(toolName, new McpToolDef(toolName, description, wf.getId(),
-                    inputSchema, outputSchema, webhookPath));
+            McpToolDef toolDef = new McpToolDef(toolName, description, wf.getId(),
+                    inputSchema, outputSchema, webhookPath);
+
+            // Route to project-scoped map or global map
+            if (wf.getProjectId() != null && projectsWithEndpoint.contains(wf.getProjectId())) {
+                Map<String, McpToolDef> pTools = projectTools.computeIfAbsent(
+                        wf.getProjectId(), k -> new ConcurrentHashMap<>());
+                if (pTools.containsKey(toolName)) {
+                    log.warn("Duplicate MCP tool name '{}' in project {} — workflow '{}' (id={}) overwrites a previous entry",
+                            toolName, wf.getProjectId(), wf.getName(), wf.getId());
+                }
+                pTools.put(toolName, toolDef);
+            } else {
+                if (tools.containsKey(toolName)) {
+                    log.warn("Duplicate MCP tool name '{}' — workflow '{}' (id={}) overwrites a previous entry",
+                            toolName, wf.getName(), wf.getId());
+                }
+                tools.put(toolName, toolDef);
+            }
 
             // Build hash input: tool identity + description + schemas + webhookPath
             hashInput.append(toolName).append('|')
@@ -164,7 +188,7 @@ public class CwcMcpServerManager {
                 notifyToolsChanged();
             }
 
-            log.info("Refreshed MCP tools: {}", tools.keySet());
+            log.info("Refreshed MCP tools: {} global, {} project-scoped", tools.size(), projectTools.size());
         }
     }
 
@@ -253,6 +277,7 @@ public class CwcMcpServerManager {
         emitters.put(sessionId, emitter);
         ClientSessionInfo sessionInfo = new ClientSessionInfo(
                 sessionId, endpoint.getId(), endpoint.getName(), endpoint.getTransport(), now);
+        sessionInfo.setProjectId(endpoint.getProjectId());
         clientSessions.put(sessionId, sessionInfo);
         persistNewSession(sessionInfo);
 
@@ -320,6 +345,7 @@ public class CwcMcpServerManager {
             Instant now = Instant.now();
             session = new ClientSessionInfo(
                     returnSessionId, endpoint.getId(), endpoint.getName(), endpoint.getTransport(), now);
+            session.setProjectId(endpoint.getProjectId());
             clientSessions.put(returnSessionId, session);
             persistNewSession(session);
         }
@@ -346,8 +372,8 @@ public class CwcMcpServerManager {
 
         return switch (method) {
             case "initialize" -> handleInitialize(id, message, session);
-            case "tools/list" -> handleToolsList(id);
-            case "tools/call" -> handleToolsCall(id, message);
+            case "tools/list" -> handleToolsList(id, session);
+            case "tools/call" -> handleToolsCall(id, message, session);
             case "ping" -> jsonRpcResult(id, Map.of());
             default -> jsonRpcError(id, -32601, "Method not found: " + method);
         };
@@ -383,8 +409,16 @@ public class CwcMcpServerManager {
         return jsonRpcResult(id, result);
     }
 
-    private Map<String, Object> handleToolsList(Object id) {
-        List<Map<String, Object>> toolList = new ArrayList<>(tools.values().stream()
+    private Map<String, Object> handleToolsList(Object id, ClientSessionInfo session) {
+        // Determine which tool map to use based on session scope
+        Map<String, McpToolDef> effectiveTools;
+        if (session != null && session.getProjectId() != null) {
+            effectiveTools = projectTools.getOrDefault(session.getProjectId(), Map.of());
+        } else {
+            effectiveTools = tools;
+        }
+
+        List<Map<String, Object>> toolList = new ArrayList<>(effectiveTools.values().stream()
                 .map(tool -> {
                     Map<String, Object> t = new LinkedHashMap<>();
                     t.put("name", tool.name);
@@ -403,8 +437,8 @@ public class CwcMcpServerManager {
                 })
                 .toList());
 
-        // In combined mode, append system tools alongside workflow tools
-        if (shouldIncludeSystemTools()) {
+        // In combined mode, append system tools alongside workflow tools (only for app-level sessions)
+        if ((session == null || session.getProjectId() == null) && shouldIncludeSystemTools()) {
             toolList.addAll(mcpSystemToolService.getSystemToolDefinitions());
         }
 
@@ -431,18 +465,26 @@ public class CwcMcpServerManager {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> handleToolsCall(Object id, Map<String, Object> message) {
+    private Map<String, Object> handleToolsCall(Object id, Map<String, Object> message, ClientSessionInfo session) {
         Map<String, Object> params = (Map<String, Object>) message.get("params");
         String toolName = (String) params.get("name");
         Map<String, Object> arguments = (Map<String, Object>) params.get("arguments");
 
-        // In combined mode, delegate system tool calls
-        if (shouldIncludeSystemTools() && mcpSystemToolService.isSystemTool(toolName)) {
+        // In combined mode, delegate system tool calls (only for app-level sessions)
+        if ((session == null || session.getProjectId() == null)
+                && shouldIncludeSystemTools() && mcpSystemToolService.isSystemTool(toolName)) {
             Map<String, Object> result = mcpSystemToolService.handleToolCall(toolName, arguments);
             return jsonRpcResult(id, result);
         }
 
-        McpToolDef tool = tools.get(toolName);
+        // Look up tool from the appropriate scope
+        McpToolDef tool;
+        if (session != null && session.getProjectId() != null) {
+            Map<String, McpToolDef> pTools = projectTools.getOrDefault(session.getProjectId(), Map.of());
+            tool = pTools.get(toolName);
+        } else {
+            tool = tools.get(toolName);
+        }
         if (tool == null) {
             return jsonRpcError(id, -32602, "Unknown tool: " + toolName);
         }
@@ -705,6 +747,7 @@ public class CwcMcpServerManager {
         private String clientName;
         private String clientVersion;
         private Instant lastDbWrite;
+        private String projectId; // null = app-level, non-null = project-scoped
 
         ClientSessionInfo(String sessionId, String endpointId, String endpointName,
                           String transport, Instant connectedAt) {

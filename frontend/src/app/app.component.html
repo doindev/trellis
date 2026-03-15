@@ -55,6 +55,16 @@
             <span class="nav-label">Chat</span>
           }
         </a>
+        <a class="nav-item" routerLink="/settings/execution" routerLinkActive="active" [title]="sidebarCollapsed ? 'Execution' : ''">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="6 3 20 12 6 21 6 3"/>
+            </svg>
+          </span>
+          @if (!sidebarCollapsed) {
+            <span class="nav-label">Execution</span>
+          }
+        </a>
         <a class="nav-item" routerLink="/settings/external-secrets" routerLinkActive="active" [title]="sidebarCollapsed ? 'External Secrets' : ''">
           <span class="nav-icon">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -340,6 +350,12 @@
                   <path d="M2 12h2"/><path d="M9 11v2"/><path d="M15 11v2"/><path d="M20 12h2"/>
                 </svg>
                 Chat
+              </button>
+              <button class="settings-popover-item" (click)="onSettingsNav('execution')">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="6 3 20 12 6 21 6 3"/>
+                </svg>
+                Execution
               </button>
               <button class="settings-popover-item" (click)="onSettingsNav('external-secrets')">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
