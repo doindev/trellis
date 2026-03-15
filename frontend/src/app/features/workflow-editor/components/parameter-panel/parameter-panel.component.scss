@@ -629,6 +629,46 @@
   }
 }
 
+// When a code editor textarea is visible (Code node), expand it to fill remaining space
+.column-body:has(.code-editor-btn) {
+  display: flex;
+  flex-direction: column;
+
+  > * { flex-shrink: 0; }
+
+  .param-group:has(.code-editor-btn) {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+
+    app-string-param {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+  }
+}
+
+:host ::ng-deep .column-body:has(.code-editor-btn) .param-group:has(.code-editor-btn) app-string-param {
+  > * { flex-shrink: 0; }
+
+  .code-textarea-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .code-textarea-wrapper .param-input {
+    flex: 1;
+    min-height: 80px;
+    resize: none;
+  }
+}
+
 // ── Input node selector ──
 
 .input-node-select {

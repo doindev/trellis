@@ -69,7 +69,7 @@ public class HtmlNode extends AbstractNode {
 				.displayName("HTML Template")
 				.description("HTML template. Use {{ fieldName }} placeholders to inject data.")
 				.type(ParameterType.STRING)
-				.typeOptions(Map.of("rows", 10))
+				.typeOptions(Map.of("rows", 10, "editor", "codeNodeEditor"))
 				.displayOptions(Map.of("show", Map.of("operation", List.of("generateHtmlTemplate"))))
 				.build(),
 

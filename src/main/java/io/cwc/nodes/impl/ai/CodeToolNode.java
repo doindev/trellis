@@ -70,7 +70,7 @@ public class CodeToolNode extends AbstractAiToolNode {
 				NodeParameter.builder()
 						.name("code").displayName("Code")
 						.type(ParameterType.STRING)
-						.typeOptions(Map.of("rows", 10))
+						.typeOptions(Map.of("rows", 10, "editor", "codeNodeEditor"))
 						.required(true)
 						.description("Code to execute. Use 'input' variable to access the AI-provided input.")
 						.build()
