@@ -473,7 +473,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
 
     if ((event.ctrlKey || event.metaKey) && event.shiftKey && (event.key === 'o' || event.key === 'O')) {
-      if (this.activeTab === 'editor') {
+      if (this.activeTab === 'editor' || this.activeTab === 'executions') {
         event.preventDefault();
         this.canvasWrapper?.triggerCleanUp();
       }

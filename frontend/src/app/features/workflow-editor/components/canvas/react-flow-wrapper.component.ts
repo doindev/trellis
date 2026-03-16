@@ -210,7 +210,7 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
             isTrigger: typeDesc.isTrigger,
           } : undefined,
           executionStatus: execEntry?.status,
-          itemCount: execEntry?.itemCount,
+          itemCount: execEntry?.itemCount ?? this.computeItemCount(execEntry),
           disabled: node.disabled,
           isPinned: !!(this.workflow?.pinData?.[nodeId]),
           readOnly: this.readOnly,
@@ -417,6 +417,23 @@ export class ReactFlowWrapperComponent implements AfterViewInit, OnChanges, OnDe
       }
     }
     return true;
+  }
+
+  /** Compute item count from execution entry output data when not pre-computed. */
+  private computeItemCount(execEntry: any): number | undefined {
+    if (!execEntry) return undefined;
+    // API format: data.main = [[item, ...], [item, ...]]
+    let outputs = execEntry?.data?.main;
+    // WebSocket format: data = [[item, ...], [item, ...]]
+    if (!Array.isArray(outputs) && Array.isArray(execEntry?.data)) {
+      outputs = execEntry.data;
+    }
+    if (!Array.isArray(outputs)) return undefined;
+    let count = 0;
+    for (const out of outputs) {
+      if (Array.isArray(out)) count += out.length;
+    }
+    return count;
   }
 
   /** Trigger the canvas auto-layout (clean up). */
