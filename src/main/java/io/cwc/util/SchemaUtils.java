@@ -203,7 +203,6 @@ public final class SchemaUtils {
      * Check whether the raw mcpInputSchema defines a "payload" property.
      * Supports both direct JSON Schema (Map) and legacy param list (List) formats.
      */
-    @SuppressWarnings("unchecked")
     public static boolean hasPayloadProperty(Object mcpInputSchema) {
         if (mcpInputSchema instanceof Map<?, ?> schemaMap) {
             Object props = schemaMap.get("properties");
@@ -221,7 +220,6 @@ public final class SchemaUtils {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     private static Map<String, Object> deepCopyMap(Map<?, ?> original) {
         Map<String, Object> copy = new LinkedHashMap<>();
         for (Map.Entry<?, ?> entry : original.entrySet()) {

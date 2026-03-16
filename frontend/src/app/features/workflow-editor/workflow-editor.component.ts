@@ -861,7 +861,7 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Enrich API runData entries with activeOutputs computed from data.main arrays. */
+  /** Enrich API runData entries with activeOutputs and itemCount computed from data.main arrays. */
   private enrichRunDataWithActiveOutputs(runData: Record<string, any>): Record<string, any> {
     const enriched: Record<string, any> = {};
     for (const [nodeId, entries] of Object.entries(runData)) {
@@ -870,16 +870,20 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         continue;
       }
       enriched[nodeId] = entries.map((entry: any) => {
-        if (entry?.activeOutputs) return entry; // already has it
         const mainOutputs = entry?.data?.main;
         if (!Array.isArray(mainOutputs)) return entry;
-        const activeOutputs: number[] = [];
+        const activeOutputs: number[] = entry.activeOutputs || [];
+        let itemCount: number = entry.itemCount ?? 0;
+        const needsActiveOutputs = !entry.activeOutputs;
+        const needsItemCount = entry.itemCount === undefined || entry.itemCount === null;
+        if (!needsActiveOutputs && !needsItemCount) return entry;
         for (let i = 0; i < mainOutputs.length; i++) {
           if (Array.isArray(mainOutputs[i]) && mainOutputs[i].length > 0) {
-            activeOutputs.push(i);
+            if (needsActiveOutputs) activeOutputs.push(i);
+            if (needsItemCount) itemCount += mainOutputs[i].length;
           }
         }
-        return { ...entry, activeOutputs };
+        return { ...entry, activeOutputs, itemCount };
       });
     }
     return enriched;

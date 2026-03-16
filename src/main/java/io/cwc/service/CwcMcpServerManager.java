@@ -530,7 +530,6 @@ public class CwcMcpServerManager {
                         if ("payload".equals(entry.getKey())) {
                             Object val = entry.getValue();
                             if (val instanceof Map<?, ?> mapVal) {
-                                @SuppressWarnings("unchecked")
                                 Map<String, Object> typedMap = (Map<String, Object>) mapVal;
                                 bodyContent.putAll(typedMap);
                             } else {
@@ -713,7 +712,6 @@ public class CwcMcpServerManager {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private String extractWebhookPath(Object nodesObj) {
         if (!(nodesObj instanceof List<?> nodes)) return null;
         for (Object nodeObj : nodes) {
