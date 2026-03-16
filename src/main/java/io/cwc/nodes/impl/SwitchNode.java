@@ -3,6 +3,7 @@ package io.cwc.nodes.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.cwc.nodes.annotation.Node;
@@ -195,6 +196,19 @@ public class SwitchNode extends AbstractNode {
 			}
 		}
 
+		// Extract raw (unresolved) rules so we can detect $json expressions for per-item resolution
+		List<Map<String, Object>> rawRulesList = new ArrayList<>();
+		if (context.getRawParameters() != null) {
+			Object rawRulesObj = context.getRawParameters().get("rules");
+			if (rawRulesObj instanceof List) {
+				for (Object r : (List<?>) rawRulesObj) {
+					if (r instanceof Map) {
+						rawRulesList.add((Map<String, Object>) r);
+					}
+				}
+			}
+		}
+
 		String fallbackOutput = context.getParameter("fallbackOutput", "none");
 		boolean hasFallbackExtra = "extra".equals(fallbackOutput);
 		boolean allMatching = Boolean.TRUE.equals(context.getParameter("allMatchingOutputs", false));
@@ -215,7 +229,8 @@ public class SwitchNode extends AbstractNode {
 		for (Map<String, Object> item : inputData) {
 			boolean matched = false;
 			for (int ruleIdx = 0; ruleIdx < rulesList.size(); ruleIdx++) {
-				if (evaluateRule(item, rulesList.get(ruleIdx))) {
+				Map<String, Object> rawRule = ruleIdx < rawRulesList.size() ? rawRulesList.get(ruleIdx) : null;
+				if (evaluateRule(item, rulesList.get(ruleIdx), rawRule)) {
 					outputs.get(ruleIdx).add(item);
 					matched = true;
 					if (!allMatching) break;
@@ -271,18 +286,56 @@ public class SwitchNode extends AbstractNode {
 		return NodeExecutionResult.successMultiOutput(outputs);
 	}
 
-	private boolean evaluateRule(Map<String, Object> item, Map<String, Object> rule) {
+	/** Pattern to detect ={{ $json.xxx }} expressions and extract the dot-notation path */
+	private static final Pattern JSON_EXPR_PATTERN = Pattern.compile("^=\\{\\{\\s*\\$json\\.(.+?)\\s*\\}\\}$");
+
+	private boolean evaluateRule(Map<String, Object> item, Map<String, Object> rule, Map<String, Object> rawRule) {
 		String value1Ref = toString(rule.get("value1"));
 		String operation = toString(rule.get("operation"));
 		String value2Ref = toString(rule.get("value2"));
 
-		Object resolvedValue1 = getNestedValue(item, value1Ref);
-		String val1 = resolvedValue1 != null ? String.valueOf(resolvedValue1) : value1Ref;
+		// Check raw (unresolved) parameters for $json expressions to resolve per-item
+		String rawValue1 = rawRule != null ? toString(rawRule.get("value1")) : null;
+		String rawValue2 = rawRule != null ? toString(rawRule.get("value2")) : null;
 
-		Object resolvedValue2 = getNestedValue(item, value2Ref);
-		String val2 = resolvedValue2 != null ? String.valueOf(resolvedValue2) : value2Ref;
+		String jsonPath1 = extractJsonPath(rawValue1);
+		String jsonPath2 = extractJsonPath(rawValue2);
+
+		Object resolvedValue1;
+		String val1;
+		if (jsonPath1 != null) {
+			// Per-item resolution: use extracted path from expression
+			resolvedValue1 = getNestedValue(item, jsonPath1);
+			val1 = resolvedValue1 != null ? String.valueOf(resolvedValue1) : "";
+		} else {
+			resolvedValue1 = getNestedValue(item, value1Ref);
+			val1 = resolvedValue1 != null ? String.valueOf(resolvedValue1) : value1Ref;
+		}
+
+		Object resolvedValue2;
+		String val2;
+		if (jsonPath2 != null) {
+			resolvedValue2 = getNestedValue(item, jsonPath2);
+			val2 = resolvedValue2 != null ? String.valueOf(resolvedValue2) : "";
+		} else {
+			resolvedValue2 = getNestedValue(item, value2Ref);
+			val2 = resolvedValue2 != null ? String.valueOf(resolvedValue2) : value2Ref;
+		}
 
 		return evaluateOperation(val1, operation, val2, resolvedValue1);
+	}
+
+	/**
+	 * Extracts the dot-notation path from a $json expression like ={{ $json.department }}.
+	 * Returns null if the value is not a $json expression.
+	 */
+	private String extractJsonPath(String rawValue) {
+		if (rawValue == null) return null;
+		Matcher m = JSON_EXPR_PATTERN.matcher(rawValue.trim());
+		if (m.matches()) {
+			return m.group(1);
+		}
+		return null;
 	}
 
 	private boolean evaluateOperation(String val1, String operation, String val2, Object rawVal1) {

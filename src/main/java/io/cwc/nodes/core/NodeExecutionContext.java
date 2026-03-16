@@ -19,6 +19,7 @@ public class NodeExecutionContext {
 	
 	private List<Map<String, Object>> inputData;
 	private Map<String, Object> parameters;
+	private Map<String, Object> rawParameters;
 	private Map<String, Object> credentials;
 	private String credentialType;
 	private Map<String, Object> staticData;

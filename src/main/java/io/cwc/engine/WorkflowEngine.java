@@ -828,6 +828,7 @@ public class WorkflowEngine {
                     .nodeVersion(graphNode.getTypeVersion())
                     .inputData(nodeInput)
                     .parameters(resolvedParams)
+                    .rawParameters(graphNode.getParameters())
                     .credentials(credentials)
                     .credentialType(credentialType)
                     .staticData(new HashMap<>())
