@@ -319,41 +319,32 @@ public class MicrosoftTeamsNode extends AbstractApiNode {
 								ParameterOption.builder().name("Get All").value("getAll").build(),
 								ParameterOption.builder().name("Update").value("update").build()
 						)).build(),
+
+				// --- Channel & Channel Message params ---
 				NodeParameter.builder()
 						.name("teamId").displayName("Team ID")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The ID of the Microsoft Teams team.").build(),
+						.description("The ID of the Microsoft Teams team.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("channel", "channelMessage"))))
+						.build(),
 				NodeParameter.builder()
 						.name("channelId").displayName("Channel ID")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The ID of the channel.").build(),
-				NodeParameter.builder()
-						.name("chatId").displayName("Chat ID")
-						.type(ParameterType.STRING).defaultValue("")
-						.description("The ID of the chat.").build(),
-				NodeParameter.builder()
-						.name("messageId").displayName("Message ID")
-						.type(ParameterType.STRING).defaultValue("")
-						.description("The ID of the message.").build(),
-				NodeParameter.builder()
-						.name("messageContent").displayName("Message Content")
-						.type(ParameterType.STRING).defaultValue("")
-						.description("The message content to send.").build(),
-				NodeParameter.builder()
-						.name("contentType").displayName("Content Type")
-						.type(ParameterType.OPTIONS).defaultValue("text")
-						.options(List.of(
-								ParameterOption.builder().name("Text").value("text").build(),
-								ParameterOption.builder().name("HTML").value("html").build()
-						)).build(),
+						.description("The ID of the channel.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("channel", "channelMessage"))))
+						.build(),
 				NodeParameter.builder()
 						.name("displayName").displayName("Display Name")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The display name of the resource.").build(),
+						.description("The display name of the resource.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("channel"), "operation", List.of("create", "update"))))
+						.build(),
 				NodeParameter.builder()
 						.name("description").displayName("Description")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The description of the resource.").build(),
+						.description("The description of the resource.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("channel"), "operation", List.of("create", "update"))))
+						.build(),
 				NodeParameter.builder()
 						.name("membershipType").displayName("Membership Type")
 						.type(ParameterType.OPTIONS).defaultValue("standard")
@@ -361,54 +352,111 @@ public class MicrosoftTeamsNode extends AbstractApiNode {
 								ParameterOption.builder().name("Standard").value("standard").build(),
 								ParameterOption.builder().name("Private").value("private").build(),
 								ParameterOption.builder().name("Shared").value("shared").build()
-						)).build(),
+						))
+						.displayOptions(Map.of("show", Map.of("resource", List.of("channel"), "operation", List.of("create"))))
+						.build(),
+				NodeParameter.builder()
+						.name("messageContent").displayName("Message Content")
+						.type(ParameterType.STRING).defaultValue("")
+						.description("The message content to send.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("channelMessage", "chatMessage"), "operation", List.of("create"))))
+						.build(),
+				NodeParameter.builder()
+						.name("contentType").displayName("Content Type")
+						.type(ParameterType.OPTIONS).defaultValue("text")
+						.options(List.of(
+								ParameterOption.builder().name("Text").value("text").build(),
+								ParameterOption.builder().name("HTML").value("html").build()
+						))
+						.displayOptions(Map.of("show", Map.of("resource", List.of("channelMessage", "chatMessage"), "operation", List.of("create"))))
+						.build(),
+
+				// --- Chat & Chat Message params ---
+				NodeParameter.builder()
+						.name("chatId").displayName("Chat ID")
+						.type(ParameterType.STRING).defaultValue("")
+						.description("The ID of the chat.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("chat", "chatMessage"))))
+						.build(),
+				NodeParameter.builder()
+						.name("messageId").displayName("Message ID")
+						.type(ParameterType.STRING).defaultValue("")
+						.description("The ID of the message.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("chatMessage"), "operation", List.of("get"))))
+						.build(),
 				NodeParameter.builder()
 						.name("chatType").displayName("Chat Type")
 						.type(ParameterType.OPTIONS).defaultValue("oneOnOne")
 						.options(List.of(
 								ParameterOption.builder().name("One-on-One").value("oneOnOne").build(),
 								ParameterOption.builder().name("Group").value("group").build()
-						)).build(),
+						))
+						.displayOptions(Map.of("show", Map.of("resource", List.of("chat"), "operation", List.of("create"))))
+						.build(),
 				NodeParameter.builder()
 						.name("members").displayName("Members")
 						.type(ParameterType.JSON).defaultValue("[]")
-						.description("JSON array of member objects with userId field for creating a chat.").build(),
+						.description("JSON array of member objects with userId field for creating a chat.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("chat"), "operation", List.of("create"))))
+						.build(),
+
+				// --- Task (Planner) params ---
 				NodeParameter.builder()
 						.name("planId").displayName("Plan ID")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The ID of the Planner plan.").build(),
+						.description("The ID of the Planner plan.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("task"), "operation", List.of("create", "getAll"))))
+						.build(),
 				NodeParameter.builder()
 						.name("bucketId").displayName("Bucket ID")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The ID of the Planner bucket.").build(),
+						.description("The ID of the Planner bucket.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("task"), "operation", List.of("create"))))
+						.build(),
 				NodeParameter.builder()
 						.name("taskId").displayName("Task ID")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The ID of the Planner task.").build(),
+						.description("The ID of the Planner task.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("task"), "operation", List.of("delete", "get", "update"))))
+						.build(),
 				NodeParameter.builder()
 						.name("title").displayName("Title")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The title of the task.").build(),
+						.description("The title of the task.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("task"), "operation", List.of("create", "update"))))
+						.build(),
 				NodeParameter.builder()
 						.name("assigneeId").displayName("Assignee ID")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The user ID to assign the task to.").build(),
+						.description("The user ID to assign the task to.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("task"), "operation", List.of("create"))))
+						.build(),
 				NodeParameter.builder()
 						.name("dueDateTime").displayName("Due Date Time")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The due date and time (ISO 8601 format).").build(),
+						.description("The due date and time (ISO 8601 format).")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("task"), "operation", List.of("create", "update"))))
+						.build(),
 				NodeParameter.builder()
 						.name("percentComplete").displayName("Percent Complete")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("Percentage of task completion (0-100).").build(),
+						.description("Percentage of task completion (0-100).")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("task"), "operation", List.of("update"))))
+						.build(),
 				NodeParameter.builder()
 						.name("etag").displayName("ETag")
 						.type(ParameterType.STRING).defaultValue("")
-						.description("The ETag value for concurrency control (required for update/delete of tasks).").build(),
+						.description("The ETag value for concurrency control (required for update/delete of tasks).")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("task"), "operation", List.of("delete", "update"))))
+						.build(),
+
+				// --- Shared params ---
 				NodeParameter.builder()
 						.name("limit").displayName("Limit")
 						.type(ParameterType.NUMBER).defaultValue(50)
-						.description("Maximum number of results to return.").build()
+						.description("Maximum number of results to return.")
+						.displayOptions(Map.of("show", Map.of("resource", List.of("channelMessage", "chat", "chatMessage"), "operation", List.of("getAll"))))
+						.build()
 		);
 	}
 }
