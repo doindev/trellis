@@ -162,7 +162,10 @@
       "Bash(git stash:*)",
       "Bash(git add:*)",
       "Bash(npm view:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "mcp__cwc-agent__cwc_get_project",
+      "Bash(for port in 8080 8443 3000 4200 5678 5679 9090)",
+      "Bash(do curl -s -o /dev/null -w \"Port $port: %{http_code}\\\\n\" \"http://localhost:$port/api/variables\" --connect-timeout 2)"
     ]
   }
 }
