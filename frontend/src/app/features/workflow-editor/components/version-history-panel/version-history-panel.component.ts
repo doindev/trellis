@@ -82,9 +82,7 @@ type VersionFilter = 'all' | 'published' | 'saves';
              [style.right.px]="menuRight"
              (mouseenter)="cancelMenuClose()"
              (mouseleave)="startMenuCloseTimer()">
-          @if (!isPersonalProject) {
-            <button class="context-menu-item" (click)="onPublishVersion()">Publish this version</button>
-          }
+          <button class="context-menu-item" (click)="onPublishVersion()">Publish this version</button>
           <button class="context-menu-item" (click)="onCloneVersion()">Clone to new workflow</button>
           <button class="context-menu-item" (click)="onOpenInNewTab()">Open in new tab</button>
           <button class="context-menu-item" (click)="onDownloadVersion()">Download</button>
@@ -372,7 +370,6 @@ type VersionFilter = 'all' | 'published' | 'saves';
 export class VersionHistoryPanelComponent implements OnInit, OnChanges {
   @Input() workflowId = '';
   @Input() visible = false;
-  @Input() isPersonalProject = false;
   @Output() close = new EventEmitter<void>();
   @Output() versionSelected = new EventEmitter<WorkflowVersion>();
   @Output() publishVersion = new EventEmitter<string>();

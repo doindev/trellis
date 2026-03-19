@@ -44,6 +44,10 @@ export class ChatService implements OnDestroy {
     return this.api.post<ChatMessage>(`/chat/sessions/${sessionId}/messages`, body);
   }
 
+  interruptChat(sessionId: string): Observable<void> {
+    return this.api.post<void>(`/chat/sessions/${sessionId}/interrupt`, {});
+  }
+
   // WebSocket
   connect(sessionId: string): void {
     if (this.subscribedSessionId === sessionId) return;

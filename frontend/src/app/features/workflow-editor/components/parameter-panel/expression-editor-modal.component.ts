@@ -712,7 +712,7 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy, AfterV
 
   private static readonly GLOBAL_VARS = [
     '$json', '$input', '$node', '$env', '$vars',
-    '$execution', '$now', '$today', '$runIndex'
+    '$execution', '$now', '$today', '$runIndex', '$auth'
   ];
 
   updateAutocomplete(): void {
@@ -757,7 +757,20 @@ export class ExpressionEditorModalComponent implements OnInit, OnDestroy, AfterV
       return;
     }
 
-    // Pattern 3: $ at start or after whitespace/operator → suggest global vars
+    // Pattern 3: $auth. → suggest auth fields
+    const authMatch = afterOpen.match(/\$auth\.([a-zA-Z]*)$/);
+    if (authMatch) {
+      const partial = authMatch[1].toLowerCase();
+      const authFields = ['username', 'authenticated', 'authType', 'roles', 'authorities', 'claims'];
+      this.autocompleteSuggestions = authFields
+        .filter(f => f.toLowerCase().startsWith(partial))
+        .slice(0, 15);
+      this.autocompleteTokenStart = cursorPos - authMatch[1].length;
+      this.showSuggestionsAt(cursorPos);
+      return;
+    }
+
+    // Pattern 4: $ at start or after whitespace/operator → suggest global vars
     const dollarMatch = afterOpen.match(/(?:^|[\s+\-*/%(<>=!&|,])(\$[a-zA-Z]*)$/);
     if (dollarMatch) {
       const partial = dollarMatch[1].toLowerCase();

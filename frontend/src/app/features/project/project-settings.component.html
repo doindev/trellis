@@ -11,9 +11,7 @@
         <nav class="settings-tabs">
           <button class="settings-tab" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">General</button>
           <button class="settings-tab" [class.active]="activeTab === 'execution'" (click)="activeTab = 'execution'">Execution</button>
-          @if (!isReadOnly()) {
-            <button class="settings-tab" [class.active]="activeTab === 'mcp'" (click)="activeTab = 'mcp'" [disabled]="!project()?.contextPath">MCP Instance</button>
-          }
+          <button class="settings-tab" [class.active]="activeTab === 'mcp'" (click)="activeTab = 'mcp'" [disabled]="!project()?.contextPath">MCP Instance</button>
         </nav>
 
         <div class="modal-body">
@@ -23,17 +21,17 @@
               <section class="settings-section">
                 <div class="form-group">
                   <label class="form-label" for="projectName">Name</label>
-                  <input id="projectName" class="form-input" type="text" [(ngModel)]="name" [disabled]="isReadOnly()">
+                  <input id="projectName" class="form-input" type="text" [(ngModel)]="name">
                 </div>
 
                 <div class="form-group">
                   <label class="form-label" for="projectDescription">Description</label>
-                  <textarea id="projectDescription" class="form-textarea" rows="3" [(ngModel)]="description" [disabled]="isReadOnly()" placeholder="Describe this project..."></textarea>
+                  <textarea id="projectDescription" class="form-textarea" rows="3" [(ngModel)]="description" placeholder="Describe this project..."></textarea>
                 </div>
 
                 <div class="form-group">
                   <label class="form-label" for="projectContextPath">Context Path</label>
-                  <input id="projectContextPath" class="form-input" type="text" [(ngModel)]="contextPath" [disabled]="isReadOnly()" placeholder="e.g. billing">
+                  <input id="projectContextPath" class="form-input" type="text" [(ngModel)]="contextPath" placeholder="e.g. billing">
                   <small class="form-hint">Optional. Webhook URLs will use /<em>path</em>/... instead of /webhook/...</small>
                 </div>
 
@@ -41,15 +39,12 @@
                   <div class="save-error">{{ saveError }}</div>
                 }
 
-                @if (!isReadOnly()) {
-                  <button class="btn-save" (click)="saveGeneral()" [disabled]="saving">
-                    {{ saving ? 'Saving...' : 'Save' }}
-                  </button>
-                }
+                <button class="btn-save" (click)="saveGeneral()" [disabled]="saving">
+                  {{ saving ? 'Saving...' : 'Save' }}
+                </button>
               </section>
 
               <!-- Members Section -->
-              @if (!isReadOnly()) {
                 <section class="settings-section">
                   <h3 class="section-title">Members</h3>
 
@@ -100,18 +95,18 @@
                   </div>
                 </section>
 
-                <!-- Danger Zone -->
-                <section class="settings-section danger-zone">
-                  <h3 class="section-title danger">Danger Zone</h3>
-                  <p class="danger-description">Deleting this project will permanently remove it and optionally transfer its resources.</p>
-                  <button class="btn-danger" (click)="confirmDeleteProject()">Delete Project</button>
-                </section>
-              }
+                <!-- Danger Zone (not available for personal projects) -->
+                @if (project()?.type !== 'PERSONAL') {
+                  <section class="settings-section danger-zone">
+                    <h3 class="section-title danger">Danger Zone</h3>
+                    <p class="danger-description">Deleting this project will permanently remove it and optionally transfer its resources.</p>
+                    <button class="btn-danger" (click)="confirmDeleteProject()">Delete Project</button>
+                  </section>
+                }
             }
 
             <!-- Execution Tab -->
             @if (activeTab === 'execution') {
-              @if (!isReadOnly()) {
                 <section class="settings-section">
                   <div class="form-group">
                     <label class="form-label">Error Workflow</label>
@@ -152,9 +147,6 @@
                     {{ execSaving ? 'Saving...' : 'Save Execution Settings' }}
                   </button>
                 </section>
-              } @else {
-                <p class="read-only-hint">Execution settings are not available for personal projects.</p>
-              }
             }
 
             <!-- MCP Instance Tab -->

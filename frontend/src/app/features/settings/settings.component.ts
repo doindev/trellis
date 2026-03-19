@@ -43,6 +43,14 @@ export class SettingsComponent implements OnInit, OnDestroy {
   aiSettingsSaving = false;
   aiModels: AiModelInfo[] = [];
   aiModelsLoading = false;
+  aiModelsError: string | null = null;
+  aiModelsLoaded = false;
+  showModelDropdown = false;
+
+  private readonly NO_API_KEY_PROVIDERS = new Set(['ollama']);
+  private readonly PROVIDER_DEFAULT_URLS: Record<string, string> = {
+    'ollama': 'http://localhost:11434',
+  };
 
   // MCP
   mcpSettings: McpSettings | null = null;
@@ -252,7 +260,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // AI Settings
   private loadAiSettings(): void {
     this.settingsService.getAiSettings().subscribe({
-      next: settings => this.aiSettings = settings,
+      next: settings => {
+        this.aiSettings = settings;
+        this.aiModels = [];
+        this.aiModelsLoaded = false;
+        this.aiModelsError = null;
+      },
       error: () => {}
     });
   }
@@ -272,22 +285,67 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return ['ollama', 'azure-openai', 'bedrock'].includes(this.aiSettings.provider);
   }
 
-  onApiKeyBlur(): void {
+  onProviderChange(): void {
+    this.aiSettings.baseUrl = this.PROVIDER_DEFAULT_URLS[this.aiSettings.provider] ?? null;
+    this.aiSettings.model = '';
+    this.aiModels = [];
+    this.aiModelsLoaded = false;
+    this.aiModelsError = null;
+    this.showModelDropdown = false;
+  }
+
+  onApiKeyInput(): void {
+    this.aiModelsError = null;
+    this.aiModels = [];
+    this.aiModelsLoaded = false;
+    this.aiSettings.model = '';
+  }
+
+  onBaseUrlInput(): void {
+    this.aiModelsError = null;
+    this.aiModels = [];
+    this.aiModelsLoaded = false;
+    this.aiSettings.model = '';
+  }
+
+  onModelFocus(): void {
+    if (this.aiModelsLoading) return;
+    if (this.aiModelsLoaded) {
+      if (this.aiModels.length > 0) this.showModelDropdown = true;
+      return;
+    }
     const key = this.aiSettings.apiKey;
-    if (!key || key.includes('...')) return; // skip masked keys
+    const needsKey = !this.NO_API_KEY_PROVIDERS.has(this.aiSettings.provider);
+    if (needsKey && (!key || !key.trim())) return;
     this.fetchAiModels();
   }
 
-  onProviderChange(): void {
-    this.aiModels = [];
-    const key = this.aiSettings.apiKey;
-    if (key && !key.includes('...')) {
-      this.fetchAiModels();
+  onModelInput(): void {
+    if (this.aiModels.length > 0) {
+      this.showModelDropdown = true;
     }
+  }
+
+  onModelBlur(): void {
+    setTimeout(() => this.showModelDropdown = false, 200);
+  }
+
+  selectModel(model: AiModelInfo): void {
+    this.aiSettings.model = model.id;
+    this.showModelDropdown = false;
+  }
+
+  get filteredModels(): AiModelInfo[] {
+    if (!this.aiSettings.model) return this.aiModels;
+    const search = this.aiSettings.model.toLowerCase();
+    return this.aiModels.filter(m =>
+      m.name.toLowerCase().includes(search) || m.id.toLowerCase().includes(search)
+    );
   }
 
   private fetchAiModels(): void {
     this.aiModelsLoading = true;
+    this.aiModelsError = null;
     this.settingsService.listAiModels(
       this.aiSettings.provider,
       this.aiSettings.apiKey,
@@ -295,11 +353,15 @@ export class SettingsComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: models => {
         this.aiModels = models;
+        this.aiModelsLoaded = true;
         this.aiModelsLoading = false;
+        if (models.length > 0) this.showModelDropdown = true;
       },
-      error: () => {
+      error: (err) => {
         this.aiModels = [];
+        this.aiModelsLoaded = true;
         this.aiModelsLoading = false;
+        this.aiModelsError = err?.error?.message || err?.error?.error || err?.message || 'Failed to connect to provider';
       }
     });
   }

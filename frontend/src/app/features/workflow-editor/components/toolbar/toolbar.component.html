@@ -37,14 +37,12 @@
     </div>
 
     <div class="header-right">
-      @if (!isPersonalProject) {
-        <button class="publish-btn" [attr.data-status]="publishStatus" (click)="publish.emit()">
-          <lucide-icon name="aperture" [size]="14"></lucide-icon>
-          {{ published ? 'Publish (v' + currentVersion + ')' : 'Publish' }}
-        </button>
+      <button class="publish-btn" [attr.data-status]="publishStatus" (click)="publish.emit()">
+        <lucide-icon name="aperture" [size]="14"></lucide-icon>
+        {{ published ? 'Publish (v' + currentVersion + ')' : 'Publish' }}
+      </button>
 
-        <div class="header-divider"></div>
-      }
+      <div class="header-divider"></div>
 
       <button class="btn-icon save-status-btn"
               [class.saving]="isSaving"
@@ -127,7 +125,7 @@
               </svg>
               Settings
             </button>
-            @if (published && !isPersonalProject) {
+            @if (published) {
               <button class="menu-item" (click)="onMenuAction('unpublish')">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17 7l-10 10"/><circle cx="12" cy="12" r="9"/>

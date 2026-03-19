@@ -39,7 +39,6 @@ export class ToolbarComponent {
     if (!this.published) return 'unpublished';
     return this.versionIsDirty ? 'stale' : 'current';
   }
-  @Input() isPersonalProject = false;
   @Input() projectName = 'Personal';
   @Input() isDirty = false;
   @Input() isExecuting = false;

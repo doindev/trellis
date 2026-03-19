@@ -84,9 +84,6 @@ public class ProjectService {
     @Transactional
     public ProjectResponse updateProject(String id, ProjectUpdateRequest request) {
         ProjectEntity entity = findById(id);
-        if (entity.getType() == ProjectType.PERSONAL) {
-            throw new BadRequestException("Personal projects cannot be updated");
-        }
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
         if (request.getIcon() != null) entity.setIcon(serializeIcon(request.getIcon()));

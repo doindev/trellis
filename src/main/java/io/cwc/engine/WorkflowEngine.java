@@ -51,6 +51,7 @@ public class WorkflowEngine {
     private final Map<String, CompletableFuture<Map<String, Object>>> pendingWebhookResponses = new ConcurrentHashMap<>();
 
     private static final ThreadLocal<Integer> SUB_WORKFLOW_DEPTH = ThreadLocal.withInitial(() -> 0);
+    private static final ThreadLocal<Map<String, Object>> INHERITED_AUTH_DATA = new ThreadLocal<>();
     private static final int MAX_SUB_WORKFLOW_DEPTH = 10;
 
     @PostConstruct
@@ -215,6 +216,12 @@ public class WorkflowEngine {
             WorkflowExecutionState state = new WorkflowExecutionState(
                     execution.getId(), workflowId, graph);
             state.loadStaticData(workflow.getStaticData());
+
+            // Inherit auth context from parent workflow via ThreadLocal
+            if (INHERITED_AUTH_DATA.get() != null) {
+                state.setAuthData(INHERITED_AUTH_DATA.get());
+            }
+
             runningExecutions.put(execution.getId(), state);
 
             try {
@@ -635,6 +642,18 @@ public class WorkflowEngine {
             runningExecutions.put(executionId, state);
 
             webSocketService.sendExecutionStarted(executionId, workflow.getId());
+
+            // Extract auth context from webhook data (if present) before it flows into nodes
+            extractAndStoreAuthContext(inputData, state);
+
+            // If no direct auth context but a parent workflow set one, inherit it
+            if (state.getAuthData() == null && INHERITED_AUTH_DATA.get() != null) {
+                state.setAuthData(INHERITED_AUTH_DATA.get());
+            }
+            // Publish auth data for any sub-workflows executed on this thread
+            if (state.getAuthData() != null) {
+                INHERITED_AUTH_DATA.set(state.getAuthData());
+            }
 
             Object effectivePinData = resolveEffectivePinData(workflow, mode);
 
@@ -1231,6 +1250,23 @@ public class WorkflowEngine {
                 "body", body));
     }
 
+    /**
+     * Extract _authContext from webhook input data and store it on the execution state.
+     * Removes _authContext from the webhook data map so it doesn't leak into $json.
+     */
+    @SuppressWarnings("unchecked")
+    private void extractAndStoreAuthContext(Map<String, Object> inputData, WorkflowExecutionState state) {
+        if (inputData == null) return;
+        Object webhookData = inputData.get("webhookData");
+        if (webhookData instanceof Map) {
+            Map<String, Object> wdMap = (Map<String, Object>) webhookData;
+            Object authContext = wdMap.remove("_authContext");
+            if (authContext instanceof Map) {
+                state.setAuthData((Map<String, Object>) authContext);
+            }
+        }
+    }
+
     private Map<String, List<Object>> collectAllAiInputs(String nodeId, WorkflowGraph graph,
                                                           WorkflowExecutionState state) {
         Map<String, List<Object>> aiInputs = new HashMap<>();
@@ -1414,6 +1450,7 @@ public class WorkflowEngine {
                 .inputItems(inputItems)
                 .nodeOutputs(nodeOutputsForExpr)
                 .variables(variables)
+                .authData(state != null ? state.getAuthData() : null)
                 .executionId(executionId)
                 .runIndex(0)
                 .build();
@@ -1468,6 +1505,7 @@ public class WorkflowEngine {
                 .currentItemData(currentItemData)
                 .inputItems(inputItems)
                 .variables(variables)
+                .authData(state != null ? state.getAuthData() : null)
                 .executionId(executionId)
                 .runIndex(0)
                 .build();

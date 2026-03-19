@@ -121,19 +121,14 @@ public class ModelListService {
      */
     public List<ModelInfo> listModels(String credentialType, Map<String, Object> credentialData, String modelType) {
         log.info("listModels called: type='{}', modelType='{}'", credentialType, modelType);
-        try {
-            return switch (credentialType) {
-                case "openAiApi" -> listOpenAiModels(credentialData, modelType);
-                case "anthropicApi" -> listAnthropicModels(credentialData, modelType);
-                case "googleAiApi" -> listGeminiModels(credentialData, modelType);
-                case "mistralApi" -> listMistralModels(credentialData, modelType);
-                case "ollamaApi" -> listOllamaModels(credentialData);
-                default -> List.of();
-            };
-        } catch (Exception e) {
-            log.warn("Failed to list models for credential type {}: {}", credentialType, e.getMessage());
-            return List.of();
-        }
+        return switch (credentialType) {
+            case "openAiApi" -> listOpenAiModels(credentialData, modelType);
+            case "anthropicApi" -> listAnthropicModels(credentialData, modelType);
+            case "googleAiApi" -> listGeminiModels(credentialData, modelType);
+            case "mistralApi" -> listMistralModels(credentialData, modelType);
+            case "ollamaApi" -> listOllamaModels(credentialData);
+            default -> List.of();
+        };
     }
 
     private List<ModelInfo> listOpenAiModels(Map<String, Object> data, String modelType) {

@@ -50,4 +50,10 @@ public class ChatController {
     public ChatMessageResponse sendMessage(@PathVariable String id, @RequestBody ChatMessageRequest request) {
         return chatService.sendMessage(id, request.getContent(), request.getCanvasState());
     }
+
+    @PostMapping("/sessions/{id}/interrupt")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void interruptChat(@PathVariable String id) {
+        chatService.interruptChat(id);
+    }
 }

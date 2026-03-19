@@ -222,6 +222,11 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
           const baseUrl = this.extractBaseUrl(prodUrl);
           this.webhookUrlProduction = baseUrl + '/' + this.projectContextPath + '/';
           this.webhookUrlTest = baseUrl + '/' + this.projectContextPath + '-test/';
+        } else if (this.node?.type === 'chatTrigger') {
+          const prodUrl = settings.webhookUrlProduction || '';
+          this.webhookUrlProduction = prodUrl.replace(/\/+$/, '') + '/' + this.workflowId + '/';
+          const testUrl = settings.webhookUrlTest || '';
+          this.webhookUrlTest = testUrl.replace(/\/+$/, '') + '/' + this.workflowId + '/';
         } else {
           this.webhookUrlProduction = settings.webhookUrlProduction || '';
           this.webhookUrlTest = settings.webhookUrlTest || '';
@@ -273,7 +278,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   get isWebhookNode(): boolean {
-    return this.node?.type === 'webhook';
+    return this.node?.type === 'webhook' || this.node?.type === 'chatTrigger' || this.node?.type === 'formTrigger';
   }
 
   get webhookPath(): string {
@@ -1117,7 +1122,11 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   startListening(): void {
     if (!this.workflowId || !this.node?.id) return;
     const method = this.currentHttpMethod;
-    const path = this.webhookPath;
+    let path = this.webhookPath;
+    // For chatTrigger without project context path, prepend workflow ID to match production URL
+    if (this.node.type === 'chatTrigger' && !this.projectContextPath) {
+      path = '/' + this.workflowId + '/' + path.replace(/^\/+/, '');
+    }
     this.webhookTestDataReceived.emit({ nodeId: this.node.id, data: null });
 
     this.webhookTestService.startListening(this.workflowId, this.node.id, method, path).subscribe({

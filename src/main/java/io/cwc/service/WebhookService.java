@@ -88,7 +88,7 @@ public class WebhookService {
 
         for (Map<String, Object> node : nodes) {
             String type = (String) node.get("type");
-            if (!"webhook".equals(type) && !"formTrigger".equals(type)) continue;
+            if (!"webhook".equals(type) && !"formTrigger".equals(type) && !"chatTrigger".equals(type)) continue;
 
             String nodeId = (String) node.get("id");
             Map<String, Object> parameters = (Map<String, Object>) node.getOrDefault("parameters", Map.of());
@@ -100,13 +100,78 @@ public class WebhookService {
 
             String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
 
-            // Prepend project context path if configured
+            // Prepend project context path if configured, otherwise use workflow ID for chat triggers
             String contextPath = resolveContextPath(workflow.getProjectId());
             if (contextPath != null) {
                 normalizedPath = contextPath + "/" + normalizedPath;
+            } else if ("chatTrigger".equals(type)) {
+                normalizedPath = workflow.getId() + "/" + normalizedPath;
             }
 
-            if ("formTrigger".equals(type)) {
+            if ("chatTrigger".equals(type)) {
+                // Only register webhooks when public=true
+                Object publicObj = parameters.get("public");
+                boolean isPublic = Boolean.TRUE.equals(publicObj) || "true".equals(String.valueOf(publicObj));
+                if (!isPublic) continue;
+
+                String mode = (String) parameters.getOrDefault("mode", "hostedChat");
+
+                // Extract options (nested collection parameters)
+                @SuppressWarnings("unchecked")
+                Map<String, Object> options = parameters.get("options") instanceof Map
+                        ? (Map<String, Object>) parameters.get("options") : Map.of();
+                String responseMode = (String) options.getOrDefault("responseMode", "lastNode");
+
+                // Build chat configuration for webhookOptions
+                Map<String, Object> chatConfig = new LinkedHashMap<>();
+                chatConfig.put("nodeType", "chatTrigger");
+                chatConfig.put("mode", mode);
+                chatConfig.put("title", options.getOrDefault("title", "Hi there!"));
+                chatConfig.put("subtitle", options.getOrDefault("subtitle", "Start a chat. We're here to help you 24/7."));
+                chatConfig.put("initialMessages", parameters.getOrDefault("initialMessages", ""));
+                chatConfig.put("inputPlaceholder", options.getOrDefault("inputPlaceholder", "Type your question.."));
+                chatConfig.put("showWelcomeScreen", options.getOrDefault("showWelcomeScreen", false));
+                chatConfig.put("getStarted", options.getOrDefault("getStarted", "New Conversation"));
+                chatConfig.put("loadPreviousSession", options.getOrDefault("loadPreviousSession", "notSupported"));
+                chatConfig.put("allowFileUploads", options.getOrDefault("allowFileUploads", false));
+                chatConfig.put("allowedFilesMimeTypes", options.getOrDefault("allowedFilesMimeTypes", "*"));
+                chatConfig.put("allowedOrigins", options.getOrDefault("allowedOrigins", "*"));
+                chatConfig.put("customCss", options.getOrDefault("customCss", ""));
+
+                if ("hostedChat".equals(mode)) {
+                    // Register GET for serving chat page
+                    WebhookEntity getWebhook = WebhookEntity.builder()
+                            .workflowId(workflow.getId())
+                            .nodeId(nodeId)
+                            .method("GET")
+                            .path(normalizedPath)
+                            .securityChain(authentication)
+                            .responseMode("chatTrigger")
+                            .webhookOptions(chatConfig)
+                            .build();
+                    webhookRepository.save(getWebhook);
+                    if (!"none".equals(authentication)) {
+                        webhookSecurityRegistry.register(authentication, "GET", normalizedPath);
+                    }
+                }
+
+                // Register POST for chat messages (both hostedChat and webhook modes)
+                WebhookEntity postWebhook = WebhookEntity.builder()
+                        .workflowId(workflow.getId())
+                        .nodeId(nodeId)
+                        .method("POST")
+                        .path(normalizedPath)
+                        .securityChain(authentication)
+                        .responseMode(responseMode)
+                        .webhookOptions(chatConfig)
+                        .build();
+                webhookRepository.save(postWebhook);
+                if (!"none".equals(authentication)) {
+                    webhookSecurityRegistry.register(authentication, "POST", normalizedPath);
+                }
+
+                log.info("Registered chat trigger: {} ({}) for workflow {}", path, mode, workflow.getId());
+            } else if ("formTrigger".equals(type)) {
                 // Register both GET (serve form) and POST (submit) for form triggers
                 // Store form configuration in webhookOptions for rendering
                 Map<String, Object> formConfig = new LinkedHashMap<>();

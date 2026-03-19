@@ -18,7 +18,6 @@ import io.cwc.entity.UserEntity;
 import io.cwc.entity.WorkflowEntity;
 import io.cwc.entity.WorkflowShareEntity;
 import io.cwc.entity.WorkflowVersionEntity;
-import io.cwc.entity.ProjectEntity.ProjectType;
 import io.cwc.entity.ProjectRelationEntity.ProjectRole;
 import io.cwc.entity.WorkflowShareEntity.SharePermission;
 import io.cwc.exception.BadRequestException;
@@ -114,15 +113,6 @@ public class WorkflowService {
         throw new ForbiddenException("You do not have permission to publish this workflow");
     }
 
-    private void checkNotPersonalProject(WorkflowEntity workflow) {
-        if (workflow.getProjectId() != null) {
-            projectRepository.findById(workflow.getProjectId()).ifPresent(project -> {
-                if (project.getType() == ProjectType.PERSONAL) {
-                    throw new BadRequestException("Workflows in personal projects cannot be published");
-                }
-            });
-        }
-    }
 
     // --- Core workflow methods ---
 
@@ -259,7 +249,6 @@ public class WorkflowService {
     @Transactional
     public WorkflowResponse publishWorkflow(String id, PublishWorkflowRequest request) {
         WorkflowEntity entity = findById(id);
-        checkNotPersonalProject(entity);
         checkPublishAccess(entity);
         validateNodesForPublish(entity);
         int newVersion = entity.getCurrentVersion() + 1;
@@ -348,7 +337,6 @@ public class WorkflowService {
     @Transactional
     public WorkflowResponse publishFromVersion(String workflowId, String versionId) {
         WorkflowEntity entity = findById(workflowId);
-        checkNotPersonalProject(entity);
         WorkflowVersionEntity version = workflowVersionRepository.findById(versionId)
                 .orElseThrow(() -> new NotFoundException("Version not found: " + versionId));
         if (!version.getWorkflowId().equals(workflowId)) {

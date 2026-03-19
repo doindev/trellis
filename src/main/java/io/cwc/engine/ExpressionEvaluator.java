@@ -98,6 +98,11 @@ public class ExpressionEvaluator {
             setup.append("var $today = '").append(LocalDate.now().toString()).append("';\n");
             setup.append("var $runIndex = ").append(ctx.getRunIndex()).append(";\n");
 
+            Map<String, Object> authForJs = ctx.getAuthData() != null ? ctx.getAuthData()
+                    : Map.of("authenticated", false, "username", "", "authType", "none",
+                             "roles", List.of(), "authorities", List.of(), "claims", Map.of());
+            setup.append("var $auth = ").append(toJson(authForJs)).append(";\n");
+
             String fullScript = setup + "(" + expression + ")";
 
             if (log.isDebugEnabled()) {
@@ -175,6 +180,7 @@ public class ExpressionEvaluator {
         private Map<String, Object> nodeOutputs;
         private Map<String, String> envVars;
         private Map<String, String> variables;
+        private Map<String, Object> authData;
         private String executionId;
         private int runIndex;
     }

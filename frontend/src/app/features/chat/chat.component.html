@@ -43,6 +43,11 @@
       </div>
 
       <div class="chat-input-area">
+        @if (sending) {
+          <div class="chat-interrupt-hint" (click)="interruptChat()">
+            <kbd>Esc</kbd> to interrupt
+          </div>
+        }
         <div class="chat-input-wrapper">
           <textarea
             #messageInputEl

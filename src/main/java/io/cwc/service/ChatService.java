@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 @Slf4j
@@ -52,6 +53,10 @@ public class ChatService {
     private final ChatToolProvider chatToolProvider;
     private final ObjectMapper objectMapper;
     private final Executor workflowExecutor;
+
+    /** Tracks in-flight AI responses so they can be interrupted per session. */
+    private final Map<String, CompletableFuture<?>> activeTasks = new ConcurrentHashMap<>();
+    private final Set<String> interruptedSessions = ConcurrentHashMap.newKeySet();
 
     private static final String DEFAULT_SYSTEM_PROMPT = """
             You are a helpful workflow automation assistant for CWC. You have tools to:
@@ -146,15 +151,68 @@ public class ChatService {
         ChatModel agentModel = resolveAgentChatModel(session.getAgentId());
         ChatModel settingsModel = agentModel == null ? resolveSettingsChatModel() : null;
 
-        // Inject canvas state into system prompt when present
+        // Build context-aware system prompt section from enriched canvas state
         String finalSystemPrompt = systemPrompt;
         if (canvasState != null && !canvasState.isEmpty()) {
             try {
-                String canvasJson = objectMapper.writeValueAsString(canvasState);
-                finalSystemPrompt = systemPrompt + "\n\nCURRENT CANVAS STATE (the user's unsaved workflow currently open in the editor):\n```json\n"
-                        + canvasJson + "\n```\nAnalyze this when the user asks about their current workflow, errors, or configuration issues.";
+                String ctxWorkflowId = canvasState.get("workflowId") instanceof String s ? s : null;
+                String ctxWorkflowName = canvasState.get("workflowName") instanceof String s ? s : null;
+                String ctxProjectId = canvasState.get("projectId") instanceof String s ? s : null;
+                String ctxProjectName = canvasState.get("projectName") instanceof String s ? s : null;
+                String ctxEditorTab = canvasState.get("editorTab") instanceof String s ? s : null;
+                String ctxSelectedExecutionId = canvasState.get("selectedExecutionId") instanceof String s ? s : null;
+
+                // Build canvas-only JSON (nodes + connections) for the prompt
+                Map<String, Object> canvasOnly = new LinkedHashMap<>();
+                canvasOnly.put("nodes", canvasState.getOrDefault("nodes", List.of()));
+                canvasOnly.put("connections", canvasState.getOrDefault("connections", Map.of()));
+                String canvasJson = objectMapper.writeValueAsString(canvasOnly);
+
+                StringBuilder ctx = new StringBuilder("\n\nWORKFLOW CONTEXT:\n");
+
+                if (ctxWorkflowId != null && !ctxWorkflowId.isBlank()) {
+                    String displayName = (ctxWorkflowName != null && !ctxWorkflowName.isBlank()) ? ctxWorkflowName : "Untitled";
+                    ctx.append("You are assisting with workflow \"").append(displayName)
+                       .append("\" (ID: ").append(ctxWorkflowId).append(")");
+                    if (ctxProjectId != null && !ctxProjectId.isBlank()) {
+                        String projDisplay = (ctxProjectName != null && !ctxProjectName.isBlank()) ? ctxProjectName : ctxProjectId;
+                        ctx.append(" in project \"").append(projDisplay)
+                           .append("\" (projectId: ").append(ctxProjectId).append(")");
+                    }
+                    ctx.append(".\n");
+
+                    if ("executions".equals(ctxEditorTab)) {
+                        ctx.append("The user is on the Executions tab, reviewing past execution results.\n");
+                        if (ctxSelectedExecutionId != null && !ctxSelectedExecutionId.isBlank()) {
+                            ctx.append("The user is currently viewing execution ID: ").append(ctxSelectedExecutionId)
+                               .append(". Use cwc_get_execution with this ID to see its details.\n");
+                        }
+                        ctx.append("\nYou can:\n");
+                        ctx.append("- Use cwc_get_execution to examine execution results and errors\n");
+                        ctx.append("- Use cwc_list_executions with workflowId \"").append(ctxWorkflowId).append("\" to find other executions\n");
+                        ctx.append("- Filter by status \"ERROR\" to find failed executions if the user asks about problems\n");
+                        ctx.append("\nIMPORTANT: If the user wants to make changes to the workflow, tell them to switch to the \"Editor\" tab first. You cannot push changes to the canvas while the Executions tab is active.\n");
+                    } else {
+                        ctx.append("The user is on the Editor tab with the canvas open.\n\n");
+                        ctx.append("You can:\n");
+                        ctx.append("- Analyze the current canvas state below for errors or misconfiguration\n");
+                        ctx.append("- Use cwc_push_to_canvas to make changes to the workflow\n");
+                        ctx.append("- Use cwc_execute_workflow with workflowId \"").append(ctxWorkflowId).append("\" to run this workflow\n");
+                        ctx.append("- Use cwc_list_executions with workflowId \"").append(ctxWorkflowId).append("\" to see past runs\n");
+                        ctx.append("- Use cwc_get_execution to examine specific execution results for errors\n");
+                        ctx.append("- Use cwc_workflow_guide to look up node documentation\n");
+                        ctx.append("\nCURRENT CANVAS STATE:\n```json\n").append(canvasJson).append("\n```\n");
+                    }
+                } else {
+                    // New unsaved workflow — no ID yet
+                    ctx.append("The user is working on a new unsaved workflow.\n");
+                    ctx.append("NOTE: The workflow must be saved before it can be executed.\n\n");
+                    ctx.append("CURRENT CANVAS STATE:\n```json\n").append(canvasJson).append("\n```\n");
+                }
+
+                finalSystemPrompt = systemPrompt + ctx;
             } catch (Exception e) {
-                log.warn("Failed to serialize canvas state: {}", e.getMessage());
+                log.warn("Failed to build canvas context: {}", e.getMessage());
             }
         }
 
@@ -162,28 +220,37 @@ public class ChatService {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         String promptForAsync = finalSystemPrompt;
 
+        // Clear any previous interruption flag for this session
+        interruptedSessions.remove(sessionId);
+
         // Run LLM response asynchronously so the HTTP response returns immediately.
         // History is already loaded (includes the just-saved user message), so no need
         // to wait for transaction commit.
-        CompletableFuture.runAsync(() -> {
+        CompletableFuture<?> future = CompletableFuture.runAsync(() -> {
             SecurityContextHolder.setContext(securityContext);
             try {
                 processAiResponse(sessionId, promptForAsync, history,
                         agentModel, settingsModel);
             } catch (Exception e) {
-                log.error("Async chat processing failed for session {}: {}", sessionId, e.getMessage(), e);
-                try {
-                    saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
-                } catch (Exception sendErr) {
-                    log.error("Failed to send error message for session {}: {}", sessionId, sendErr.getMessage());
+                if (!interruptedSessions.contains(sessionId)) {
+                    log.error("Async chat processing failed for session {}: {}", sessionId, e.getMessage(), e);
+                    try {
+                        saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
+                    } catch (Exception sendErr) {
+                        log.error("Failed to send error message for session {}: {}", sessionId, sendErr.getMessage());
+                    }
                 }
             } finally {
                 SecurityContextHolder.clearContext();
+                activeTasks.remove(sessionId);
             }
         }, workflowExecutor).exceptionally(t -> {
-            log.error("Uncaught error in chat async task for session {}: {}", sessionId, t.getMessage(), t);
+            if (!interruptedSessions.contains(sessionId)) {
+                log.error("Uncaught error in chat async task for session {}: {}", sessionId, t.getMessage(), t);
+            }
             return null;
         });
+        activeTasks.put(sessionId, future);
 
         return toResponse(userMsg);
     }
@@ -191,6 +258,7 @@ public class ChatService {
     private void processAiResponse(String sessionId, String systemPrompt,
                                     List<ChatMessageEntity> history,
                                     ChatModel agentModel, ChatModel settingsModel) {
+        if (isInterrupted(sessionId)) return;
         if (agentModel != null) {
             respondWithTools(sessionId, systemPrompt, history, agentModel);
         } else if (settingsModel != null) {
@@ -208,6 +276,24 @@ public class ChatService {
         return chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId).stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /**
+     * Interrupts an in-flight AI response for the given session.
+     * The processing thread will stop at the next safe point and no
+     * assistant message will be saved.
+     */
+    public void interruptChat(String sessionId) {
+        interruptedSessions.add(sessionId);
+        CompletableFuture<?> future = activeTasks.remove(sessionId);
+        if (future != null) {
+            future.cancel(true);
+        }
+        log.info("Chat interrupted for session {}", sessionId);
+    }
+
+    private boolean isInterrupted(String sessionId) {
+        return interruptedSessions.contains(sessionId) || Thread.currentThread().isInterrupted();
     }
 
     private String resolveSystemPrompt(String agentId) {
@@ -295,6 +381,9 @@ public class ChatService {
      * Maps the provider name to the corresponding chat model node and uses its
      * supplyData() to construct the model instance.
      */
+    /** Providers that work without an API key. */
+    private static final Set<String> NO_API_KEY_PROVIDERS = Set.of("ollama");
+
     private ChatModel resolveSettingsChatModel() {
         try {
             if (!aiSettingsService.isEnabled()) return null;
@@ -302,11 +391,12 @@ public class ChatService {
             var entity = aiSettingsService.getEntity();
             if (entity == null) return null;
 
-            // Decrypt the API key
-            String apiKey = aiSettingsService.getDecryptedApiKey();
-            if (apiKey == null || apiKey.isBlank()) return null;
-
             String provider = entity.getProvider();
+
+            // Decrypt the API key — only required for providers that need one
+            String apiKey = aiSettingsService.getDecryptedApiKey();
+            if ((apiKey == null || apiKey.isBlank()) && !NO_API_KEY_PROVIDERS.contains(provider)) return null;
+
             String nodeType = PROVIDER_TO_NODE_TYPE.get(provider);
             if (nodeType == null) {
                 log.warn("No chat model node mapping for provider '{}'", provider);
@@ -321,7 +411,9 @@ public class ChatService {
 
             // Build credentials map with decrypted apiKey (and optional baseUrl)
             Map<String, Object> credentials = new HashMap<>();
-            credentials.put("apiKey", apiKey);
+            if (apiKey != null && !apiKey.isBlank()) {
+                credentials.put("apiKey", apiKey);
+            }
             if (entity.getBaseUrl() != null && !entity.getBaseUrl().isBlank()) {
                 credentials.put("baseUrl", entity.getBaseUrl());
             }
@@ -353,12 +445,16 @@ public class ChatService {
 
             // Manual tool loop — max 10 iterations
             for (int i = 0; i < 10; i++) {
+                if (isInterrupted(sessionId)) return;
+
                 ChatRequest request = ChatRequest.builder()
                         .messages(currentMessages)
                         .toolSpecifications(toolSpecs)
                         .build();
 
                 ChatResponse response = model.chat(request);
+                if (isInterrupted(sessionId)) return;
+
                 AiMessage aiMessage = response.aiMessage();
                 currentMessages.add(aiMessage);
 
@@ -368,6 +464,8 @@ public class ChatService {
                 }
 
                 for (var toolRequest : aiMessage.toolExecutionRequests()) {
+                    if (isInterrupted(sessionId)) return;
+
                     ToolExecutor executor = toolMap.entrySet().stream()
                             .filter(e -> e.getKey().name().equals(toolRequest.name()))
                             .map(Map.Entry::getValue)
@@ -383,8 +481,10 @@ public class ChatService {
             // Hit max iterations
             saveAndSend(sessionId, "I ran out of tool iterations. Please try a more specific request.");
         } catch (Exception e) {
-            log.error("Chat error for session {}: {}", sessionId, e.getMessage(), e);
-            saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
+            if (!isInterrupted(sessionId)) {
+                log.error("Chat error for session {}: {}", sessionId, e.getMessage(), e);
+                saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
+            }
         }
     }
 
@@ -392,11 +492,14 @@ public class ChatService {
         try {
             var messages = buildMessages(systemPrompt, history);
             ChatResponse response = chatModel.get().chat(messages);
+            if (isInterrupted(sessionId)) return;
             String text = response.aiMessage().text();
             saveAndSend(sessionId, text);
         } catch (Exception e) {
-            log.error("Chat error for session {}: {}", sessionId, e.getMessage());
-            saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
+            if (!isInterrupted(sessionId)) {
+                log.error("Chat error for session {}: {}", sessionId, e.getMessage());
+                saveAndSend(sessionId, "Sorry, I encountered an error processing your request.");
+            }
         }
     }
 

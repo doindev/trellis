@@ -125,9 +125,82 @@ select.form-input {
   option { background: hsl(0, 0%, 13%); }
 }
 
-.ai-model-loading {
-  color: var(--cwc-text-secondary);
+// AI model combo box
+.model-combo {
+  position: relative;
+  max-width: 360px;
+
+  .form-input {
+    max-width: none;
+  }
+}
+
+.model-combo-status {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  padding: 10px 12px;
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  color: hsl(0, 0%, 52%);
+  font-size: 0.8125rem;
   font-style: italic;
+  z-index: 10;
+}
+
+.model-combo-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: hsl(0, 0%, 13%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  z-index: 10;
+}
+
+.model-combo-option {
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+  color: hsl(0, 0%, 86%);
+  cursor: pointer;
+
+  &:hover {
+    background: hsl(0, 0%, 17%);
+  }
+
+  &.selected {
+    background: hsla(247, 49%, 53%, 0.12);
+    color: hsl(247, 49%, 80%);
+  }
+}
+
+// AI error message
+.ai-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  max-width: 360px;
+  background: hsla(355, 83%, 52%, 0.08);
+  border: 1px solid hsla(355, 83%, 52%, 0.2);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  color: hsl(355, 83%, 70%);
+  line-height: 1.4;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: hsl(355, 83%, 62%);
+  }
 }
 
 .form-row-inline {

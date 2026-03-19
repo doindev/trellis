@@ -156,6 +156,36 @@
   border-top: 1px solid hsl(0, 0%, 17%);
 }
 
+.chat-interrupt-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 800px;
+  margin: 0 auto 8px;
+  padding: 6px 0;
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 48%);
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: hsl(0, 0%, 72%);
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    background: hsl(0, 0%, 17%);
+    border: 1px solid hsl(0, 0%, 28%);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.6875rem;
+    color: hsl(0, 0%, 64%);
+    line-height: 1.4;
+  }
+}
+
 .chat-input-wrapper {
   display: flex;
   align-items: flex-end;

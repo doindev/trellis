@@ -36,6 +36,9 @@ public class ChatToolProvider {
                 try {
                     Map<String, Object> args = objectMapper.readValue(
                             request.arguments(), new TypeReference<>() {});
+                    // LLM may send array/object values as JSON strings since the schema
+                    // maps them to string types — deserialize them back to native types
+                    deserializeJsonStrings(args);
                     return mcpToolService.executeTool(name, args);
                 } catch (Exception e) {
                     return "{\"error\": \"" + e.getMessage() + "\"}";
@@ -44,6 +47,28 @@ public class ChatToolProvider {
             tools.put(spec, executor);
         }
         return tools;
+    }
+
+    /**
+     * Attempt to parse any String values that look like JSON arrays or objects
+     * back into their native List/Map types. This handles the mismatch between
+     * the schema (which maps array/object to string) and what the tool handlers expect.
+     */
+    private void deserializeJsonStrings(Map<String, Object> args) {
+        for (var entry : args.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof String str) {
+                String trimmed = str.trim();
+                if ((trimmed.startsWith("[") && trimmed.endsWith("]"))
+                        || (trimmed.startsWith("{") && trimmed.endsWith("}"))) {
+                    try {
+                        entry.setValue(objectMapper.readValue(trimmed, Object.class));
+                    } catch (Exception ignored) {
+                        // Not valid JSON — keep as string
+                    }
+                }
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -221,30 +221,51 @@
 
           <div class="form-row">
             <label class="form-label">API Key</label>
-            <input class="form-input" type="password" [(ngModel)]="aiSettings.apiKey" placeholder="sk-..." (blur)="onApiKeyBlur()">
-          </div>
-
-          <div class="form-row">
-            <label class="form-label">Model</label>
-            @if (aiModelsLoading) {
-              <div class="form-input ai-model-loading">Loading models...</div>
-            } @else if (aiModels.length > 0) {
-              <select class="form-input" [(ngModel)]="aiSettings.model">
-                @for (m of aiModels; track m.id) {
-                  <option [value]="m.id">{{ m.name }}</option>
-                }
-              </select>
-            } @else {
-              <input class="form-input" type="text" [(ngModel)]="aiSettings.model" placeholder="gpt-4o-mini">
-            }
+            <input class="form-input" type="password" [(ngModel)]="aiSettings.apiKey" placeholder="sk-..." (input)="onApiKeyInput()">
           </div>
 
           @if (showBaseUrl()) {
             <div class="form-row">
               <label class="form-label">Base URL</label>
-              <input class="form-input" type="text" [(ngModel)]="aiSettings.baseUrl" placeholder="http://localhost:11434">
+              <input class="form-input" type="text" [(ngModel)]="aiSettings.baseUrl" placeholder="http://localhost:11434" (input)="onBaseUrlInput()">
             </div>
           }
+
+          @if (aiModelsError) {
+            <div class="ai-error-message">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>{{ aiModelsError }}</span>
+            </div>
+          }
+
+          <div class="form-row">
+            <label class="form-label">Model</label>
+            <div class="model-combo">
+              <input class="form-input" type="text"
+                     [(ngModel)]="aiSettings.model"
+                     placeholder="Select or type a model name"
+                     (focus)="onModelFocus()"
+                     (input)="onModelInput()"
+                     (blur)="onModelBlur()"
+                     autocomplete="off">
+              @if (aiModelsLoading) {
+                <div class="model-combo-status">Loading models...</div>
+              }
+              @if (showModelDropdown && filteredModels.length > 0) {
+                <div class="model-combo-dropdown">
+                  @for (m of filteredModels; track m.id) {
+                    <div class="model-combo-option"
+                         [class.selected]="aiSettings.model === m.id"
+                         (mousedown)="selectModel(m)">
+                      {{ m.name }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
 
           <div class="form-actions">
             <button class="btn-primary" (click)="saveAiSettings()" [disabled]="aiSettingsSaving">

@@ -52,6 +52,11 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   @Input() selectedNodeId: string | null = null;
   @Input() isExecuting = false;
   @Input() workflowId: string | null = null;
+  @Input() workflowName: string = '';
+  @Input() projectId: string | null = null;
+  @Input() projectName: string = '';
+  @Input() editorTab: 'editor' | 'executions' = 'editor';
+  @Input() selectedExecutionId: string | null = null;
 
   @Input() expanded = false;
   @Output() expandedChange = new EventEmitter<boolean>();
@@ -693,8 +698,16 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     }
   }
 
-  private buildCanvasState(): any | undefined {
-    if (!this.canvasNodes || this.canvasNodes.length === 0) return undefined;
-    return { nodes: this.canvasNodes, connections: this.canvasConnections || {} };
+  private buildCanvasState(): any {
+    return {
+      workflowId: this.workflowId,
+      workflowName: this.workflowName,
+      projectId: this.projectId,
+      projectName: this.projectName,
+      editorTab: this.editorTab,
+      selectedExecutionId: this.selectedExecutionId,
+      nodes: this.canvasNodes || [],
+      connections: this.canvasConnections || {}
+    };
   }
 }

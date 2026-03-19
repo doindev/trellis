@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -98,6 +98,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (msg.sessionId === this.sessionId) {
         this.messages.push(msg);
         this.shouldScrollToBottom = true;
+        if (msg.role === 'assistant') {
+          this.sending = false;
+        }
       }
     });
   }
@@ -123,7 +126,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         // Replace temp message with saved one
         const idx = this.messages.findIndex(m => m.id === userMsg.id);
         if (idx >= 0) this.messages[idx] = saved;
-        this.sending = false;
+        // sending stays true until the AI response arrives via WebSocket
       },
       error: () => this.sending = false
     });
@@ -134,6 +137,20 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       event.preventDefault();
       this.onSend();
     }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.sending && this.view === 'conversation') {
+      this.interruptChat();
+    }
+  }
+
+  interruptChat(): void {
+    this.sending = false;
+    this.chatService.interruptChat(this.sessionId).subscribe();
+    // Focus the input so the user can immediately type
+    setTimeout(() => this.messageInputEl?.nativeElement?.focus(), 0);
   }
 
   private scrollToBottom(): void {

@@ -24,6 +24,7 @@ public class WorkflowExecutionState {
     private final Map<String, Object> aiSuppliedData = new ConcurrentHashMap<>();
     private final AtomicInteger executionOrderCounter = new AtomicInteger(0);
     private final AtomicBoolean executionFinished = new AtomicBoolean(false);
+    private Map<String, Object> authData;
 
     @Data
     public static class NodeExecutionMetadata {

@@ -292,7 +292,4 @@ export class ProjectSettingsComponent {
     }
   }
 
-  isReadOnly(): boolean {
-    return this.project()?.type === 'PERSONAL';
-  }
 }
