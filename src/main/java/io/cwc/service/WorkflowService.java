@@ -42,6 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -118,14 +119,23 @@ public class WorkflowService {
 
     @Transactional(readOnly = true)
     public List<WorkflowResponse> listWorkflows() {
+        String userId = securityContextHelper.getCurrentUserId();
+        Set<String> accessibleProjectIds = projectRelationRepository.findByUserId(userId).stream()
+                .map(ProjectRelationEntity::getProjectId)
+                .collect(Collectors.toSet());
         return workflowRepository.findAll().stream()
                 .filter(w -> !w.isArchived())
+                .filter(w -> w.getProjectId() != null && accessibleProjectIds.contains(w.getProjectId()))
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<WorkflowResponse> listWorkflowsByProject(String projectId) {
+        String userId = securityContextHelper.getCurrentUserId();
+        if (!projectRelationRepository.existsByProjectIdAndUserId(projectId, userId)) {
+            throw new ForbiddenException("You do not have access to this project");
+        }
         return workflowRepository.findByProjectId(projectId).stream()
                 .filter(w -> !w.isArchived())
                 .map(this::toResponse)
@@ -144,6 +154,15 @@ public class WorkflowService {
         String projectId = request.getProjectId();
         if (projectId == null || projectId.isBlank()) {
             projectId = resolvePersonalProjectId();
+        }
+
+        // Verify user has edit access to the target project
+        if (projectId != null) {
+            String userId = securityContextHelper.getCurrentUserId();
+            ProjectRole role = getProjectRole(projectId, userId);
+            if (role != ProjectRole.PROJECT_PERSONAL_OWNER && role != ProjectRole.PROJECT_ADMIN && role != ProjectRole.PROJECT_EDITOR) {
+                throw new ForbiddenException("You do not have permission to create workflows in this project");
+            }
         }
 
         var builder = WorkflowEntity.builder()

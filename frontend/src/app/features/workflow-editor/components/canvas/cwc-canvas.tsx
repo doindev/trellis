@@ -759,13 +759,13 @@ function CwcCanvasInner({
             onMouseLeave={hideMinimap}
           />
           <Panel position="bottom-left" className="canvas-controls-panel" style={drawerOffset ? { bottom: drawerOffset + 10, transition: 'bottom 0.2s ease' } : { transition: 'bottom 0.2s ease' }}>
-            <button className="ctrl-btn" onClick={() => zoomOut()} title="Zoom out">
+            <button className="ctrl-btn" onClick={() => zoomOut()} title="Zoom Out (Ctrl+-)">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
             </button>
             <span className="ctrl-zoom-label">{Math.round(zoom * 100)}%</span>
-            <button className="ctrl-btn" onClick={() => zoomIn()} title="Zoom in">
+            <button className="ctrl-btn" onClick={() => zoomIn()} title="Zoom In (Ctrl++)">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
               </svg>
@@ -778,13 +778,13 @@ function CwcCanvasInner({
                   setViewport({ x: vp.x, y: vp.y - drawerOffset / 2, zoom: vp.zoom }, { duration: 150 });
                 }, 220);
               }
-            }} title="Fit view">
+            }} title="Fit View">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
               </svg>
             </button>
             {!readOnly && (
-              <button className="ctrl-btn" onClick={onCleanUp} title="Clean up">
+              <button className="ctrl-btn" onClick={onCleanUp} title="Clean Up (Ctrl+Shift+O)">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m16 22-1-4" /><path d="M19 13.99a1 1 0 0 0 1-1V12a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v.99a1 1 0 0 0 1 1" /><path d="M5 14h14l1.973 6.767A1 1 0 0 1 20 22H4a1 1 0 0 1-.973-1.233z" /><path d="m8 22 1-4" />
                 </svg>

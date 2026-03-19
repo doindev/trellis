@@ -101,6 +101,17 @@ public class ExecutionService {
         return entities.map(this::toListResponse);
     }
 
+    public Page<ExecutionListResponse> listExecutionsByProjects(List<String> projectIds, String status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startedAt"));
+        Page<ExecutionEntity> entities;
+        if (status != null) {
+            entities = executionRepository.findByProjectIdsAndStatus(projectIds, ExecutionStatus.valueOf(status), pageable);
+        } else {
+            entities = executionRepository.findByProjectIds(projectIds, pageable);
+        }
+        return entities.map(this::toListResponse);
+    }
+
     /**
      * List executions for metrics: excludes MANUAL mode, only published workflows,
      * filtered by project(s).

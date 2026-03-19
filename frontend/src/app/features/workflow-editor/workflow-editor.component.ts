@@ -477,6 +477,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         this.canvasWrapper?.triggerCleanUp();
       }
     }
+
+    // Ctrl+Alt+C — toggle chat drawer
+    if ((event.ctrlKey || event.metaKey) && event.altKey && event.key.toLowerCase() === 'c') {
+      event.preventDefault();
+      this.editorDrawer?.selectTab('chat');
+    }
+
+    // Ctrl+Alt+L — toggle logs drawer
+    if ((event.ctrlKey || event.metaKey) && event.altKey && event.key.toLowerCase() === 'l') {
+      event.preventDefault();
+      this.editorDrawer?.selectTab('logs');
+    }
   }
 
   addStickyNote(): void {

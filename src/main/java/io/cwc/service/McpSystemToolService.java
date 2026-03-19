@@ -853,8 +853,21 @@ public class McpSystemToolService {
             limit = Math.min(Math.max(n.intValue(), 1), 100);
         }
 
-        Page<ExecutionListResponse> page = executionService.listExecutions(
-                workflowId, null, status, 0, limit);
+        Page<ExecutionListResponse> page;
+        if (workflowId != null && !workflowId.isBlank()) {
+            // Verify user has access to the workflow
+            workflowService.getWorkflow(workflowId);
+            page = executionService.listExecutions(workflowId, null, status, 0, limit);
+        } else {
+            // Scope to user's accessible projects
+            List<String> accessibleProjectIds = projectService.listProjects().stream()
+                    .map(ProjectResponse::getId)
+                    .toList();
+            if (accessibleProjectIds.isEmpty()) {
+                return Map.of("executions", List.of(), "count", 0, "totalCount", 0L);
+            }
+            page = executionService.listExecutionsByProjects(accessibleProjectIds, status, 0, limit);
+        }
 
         List<Map<String, Object>> result = page.getContent().stream()
                 .map(ex -> {
@@ -883,6 +896,9 @@ public class McpSystemToolService {
 
         ExecutionResponse ex = executionService.getExecution(id);
 
+        // Verify user has access to the execution's workflow
+        workflowService.getWorkflow(ex.getWorkflowId());
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", ex.getId());
         result.put("workflowId", ex.getWorkflowId());
@@ -901,6 +917,9 @@ public class McpSystemToolService {
         if (workflowId == null || workflowId.isBlank()) {
             throw new IllegalArgumentException("'workflowId' is required");
         }
+
+        // Verify user has access to the workflow
+        workflowService.getWorkflow(workflowId);
 
         Map<String, Object> inputData = (Map<String, Object>) args.get("inputData");
 

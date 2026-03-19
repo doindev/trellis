@@ -9,6 +9,7 @@ import io.cwc.entity.*;
 import io.cwc.entity.ProjectEntity.ProjectType;
 import io.cwc.entity.ProjectRelationEntity.ProjectRole;
 import io.cwc.exception.BadRequestException;
+import io.cwc.exception.ForbiddenException;
 import io.cwc.exception.NotFoundException;
 import io.cwc.repository.*;
 import io.cwc.util.SecurityContextHelper;
@@ -43,13 +44,36 @@ public class ProjectService {
     private final SecurityContextHelper securityContextHelper;
     private final ObjectMapper objectMapper;
 
+    // --- Access control helpers ---
+
+    private void checkProjectMembership(String projectId) {
+        String userId = securityContextHelper.getCurrentUserId();
+        if (!projectRelationRepository.existsByProjectIdAndUserId(projectId, userId)) {
+            throw new ForbiddenException("You do not have access to this project");
+        }
+    }
+
+    private void checkProjectAdminAccess(String projectId) {
+        String userId = securityContextHelper.getCurrentUserId();
+        ProjectRelationEntity relation = projectRelationRepository.findByProjectIdAndUserId(projectId, userId)
+                .orElseThrow(() -> new ForbiddenException("You do not have access to this project"));
+        if (relation.getRole() != ProjectRole.PROJECT_PERSONAL_OWNER && relation.getRole() != ProjectRole.PROJECT_ADMIN) {
+            throw new ForbiddenException("You do not have admin access to this project");
+        }
+    }
+
     public List<ProjectResponse> listProjects() {
-        return projectRepository.findAll().stream()
+        String userId = securityContextHelper.getCurrentUserId();
+        List<String> accessibleProjectIds = projectRelationRepository.findByUserId(userId).stream()
+                .map(ProjectRelationEntity::getProjectId)
+                .toList();
+        return projectRepository.findAllById(accessibleProjectIds).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     public ProjectResponse getProject(String id) {
+        checkProjectMembership(id);
         return toDetailResponse(findById(id));
     }
 
@@ -83,6 +107,7 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse updateProject(String id, ProjectUpdateRequest request) {
+        checkProjectAdminAccess(id);
         ProjectEntity entity = findById(id);
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
@@ -126,6 +151,7 @@ public class ProjectService {
 
     @Transactional
     public void deleteProject(String id, ProjectDeleteRequest request) {
+        checkProjectAdminAccess(id);
         ProjectEntity entity = findById(id);
         if (entity.getType() == ProjectType.PERSONAL) {
             throw new BadRequestException("Personal projects cannot be deleted");
@@ -153,6 +179,7 @@ public class ProjectService {
     }
 
     public List<ProjectMemberResponse> getMembers(String projectId) {
+        checkProjectMembership(projectId);
         findById(projectId);
         return projectRelationRepository.findByProjectId(projectId).stream()
                 .map(this::toMemberResponse)
@@ -161,6 +188,7 @@ public class ProjectService {
 
     @Transactional
     public ProjectMemberResponse addMember(String projectId, ProjectMemberRequest request) {
+        checkProjectAdminAccess(projectId);
         findById(projectId);
         ProjectRole role = parseRole(request.getRole());
         if (role == ProjectRole.PROJECT_PERSONAL_OWNER) {
@@ -184,6 +212,7 @@ public class ProjectService {
 
     @Transactional
     public ProjectMemberResponse updateMember(String projectId, String userId, ProjectMemberRequest request) {
+        checkProjectAdminAccess(projectId);
         findById(projectId);
         ProjectRelationEntity relation = projectRelationRepository.findByProjectIdAndUserId(projectId, userId)
                 .orElseThrow(() -> new NotFoundException("Member not found in project"));
@@ -207,6 +236,7 @@ public class ProjectService {
 
     @Transactional
     public void removeMember(String projectId, String userId) {
+        checkProjectAdminAccess(projectId);
         findById(projectId);
         ProjectRelationEntity relation = projectRelationRepository.findByProjectIdAndUserId(projectId, userId)
                 .orElseThrow(() -> new NotFoundException("Member not found in project"));
