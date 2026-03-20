@@ -15,7 +15,7 @@ export class WebSocketService implements OnDestroy {
   constructor() {
     let id = sessionStorage.getItem('browserSessionId');
     if (!id) {
-      id = crypto.randomUUID();
+      id = crypto.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
       sessionStorage.setItem('browserSessionId', id);
     }
     this.browserSessionId = id;
