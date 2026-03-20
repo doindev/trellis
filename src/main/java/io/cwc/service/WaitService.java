@@ -9,6 +9,7 @@ import io.cwc.entity.WaitEntity;
 import io.cwc.entity.WaitEntity.WaitStatus;
 import io.cwc.entity.WaitEntity.WaitType;
 import io.cwc.repository.WaitRepository;
+import io.cwc.util.ExecutionDataObfuscator;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,7 +32,7 @@ public class WaitService {
                 .waitType(waitType)
                 .resumeAt(resumeAt)
                 .formDefinition(formDefinition)
-                .executionState(checkpointState)
+                .executionState(ExecutionDataObfuscator.obfuscate(checkpointState))
                 .status(WaitStatus.WAITING)
                 .createdAt(Instant.now())
                 .build();

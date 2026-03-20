@@ -15,6 +15,7 @@ import io.cwc.repository.UserRepository;
 import io.cwc.repository.WebhookRepository;
 import io.cwc.repository.WorkflowRepository;
 import io.cwc.service.SecurityChainInfoService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -29,9 +30,6 @@ public class SettingsController {
     private final UserRepository userRepository;
     private final WebhookRepository webhookRepository;
 
-    @Value("${server.port:5678}")
-    private int serverPort;
-
     @Value("${cwc.webhook.base-path:/webhook/}")
     private String webhookBasePath;
 
@@ -42,8 +40,11 @@ public class SettingsController {
     private String supportEmail;
 
     @GetMapping
-    public Map<String, Object> getSettings() {
-        String baseUrl = "http://localhost:" + serverPort;
+    public Map<String, Object> getSettings(HttpServletRequest request) {
+        String scheme = request.getScheme();
+        String host = request.getHeader("Host");
+        if (host == null) host = request.getServerName() + ":" + request.getServerPort();
+        String baseUrl = scheme + "://" + host;
         Map<String, Object> settings = new LinkedHashMap<>();
         Map<String, Object> features = new LinkedHashMap<>();
         features.put("variables", true);

@@ -1,9 +1,12 @@
 package io.cwc.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import io.cwc.dto.McpClientSession;
 import io.cwc.dto.McpEndpointDto;
@@ -57,7 +60,7 @@ public class McpSettingsService {
                 .agentToolsDedicated(agentToolsDedicated)
                 .agentToolsPath(agentToolsPath)
                 .agentToolsTransport(agentToolsTransport)
-                .agentToolsUrl("http://localhost:" + serverPort + "/mcp/" + agentToolsPath)
+                .agentToolsUrl(resolveBaseUrl() + "/mcp/" + agentToolsPath)
                 .endpoints(endpoints)
                 .build();
     }
@@ -400,6 +403,18 @@ public class McpSettingsService {
 
     // --- Helpers ---
 
+    private String resolveBaseUrl() {
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs != null) {
+            HttpServletRequest request = attrs.getRequest();
+            String scheme = request.getScheme();
+            String host = request.getHeader("Host");
+            if (host == null) host = request.getServerName() + ":" + request.getServerPort();
+            return scheme + "://" + host;
+        }
+        return "http://localhost:" + serverPort;
+    }
+
     private boolean hasWebhookNode(WorkflowEntity workflow) {
         Object nodes = workflow.getNodes();
         if (nodes instanceof List<?> nodeList) {
@@ -419,7 +434,7 @@ public class McpSettingsService {
                 .name(entity.getName())
                 .transport(entity.getTransport())
                 .path(entity.getPath())
-                .url("http://localhost:" + serverPort + "/mcp/" + entity.getPath())
+                .url(resolveBaseUrl() + "/mcp/" + entity.getPath())
                 .enabled(entity.isEnabled())
                 .build();
     }

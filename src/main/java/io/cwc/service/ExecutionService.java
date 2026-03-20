@@ -17,6 +17,7 @@ import io.cwc.entity.ExecutionEntity.ExecutionMode;
 import io.cwc.entity.ExecutionEntity.ExecutionStatus;
 import io.cwc.exception.NotFoundException;
 import io.cwc.repository.ExecutionRepository;
+import io.cwc.util.ExecutionDataObfuscator;
 
 import java.time.Instant;
 
@@ -52,7 +53,7 @@ public class ExecutionService {
     @Transactional
     public void saveResult(String executionId, Object resultData) {
         ExecutionEntity entity = findEntityById(executionId);
-        entity.setResultData(resultData);
+        entity.setResultData(ExecutionDataObfuscator.obfuscate(resultData));
         executionRepository.save(entity);
     }
 
@@ -60,7 +61,7 @@ public class ExecutionService {
     public void finish(String executionId, ExecutionStatus status, Object resultData, String errorMessage) {
         ExecutionEntity entity = findEntityById(executionId);
         entity.setStatus(status);
-        entity.setResultData(resultData);
+        entity.setResultData(ExecutionDataObfuscator.obfuscate(resultData));
         entity.setFinishedAt(Instant.now());
         entity.setErrorMessage(errorMessage);
         executionRepository.save(entity);
