@@ -2,7 +2,6 @@ package io.cwc.dto;
 
 import lombok.Data;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Deserialization target for settings.json — global application settings.

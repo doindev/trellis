@@ -40,7 +40,6 @@ public final class ExecutionDataObfuscator {
         return data;
     }
 
-    @SuppressWarnings("unchecked")
     private static Map<String, Object> obfuscateMap(Map<?, ?> map) {
         Map<String, Object> result = new LinkedHashMap<>(map.size());
         for (Map.Entry<?, ?> entry : map.entrySet()) {

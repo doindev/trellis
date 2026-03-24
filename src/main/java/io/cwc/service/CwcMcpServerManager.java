@@ -445,7 +445,8 @@ public class CwcMcpServerManager {
         return jsonRpcResult(id, Map.of("tools", toolList));
     }
 
-    private Map<String, Object> buildInputSchema(Object mcpInputSchema) {
+    @SuppressWarnings("unused")
+	private Map<String, Object> buildInputSchema(Object mcpInputSchema) {
         return io.cwc.util.SchemaUtils.buildInputSchema(mcpInputSchema);
     }
 

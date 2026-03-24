@@ -22,7 +22,6 @@ public final class ChatPageGenerator {
      * @param config           chat configuration from the node parameters
      * @return complete HTML page string
      */
-    @SuppressWarnings("unchecked")
     public static String generateChatPage(String webhookUrl, Map<String, Object> config) {
         String title = escapeHtml(getStr(config, "title", "Hi there!"));
         String subtitle = escapeHtml(getStr(config, "subtitle", "Start a chat. We're here to help you 24/7."));
