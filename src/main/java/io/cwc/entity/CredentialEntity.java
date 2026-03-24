@@ -20,6 +20,9 @@ public class CredentialEntity {
 
     private String projectId;
 
+    @Column(name = "config_id")
+    private String configId;
+
     @Column(nullable = false)
     private String name;
 
@@ -29,6 +32,9 @@ public class CredentialEntity {
     @Lob
     @Column(columnDefinition = "TEXT")
     private String data;
+
+    @Column(name = "source_placeholder", columnDefinition = "TEXT")
+    private String sourcePlaceholder;
 
     @Builder.Default
     @Column(nullable = false, updatable = false)

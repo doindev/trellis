@@ -80,7 +80,7 @@ export class AgentControlService implements OnDestroy {
   }
 
   respondToRequest(requestId: string, approved: boolean): void {
-    this.http.post(`/api/agent-control/${requestId}/respond`, { approved }).subscribe();
+    this.http.post(`${(window as any).__CWC_BASE_PATH__ || ''}/api/agent-control/${requestId}/respond`, { approved }).subscribe();
   }
 
   approveRequest(request: AgentControlRequest): void {
@@ -93,7 +93,7 @@ export class AgentControlService implements OnDestroy {
   }
 
   revokeControl(): void {
-    this.http.post('/api/agent-control/revoke', {}).subscribe();
+    this.http.post(`${(window as any).__CWC_BASE_PATH__ || ''}/api/agent-control/revoke`, {}).subscribe();
     this.activeSession$.next(false);
   }
 

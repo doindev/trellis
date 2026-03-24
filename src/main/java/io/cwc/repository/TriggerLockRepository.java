@@ -22,6 +22,10 @@ public interface TriggerLockRepository extends JpaRepository<TriggerLockEntity, 
     List<TriggerLockEntity> findByInstanceId(String instanceId);
 
     @Modifying
+    @Query("DELETE FROM TriggerLockEntity t WHERE t.instanceId = :instanceId")
+    int deleteByInstanceId(@Param("instanceId") String instanceId);
+
+    @Modifying
     @Query("DELETE FROM TriggerLockEntity t WHERE t.expiresAt < :now")
     int deleteExpired(@Param("now") Instant now);
 

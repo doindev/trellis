@@ -3,6 +3,7 @@ package io.cwc.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cwc.config.ProjectContextPathFilter;
+import io.cwc.engine.ExpressionEvaluator;
 import io.cwc.entity.ProjectEntity;
 import io.cwc.entity.WebhookEntity;
 import io.cwc.entity.WorkflowEntity;
@@ -34,6 +35,8 @@ public class WebhookService {
     private final ObjectMapper objectMapper;
     private final WebhookSecurityRegistry webhookSecurityRegistry;
     private final ProjectContextPathFilter projectContextPathFilter;
+    private final ExpressionEvaluator expressionEvaluator;
+    private final VariableService variableService;
 
     @PostConstruct
     public void initializeSecurityRegistry() {
@@ -92,12 +95,14 @@ public class WebhookService {
 
             String nodeId = (String) node.get("id");
             Map<String, Object> parameters = (Map<String, Object>) node.getOrDefault("parameters", Map.of());
-            String path = (String) parameters.getOrDefault("path", "");
+            String rawPath = (String) parameters.getOrDefault("path", "");
+            String path = resolvePathExpressions(rawPath, workflow.getProjectId());
             String authentication = (String) parameters.getOrDefault("authentication",
                     (String) parameters.getOrDefault("securityChain", "none"));
 
             if (path.isEmpty()) continue;
 
+            List<String> requiredRoles = extractRoles(parameters);
             String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
 
             // Prepend project context path if configured, otherwise use workflow ID for chat triggers
@@ -148,6 +153,7 @@ public class WebhookService {
                             .securityChain(authentication)
                             .responseMode("chatTrigger")
                             .webhookOptions(chatConfig)
+                            .requiredRoles(requiredRoles)
                             .build();
                     webhookRepository.save(getWebhook);
                     if (!"none".equals(authentication)) {
@@ -164,6 +170,7 @@ public class WebhookService {
                         .securityChain(authentication)
                         .responseMode(responseMode)
                         .webhookOptions(chatConfig)
+                        .requiredRoles(requiredRoles)
                         .build();
                 webhookRepository.save(postWebhook);
                 if (!"none".equals(authentication)) {
@@ -190,6 +197,7 @@ public class WebhookService {
                         .securityChain(authentication)
                         .responseMode("formTrigger")
                         .webhookOptions(formConfig)
+                        .requiredRoles(requiredRoles)
                         .build();
                 webhookRepository.save(getWebhook);
                 if (!"none".equals(authentication)) {
@@ -205,6 +213,7 @@ public class WebhookService {
                         .securityChain(authentication)
                         .responseMode("formTrigger")
                         .webhookOptions(formConfig)
+                        .requiredRoles(requiredRoles)
                         .build();
                 webhookRepository.save(postWebhook);
                 if (!"none".equals(authentication)) {
@@ -225,6 +234,7 @@ public class WebhookService {
                         .securityChain(authentication)
                         .responseMode(responseMode)
                         .webhookOptions(nodeOptions)
+                        .requiredRoles(requiredRoles)
                         .build();
 
                 webhookRepository.save(webhook);
@@ -326,5 +336,63 @@ public class WebhookService {
 
     public List<WebhookEntity> getWorkflowWebhooks(String workflowId) {
         return webhookRepository.findByWorkflowId(workflowId);
+    }
+
+    /**
+     * Extracts role names from the FIXED_COLLECTION "roles" parameter.
+     * Expects a list of maps with a "roleName" key, e.g.:
+     * [{"roleName": "admin"}, {"roleName": "editor"}]
+     * Returns a flat list of role name strings, or null if empty/absent.
+     */
+    /**
+     * Resolves expressions in a webhook path using $env (system environment
+     * variables) and $vars (CWC variables). Only these two sources are
+     * available at registration time since there is no execution context yet.
+     */
+    private String resolvePathExpressions(String path, String projectId) {
+        if (path == null || !path.contains("{{")) return path;
+
+        Map<String, String> envVars = new LinkedHashMap<>(System.getenv());
+        Map<String, String> variables = variableService.getVariablesForProject(projectId);
+
+        ExpressionEvaluator.ExpressionContext ctx = ExpressionEvaluator.ExpressionContext.builder()
+                .currentItemData(Map.of())
+                .inputItems(List.of())
+                .envVars(envVars)
+                .variables(variables)
+                .build();
+
+        Object resolved = expressionEvaluator.resolveExpressions(path, ctx);
+        return resolved != null ? String.valueOf(resolved) : path;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> extractRoles(Map<String, Object> parameters) {
+        Object rolesObj = parameters.get("roles");
+        if (rolesObj == null) return null;
+
+        List<Map<String, Object>> roleEntries;
+        if (rolesObj instanceof List) {
+            roleEntries = (List<Map<String, Object>>) rolesObj;
+        } else if (rolesObj instanceof Map) {
+            // FIXED_COLLECTION may come wrapped as {"values": [...]}
+            Object values = ((Map<String, Object>) rolesObj).get("values");
+            if (values instanceof List) {
+                roleEntries = (List<Map<String, Object>>) values;
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+
+        List<String> roles = new ArrayList<>();
+        for (Map<String, Object> entry : roleEntries) {
+            Object roleName = entry.get("roleName");
+            if (roleName != null && !roleName.toString().isBlank()) {
+                roles.add(roleName.toString().trim());
+            }
+        }
+        return roles.isEmpty() ? null : roles;
     }
 }

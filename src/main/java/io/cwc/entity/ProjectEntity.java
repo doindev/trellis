@@ -34,6 +34,9 @@ public class ProjectEntity {
     @Column(length = 512)
     private String description;
 
+    @Column(name = "config_id", unique = true)
+    private String configId;
+
     @Column(unique = true, length = 100)
     private String contextPath;
 

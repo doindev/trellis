@@ -966,4 +966,109 @@ export class HomeComponent implements OnInit {
     if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
     return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
   }
+
+  // ---- Project Export / Import ----
+
+  showProjectActionsMenu = false;
+  showExportModal = false;
+  exporting = false;
+  importResultMessage = '';
+  importResultIsError = false;
+  private importToastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  exportAsZip(): void {
+    const projectId = this.selectedProjectId();
+    if (!projectId) return;
+    this.exporting = true;
+    this.projectService.exportAsZip(projectId);
+    setTimeout(() => {
+      this.exporting = false;
+      this.showExportModal = false;
+    }, 500);
+  }
+
+  exportProjectSettingsOnly(): void {
+    const projectId = this.selectedProjectId();
+    if (!projectId) return;
+    this.exporting = true;
+    this.projectService.exportSettingsOnly(projectId).subscribe({
+      next: (projectConfig: any) => {
+        const blob = new Blob([JSON.stringify(projectConfig, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const project = this.allProjects().find(p => p.id === projectId);
+        const name = project?.name || 'project';
+        a.download = `${name.replace(/[^a-zA-Z0-9_-]/g, '_')}-settings.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.exporting = false;
+        this.showExportModal = false;
+      },
+      error: (err: any) => {
+        this.exporting = false;
+        console.error('Export failed:', err);
+      }
+    });
+  }
+
+  exportAsJson(): void {
+    const projectId = this.selectedProjectId();
+    if (!projectId) return;
+    this.exporting = true;
+    this.projectService.exportAsBundle(projectId).subscribe({
+      next: (bundle: any) => {
+        const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const project = this.allProjects().find(p => p.id === projectId);
+        const name = project?.name || 'project';
+        a.download = `${name.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.exporting = false;
+        this.showExportModal = false;
+      },
+      error: (err: any) => {
+        this.exporting = false;
+        console.error('Export failed:', err);
+      }
+    });
+  }
+
+  importProject(): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,.zip';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      this.projectService.importProject(file, 'sync').subscribe({
+        next: (result: any) => {
+          const created = (result.projectsCreated || 0) + (result.workflowsCreated || 0);
+          const updated = (result.projectsUpdated || 0) + (result.workflowsUpdated || 0);
+          const errors = result.errors?.length || 0;
+          if (errors > 0) {
+            this.showImportToast(`Import completed with ${errors} error(s). ${created} created, ${updated} updated.`, true);
+          } else {
+            this.showImportToast(`Import successful. ${created} created, ${updated} updated.`, false);
+          }
+          // Reload projects list first (updates the dropdown), which then triggers reloadAllData
+          this.loadProjects();
+        },
+        error: (err: any) => {
+          this.showImportToast('Import failed: ' + (err.message || 'Unknown error'), true);
+        }
+      });
+    };
+    input.click();
+  }
+
+  private showImportToast(message: string, isError: boolean): void {
+    this.importResultMessage = message;
+    this.importResultIsError = isError;
+    if (this.importToastTimer) clearTimeout(this.importToastTimer);
+    this.importToastTimer = setTimeout(() => { this.importResultMessage = ''; }, 8000);
+  }
 }

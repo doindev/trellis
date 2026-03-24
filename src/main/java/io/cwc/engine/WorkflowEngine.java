@@ -12,6 +12,7 @@ import io.cwc.repository.WorkflowRepository;
 import io.cwc.repository.WorkflowVersionRepository;
 import io.cwc.service.*;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,8 +48,11 @@ public class WorkflowEngine {
     @Resource(name = "branchExecutorService")
     private ExecutorService branchExecutorService;
 
+    private final TriggerLockService triggerLockService;
+
     private final Map<String, WorkflowExecutionState> runningExecutions = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<Map<String, Object>>> pendingWebhookResponses = new ConcurrentHashMap<>();
+    private volatile boolean shuttingDown = false;
 
     private static final ThreadLocal<Integer> SUB_WORKFLOW_DEPTH = ThreadLocal.withInitial(() -> 0);
     private static final ThreadLocal<Map<String, Object>> INHERITED_AUTH_DATA = new ThreadLocal<>();
@@ -57,6 +61,43 @@ public class WorkflowEngine {
     @PostConstruct
     void init() {
         waitPollerService.setResumeHandler(this::resumeFromWait);
+    }
+
+    /**
+     * Graceful shutdown: waits for in-flight executions to complete (up to 25s),
+     * then marks any remaining as ERROR.
+     */
+    @PreDestroy
+    void shutdown() {
+        shuttingDown = true;
+        int count = runningExecutions.size();
+        if (count == 0) return;
+
+        log.info("Shutting down workflow engine, {} execution(s) in progress", count);
+
+        // Wait for in-flight executions (leave 5s buffer before SIGKILL at 30s)
+        int waitSeconds = 0;
+        while (!runningExecutions.isEmpty() && waitSeconds < 25) {
+            try { Thread.sleep(1000); } catch (InterruptedException e) { break; }
+            waitSeconds++;
+        }
+
+        // Mark any remaining executions as interrupted
+        for (Map.Entry<String, WorkflowExecutionState> entry : runningExecutions.entrySet()) {
+            entry.getValue().setCancelled(true);
+            try {
+                executionService.finish(entry.getKey(), ExecutionStatus.ERROR, null,
+                        "Execution interrupted by pod shutdown");
+            } catch (Exception e) {
+                log.warn("Failed to mark execution {} as interrupted: {}", entry.getKey(), e.getMessage());
+            }
+            log.warn("Forcefully interrupted execution {}", entry.getKey());
+        }
+    }
+
+    /** Returns the instance ID for tracking which pod is running an execution. */
+    public String getInstanceId() {
+        return triggerLockService.getInstanceId();
     }
 
     public String startExecution(String workflowId, Map<String, Object> inputData) {
@@ -1324,6 +1365,7 @@ public class WorkflowEngine {
                     .currentItemData(currentItemData)
                     .inputItems(inputItems)
                     .nodeOutputs(nodeOutputs)
+                    .envVars(new LinkedHashMap<>(System.getenv()))
                     .variables(variables)
                     .executionId("preview")
                     .runIndex(0)
@@ -1449,6 +1491,7 @@ public class WorkflowEngine {
                 .currentItemData(currentItemData)
                 .inputItems(inputItems)
                 .nodeOutputs(nodeOutputsForExpr)
+                .envVars(new LinkedHashMap<>(System.getenv()))
                 .variables(variables)
                 .authData(state != null ? state.getAuthData() : null)
                 .executionId(executionId)
@@ -1504,6 +1547,7 @@ public class WorkflowEngine {
         ExpressionEvaluator.ExpressionContext ctx = ExpressionEvaluator.ExpressionContext.builder()
                 .currentItemData(currentItemData)
                 .inputItems(inputItems)
+                .envVars(new LinkedHashMap<>(System.getenv()))
                 .variables(variables)
                 .authData(state != null ? state.getAuthData() : null)
                 .executionId(executionId)

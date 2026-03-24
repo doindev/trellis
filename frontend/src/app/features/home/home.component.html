@@ -16,6 +16,26 @@
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
         </button>
+        <!-- Project actions dropdown (export/import) -->
+        <div class="project-actions-wrapper">
+          <button class="btn-project-settings" (click)="showProjectActionsMenu = !showProjectActionsMenu" title="Project actions">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
+            </svg>
+          </button>
+          @if (showProjectActionsMenu) {
+            <div class="project-actions-dropdown" (mouseleave)="showProjectActionsMenu = false">
+              <button class="project-action-item" (click)="showExportModal = true; showProjectActionsMenu = false">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export project
+              </button>
+              <button class="project-action-item" (click)="importProject(); showProjectActionsMenu = false">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import project
+              </button>
+            </div>
+          }
+        </div>
       </div>
       <p class="header-subtitle">Workflows, credentials and caches for the selected project</p>
     </div>
@@ -636,3 +656,69 @@
   [projectId]="selectedProjectId()"
   (saved)="onProjectSettingsSaved()"
   (deleted)="onProjectDeleted()" />
+
+<!-- Export Modal -->
+@if (showExportModal) {
+  <div class="modal-backdrop" (click)="showExportModal = false">
+    <div class="export-modal" (click)="$event.stopPropagation()">
+      <div class="export-modal-header">
+        <h3>Export Project</h3>
+        <button class="modal-close-btn" (click)="showExportModal = false">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="export-modal-body">
+        <p class="export-description">Export this project's configuration, credentials (as placeholder templates), variables, and cache definitions.</p>
+        <div class="export-options">
+          <button class="export-option" (click)="exportAsZip()" [disabled]="exporting">
+            <div class="export-option-icon">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </div>
+            <div class="export-option-text">
+              <strong>ZIP Archive (with workflows)</strong>
+              <span>project.json + individual workflow files in a directory structure. Best for version control and file-based deployments.</span>
+            </div>
+          </button>
+          <button class="export-option" (click)="exportAsJson()" [disabled]="exporting">
+            <div class="export-option-icon">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <div class="export-option-text">
+              <strong>JSON Bundle (with workflows)</strong>
+              <span>Single JSON file with project config and all workflows embedded. Best for API-driven imports and CI/CD pipelines.</span>
+            </div>
+          </button>
+          <button class="export-option" (click)="exportProjectSettingsOnly()" [disabled]="exporting">
+            <div class="export-option-icon">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </div>
+            <div class="export-option-text">
+              <strong>Project Settings Only</strong>
+              <span>project.json with credentials, variables, and caches — no workflows. Best for replicating project configuration to another environment.</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Import Result Toast -->
+@if (importResultMessage) {
+  <div class="import-toast" [class.import-toast-error]="importResultIsError">
+    <span>{{ importResultMessage }}</span>
+    <button class="toast-close" (click)="importResultMessage = ''">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+}

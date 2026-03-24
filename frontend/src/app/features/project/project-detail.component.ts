@@ -577,4 +577,83 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
     return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
   }
+
+  // ---- Project Export / Import ----
+
+  showExportModal = false;
+  exporting = false;
+  importResultMessage = '';
+  importResultIsError = false;
+  private importToastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  exportAsZip(): void {
+    if (!this.projectId) return;
+    this.exporting = true;
+    this.projectService.exportAsZip(this.projectId);
+    // ZIP is a direct download link, close modal after short delay
+    setTimeout(() => {
+      this.exporting = false;
+      this.showExportModal = false;
+    }, 500);
+  }
+
+  exportAsJson(): void {
+    if (!this.projectId) return;
+    this.exporting = true;
+    this.projectService.exportAsBundle(this.projectId).subscribe({
+      next: (bundle) => {
+        const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const name = this.project()?.name || 'project';
+        a.download = `${name.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.exporting = false;
+        this.showExportModal = false;
+      },
+      error: (err) => {
+        this.exporting = false;
+        console.error('Export failed:', err);
+      }
+    });
+  }
+
+  importProject(): void {
+    this.showCreateDropdown = false;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,.zip';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      this.projectService.importProject(file, 'sync').subscribe({
+        next: (result) => {
+          const created = (result.projectsCreated || 0) + (result.workflowsCreated || 0);
+          const updated = (result.projectsUpdated || 0) + (result.workflowsUpdated || 0);
+          const errors = result.errors?.length || 0;
+          if (errors > 0) {
+            this.showImportToast(`Import completed with ${errors} error(s). ${created} created, ${updated} updated.`, true);
+          } else {
+            this.showImportToast(`Import successful. ${created} created, ${updated} updated.`, false);
+          }
+          this.loadWorkflows();
+          this.loadCredentials();
+          this.loadExecutions();
+        },
+        error: (err) => {
+          this.showImportToast('Import failed: ' + (err.message || 'Unknown error'), true);
+        }
+      });
+    };
+    input.click();
+  }
+
+  private showImportToast(message: string, isError: boolean): void {
+    this.importResultMessage = message;
+    this.importResultIsError = isError;
+    if (this.importToastTimer) clearTimeout(this.importToastTimer);
+    this.importToastTimer = setTimeout(() => { this.importResultMessage = ''; }, 8000);
+  }
 }

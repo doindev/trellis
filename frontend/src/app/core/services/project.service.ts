@@ -55,6 +55,34 @@ export class ProjectService {
   updateProjectMcp(projectId: string, data: ProjectMcpRequest): Observable<ProjectMcpEndpoint> {
     return this.api.put<ProjectMcpEndpoint>(`${this.basePath}/${projectId}/mcp`, data);
   }
+
+  /** Export a project as a JSON bundle (with workflows). */
+  exportAsBundle(projectId: string): Observable<any> {
+    return this.api.get<any>(`${this.basePath}/${projectId}/export`, { format: 'bundle' });
+  }
+
+  /** Export project settings only (no workflows). */
+  exportSettingsOnly(projectId: string): Observable<any> {
+    return this.api.get<any>(`${this.basePath}/${projectId}/export`, { format: 'settings' });
+  }
+
+  /** Download a project export as a ZIP file (triggers browser download). */
+  exportAsZip(projectId: string): void {
+    const baseUrl = ((window as any).__CWC_BASE_PATH__ || '') + '/api';
+    const url = `${baseUrl}${this.basePath}/${projectId}/export?format=zip`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'project-export.zip';
+    a.click();
+  }
+
+  /** Import a project from a file (ZIP or JSON). Returns import result. */
+  importProject(file: File, mode: string = 'seed'): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('mode', mode);
+    return this.api.postFormData<any>(`${this.basePath}/import`, formData);
+  }
 }
 
 export interface ProjectMcpEndpoint {

@@ -11,6 +11,7 @@ import java.util.Optional;
 @Repository
 public interface VariableRepository extends JpaRepository<VariableEntity, String> {
     Optional<VariableEntity> findByKey(String key);
+    Optional<VariableEntity> findByKeyAndProjectId(String key, String projectId);
     List<VariableEntity> findByProjectId(String projectId);
     List<VariableEntity> findByProjectIdIsNull();
 }

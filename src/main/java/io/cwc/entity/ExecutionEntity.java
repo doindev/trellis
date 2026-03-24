@@ -53,6 +53,9 @@ public class ExecutionEntity {
     @Column(columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(name = "instance_id")
+    private String instanceId;
+
     public enum ExecutionStatus {
         NEW, RUNNING, SUCCESS, ERROR, CANCELED, WAITING
     }

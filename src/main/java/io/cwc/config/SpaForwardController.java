@@ -1,14 +1,68 @@
 package io.cwc.config;
 
-import org.springframework.stereotype.Controller;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Forwards all non-API, non-static-resource GET requests to index.html
  * so that Angular's client-side router can handle them.
+ *
+ * When a CWC context path is configured (e.g. /cwc), the index.html is
+ * patched with the correct {@code <base href>} and a global
+ * {@code window.__CWC_BASE_PATH__} variable.
  */
-@Controller
+@Slf4j
+@RestController
+@RequiredArgsConstructor
 public class SpaForwardController {
+
+    private final CwcProperties cwcProperties;
+
+    private String cachedIndexHtml;
+
+    @PostConstruct
+    void init() {
+        try {
+            ClassPathResource resource = new ClassPathResource("static/index.html");
+            if (resource.exists()) {
+                try (InputStream is = resource.getInputStream()) {
+                    String html = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    cachedIndexHtml = patchHtml(html);
+                }
+            } else {
+                // Frontend not built yet — will be available at runtime
+                cachedIndexHtml = null;
+            }
+        } catch (IOException e) {
+            log.warn("Could not read index.html at startup: {}", e.getMessage());
+            cachedIndexHtml = null;
+        }
+    }
+
+    private String patchHtml(String html) {
+        String contextPath = cwcProperties.getContextPath(); // "" or "/cwc"
+        String baseHref = contextPath + "/";
+
+        // Replace <base href="/"> with the correct context path
+        html = html.replace("<base href=\"/\">", "<base href=\"" + baseHref + "\">");
+
+        // Inject the global base path variable before </head>
+        String script = "<script>window.__CWC_BASE_PATH__='" + contextPath + "';</script>";
+        html = html.replace("</head>", script + "</head>");
+
+        return html;
+    }
 
     @GetMapping(value = {
             "/",
@@ -23,8 +77,31 @@ public class SpaForwardController {
             "/templates",
             "/settings",
             "/settings/**"
-    })
-    public String forward() {
-        return "forward:/index.html";
+    }, produces = MediaType.TEXT_HTML_VALUE)
+    public String forward(HttpServletRequest request) {
+        // When context path is non-root, only serve for CWC-matched requests
+        if (!cwcProperties.isRootContext()
+                && request.getAttribute(CwcContextPathFilter.CWC_REQUEST) == null) {
+            return null; // Let the host app handle it
+        }
+
+        if (cachedIndexHtml != null) {
+            return cachedIndexHtml;
+        }
+
+        // Fallback: try to read at runtime (e.g. if built after startup)
+        try {
+            ClassPathResource resource = new ClassPathResource("static/index.html");
+            if (resource.exists()) {
+                try (InputStream is = resource.getInputStream()) {
+                    String html = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    cachedIndexHtml = patchHtml(html);
+                    return cachedIndexHtml;
+                }
+            }
+        } catch (IOException e) {
+            log.error("Failed to read index.html", e);
+        }
+        return "<!DOCTYPE html><html><body>CWC frontend not found.</body></html>";
     }
 }

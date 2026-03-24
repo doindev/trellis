@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import io.cwc.entity.TriggerLockEntity;
 import io.cwc.repository.TriggerLockRepository;
 
+import jakarta.annotation.PreDestroy;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -30,6 +32,23 @@ public class TriggerLockService {
 
     public String getInstanceId() {
         return instanceId;
+    }
+
+    /**
+     * Releases all trigger locks held by this instance on shutdown.
+     * Allows other cluster instances to immediately reacquire them.
+     */
+    @PreDestroy
+    @Transactional
+    public void releaseAllOnShutdown() {
+        try {
+            int released = triggerLockRepository.deleteByInstanceId(instanceId);
+            if (released > 0) {
+                log.info("Released {} trigger lock(s) on shutdown (instance={})", released, instanceId);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to release trigger locks on shutdown: {}", e.getMessage());
+        }
     }
 
     /**

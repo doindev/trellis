@@ -46,4 +46,8 @@ public class WebhookEntity {
     @Column(columnDefinition = "TEXT")
     @Convert(converter = JsonObjectConverter.class)
     private Object webhookOptions;
+
+    @Column(name = "required_roles", columnDefinition = "TEXT")
+    @Convert(converter = JsonObjectConverter.class)
+    private Object requiredRoles;
 }

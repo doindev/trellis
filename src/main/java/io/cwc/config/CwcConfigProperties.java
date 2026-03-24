@@ -1,0 +1,69 @@
+package io.cwc.config;
+
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import jakarta.annotation.PostConstruct;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Parses cwc.config.paths and cwc.config.mode properties for the config bootstrap system.
+ */
+@Slf4j
+@Component
+@Getter
+public class CwcConfigProperties {
+
+    @Value("${cwc.config.paths:}")
+    private String rawPaths;
+
+    @Value("${cwc.config.mode:seed}")
+    private String rawMode;
+
+    private List<Path> configPaths;
+    private ConfigMode configMode;
+
+    public enum ConfigMode {
+        SEED, SYNC
+    }
+
+    @PostConstruct
+    void init() {
+        // Parse mode
+        configMode = "sync".equalsIgnoreCase(rawMode.trim()) ? ConfigMode.SYNC : ConfigMode.SEED;
+
+        // Parse paths
+        List<Path> paths = new ArrayList<>();
+        if (rawPaths != null && !rawPaths.isBlank()) {
+            for (String segment : rawPaths.split(",")) {
+                String trimmed = segment.trim();
+                if (!trimmed.isEmpty()) {
+                    Path path = Path.of(trimmed);
+                    if (Files.isDirectory(path)) {
+                        paths.add(path);
+                    } else {
+                        log.warn("Config path does not exist or is not a directory: {}", trimmed);
+                    }
+                }
+            }
+        }
+        configPaths = Collections.unmodifiableList(paths);
+
+        if (!configPaths.isEmpty()) {
+            log.info("Config bootstrap enabled: mode={}, paths={}", configMode, configPaths);
+        }
+    }
+
+    /**
+     * Returns true if config bootstrap is enabled (at least one valid path configured).
+     */
+    public boolean isEnabled() {
+        return !configPaths.isEmpty();
+    }
+}

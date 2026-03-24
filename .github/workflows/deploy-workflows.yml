@@ -1,0 +1,34 @@
+name: Deploy Workflows
+
+on:
+  push:
+    branches: [main]
+    paths: ['config/**']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pattern A: API-driven deployment
+      - name: Deploy via API
+        run: |
+          cd config && zip -r ../config.zip . && cd ..
+          curl -sf -X POST "$CWC_URL/api/projects/import" \
+            -H "Authorization: Bearer $CWC_API_KEY" \
+            -F "file=@config.zip" \
+            -F "mode=sync"
+        env:
+          CWC_URL: ${{ secrets.CWC_URL }}
+          CWC_API_KEY: ${{ secrets.CWC_API_KEY }}
+
+      # Pattern B (alternative): Git-sync + reload trigger
+      # Uncomment and remove Pattern A above if using git-sync sidecar
+      # - name: Trigger CWC reload
+      #   run: |
+      #     curl -sf -X POST "$CWC_URL/api/admin/reload-config?mode=sync" \
+      #       -H "Authorization: Bearer $CWC_API_KEY"
+      #   env:
+      #     CWC_URL: ${{ secrets.CWC_URL }}
+      #     CWC_API_KEY: ${{ secrets.CWC_API_KEY }}

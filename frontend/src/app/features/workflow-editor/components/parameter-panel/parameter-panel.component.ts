@@ -136,8 +136,8 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   editNameValue = '';
 
   // Webhook URL state
-  webhookUrlProduction = window.location.origin + '/webhook/';
-  webhookUrlTest = window.location.origin + '/webhook-test/';
+  webhookUrlProduction = window.location.origin + ((window as any).__CWC_BASE_PATH__ || '') + '/webhook/';
+  webhookUrlTest = window.location.origin + ((window as any).__CWC_BASE_PATH__ || '') + '/webhook-test/';
   webhookUrlsExpanded = true;
   webhookUrlMode: 'test' | 'production' = 'test';
   copiedField: string | null = null;

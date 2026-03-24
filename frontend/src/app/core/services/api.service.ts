@@ -4,7 +4,7 @@ import { Observable, catchError, throwError } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly baseUrl = '/api';
+  private readonly baseUrl = ((window as any).__CWC_BASE_PATH__ || '') + '/api';
 
   constructor(private http: HttpClient) {}
 
@@ -41,6 +41,12 @@ export class ApiService {
   patch<T>(path: string, body: any = {}): Observable<T> {
     return this.http
       .patch<T>(`${this.baseUrl}${path}`, body)
+      .pipe(catchError(this.handleError));
+  }
+
+  postFormData<T>(path: string, formData: FormData): Observable<T> {
+    return this.http
+      .post<T>(`${this.baseUrl}${path}`, formData)
       .pipe(catchError(this.handleError));
   }
 

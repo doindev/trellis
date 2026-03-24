@@ -25,6 +25,9 @@ public class WorkflowEntity {
 
     private String projectId;
 
+    @Column(name = "config_id")
+    private String configId;
+
     @Column(nullable = false)
     private String name;
 

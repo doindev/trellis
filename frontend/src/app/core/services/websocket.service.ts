@@ -31,7 +31,7 @@ export class WebSocketService implements OnDestroy {
     }
 
     this.client = new Client({
-      webSocketFactory: () => new SockJS('/ws'),
+      webSocketFactory: () => new SockJS(((window as any).__CWC_BASE_PATH__ || '') + '/ws'),
       connectHeaders: { browserSessionId: this.browserSessionId },
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,

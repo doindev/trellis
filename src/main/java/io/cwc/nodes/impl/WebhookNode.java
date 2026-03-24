@@ -94,6 +94,26 @@ public class WebhookNode extends AbstractTriggerNode {
 				.options(buildAuthenticationOptions())
 				.build(),
 
+			// 5b. Roles (shown when authentication is not "none")
+			NodeParameter.builder()
+				.name("roles")
+				.displayName("Roles")
+				.description("Restrict this webhook to users with at least one of these roles. Leave empty to allow any authenticated user.")
+				.type(ParameterType.FIXED_COLLECTION)
+				.defaultValue(List.of())
+				.displayOptions(Map.of("hide", Map.of("authentication", List.of("none"))))
+				.nestedParameters(List.of(
+					NodeParameter.builder()
+						.name("roleName")
+						.displayName("Role Name")
+						.description("The role name required to access this webhook.")
+						.type(ParameterType.STRING)
+						.required(true)
+						.placeHolder("e.g. admin")
+						.build()
+				))
+				.build(),
+
 			// 6. Response Mode
 			NodeParameter.builder()
 				.name("responseMode")

@@ -129,6 +129,27 @@ public class ChatTriggerNode extends AbstractTriggerNode {
 						))
 						.build(),
 
+				// ── Roles ──
+				NodeParameter.builder()
+						.name("roles")
+						.displayName("Roles")
+						.description("Restrict this chat to users with at least one of these roles. Leave empty to allow any authenticated user.")
+						.type(ParameterType.FIXED_COLLECTION)
+						.defaultValue(List.of())
+						.displayOptions(Map.of("show", Map.of("public", List.of(true)),
+								"hide", Map.of("authentication", List.of("none"))))
+						.nestedParameters(List.of(
+								NodeParameter.builder()
+										.name("roleName")
+										.displayName("Role Name")
+										.description("The role name required to access this chat.")
+										.type(ParameterType.STRING)
+										.required(true)
+										.placeHolder("e.g. admin")
+										.build()
+						))
+						.build(),
+
 				// ── Initial Messages ──
 				NodeParameter.builder()
 						.name("initialMessages")

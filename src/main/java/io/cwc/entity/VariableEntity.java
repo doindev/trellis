@@ -28,4 +28,7 @@ public class VariableEntity {
     private String type = "string";
 
     private String projectId;
+
+    @Column(name = "source_placeholder")
+    private String sourcePlaceholder;
 }

@@ -17,10 +17,13 @@ import io.cwc.repository.UserRepository;
 import io.cwc.repository.WorkflowRepository;
 import io.cwc.service.ProjectService;
 
+import org.springframework.core.annotation.Order;
+
 import java.util.List;
 
 @Slf4j
 @Component
+@Order(1)
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 

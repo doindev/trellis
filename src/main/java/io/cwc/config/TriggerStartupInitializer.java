@@ -10,10 +10,13 @@ import io.cwc.engine.TriggerSchedulerService;
 import io.cwc.entity.WorkflowEntity;
 import io.cwc.repository.WorkflowRepository;
 
+import org.springframework.core.annotation.Order;
+
 import java.util.List;
 
 /**
  * Registers schedule/polling triggers for all published workflows at application startup.
+ * Runs after ExecutionRecoveryInitializer (Order 1).
  */
 @Slf4j
 @Component
@@ -24,6 +27,7 @@ public class TriggerStartupInitializer {
     private final TriggerSchedulerService triggerSchedulerService;
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(2)
     public void onApplicationReady() {
         List<WorkflowEntity> published = workflowRepository.findByPublished(true);
         if (!published.isEmpty()) {

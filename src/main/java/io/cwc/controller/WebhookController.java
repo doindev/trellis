@@ -31,6 +31,7 @@ import org.springframework.web.context.request.async.DeferredResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cwc.config.CwcProperties;
 import io.cwc.engine.WorkflowEngine;
 import io.cwc.entity.WebhookEntity;
 import io.cwc.repository.WebhookRepository;
@@ -51,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class WebhookController {
 
+    private final CwcProperties cwcProperties;
     private final WebhookService webhookService;
     private final WorkflowEngine workflowEngine;
     private final WebSocketService webSocketService;
@@ -117,9 +119,9 @@ public class WebhookController {
         String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
         String testUrl;
         if (contextPath != null && !contextPath.isBlank()) {
-            testUrl = "/" + contextPath + "-test/" + normalizedPath;
+            testUrl = cwcProperties.getContextPath() + "/" + contextPath + "-test/" + normalizedPath;
         } else {
-            testUrl = "/webhook-test/" + normalizedPath;
+            testUrl = cwcProperties.getContextPath() + "/webhook-test/" + normalizedPath;
         }
 
         log.info("Started listening for test webhook: {} {} for workflow {}", method, path, workflowId);
@@ -214,6 +216,13 @@ public class WebhookController {
                         .body(Map.of("error", "IP address not allowed")));
                 return deferredResult;
             }
+        }
+
+        // Check role-based access control
+        if (!hasRequiredRole(webhook)) {
+            deferredResult.setResult(ResponseEntity.status(403)
+                    .body(Map.of("error", "Insufficient role permissions")));
+            return deferredResult;
         }
 
         // Handle form trigger webhooks — serve form on GET, process submission on POST
@@ -384,10 +393,9 @@ public class WebhookController {
             String scheme = request.getScheme();
             String host = request.getHeader("Host");
             if (host == null) host = request.getServerName() + ":" + request.getServerPort();
-            String basePath = request.getContextPath();
 
             // Build the POST webhook URL for the chat page to call
-            String webhookUrl = scheme + "://" + host + basePath + "/webhook/" + webhook.getPath();
+            String webhookUrl = scheme + "://" + host + cwcProperties.getContextPath() + "/webhook/" + webhook.getPath();
 
             String html = ChatPageGenerator.generateChatPage(webhookUrl, options);
             deferredResult.setResult(ResponseEntity.ok()
@@ -623,6 +631,42 @@ public class WebhookController {
             } else {
                 // Exact IP match
                 if (trimmed.equals(clientIp)) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks whether the current authenticated user has at least one of the required roles.
+     * Returns true if no roles are required (null/empty) or if the user has a matching role.
+     */
+    @SuppressWarnings("unchecked")
+    private boolean hasRequiredRole(WebhookEntity webhook) {
+        Object rolesObj = webhook.getRequiredRoles();
+        if (rolesObj == null) return true;
+
+        List<String> requiredRoles;
+        if (rolesObj instanceof List) {
+            requiredRoles = (List<String>) rolesObj;
+        } else {
+            return true;
+        }
+        if (requiredRoles.isEmpty()) return true;
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return false;
+        }
+
+        for (GrantedAuthority authority : authentication.getAuthorities()) {
+            String auth = authority.getAuthority();
+            // Match against both raw role name and ROLE_ prefixed form
+            for (String required : requiredRoles) {
+                if (auth.equalsIgnoreCase(required)
+                        || auth.equalsIgnoreCase("ROLE_" + required)) {
+                    return true;
+                }
             }
         }
         return false;

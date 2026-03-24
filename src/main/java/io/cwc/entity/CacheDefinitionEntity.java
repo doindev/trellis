@@ -31,6 +31,9 @@ public class CacheDefinitionEntity {
     @Builder.Default
     private long ttlSeconds = 3600;
 
+    @Column(name = "config_id")
+    private String configId;
+
     private String projectId;
 
     private Instant createdAt;
