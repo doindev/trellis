@@ -599,6 +599,13 @@ public class CwcMcpServerManager {
 
     public List<McpClientSession> getClientSessions() {
         Instant cutoff = Instant.now().minusSeconds(86400);
+
+        // Build endpoint -> projectId lookup
+        Map<String, String> endpointProjectMap = new HashMap<>();
+        for (McpEndpointEntity ep : endpointRepository.findAll()) {
+            endpointProjectMap.put(ep.getId(), ep.getProjectId());
+        }
+
         return clientSessionRepository.findByLastSeenAtAfterOrderByDisconnectedAtAscConnectedAtDesc(cutoff)
                 .stream()
                 .map(e -> McpClientSession.builder()
@@ -608,6 +615,7 @@ public class CwcMcpServerManager {
                         .transport(e.getTransport())
                         .clientName(e.getClientName())
                         .clientVersion(e.getClientVersion())
+                        .projectId(endpointProjectMap.get(e.getEndpointId()))
                         .connectedAt(e.getConnectedAt())
                         .lastSeenAt(e.getLastSeenAt())
                         .disconnectedAt(e.getDisconnectedAt())

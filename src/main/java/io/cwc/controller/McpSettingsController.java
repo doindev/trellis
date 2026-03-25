@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import io.cwc.dto.McpClientSession;
 import io.cwc.dto.McpEndpointDto;
+import io.cwc.dto.McpServerInfo;
 import io.cwc.dto.McpSettingsDto;
 import io.cwc.service.McpSettingsService;
 
@@ -37,6 +38,13 @@ public class McpSettingsController {
         String path = (String) body.get("agentToolsPath");
         String transport = (String) body.get("agentToolsTransport");
         return mcpSettingsService.updateAgentToolsSettings(enabled, dedicated, path, transport);
+    }
+
+    // --- Servers ---
+
+    @GetMapping("/servers")
+    public List<McpServerInfo> getMcpServers() {
+        return mcpSettingsService.getMcpServers();
     }
 
     // --- Endpoints ---

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, AiModelInfo, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpParameter, McpOutputSchema, SwaggerSettings, SwaggerWorkflow, ExecutionSettings } from '../../core/services/settings.service';
+import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, AiModelInfo, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpServer, McpParameter, McpOutputSchema, SwaggerSettings, SwaggerWorkflow, ExecutionSettings } from '../../core/services/settings.service';
 import { WorkflowService } from '../../core/services/workflow.service';
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
 
@@ -70,12 +70,75 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private mcpMenuCloseTimer: ReturnType<typeof setTimeout> | null = null;
   private mcpMenuScrollListener: (() => void) | null = null;
 
+  // MCP Servers
+  mcpServers: McpServer[] = [];
+  selectedServerId = 'instance';
+  mcpProjectFilter = 'all';
+  copiedUrl: string | null = null;
+  private copiedUrlTimer: ReturnType<typeof setTimeout> | null = null;
+
   // Param editor modal
   showParamEditorModal = false;
   paramEditorWorkflow: McpWorkflow | null = null;
 
+  get selectedServer(): McpServer | null {
+    return this.mcpServers.find(s => s.id === this.selectedServerId) || null;
+  }
+
+  /** Projects with their own MCP server (for the server dropdown) */
+  get projectServers(): McpServer[] {
+    return this.mcpServers.filter(s => !!s.projectId);
+  }
+
+  /**
+   * For the Instance-level server, compute which projects have workflows
+   * served through it. A project's workflows land on instance-level if the
+   * project does NOT have its own MCP endpoint.
+   */
+  get instanceProjectFilters(): { id: string; name: string }[] {
+    const projectServerIds = new Set(this.mcpServers.filter(s => s.projectId).map(s => s.projectId));
+    const projectMap = new Map<string, string>();
+    for (const wf of this.mcpWorkflows) {
+      if (wf.projectId && !projectServerIds.has(wf.projectId)) {
+        projectMap.set(wf.projectId, wf.projectName || wf.projectId);
+      }
+    }
+    // Also include workflows without a project (standalone)
+    return Array.from(projectMap.entries()).map(([id, name]) => ({ id, name }));
+  }
+
+  /** Workflows filtered by selected server and project filter */
+  get filteredMcpWorkflows(): McpWorkflow[] {
+    const projectServerIds = new Set(this.mcpServers.filter(s => s.projectId).map(s => s.projectId));
+
+    if (this.selectedServerId === 'instance') {
+      // Instance-level: workflows NOT belonging to a project with its own server
+      let workflows = this.mcpWorkflows.filter(wf => !wf.projectId || !projectServerIds.has(wf.projectId));
+      if (this.mcpProjectFilter !== 'all') {
+        workflows = workflows.filter(wf => wf.projectId === this.mcpProjectFilter);
+      }
+      return workflows;
+    } else {
+      // Project server: only that project's workflows
+      const server = this.selectedServer;
+      if (!server?.projectId) return [];
+      return this.mcpWorkflows.filter(wf => wf.projectId === server.projectId);
+    }
+  }
+
+  /** Clients filtered by selected server */
+  get filteredMcpClients(): McpClient[] {
+    if (this.selectedServerId === 'instance') {
+      return this.mcpClients.filter(c => !c.projectId);
+    } else {
+      const server = this.selectedServer;
+      if (!server?.projectId) return [];
+      return this.mcpClients.filter(c => c.projectId === server.projectId);
+    }
+  }
+
   get showMcpProjectColumn(): boolean {
-    return this.mcpWorkflows.some(wf => !!wf.projectId);
+    return this.filteredMcpWorkflows.some(wf => !!wf.projectId);
   }
 
   // Swagger
@@ -379,6 +442,24 @@ export class SettingsComponent implements OnInit, OnDestroy {
       next: workflows => this.mcpWorkflows = workflows.filter(wf => wf.type === 'WORKFLOW'),
       error: () => this.mcpWorkflows = []
     });
+    this.settingsService.getMcpServers().subscribe({
+      next: servers => this.mcpServers = servers,
+      error: () => this.mcpServers = []
+    });
+  }
+
+  onServerChange(): void {
+    this.mcpProjectFilter = 'all';
+    if (this.mcpActiveTab === 'clients') {
+      this.loadMcpClients();
+    }
+  }
+
+  copyServerUrl(url: string): void {
+    navigator.clipboard.writeText(url);
+    this.copiedUrl = url;
+    if (this.copiedUrlTimer) clearTimeout(this.copiedUrlTimer);
+    this.copiedUrlTimer = setTimeout(() => this.copiedUrl = null, 2000);
   }
 
   toggleMcp(): void {
@@ -389,6 +470,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.mcpSettings = settings;
         this.mcpEndpoints = settings.endpoints || [];
         this.mcpSaving = false;
+        // Refresh servers list after toggle
+        this.settingsService.getMcpServers().subscribe({
+          next: servers => this.mcpServers = servers,
+          error: () => {}
+        });
       },
       error: () => this.mcpSaving = false
     });

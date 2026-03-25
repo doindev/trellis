@@ -216,11 +216,11 @@ export class ProjectSettingsComponent {
         const sse = endpoints.find(e => e.transport === 'SSE');
 
         this.httpEnabled = !!http?.enabled;
-        this.httpPath = http?.path || '';
+        this.httpPath = this.stripContextPath(http?.path || '');
         this.httpUrl = http?.url || null;
 
         this.sseEnabled = !!sse?.enabled;
-        this.ssePath = sse?.path || '';
+        this.ssePath = this.stripContextPath(sse?.path || '');
         this.sseUrl = sse?.url || null;
 
         // Auto-suggest paths if not configured
@@ -243,12 +243,12 @@ export class ProjectSettingsComponent {
       next: (result) => {
         if (isHttp) {
           this.httpEnabled = result.enabled;
-          this.httpPath = result.path || '';
+          this.httpPath = this.stripContextPath(result.path || '');
           this.httpUrl = result.url || null;
           this.httpSaving = false;
         } else {
           this.sseEnabled = result.enabled;
-          this.ssePath = result.path || '';
+          this.ssePath = this.stripContextPath(result.path || '');
           this.sseUrl = result.url || null;
           this.sseSaving = false;
         }
@@ -258,6 +258,15 @@ export class ProjectSettingsComponent {
         this.mcpError = err.error?.message || err.message || 'Failed to save';
       }
     });
+  }
+
+  /** Strip the project contextPath prefix from a full endpoint path to get the user portion */
+  private stripContextPath(fullPath: string): string {
+    const ctx = this.project()?.contextPath;
+    if (!ctx || !fullPath) return fullPath;
+    if (fullPath === ctx) return '';
+    if (fullPath.startsWith(ctx + '/')) return fullPath.substring(ctx.length + 1);
+    return fullPath;
   }
 
   onHttpPathInput(): void {

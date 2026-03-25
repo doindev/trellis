@@ -18,6 +18,7 @@ public class McpClientSession {
     private String transport;
     private String clientName;
     private String clientVersion;
+    private String projectId;
     private Instant connectedAt;
     private Instant lastSeenAt;
     private Instant disconnectedAt;

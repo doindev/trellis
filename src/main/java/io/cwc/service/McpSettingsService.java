@@ -10,6 +10,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import io.cwc.dto.McpClientSession;
 import io.cwc.dto.McpEndpointDto;
+import io.cwc.dto.McpServerInfo;
 import io.cwc.dto.McpSettingsDto;
 import io.cwc.entity.McpEndpointEntity;
 import io.cwc.entity.McpSettingsEntity;
@@ -330,6 +331,76 @@ public class McpSettingsService {
         AUTO_DESCRIPTIONS.put("language", "The language");
         AUTO_DESCRIPTIONS.put("source", "The source");
         AUTO_DESCRIPTIONS.put("target", "The target");
+    }
+
+    // --- MCP Servers overview ---
+
+    public List<McpServerInfo> getMcpServers() {
+        List<McpEndpointEntity> allEndpoints = endpointRepository.findAll();
+
+        List<McpEndpointEntity> instanceEndpoints = allEndpoints.stream()
+                .filter(e -> e.getProjectId() == null)
+                .toList();
+
+        Map<String, List<McpEndpointEntity>> projectEndpointMap = allEndpoints.stream()
+                .filter(e -> e.getProjectId() != null && e.isEnabled())
+                .collect(java.util.stream.Collectors.groupingBy(McpEndpointEntity::getProjectId));
+
+        // Client counts by endpoint
+        List<McpClientSession> clients = mcpServerManager.getClientSessions();
+        Map<String, Long> connectedByEndpoint = clients.stream()
+                .filter(c -> c.getDisconnectedAt() == null)
+                .collect(java.util.stream.Collectors.groupingBy(
+                        c -> c.getEndpointId() != null ? c.getEndpointId() : "",
+                        java.util.stream.Collectors.counting()));
+
+        java.util.Set<String> instanceEndpointIds = instanceEndpoints.stream()
+                .map(McpEndpointEntity::getId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        long instanceClientCount = connectedByEndpoint.entrySet().stream()
+                .filter(e -> instanceEndpointIds.contains(e.getKey()))
+                .mapToLong(Map.Entry::getValue)
+                .sum();
+
+        List<McpServerInfo> servers = new ArrayList<>();
+
+        // Instance-level server
+        servers.add(McpServerInfo.builder()
+                .id("instance")
+                .name("Instance-level")
+                .projectId(null)
+                .endpoints(instanceEndpoints.stream().map(this::toEndpointDto).toList())
+                .connectedClients((int) instanceClientCount)
+                .build());
+
+        // Project servers
+        Map<String, String> projectNames = projectRepository.findAll().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        io.cwc.entity.ProjectEntity::getId,
+                        io.cwc.entity.ProjectEntity::getName));
+
+        for (var entry : projectEndpointMap.entrySet()) {
+            String projId = entry.getKey();
+            java.util.Set<String> projEndpointIds = entry.getValue().stream()
+                    .map(McpEndpointEntity::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            long projClientCount = connectedByEndpoint.entrySet().stream()
+                    .filter(e -> projEndpointIds.contains(e.getKey()))
+                    .mapToLong(Map.Entry::getValue)
+                    .sum();
+
+            servers.add(McpServerInfo.builder()
+                    .id(projId)
+                    .name(projectNames.getOrDefault(projId, "Unknown Project"))
+                    .projectId(projId)
+                    .endpoints(entry.getValue().stream().map(this::toEndpointDto).toList())
+                    .connectedClients((int) projClientCount)
+                    .build());
+        }
+
+        return servers;
     }
 
     // --- Project MCP Endpoint ---

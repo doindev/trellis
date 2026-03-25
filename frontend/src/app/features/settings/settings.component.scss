@@ -840,6 +840,136 @@ select.form-input {
 }
 
 
+// --- MCP Server info bar ---
+
+.server-info-bar {
+  background: hsl(0, 0%, 11%);
+  border: 1px solid hsl(0, 0%, 20%);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.server-info-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.server-selectors {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.server-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.selector-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: hsl(0, 0%, 50%);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.selector-input {
+  max-width: 220px !important;
+  padding: 6px 10px !important;
+  font-size: 0.8125rem !important;
+}
+
+.server-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 2px;
+}
+
+.server-client-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.server-client-text {
+  font-size: 0.75rem;
+  color: hsl(0, 0%, 60%);
+  white-space: nowrap;
+}
+
+.server-endpoints {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid hsl(0, 0%, 18%);
+}
+
+.server-endpoint-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .transport-badge {
+    flex-shrink: 0;
+    min-width: 90px;
+    text-align: center;
+  }
+}
+
+.server-endpoint-url {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  color: hsl(0, 0%, 62%);
+  background: hsl(0, 0%, 8%);
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid hsl(0, 0%, 17%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-copy-url {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  background: hsl(0, 0%, 15%);
+  border: 1px solid hsl(0, 0%, 24%);
+  border-radius: 6px;
+  color: hsl(0, 0%, 56%);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: hsl(0, 0%, 20%);
+    color: hsl(0, 0%, 86%);
+    border-color: hsl(0, 0%, 32%);
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.server-no-endpoints {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid hsl(0, 0%, 18%);
+  font-size: 0.8125rem;
+  color: hsl(0, 0%, 44%);
+}
+
 // --- Endpoint mode radio options ---
 
 .endpoint-mode-options {

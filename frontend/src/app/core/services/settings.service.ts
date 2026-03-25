@@ -61,9 +61,18 @@ export interface McpClient {
   transport: string;
   clientName: string;
   clientVersion: string;
+  projectId: string | null;
   connectedAt: string;
   lastSeenAt: string;
   disconnectedAt: string | null;
+}
+
+export interface McpServer {
+  id: string;
+  name: string;
+  projectId: string | null;
+  endpoints: McpEndpoint[];
+  connectedClients: number;
 }
 
 export interface McpSettings {
@@ -276,6 +285,11 @@ export class SettingsService {
 
   deleteMcpEndpoint(id: string): Observable<void> {
     return this.api.delete<void>(`/settings/mcp/endpoints/${id}`);
+  }
+
+  // MCP Servers
+  getMcpServers(): Observable<McpServer[]> {
+    return this.api.get<McpServer[]>('/settings/mcp/servers');
   }
 
   // MCP Clients

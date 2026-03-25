@@ -352,6 +352,70 @@
             </div>
 
             @if (mcpSettings?.enabled) {
+              <!-- Server info bar -->
+              <div class="server-info-bar">
+                <div class="server-info-top">
+                  <div class="server-selectors">
+                    <div class="server-selector">
+                      <label class="selector-label">MCP Server</label>
+                      <select class="form-input selector-input" [(ngModel)]="selectedServerId" (ngModelChange)="onServerChange()">
+                        <option value="instance">Instance-level</option>
+                        @for (server of projectServers; track server.id) {
+                          <option [value]="server.id">{{ server.name }}</option>
+                        }
+                      </select>
+                    </div>
+                    @if (selectedServerId === 'instance' && instanceProjectFilters.length > 0) {
+                      <div class="server-selector">
+                        <label class="selector-label">Filter by project</label>
+                        <select class="form-input selector-input" [(ngModel)]="mcpProjectFilter">
+                          <option value="all">All</option>
+                          @for (proj of instanceProjectFilters; track proj.id) {
+                            <option [value]="proj.id">{{ proj.name }}</option>
+                          }
+                        </select>
+                      </div>
+                    }
+                  </div>
+                  @if (selectedServer) {
+                    <div class="server-meta">
+                      <div class="server-client-count">
+                        <span class="status-dot" [class.connected]="selectedServer.connectedClients > 0"
+                              [class.disconnected]="selectedServer.connectedClients === 0"></span>
+                        <span class="server-client-text">{{ selectedServer.connectedClients }} client{{ selectedServer.connectedClients !== 1 ? 's' : '' }} connected</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+                @if (selectedServer && selectedServer.endpoints.length > 0) {
+                  <div class="server-endpoints">
+                    @for (ep of selectedServer.endpoints; track ep.id) {
+                      <div class="server-endpoint-row">
+                        <span class="transport-badge" [class.sse]="ep.transport === 'SSE'"
+                              [class.streamable]="ep.transport === 'STREAMABLE_HTTP'">
+                          {{ ep.transport === 'STREAMABLE_HTTP' ? 'Streamable HTTP' : ep.transport }}
+                        </span>
+                        <code class="server-endpoint-url">{{ ep.url }}</code>
+                        <button class="btn-copy-url" (click)="copyServerUrl(ep.url)" [title]="copiedUrl === ep.url ? 'Copied!' : 'Copy URL'">
+                          @if (copiedUrl === ep.url) {
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          } @else {
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                            </svg>
+                          }
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+                @if (selectedServer && selectedServer.endpoints.length === 0) {
+                  <div class="server-no-endpoints">No endpoints configured for this server</div>
+                }
+              </div>
+
               <!-- Sub-tabs -->
               <ul class="nav nav-tabs mcp-tabs">
                 <li class="nav-item">
@@ -374,7 +438,7 @@
                     <div class="col-wf-status">MCP</div>
                     <div class="col-actions"></div>
                   </div>
-                  @for (wf of mcpWorkflows; track wf.id) {
+                  @for (wf of filteredMcpWorkflows; track wf.id) {
                     <div class="table-row">
                       @if (showMcpProjectColumn) {
                         <div class="col-wf-project">{{ wf.projectName || '' }}</div>
@@ -413,7 +477,7 @@
                       </div>
                     </div>
                   }
-                  @if (mcpWorkflows.length === 0) {
+                  @if (filteredMcpWorkflows.length === 0) {
                     <div class="empty-row">No workflows found</div>
                   }
                 </div>
@@ -422,7 +486,7 @@
                   <div class="actions-menu" [ngStyle]="mcpMenuStyle"
                        (mouseenter)="cancelMcpMenuClose()"
                        (mouseleave)="scheduleMcpMenuClose()">
-                    @for (wf of mcpWorkflows; track wf.id) {
+                    @for (wf of filteredMcpWorkflows; track wf.id) {
                       @if (wf.id === mcpWorkflowMenuId) {
                         <button class="menu-item" (click)="startEditDescription(wf)">Edit description...</button>
                         <button class="menu-item" (click)="openParamEditor(wf)">Edit Schema parameters...</button>
@@ -450,7 +514,7 @@
                     <div class="col-client-connected">Connected</div>
                     <div class="col-client-seen">Last seen</div>
                   </div>
-                  @for (client of mcpClients; track client.sessionId) {
+                  @for (client of filteredMcpClients; track client.sessionId) {
                     <div class="table-row">
                       <div class="col-client-status">
                         @if (!client.disconnectedAt) {
@@ -471,7 +535,7 @@
                       <div class="col-client-seen">{{ client.lastSeenAt | date:'short' }}</div>
                     </div>
                   }
-                  @if (mcpClients.length === 0) {
+                  @if (filteredMcpClients.length === 0) {
                     <div class="empty-row">No recent client activity</div>
                   }
                 </div>
