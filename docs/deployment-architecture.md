@@ -439,10 +439,94 @@ Backend: exports project to files -> creates branch `cwc/update-<configId>-<time
 
 ### Sync Triggers
 
-1. **Startup** — always syncs if configured
+1. **Startup** — always syncs if `cwc.git.sync-on-startup=true`
 2. **Manual reload** — `POST /api/admin/reload-config`
 3. **Periodic polling** — if `cwc.git.poll-interval > 0`
 4. **Webhook** — `POST /api/admin/git-webhook` (secured with `cwc.git.webhook-secret`)
+
+### Git Polling
+
+When `cwc.git.poll-interval` is set to a value greater than 0 (seconds), a `GitPollScheduler` service starts on boot and runs a fixed-delay loop:
+
+1. Captures the current `HEAD` commit hash via `git rev-parse HEAD`
+2. Runs `git pull origin <branch>`
+3. Captures the new `HEAD` commit hash
+4. If HEAD changed, automatically runs `ConfigBootstrapService.loadAndApply(SYNC)` to apply the new files to the database
+
+Other instances in the cluster pick up the DB changes via existing `ClusterSyncService` polling (10-second cycle), so only one instance needs to fetch the git changes.
+
+```properties
+cwc.git.enabled=true
+cwc.git.url=https://github.com/your-org/cwc-config.git
+cwc.git.branch=main
+cwc.git.token=${GIT_TOKEN}
+cwc.git.local-path=/opt/cwc/git-config
+cwc.git.poll-interval=60          # poll every 60 seconds
+```
+
+All instances can poll independently — the bootstrap uses a `ReentrantLock` and the DB operations use `configId` for idempotency, so concurrent reloads are safe (just redundant).
+
+### Webhook-Triggered Sync
+
+For immediate sync on push (instead of polling), configure a webhook in your git provider pointing to:
+
+```
+POST https://<cwc-host>/api/admin/git-webhook
+```
+
+Set the same shared secret in both the git provider and CWC:
+
+```properties
+cwc.git.webhook-secret=your-shared-secret-here
+```
+
+#### Supported Providers
+
+| Provider   | Auth Header            | Mechanism                                              |
+|------------|------------------------|--------------------------------------------------------|
+| GitHub     | `X-Hub-Signature-256`  | HMAC-SHA256 of request body with shared secret         |
+| GitLab     | `X-Gitlab-Token`       | Direct constant-time string comparison                 |
+| Bitbucket  | `X-Hub-Signature`      | HMAC-SHA256 of request body (same as GitHub pattern)   |
+
+#### Behavior
+
+1. Validates the signature/token against `cwc.git.webhook-secret`
+2. Checks the push targets the tracked branch (`cwc.git.branch`). Non-matching branches are ignored with a `200 OK` status.
+3. Runs `git pull`
+4. Runs `ConfigBootstrapService.loadAndApply(SYNC)` to apply changes to the database
+5. Returns JSON summary:
+
+```json
+{
+  "status": "reloaded",
+  "projectsCreated": 0,
+  "projectsUpdated": 2,
+  "workflowsCreated": 1,
+  "workflowsUpdated": 3
+}
+```
+
+#### GitHub Setup
+
+1. Go to **Repository Settings → Webhooks → Add webhook**
+2. Payload URL: `https://<cwc-host>/api/admin/git-webhook`
+3. Content type: `application/json`
+4. Secret: same value as `cwc.git.webhook-secret`
+5. Events: select **Just the push event**
+
+#### GitLab Setup
+
+1. Go to **Settings → Webhooks → Add new webhook**
+2. URL: `https://<cwc-host>/api/admin/git-webhook`
+3. Secret token: same value as `cwc.git.webhook-secret`
+4. Trigger: **Push events**, filter by branch `main`
+
+#### Bitbucket Setup
+
+1. Go to **Repository Settings → Webhooks → Add webhook**
+2. URL: `https://<cwc-host>/api/admin/git-webhook`
+3. Secret: same value as `cwc.git.webhook-secret`
+4. Triggers: **Repository push**
 
 ---
 
@@ -561,6 +645,40 @@ kubectl create configmap cwc-config --from-file=config/ \
 kubectl rollout restart deployment/cwc
 ```
 
+### Pattern D: Webhook Auto-Sync (Zero-Touch)
+
+Configure a webhook in your git provider (see [Webhook-Triggered Sync](#webhook-triggered-sync)) and set:
+
+```properties
+cwc.git.enabled=true
+cwc.git.url=https://github.com/your-org/cwc-config.git
+cwc.git.branch=main
+cwc.git.token=${GIT_TOKEN}
+cwc.git.local-path=/opt/cwc/git-config
+cwc.git.webhook-secret=${GIT_WEBHOOK_SECRET}
+cwc.config.paths=/opt/cwc/git-config
+cwc.config.mode=sync
+```
+
+After merging a PR to `main`, the git provider sends a push webhook to CWC. The receiving instance pulls the latest changes and applies them to the shared database. Other cluster instances pick up the DB changes within 10 seconds via `ClusterSyncService`. No manual intervention or CI/CD step required.
+
+### Pattern E: Git Polling (No External Webhook Required)
+
+For environments where inbound webhooks are not feasible (e.g., air-gapped networks):
+
+```properties
+cwc.git.enabled=true
+cwc.git.url=https://github.com/your-org/cwc-config.git
+cwc.git.branch=main
+cwc.git.token=${GIT_TOKEN}
+cwc.git.local-path=/opt/cwc/git-config
+cwc.git.poll-interval=60
+cwc.config.paths=/opt/cwc/git-config
+cwc.config.mode=sync
+```
+
+Each instance polls the git repo every 60 seconds. When new commits are detected (HEAD changes), config is automatically reloaded.
+
 ---
 
 ## 11. Startup Chain
@@ -587,6 +705,10 @@ kubectl rollout restart deployment/cwc
 
 5. TriggerStartupInitializer            ApplicationReadyEvent @Order(2)
    └─ Registers triggers for all published workflows
+
+6. GitPollScheduler                     @PostConstruct
+   └─ If cwc.git.poll-interval > 0, starts fixed-delay polling loop
+   └─ Each cycle: git pull → detect HEAD change → reload config if changed
 ```
 
 ---
