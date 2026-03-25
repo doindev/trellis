@@ -41,6 +41,12 @@ public class GitSyncService {
     @Value("${cwc.git.sync-on-startup:true}")
     private boolean syncOnStartup;
 
+    @Value("${cwc.git.poll-interval:0}")
+    private long pollIntervalSeconds;
+
+    @Value("${cwc.git.webhook-secret:}")
+    private String webhookSecret;
+
     public boolean isEnabled() {
         return enabled && repoUrl != null && !repoUrl.isBlank();
     }
@@ -51,6 +57,18 @@ public class GitSyncService {
 
     public String getLocalPath() {
         return localPath;
+    }
+
+    public long getPollIntervalSeconds() {
+        return pollIntervalSeconds;
+    }
+
+    public String getWebhookSecret() {
+        return webhookSecret;
+    }
+
+    public String getBranch() {
+        return branch;
     }
 
     /**
@@ -74,6 +92,50 @@ public class GitSyncService {
         } catch (Exception e) {
             log.error("Git sync failed: {}", e.getMessage(), e);
             return false;
+        }
+    }
+
+    /**
+     * Performs a git pull and returns whether new changes were fetched.
+     *
+     * @return true if new commits were pulled (i.e., HEAD changed)
+     */
+    public boolean syncAndDetectChanges() {
+        if (!isEnabled()) {
+            return false;
+        }
+
+        Path local = Path.of(localPath);
+        try {
+            if (!Files.isDirectory(local.resolve(".git"))) {
+                // First clone always counts as changes
+                return clone(local);
+            }
+
+            String headBefore = getHead(local);
+            boolean success = pull(local);
+            if (!success) return false;
+            String headAfter = getHead(local);
+
+            boolean changed = headBefore != null && !headBefore.equals(headAfter);
+            if (changed) {
+                log.info("Git sync: new changes detected ({}..{})", headBefore.substring(0, 7), headAfter.substring(0, 7));
+            }
+            return changed;
+        } catch (Exception e) {
+            log.error("Git sync failed: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private String getHead(Path local) {
+        try {
+            GitResult result = executeGit(
+                    List.of("git", "-C", local.toAbsolutePath().toString(), "rev-parse", "HEAD"), local);
+            return result.exitCode == 0 ? result.stdout.trim() : null;
+        } catch (Exception e) {
+            log.warn("Failed to read HEAD: {}", e.getMessage());
+            return null;
         }
     }
 
