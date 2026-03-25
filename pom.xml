@@ -17,7 +17,7 @@
 		<langchain4j.version>1.11.0</langchain4j.version>
 		<aws.sdk.version>2.25.60</aws.sdk.version>
 		<spring-ai.version>1.0.0</spring-ai.version>
-		<tomcat.version>11.1.18</tomcat.version>
+		<tomcat.version>11.0.18</tomcat.version>
 	</properties>
 
 	<dependencyManagement>
