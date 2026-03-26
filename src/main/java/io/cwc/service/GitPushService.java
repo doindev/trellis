@@ -107,7 +107,16 @@ public class GitPushService {
             git(repoDir, "add", "projects/" + configId);
             String msg = commitMessage != null ? commitMessage : "Update project: " + project.getName();
             git(repoDir, "commit", "-m", msg);
-            git(repoDir, "push", "origin", branchName);
+
+            // Inject auth token into remote URL for push, then reset
+            String authUrl = injectToken(repoUrl, token);
+            git(repoDir, "remote", "set-url", "origin", authUrl);
+            try {
+                git(repoDir, "push", "origin", branchName);
+            } finally {
+                // Reset remote URL to strip the token from git config
+                git(repoDir, "remote", "set-url", "origin", repoUrl != null ? repoUrl : "");
+            }
 
             // Switch back to the original branch
             git(repoDir, "checkout", targetBranch);
@@ -125,6 +134,14 @@ public class GitPushService {
             try { git(repoDir, "branch", "-D", branchName); } catch (Exception ignored) {}
             throw new BadRequestException("Git push failed: " + e.getMessage());
         }
+    }
+
+    private String injectToken(String url, String authToken) {
+        if (url == null || authToken == null || authToken.isBlank()) return url;
+        if (url.startsWith("https://")) {
+            return "https://" + authToken + "@" + url.substring(8);
+        }
+        return url;
     }
 
     /**
