@@ -1,6 +1,7 @@
 package io.cwc.service;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.TaskScheduler;
@@ -41,6 +42,14 @@ public class GitPollScheduler {
         log.info("Git polling enabled: interval={}s", intervalSeconds);
         pollFuture = taskScheduler.scheduleWithFixedDelay(this::pollAndReload,
                 Duration.ofSeconds(intervalSeconds));
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        if (pollFuture != null) {
+            pollFuture.cancel(false);
+            log.info("Git polling stopped");
+        }
     }
 
     private void pollAndReload() {
