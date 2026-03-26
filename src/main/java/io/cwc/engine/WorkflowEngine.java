@@ -668,6 +668,12 @@ public class WorkflowEngine {
     @Async("workflowExecutor")
     protected void executeAsync(String executionId, WorkflowEntity workflow,
                                  Map<String, Object> inputData, NodeExecutionContext.ExecutionMode mode) {
+        if (shuttingDown) {
+            log.warn("Rejecting execution {} — engine is shutting down", executionId);
+            executionService.finish(executionId, ExecutionStatus.ERROR, null,
+                    "Execution rejected: instance is shutting down");
+            return;
+        }
         try {
             var resolvedSettings = executionSettingsResolver.resolve(workflow);
             log.debug("Resolved execution settings for workflow {}: {}", workflow.getId(), resolvedSettings);
