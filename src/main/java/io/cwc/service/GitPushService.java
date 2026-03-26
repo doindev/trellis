@@ -6,8 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import io.cwc.dto.ProjectConfigFile;
-import io.cwc.dto.WorkflowConfigFile;
 import io.cwc.entity.ProjectEntity;
 import io.cwc.entity.SourceControlSettingsEntity;
 import io.cwc.exception.BadRequestException;
@@ -65,6 +63,12 @@ public class GitPushService {
         String configId = project.getConfigId() != null ? project.getConfigId()
                 : project.getName().toLowerCase().replaceAll("[^a-z0-9]+", "-");
 
+        // Resolve git settings: DB takes precedence over properties
+        SourceControlSettingsEntity dbSettings = sourceControlSettingsRepository
+                .findFirstByOrderByCreatedAtAsc().orElse(null);
+        String repoUrl = resolveGitSetting(dbSettings != null ? dbSettings.getRepoUrl() : null, defaultRepoUrl);
+        String token = resolveGitSetting(dbSettings != null ? dbSettings.getToken() : null, defaultToken);
+
         Path repoDir = Path.of(localPath);
         if (!Files.isDirectory(repoDir.resolve(".git"))) {
             throw new BadRequestException("Git repository not initialized at " + localPath
@@ -121,6 +125,14 @@ public class GitPushService {
             try { git(repoDir, "branch", "-D", branchName); } catch (Exception ignored) {}
             throw new BadRequestException("Git push failed: " + e.getMessage());
         }
+    }
+
+    /**
+     * Returns the DB value if non-blank, otherwise the property default.
+     */
+    private String resolveGitSetting(String dbValue, String propertyDefault) {
+        if (dbValue != null && !dbValue.isBlank()) return dbValue;
+        return propertyDefault;
     }
 
     private String git(Path workDir, String... args) throws IOException, InterruptedException {
