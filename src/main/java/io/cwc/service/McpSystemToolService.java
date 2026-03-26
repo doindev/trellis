@@ -238,6 +238,20 @@ public class McpSystemToolService {
                         "required", List.of("name")
                 )));
 
+        tools.add(toolDef("cwc_update_project",
+                "Update an existing project. Only provided fields are updated.",
+                Map.of(
+                        "type", "object",
+                        "properties", orderedMap(
+                                "id", prop("string", "The project ID (required)"),
+                                "name", prop("string", "New project name"),
+                                "description", prop("string", "New project description"),
+                                "contextPath", prop("string", "New URL context path (must be unique, lowercase, alphanumeric with hyphens)"),
+                                "icon", Map.of("type", "object", "description", "New icon object with 'type' and 'value' keys (e.g. {\"type\": \"emoji\", \"value\": \"📁\"})")
+                        ),
+                        "required", List.of("id")
+                )));
+
         // --- Agent Tools ---
 
         tools.add(toolDef("cwc_list_agents",
@@ -307,7 +321,8 @@ public class McpSystemToolService {
             "cwc_publish_workflow",
             "cwc_create_agent",
             "cwc_update_agent",
-            "cwc_execute_workflow"
+            "cwc_execute_workflow",
+            "cwc_update_project"
     );
 
     private static final Set<String> BROWSER_SESSION_TOOLS = Set.of(
@@ -386,6 +401,7 @@ public class McpSystemToolService {
             case "cwc_list_projects" -> handleListProjects(arguments);
             case "cwc_get_project" -> handleGetProject(arguments);
             case "cwc_create_project" -> handleCreateProject(arguments);
+            case "cwc_update_project" -> handleUpdateProject(arguments);
             case "cwc_list_workflows" -> handleListWorkflows(arguments);
             case "cwc_get_workflow" -> handleGetWorkflow(arguments);
             case "cwc_create_workflow" -> handleCreateWorkflow(arguments);
@@ -439,6 +455,7 @@ public class McpSystemToolService {
             case "cwc_list_projects" -> "List all accessible projects";
             case "cwc_get_project" -> "Get project details for '" + args.getOrDefault("id", "?") + "'";
             case "cwc_create_project" -> "Create project '" + args.getOrDefault("name", "?") + "'";
+            case "cwc_update_project" -> "Update project '" + args.getOrDefault("id", "?") + "'";
             case "cwc_list_browser_sessions" -> "List active browser sessions";
             case "cwc_browser_control" -> {
                 String action = (String) args.getOrDefault("action", "?");
@@ -648,6 +665,33 @@ public class McpSystemToolService {
         result.put("description", project.getDescription());
         result.put("contextPath", project.getContextPath());
         result.put("message", "Project created successfully");
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object handleUpdateProject(Map<String, Object> args) {
+        String id = (String) args.get("id");
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("'id' is required");
+        }
+
+        ProjectUpdateRequest request = new ProjectUpdateRequest();
+        if (args.containsKey("name")) request.setName((String) args.get("name"));
+        if (args.containsKey("description")) request.setDescription((String) args.get("description"));
+        if (args.containsKey("contextPath")) request.setContextPath((String) args.get("contextPath"));
+        if (args.get("icon") instanceof Map) {
+            request.setIcon((Map<String, String>) args.get("icon"));
+        }
+
+        ProjectResponse project = projectService.updateProject(id, request);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", project.getId());
+        result.put("name", project.getName());
+        result.put("type", project.getType());
+        result.put("description", project.getDescription());
+        result.put("contextPath", project.getContextPath());
+        result.put("message", "Project updated successfully");
         return result;
     }
 
