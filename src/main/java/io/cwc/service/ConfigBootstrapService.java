@@ -172,7 +172,6 @@ public class ConfigBootstrapService {
         Map<String, WorkflowConfigFile> workflows = new LinkedHashMap<>();
     }
 
-    @SuppressWarnings("unchecked")
     private void mergeDiscovered(ConfigDiscoveryService.DiscoveredConfig discovered, Path basePath,
                                   MergedConfig merged, ConfigReloadResult result) {
         // Merge settings (deep-merge)
@@ -284,6 +283,60 @@ public class ConfigBootstrapService {
                     .errorWorkflow(exec.getErrorWorkflow())
                     .build();
             executionSettingsService.updateSettings(dto);
+        }
+
+        // Apply MCP settings
+        if (settings.getMcp() != null) {
+            var mcp = settings.getMcp();
+
+            // Enable/disable MCP
+            if (mcp.getEnabled() != null) {
+                mcpSettingsService.setEnabled(mcp.getEnabled());
+            }
+
+            // Agent tools settings
+            if (mcp.getAgentToolsEnabled() != null || mcp.getAgentToolsDedicated() != null
+                    || mcp.getAgentToolsPath() != null || mcp.getAgentToolsTransport() != null) {
+                mcpSettingsService.updateAgentToolsSettings(
+                        mcp.getAgentToolsEnabled(),
+                        mcp.getAgentToolsDedicated(),
+                        mcp.getAgentToolsPath(),
+                        mcp.getAgentToolsTransport());
+            }
+
+            // MCP endpoints
+            if (mcp.getEndpoints() != null) {
+                for (var epConfig : mcp.getEndpoints()) {
+                    if (epConfig.getName() == null || epConfig.getTransport() == null) continue;
+                    try {
+                        // Check if an endpoint with this transport already exists
+                        var existing = mcpSettingsService.listEndpoints().stream()
+                                .filter(e -> e.getTransport().equals(epConfig.getTransport()))
+                                .findFirst();
+                        if (existing.isPresent()) {
+                            // Update existing endpoint
+                            McpEndpointDto updateDto = McpEndpointDto.builder()
+                                    .name(epConfig.getName())
+                                    .transport(epConfig.getTransport())
+                                    .path(epConfig.getPath())
+                                    .enabled(epConfig.getEnabled() != null ? epConfig.getEnabled() : true)
+                                    .build();
+                            mcpSettingsService.updateEndpoint(existing.get().getId(), updateDto);
+                        } else {
+                            // Create new endpoint
+                            McpEndpointDto createDto = McpEndpointDto.builder()
+                                    .name(epConfig.getName())
+                                    .transport(epConfig.getTransport())
+                                    .path(epConfig.getPath())
+                                    .enabled(epConfig.getEnabled() != null ? epConfig.getEnabled() : true)
+                                    .build();
+                            mcpSettingsService.createEndpoint(createDto);
+                        }
+                    } catch (Exception e) {
+                        result.addWarning("Failed to apply MCP endpoint '" + epConfig.getName() + "': " + e.getMessage());
+                    }
+                }
+            }
         }
 
         result.setSettingsApplied(1);
@@ -448,7 +501,6 @@ public class ConfigBootstrapService {
                     // Update
                     if (cc.getName() != null) existing.setName(cc.getName());
                     if (cc.getData() != null) {
-                        @SuppressWarnings("unchecked")
                         Map<String, Object> data = (Map<String, Object>) cc.getData();
                         existing.setData(encryptionService.encrypt(data));
                     }
@@ -457,7 +509,6 @@ public class ConfigBootstrapService {
                     refToDbId.put(ref, existing.getId());
                     result.setCredentialsApplied(result.getCredentialsApplied() + 1);
                 } else {
-                    @SuppressWarnings("unchecked")
                     Map<String, Object> data = cc.getData() != null ? (Map<String, Object>) cc.getData() : Map.of();
                     CredentialEntity entity = CredentialEntity.builder()
                             .projectId(projectId)
@@ -577,7 +628,6 @@ public class ConfigBootstrapService {
 
     // ---- Apply Phase: Workflows ----
 
-    @SuppressWarnings("unchecked")
     private void applyWorkflow(WorkflowConfigFile wfConfig, String projectId, String projectConfigId,
                                 Map<String, String> credRefToDbId, ConfigMode mode,
                                 ConfigReloadResult result) {
