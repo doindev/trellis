@@ -39,6 +39,7 @@ public class GitSyncRunner implements CommandLineRunner {
             if (success) {
                 // Prepend the git local path to config paths if not already there
                 String gitPath = gitSyncService.getLocalPath();
+                configProperties.prependPath(java.nio.file.Path.of(gitPath));
                 log.info("Git sync complete. Config files available at: {}", gitPath);
             } else {
                 log.warn("Git sync failed — continuing with existing config files if available");

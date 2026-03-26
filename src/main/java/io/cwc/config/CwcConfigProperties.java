@@ -66,4 +66,21 @@ public class CwcConfigProperties {
     public boolean isEnabled() {
         return !configPaths.isEmpty();
     }
+
+    /**
+     * Prepends a path to the config paths list if not already present.
+     * Used by GitSyncRunner to register the git local path after a successful sync.
+     */
+    public void prependPath(Path path) {
+        if (path == null || !Files.isDirectory(path)) return;
+        Path normalized = path.toAbsolutePath().normalize();
+        for (Path existing : configPaths) {
+            if (existing.toAbsolutePath().normalize().equals(normalized)) return;
+        }
+        List<Path> updated = new ArrayList<>();
+        updated.add(normalized);
+        updated.addAll(configPaths);
+        configPaths = Collections.unmodifiableList(updated);
+        log.info("Registered git sync path for config bootstrap: {}", normalized);
+    }
 }
