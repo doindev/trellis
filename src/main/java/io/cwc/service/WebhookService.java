@@ -122,7 +122,6 @@ public class WebhookService {
                 String mode = (String) parameters.getOrDefault("mode", "hostedChat");
 
                 // Extract options (nested collection parameters)
-                @SuppressWarnings("unchecked")
                 Map<String, Object> options = parameters.get("options") instanceof Map
                         ? (Map<String, Object>) parameters.get("options") : Map.of();
                 String responseMode = (String) options.getOrDefault("responseMode", "lastNode");

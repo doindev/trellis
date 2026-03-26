@@ -41,6 +41,7 @@ import io.cwc.service.WebhookService;
 import io.cwc.util.ChatPageGenerator;
 import io.cwc.util.FormHtmlGenerator;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.HttpServletRequest;
@@ -405,16 +406,17 @@ public class WebhookController {
         }
 
         if ("POST".equalsIgnoreCase(method)) {
-            // Handle CORS
+            // Handle CORS — resolve allowed origin for response headers
             String allowedOrigins = options.getOrDefault("allowedOrigins", "*").toString();
             String origin = request.getHeader("Origin");
+            HttpHeaders corsHeaders = buildCorsHeaders(allowedOrigins, origin);
 
             String action = body != null ? (String) body.getOrDefault("action", "sendMessage") : "sendMessage";
 
             // Handle loadPreviousSession action — return empty array (memory-backed loading
             // would require AI memory node integration which is handled at workflow level)
             if ("loadPreviousSession".equals(action)) {
-                deferredResult.setResult(ResponseEntity.ok().body(Map.of("data", List.of())));
+                deferredResult.setResult(ResponseEntity.ok().headers(corsHeaders).body(Map.of("data", List.of())));
                 return deferredResult;
             }
 
@@ -438,7 +440,8 @@ public class WebhookController {
                 webSocketService.sendWebhookTestData(webhook.getWorkflowId(), testData);
                 cancelTimeout(webhook.getWorkflowId());
                 webhookService.deregisterTestWebhooks(webhook.getWorkflowId());
-                deferredResult.setResult(ResponseEntity.ok(Map.of("message", "Test webhook received")));
+                deferredResult.setResult(ResponseEntity.ok().headers(corsHeaders)
+                        .body(Map.of("message", "Test webhook received")));
                 return deferredResult;
             }
 
@@ -448,8 +451,8 @@ public class WebhookController {
             if ("onReceived".equals(responseMode)) {
                 String executionId = workflowEngine.startWebhookExecution(
                         webhook.getWorkflowId(), webhook.getNodeId(), webhookData);
-                deferredResult.setResult(ResponseEntity.ok(
-                        Map.of("executionId", executionId, "message", "Chat message received")));
+                deferredResult.setResult(ResponseEntity.ok().headers(corsHeaders)
+                        .body(Map.of("executionId", executionId, "message", "Chat message received")));
             } else {
                 // lastNode or responseNode — wait for workflow to produce response
                 CompletableFuture<Map<String, Object>> future = workflowEngine.startWebhookExecutionWithResponse(
@@ -458,10 +461,10 @@ public class WebhookController {
                 future.whenComplete((response, ex) -> {
                     if (ex != null) {
                         log.error("Chat trigger workflow execution failed", ex);
-                        deferredResult.setResult(ResponseEntity.status(500).body(
+                        deferredResult.setResult(ResponseEntity.status(500).headers(corsHeaders).body(
                                 Map.of("error", "Workflow execution failed: " + ex.getMessage())));
                     } else {
-                        deferredResult.setResult(buildWebhookResponse(response));
+                        deferredResult.setResult(buildCorsWebhookResponse(response, corsHeaders));
                     }
                 });
             }
@@ -510,6 +513,43 @@ public class WebhookController {
         }
 
         return builder.body(body);
+    }
+
+    /**
+     * Builds CORS headers for chat trigger responses.
+     * If the request origin matches the allowed origins pattern, it is echoed back;
+     * otherwise "*" is used if allowed.
+     */
+    private HttpHeaders buildCorsHeaders(String allowedOrigins, String origin) {
+        HttpHeaders headers = new HttpHeaders();
+        if ("*".equals(allowedOrigins)) {
+            headers.set("Access-Control-Allow-Origin", "*");
+        } else if (origin != null && !origin.isBlank()) {
+            // Check if the origin matches any of the comma-separated allowed origins
+            for (String allowed : allowedOrigins.split(",")) {
+                if (origin.equalsIgnoreCase(allowed.trim())) {
+                    headers.set("Access-Control-Allow-Origin", origin);
+                    headers.set("Vary", "Origin");
+                    break;
+                }
+            }
+        }
+        headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        headers.set("Access-Control-Allow-Credentials", "true");
+        return headers;
+    }
+
+    /**
+     * Wraps buildWebhookResponse with additional CORS headers for chat trigger responses.
+     */
+    private ResponseEntity<Object> buildCorsWebhookResponse(Map<String, Object> response, HttpHeaders corsHeaders) {
+        ResponseEntity<Object> original = buildWebhookResponse(response);
+        HttpHeaders merged = new HttpHeaders();
+        merged.putAll(original.getHeaders());
+        // CORS headers take precedence
+        corsHeaders.forEach((key, values) -> merged.put(key, values));
+        return ResponseEntity.status(original.getStatusCode()).headers(merged).body(original.getBody());
     }
 
     private void cancelTimeout(String workflowId) {
