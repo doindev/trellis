@@ -1532,7 +1532,6 @@ public class WorkflowEngine {
                             ? (Map<String, Object>) nodeDef.get("parameters") : Map.of();
 
                     // Resolve credentials for this sub-node
-                    @SuppressWarnings("unchecked")
                     Map<String, Object> credRefs = nodeDef.get("credentials") instanceof Map<?, ?>
                             ? (Map<String, Object>) nodeDef.get("credentials") : Map.of();
                     Map<String, Object> creds = resolveCredentials(

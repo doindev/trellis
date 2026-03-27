@@ -1,15 +1,24 @@
 package io.cwc.nodes.impl.ai;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.model.chat.request.json.JsonArraySchema;
+import dev.langchain4j.model.chat.request.json.JsonIntegerSchema;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
 import dev.langchain4j.model.chat.request.json.JsonStringSchema;
-import dev.langchain4j.model.chat.request.json.JsonIntegerSchema;
-import dev.langchain4j.model.chat.request.json.JsonArraySchema;
-import dev.langchain4j.model.chat.request.json.JsonAnyOfSchema;
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractAiToolNode;
 import io.cwc.nodes.core.DynamicTool;
@@ -19,10 +28,6 @@ import io.cwc.nodes.core.NodeParameter.ParameterOption;
 import io.cwc.nodes.core.NodeParameter.ParameterType;
 import io.cwc.service.McpSystemToolService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-
-import java.util.*;
 
 @Node(
 		type = "cwcPlatformTool",
