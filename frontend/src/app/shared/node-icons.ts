@@ -128,6 +128,15 @@ const Datadog: LucideIconData = [
   ['path', { d: 'M8 15c1.5 2 6.5 2 8 0' }],
 ];
 
+const Cwc: LucideIconData = [
+  ['rect', { x: '3', y: '3', width: '18', height: '18', rx: '3' }],
+  ['circle', { cx: '8', cy: '8', r: '1.5' }],
+  ['circle', { cx: '16', cy: '8', r: '1.5' }],
+  ['circle', { cx: '12', cy: '16', r: '1.5' }],
+  ['path', { d: 'M8 9.5v2.5a2 2 0 0 0 2 2h0' }],
+  ['path', { d: 'M16 9.5v2.5a2 2 0 0 1-2 2h0' }],
+];
+
 const Signpost: LucideIconData = [
   ['path', { d: 'M12 3v18' }],
   ['path', { d: 'M12 5h7l2 2-2 2h-7z' }],
@@ -261,6 +270,7 @@ export const NODE_ICON_SET = {
   Azure,
   Tavily,
   Mcp,
+  Cwc,
   BalanceScale,
   Datadog,
   Signpost,

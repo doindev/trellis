@@ -79,6 +79,7 @@ export interface CwcCanvasProps {
   onExecuteFromNode?: (nodeId: string) => void;
   onCopyNode?: (nodeId: string) => void;
   onInsertNodeOnEdge?: (edgeInfo: { sourceNodeId: string; targetNodeId: string; sourceHandle: string; targetHandle: string }) => void;
+  onNodeResize?: (nodeId: string, width: number, height: number) => void;
   triggerCleanUp?: number;
 }
 
@@ -119,6 +120,7 @@ function CwcCanvasInner({
   onExecuteFromNode,
   onCopyNode,
   onInsertNodeOnEdge,
+  onNodeResize,
   triggerCleanUp,
 }: CwcCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -141,6 +143,8 @@ function CwcCanvasInner({
   onCopyNodeRef.current = onCopyNode;
   const onInsertNodeOnEdgeRef = useRef(onInsertNodeOnEdge);
   onInsertNodeOnEdgeRef.current = onInsertNodeOnEdge;
+  const onNodeResizeRef = useRef(onNodeResize);
+  onNodeResizeRef.current = onNodeResize;
   const onConnectionsChangeRef = useRef(onConnectionsChange);
   onConnectionsChangeRef.current = onConnectionsChange;
 
@@ -288,6 +292,11 @@ function CwcCanvasInner({
     }, 600);
   }, []);
 
+  // Stable resize callback for sticky notes
+  const handleStickyNoteResize = useCallback((nodeId: string, width: number, height: number) => {
+    onNodeResizeRef.current?.(nodeId, width, height);
+  }, []);
+
   // Track single node selection
   const onSelectionChange = useCallback(({ nodes: selectedNodes }: { nodes: Node[] }) => {
     setSingleSelectedId(selectedNodes.length === 1 ? selectedNodes[0].id : null);
@@ -315,6 +324,7 @@ function CwcCanvasInner({
               onOutputHandleDoubleClick: (handleId: string) => {
                 outputHandleDoubleClickRef.current?.(newNode.id, handleId);
               },
+              ...(newNode.type === 'stickyNoteNode' ? { onResize: handleStickyNoteResize } : {}),
             },
           };
         }
@@ -348,6 +358,7 @@ function CwcCanvasInner({
               || ((handleId: string) => {
                 outputHandleDoubleClickRef.current?.(newNode.id, handleId);
               }),
+            ...(newNode.type === 'stickyNoteNode' ? { onResize: handleStickyNoteResize } : {}),
           },
         };
       });

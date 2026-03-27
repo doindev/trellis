@@ -168,7 +168,8 @@
       "Bash(do curl -s -o /dev/null -w \"Port $port: %{http_code}\\\\n\" \"http://localhost:$port/api/variables\" --connect-timeout 2)",
       "Bash(find /c/Users/timhj/eclipse-workspace/Cwc -maxdepth 3 -type f \\\\\\(-name *Dockerfile* -o -name docker-compose* -o -name Jenkinsfile -o -name .github \\\\\\))",
       "Bash(tasklist)",
-      "mcp__cwc-agent__cwc_create_project"
+      "mcp__cwc-agent__cwc_create_project",
+      "Read(//c/Users/timhj/.claude/**)"
     ]
   }
 }

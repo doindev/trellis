@@ -353,6 +353,19 @@ export class WorkflowEditorStore {
     }, 'positions');
   }
 
+  resizeStickyNote({ nodeId, width, height }: { nodeId: string; width: number; height: number }): void {
+    const wf = this.workflow();
+    if (!wf) return;
+    this.commitChange({
+      ...wf,
+      nodes: wf.nodes.map(n =>
+        n.id === nodeId
+          ? { ...n, parameters: { ...n.parameters, width, height } }
+          : n
+      ),
+    }, 'resize');
+  }
+
   pinNodeData(nodeId: string, items: any[]): void {
     const wf = this.workflow();
     if (!wf) return;

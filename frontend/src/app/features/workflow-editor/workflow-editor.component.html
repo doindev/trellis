@@ -80,7 +80,8 @@
             (duplicateNode)="store.duplicateNode($event)"
             (executeFromNode)="onExecuteFromNode($event)"
             (copyNode)="store.copyNode($event)"
-            (insertNodeOnEdge)="onInsertNodeOnEdge($event)" />
+            (insertNodeOnEdge)="onInsertNodeOnEdge($event)"
+            (nodeResized)="store.resizeStickyNote($event)" />
         </div>
 
         @if (activeTab === 'editor') {

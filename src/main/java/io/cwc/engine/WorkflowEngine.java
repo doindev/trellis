@@ -1398,16 +1398,18 @@ public class WorkflowEngine {
         log.info("[{}] Merging predefined agent definition '{}'", executionId, agentDefinitionId);
 
         // --- Parameter overrides: definition values are used unless the workflow explicitly changed them ---
-        // systemMessage: use definition's unless the workflow's value differs from the definition's
-        // (When the frontend populates the field from the definition, it will match. If the user
-        //  edited it, it won't match — and that edited value should be used as the override.)
+        // systemMessage: use definition's unless the user explicitly typed a different value.
+        // Treat null, blank, and the node's built-in default as "not set" — all resolve to the definition's value.
         String workflowSystemMsg = (String) resolvedParams.get("systemMessage");
         String defSystemMsg = config.systemMessage();
-        if (workflowSystemMsg == null || workflowSystemMsg.equals(defSystemMsg)) {
-            // Workflow matches definition (or is null) — use definition's value as-is
+        boolean isDefault = workflowSystemMsg == null
+                || workflowSystemMsg.isBlank()
+                || workflowSystemMsg.equals(defSystemMsg)
+                || workflowSystemMsg.equals("You are a helpful assistant.");
+        if (isDefault) {
             resolvedParams.put("systemMessage", defSystemMsg);
         }
-        // else: workflow has a different system message — it's an intentional override, keep it
+        // else: workflow has a user-typed system message — it's an intentional override, keep it
 
         // maxIterations: use definition's unless workflow explicitly set a different value
         Object workflowMaxIter = resolvedParams.get("maxIterations");

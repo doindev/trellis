@@ -1,5 +1,5 @@
-import React, { memo, useMemo } from 'react';
-import { type NodeProps } from '@xyflow/react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
+import { type NodeProps, NodeResizeControl } from '@xyflow/react';
 import { marked } from 'marked';
 
 interface StickyNoteData {
@@ -11,6 +11,7 @@ interface StickyNoteData {
     height?: number;
   };
   readOnly?: boolean;
+  onResize?: (nodeId: string, width: number, height: number) => void;
   [key: string]: unknown;
 }
 
@@ -22,10 +23,13 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string }> = 
   purple: { bg: 'hsl(270, 60%, 92%)', border: 'hsl(270, 40%, 74%)', text: 'hsl(270, 25%, 22%)' },
 };
 
+const MIN_WIDTH = 120;
+const MIN_HEIGHT = 80;
+
 // Configure marked for safe inline rendering
 marked.setOptions({ breaks: true, gfm: true });
 
-function StickyNoteNode({ data, selected }: NodeProps) {
+function StickyNoteNode({ id, data, selected }: NodeProps) {
   const d = data as StickyNoteData;
   const params = d.nodeParameters || {};
   const content = params.content || '';
@@ -34,23 +38,57 @@ function StickyNoteNode({ data, selected }: NodeProps) {
   const height = params.height || 150;
   const defaultColor = COLOR_MAP['yellow'];
   const colors = COLOR_MAP[colorKey] || defaultColor;
+  const readOnly = d.readOnly;
+
+  // Local state for live resize — null when not dragging
+  const [liveSize, setLiveSize] = useState<{ w: number; h: number } | null>(null);
 
   const html = useMemo(() => {
     if (!content) return '';
     return marked.parse(content) as string;
   }, [content]);
 
+  const onResizeDrag = useCallback(
+    (_event: unknown, params: { width: number; height: number }) => {
+      setLiveSize({ w: params.width, h: params.height });
+    },
+    []
+  );
+
+  const onResizeEnd = useCallback(
+    (_event: unknown, params: { width: number; height: number }) => {
+      setLiveSize(null);
+      d.onResize?.(id, Math.round(params.width), Math.round(params.height));
+    },
+    [id, d.onResize]
+  );
+
+  const displayWidth = liveSize ? liveSize.w : width;
+  const displayHeight = liveSize ? liveSize.h : height;
+
   return (
     <div
       className={`sticky-note-node${selected ? ' selected' : ''}`}
       style={{
-        width,
-        height,
+        width: displayWidth,
+        height: displayHeight,
         backgroundColor: colors.bg,
         borderColor: selected ? 'hsl(247, 49%, 53%)' : colors.border,
         color: colors.text,
       }}
     >
+      {selected && !readOnly && (
+        <NodeResizeControl
+          minWidth={MIN_WIDTH}
+          minHeight={MIN_HEIGHT}
+          position="bottom-right"
+          style={{ background: 'transparent', border: 'none' }}
+          onResize={onResizeDrag}
+          onResizeEnd={onResizeEnd}
+        >
+          <div className="sticky-note-resize-handle" />
+        </NodeResizeControl>
+      )}
       {html ? (
         <div
           className="sticky-note-content"
