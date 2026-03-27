@@ -20,6 +20,7 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 import io.cwc.service.McpSystemToolService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 
 import java.util.*;
 
@@ -43,6 +44,7 @@ public class CwcPlatformToolNode extends AbstractAiToolNode {
 			"cwc_list_browser_sessions"
 	);
 
+	@Lazy
 	@Autowired
 	private McpSystemToolService mcpSystemToolService;
 
