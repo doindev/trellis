@@ -1,0 +1,233 @@
+{
+  "configId": "daily-ai-operations-runner",
+  "name": "Daily AI Operations Runner",
+  "description": "Daily (9 PM ET, Mon-Fri): Gathers execution logs, strategy metrics, watchlist stats, alert summaries. Feeds to AI Operations Orchestrator for health monitoring, performance evaluation, and improvement recommendations.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Daily 9PM ET",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        512,
+        320
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 21 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        304,
+        80
+      ],
+      "parameters": {
+        "content": "## Daily AI Operations Runner\n\nRequired: postgresApi, anthropicApi, tavilyApi\nUses: AI Operations Orchestrator\nRuns after all other workflows complete.",
+        "width": 294,
+        "height": 147
+      }
+    },
+    {
+      "id": "el",
+      "name": "Exec Logs (24h)",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        704,
+        80
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT workflow_id,workflow_name,project_name,status,started_at,completed_at,duration_ms,error_message FROM workflow_execution_log WHERE started_at>NOW()-INTERVAL '24 hours' ORDER BY started_at DESC"
+      }
+    },
+    {
+      "id": "sm",
+      "name": "Strategy Metrics",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        704,
+        240
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT strategy,COUNT(*) as total,AVG(overall_score) as avg_score,COUNT(CASE WHEN recommendation IN ('STRONG_BUY','BUY') THEN 1 END) as buy_cnt,COUNT(CASE WHEN recommendation='AVOID' THEN 1 END) as avoid_cnt FROM investment_scores WHERE score_date>=CURRENT_DATE-INTERVAL '7 days' GROUP BY strategy"
+      }
+    },
+    {
+      "id": "ws",
+      "name": "Watchlist Stats",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        704,
+        416
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT strategy,COUNT(*) as cnt,AVG(score) as avg_scr,MAX(added_at) as newest FROM watchlists WHERE status='active' GROUP BY strategy"
+      }
+    },
+    {
+      "id": "as",
+      "name": "Alert Summary",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        704,
+        576
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT alert_type,strategy,COUNT(*) as cnt,COUNT(CASE WHEN sent THEN 1 END) as sent_cnt FROM alerts WHERE triggered_at>NOW()-INTERVAL '24 hours' GROUP BY alert_type,strategy"
+      }
+    },
+    {
+      "id": "ctx",
+      "name": "Build Context",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        896,
+        320
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items=$input.all();const logs=items[0]?.json||[];const metrics=items[1]?.json||[];const wl=items[2]?.json||[];const alerts=items[3]?.json||[];\nconst today=new Date().toISOString().split('T')[0];\nlet ctx=`=== DAILY AI OPS BRIEFING ===\\nDate: ${today}\\n\\n--- EXECUTIONS (24h) ---\\n`;\nconst la=Array.isArray(logs)?logs:[logs];if(la.length>0&&la[0].workflow_name){const t=la.length,f=la.filter(l=>l.status==='error'||l.status==='failed').length;ctx+=`Total: ${t} | Failed: ${f} | Rate: ${((t-f)/t*100).toFixed(1)}%\\n`;for(const l of la.filter(l=>l.status!=='success'))ctx+=`  FAILED: ${l.workflow_name} - ${l.error_message}\\n`;}else ctx+='No logs.\\n';\nctx+='\\n--- STRATEGY PERF (7d) ---\\n';const ma=Array.isArray(metrics)?metrics:[metrics];for(const m of ma){if(m.strategy)ctx+=`${m.strategy}: ${m.total} scored, avg ${parseFloat(m.avg_score).toFixed(1)}, BUY:${m.buy_cnt}, AVOID:${m.avoid_cnt}\\n`;}\nctx+='\\n--- WATCHLISTS ---\\n';const wa=Array.isArray(wl)?wl:[wl];for(const w of wa){if(w.strategy)ctx+=`${w.strategy}: ${w.cnt} active, avg ${parseFloat(w.avg_scr).toFixed(1)}\\n`;}\nctx+='\\n--- ALERTS ---\\n';const aa=Array.isArray(alerts)?alerts:[alerts];for(const a of aa){if(a.alert_type)ctx+=`${a.alert_type} (${a.strategy}): ${a.cnt} triggered, ${a.sent_cnt} sent\\n`;}\nctx+='\\n--- TASKS ---\\n1. Assess health\\n2. Evaluate strategies\\n3. Identify optimizations\\n4. Research new strategies if warranted\\n5. Take corrective actions\\n6. Compile report';return [{json:{context:ctx}}];"
+      }
+    },
+    {
+      "id": "ag",
+      "name": "AI Ops",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        304
+      ],
+      "parameters": {
+        "agentDefinitionId": "0mNYJosp3x1WHHRnXJ0lp",
+        "prompt": "{{$json.context}}",
+        "maxIterations": 25,
+        "systemMessage": "You are the AI Operations Orchestrator for a stock research automation platform.\n\nSub-agents:\n1. **health_monitor** - Checks workflow execution logs for failures, timeouts, degradation\n2. **performance_evaluator** - Analyzes strategy metrics, score distributions, watchlist quality\n3. **strategy_researcher** - Researches new strategies and data sources via web search\n4. **workflow_implementer** - CWC Platform Tool access to create/update workflows\n\nDaily routine:\n1. health_monitor: 24h execution check\n2. performance_evaluator: strategy assessment\n3. strategy_researcher: if opportunities exist\n4. workflow_implementer: if improvements needed\n5. Compile operations report\n\nOutput: health_status (green/yellow/red), failed_workflows, strategy_performance, optimization_opportunities, actions_taken, recommendations."
+      }
+    },
+    {
+      "id": "st",
+      "name": "Store Report",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        320
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,created_at) VALUES ('ai_ops_orchestrator',CURRENT_DATE,'daily_operations','{{$json.output}}',NOW());"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "el",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "sm",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "ws",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "as",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "el": {
+      "main": [
+        [
+          {
+            "node": "ctx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sm": {
+      "main": [
+        [
+          {
+            "node": "ctx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ws": {
+      "main": [
+        [
+          {
+            "node": "ctx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "as": {
+      "main": [
+        [
+          {
+            "node": "ctx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ctx": {
+      "main": [
+        [
+          {
+            "node": "ag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ag": {
+      "main": [
+        [
+          {
+            "node": "st",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

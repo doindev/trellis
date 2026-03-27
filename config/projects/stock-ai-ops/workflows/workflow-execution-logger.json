@@ -1,0 +1,85 @@
+{
+  "configId": "workflow-execution-logger",
+  "name": "Workflow Execution Logger",
+  "description": "Error trigger: Automatically logs workflow failures to workflow_execution_log. Captures workflow ID, name, errors, timing. Critical for AI Ops health monitoring.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "On Error",
+      "type": "errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Execution Logger\n\nRequired: postgresApi\nEvent-driven, no schedule needed"
+      }
+    },
+    {
+      "id": "ex",
+      "name": "Extract",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const d=$input.first().json;const exec=d.execution||{};const wf=d.workflow||{};return [{json:{workflow_id:wf.id||'unknown',workflow_name:wf.name||'unknown',execution_id:exec.id||'',status:'error',started_at:exec.startedAt||new Date().toISOString(),completed_at:new Date().toISOString(),duration_ms:exec.duration||0,error_message:(d.error?.message||d.errorMessage||'Unknown').substring(0,500).replace(/'/g,'')}}];"
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Log",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO workflow_execution_log (workflow_id,workflow_name,execution_id,status,started_at,completed_at,duration_ms,error_message) VALUES ('{{$json.workflow_id}}','{{$json.workflow_name}}','{{$json.execution_id}}','{{$json.status}}','{{$json.started_at}}','{{$json.completed_at}}',{{$json.duration_ms}},'{{$json.error_message}}');"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "ex",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ex": {
+      "main": [
+        [
+          {
+            "node": "pg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

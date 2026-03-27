@@ -1,0 +1,227 @@
+{
+  "configId": "dividend-strategy-analyst",
+  "name": "Dividend Strategy Analyst",
+  "description": "AI agent for income/dividend investing. Evaluates dividend safety, yield sustainability, payout ratios, Aristocrat status. Sub-agent: Dividend Safety Analyst.",
+  "type": "AGENT",
+  "nodes": [
+    {
+      "id": "agent1",
+      "name": "Dividend Strategy Analyst",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "systemMessage": "You are a Dividend Strategy Analyst for income investments.\n\nPhilosophy:\n- Safety/sustainability over raw yield\n- Favor Dividend Aristocrats (25+ years increases)\n- Payout <75% (most sectors), <90% (REITs/utilities)\n- Dividend growth must outpace inflation, FCF must cover dividends\n\nAnalysis:\n1. Dividend safety score (FCF coverage, payout, debt)\n2. Growth history (5/10yr CAGR)\n3. Yield vs peers and 10Y Treasury\n4. Business model durability\n5. Red flags: special dividends masking cuts, rising payout\n\nOutput JSON: ticker, dividend_score, current_yield, dividend_growth_5yr, payout_ratio, fcf_coverage, aristocrat_status, safety_rating (safe/watch/danger), recommendation, thesis.",
+        "prompt": "{{$json.context}}",
+        "maxIterations": 12
+      }
+    },
+    {
+      "id": "model1",
+      "name": "Claude Sonnet",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        300,
+        450
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.3,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "memory1",
+      "name": "Memory",
+      "type": "memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        420,
+        450
+      ],
+      "parameters": {
+        "sessionId": "dividend_analyst_{{$json.ticker}}"
+      }
+    },
+    {
+      "id": "think1",
+      "name": "Think",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [
+        540,
+        450
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "httpTool1",
+      "name": "Data",
+      "type": "httpRequestTool",
+      "typeVersion": 1,
+      "position": [
+        660,
+        450
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://financialmodelingprep.com/api/v3/{endpoint}",
+        "description": "FMP: historical-price-full/stock_dividend/{ticker}, profile/{ticker}, ratios/{ticker}, cash-flow-statement/{ticker}. Append ?apikey=."
+      }
+    },
+    {
+      "id": "codeTool1",
+      "name": "Div Calc",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [
+        780,
+        450
+      ],
+      "parameters": {
+        "language": "js",
+        "code": "try{const d=JSON.parse(input);const fcf=d.free_cash_flow||0,dp=d.total_dividends_paid||0,p=d.current_price||1,ad=d.annual_dividend||0;const cov=dp>0?fcf/Math.abs(dp):0;const y=ad/p*100;return JSON.stringify({yield:y.toFixed(2)+'%',fcf_coverage:cov.toFixed(2),safety:cov>1.5?'safe':cov>1.0?'watch':'danger'});}catch(e){return'Error: '+e.message;}"
+      }
+    },
+    {
+      "id": "sub1",
+      "name": "Dividend Safety Analyst",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        550,
+        650
+      ],
+      "parameters": {
+        "agentName": "dividend_safety_analyst",
+        "agentDescription": "Evaluates dividend safety: payout trends, FCF coverage, debt maturity, cyclicality.",
+        "systemMessage": "Evaluate dividend safety: 1) Payout trend, 2) FCF coverage >1.5x, 3) Debt maturity, 4) Industry cyclicality, 5) Management commitment. Return: safety_rating (safe/watch/danger), confidence (1-10), risk_factors.",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model2",
+      "name": "Safety Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        400,
+        800
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    }
+  ],
+  "connections": {
+    "model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "think1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "httpTool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "codeTool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "icon": "💰"
+}

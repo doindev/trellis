@@ -1,0 +1,7 @@
+{
+  "configId": "stock-technical",
+  "name": "Stock Research - Technical Analysis",
+  "type": "TEAM",
+  "contextPath": "stock-technical",
+  "description": "Technical analysis pipeline: calculates RSI, MACD, Bollinger Bands, Moving Averages, detects chart patterns, identifies entry/exit signals. Stores computed technicals in PostgreSQL."
+}

@@ -1,0 +1,7 @@
+{
+  "configId": "stock-ai-ops",
+  "name": "Stock Research - AI Operations",
+  "type": "TEAM",
+  "contextPath": "stock-ai-ops",
+  "description": "Meta-orchestration layer: daily AI agent monitors workflow health/failures, evaluates strategy performance, identifies optimization opportunities, researches and implements new investment strategy workflows."
+}

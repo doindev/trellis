@@ -1,0 +1,7 @@
+{
+  "configId": "stock-reporting",
+  "name": "Stock Research - Valuation & Reporting",
+  "type": "TEAM",
+  "contextPath": "stock-reporting",
+  "description": "Consolidation layer: generates investment scorecards (1-10), compiles HTML investment reports, calculates intrinsic values, sends alert notifications via email when trigger conditions are met."
+}

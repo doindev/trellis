@@ -1,0 +1,165 @@
+{
+  "configId": "sec-filing-monitor",
+  "name": "SEC Filing Monitor",
+  "description": "Daily (7 PM ET, Mon-Fri): Checks SEC EDGAR for new 10-K, 10-Q, 8-K filings from watchlist companies. Free API, no key needed.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 7PM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 19 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## SEC Filing Monitor\n\nNo API key needed - SEC EDGAR free\nMonitors: 10-K, 10-Q, 8-K"
+      }
+    },
+    {
+      "id": "tks",
+      "name": "Watchlist",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT DISTINCT w.ticker,t.company_name FROM watchlists w JOIN tickers t ON w.ticker=t.ticker WHERE w.status='active' LIMIT 30"
+      }
+    },
+    {
+      "id": "lp",
+      "name": "Each",
+      "type": "loopOverItems",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "f1",
+      "name": "EDGAR",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        950,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://efts.sec.gov/LATEST/search-index?q=%22{{$json.ticker}}%22&dateRange=custom&startdt={{$now.minus(7,'days').format('yyyy-MM-dd')}}&enddt={{$now.format('yyyy-MM-dd')}}&forms=10-K,10-Q,8-K",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "tx",
+      "name": "Extract",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const d=$input.first().json;const hits=d.hits?.hits||[];if(!hits.length)return [];return hits.map(h=>{const s=h._source||{};return {json:{ticker:s.tickers?.[0]||'',filing_type:s.form_type||'',filing_date:s.file_date||'',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK='+encodeURIComponent(s.entity_id||''),summary:(s.display_names?.[0]||'')+' - '+(s.form_type||'')}};});"
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Store",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO sec_filings (ticker,filing_type,filing_date,url,summary) SELECT '{{$json.ticker}}','{{$json.filing_type}}','{{$json.filing_date}}','{{$json.url}}','{{$json.summary}}' WHERE NOT EXISTS (SELECT 1 FROM sec_filings WHERE ticker='{{$json.ticker}}' AND filing_type='{{$json.filing_type}}' AND filing_date='{{$json.filing_date}}');"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "tks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tks": {
+      "main": [
+        [
+          {
+            "node": "lp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "lp": {
+      "main": [
+        [],
+        [
+          {
+            "node": "f1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "f1": {
+      "main": [
+        [
+          {
+            "node": "tx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tx": {
+      "main": [
+        [
+          {
+            "node": "pg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

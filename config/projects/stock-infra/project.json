@@ -1,0 +1,7 @@
+{
+  "configId": "stock-infra",
+  "name": "Stock Research - Market Infrastructure",
+  "type": "TEAM",
+  "contextPath": "stock-infra",
+  "description": "Shared data pipelines: ticker universe management, OHLCV price ingestion, company fundamentals sync, economic indicators, and database schema initialization. Backs all strategy projects via PostgreSQL and Neo4j."
+}

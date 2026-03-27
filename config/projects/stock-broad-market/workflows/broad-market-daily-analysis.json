@@ -1,0 +1,170 @@
+{
+  "configId": "broad-market-daily-analysis",
+  "name": "Broad Market Daily Analysis",
+  "description": "Daily (8 AM ET, Mon-Fri): Gathers economic indicators and sector performance, feeds to Broad Market Strategy Analyst for cycle/rotation/DCA guidance.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 8AM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 8 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Broad Market Analysis\n\nRequired: postgresApi, anthropicApi, httpHeaderAuth (FMP)\nUses: Broad Market Strategy Analyst"
+      }
+    },
+    {
+      "id": "ec",
+      "name": "Economic Data",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT indicator_id,indicator_name,observation_date,value FROM economic_indicators WHERE observation_date>=CURRENT_DATE-INTERVAL '90 days' ORDER BY indicator_id,observation_date DESC"
+      }
+    },
+    {
+      "id": "sp",
+      "name": "Sector Perf",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        450
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://financialmodelingprep.com/api/v3/sector-performance?apikey={{$credentials.httpHeaderAuth.value}}",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "ctx",
+      "name": "Build Context",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items=$input.all();const econ=items[0]?.json||[];const sectors=items[1]?.json||[];\nlet ctx='=== MARKET ANALYSIS ===\\nDate: '+new Date().toISOString().split('T')[0]+'\\n\\n--- ECONOMIC ---\\n';\nif(Array.isArray(econ)){const lt={};for(const r of econ){if(!lt[r.indicator_id])lt[r.indicator_id]=r;}for(const[id,r]of Object.entries(lt))ctx+=`- ${r.indicator_name||id}: ${r.value} (${r.observation_date})\\n`;}\nctx+='\\n--- SECTORS ---\\n';if(Array.isArray(sectors)){for(const s of sectors)ctx+=`- ${s.sector}: ${s.changesPercentage}\\n`;}\nctx+='\\nProvide cycle assessment, sector rotation, DCA guidance, outlook.';return [{json:{context:ctx}}];"
+      }
+    },
+    {
+      "id": "ag",
+      "name": "Market Analyst",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "parameters": {
+        "agentDefinitionId": "A0t4eROQhUunc1OaWUQEt",
+        "prompt": "{{$json.context}}"
+      }
+    },
+    {
+      "id": "st",
+      "name": "Store",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,created_at) VALUES ('broad_market_analyst',CURRENT_DATE,'daily_market_analysis','{{$json.output}}',NOW());"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "ec",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "sp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ec": {
+      "main": [
+        [
+          {
+            "node": "ctx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sp": {
+      "main": [
+        [
+          {
+            "node": "ctx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ctx": {
+      "main": [
+        [
+          {
+            "node": "ag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ag": {
+      "main": [
+        [
+          {
+            "node": "st",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,238 @@
+{
+  "configId": "company-fundamentals-sync",
+  "name": "Company Fundamentals Sync",
+  "description": "Weekly (Saturday 8 AM ET): Fetches financial ratios and company profiles from FMP for all active tickers. Updates fundamentals table. Critical for Value and Growth screening.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Saturday 8AM ET",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 8 * * 6",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Fundamentals Sync\n\nRequired: httpHeaderAuth (FMP), postgresApi\nAPIs: FMP /api/v3/ratios, /api/v3/profile"
+      }
+    },
+    {
+      "id": "tks",
+      "name": "Active Tickers",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ticker FROM tickers WHERE is_active=true ORDER BY ticker"
+      }
+    },
+    {
+      "id": "loop1",
+      "name": "Each Ticker",
+      "type": "loopOverItems",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "fr",
+      "name": "Fetch Ratios",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        950,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://financialmodelingprep.com/api/v3/ratios/{{$json.ticker}}?period=annual&limit=1&apikey={{$credentials.httpHeaderAuth.value}}",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "fp",
+      "name": "Fetch Profile",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        950,
+        450
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://financialmodelingprep.com/api/v3/profile/{{$json.ticker}}?apikey={{$credentials.httpHeaderAuth.value}}",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "tx",
+      "name": "Transform",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items=$input.all(); const r=Array.isArray(items[0]?.json)?items[0].json[0]:items[0]?.json; const p=Array.isArray(items[1]?.json)?items[1].json[0]:items[1]?.json;\nif(!r&&!p) return [{json:{skip:true}}]; const tk=r?.symbol||p?.symbol||'?';\nreturn [{json:{ticker:tk,period_date:r?.date||new Date().toISOString().split('T')[0],revenue:p?.revenue||null,net_income:p?.netIncome||null,eps:p?.eps||null,pe_ratio:r?.priceEarningsRatio||p?.peRatio||null,pb_ratio:r?.priceToBookRatio||null,ps_ratio:r?.priceToSalesRatio||null,debt_to_equity:r?.debtEquityRatio||null,roe:r?.returnOnEquity||null,roa:r?.returnOnAssets||null,current_ratio:r?.currentRatio||null,dividend_yield:r?.dividendYield||null,payout_ratio:r?.payoutRatio||null,revenue_growth:r?.revenueGrowth||null,earnings_growth:r?.netIncomeGrowth||null,free_cash_flow:p?.freeCashFlow||null,gross_margin:r?.grossProfitMargin||null,operating_margin:r?.operatingProfitMargin||null,net_margin:r?.netProfitMargin||null,market_cap:p?.mktCap||null}}];"
+      }
+    },
+    {
+      "id": "fl",
+      "name": "Skip Empty",
+      "type": "filter",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              },
+              "leftValue": "={{$json.skip}}",
+              "rightValue": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "pg1",
+      "name": "Upsert",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1750,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO fundamentals (ticker,period_date,period_type,revenue,net_income,eps,pe_ratio,pb_ratio,ps_ratio,debt_to_equity,roe,roa,current_ratio,dividend_yield,payout_ratio,revenue_growth,earnings_growth,free_cash_flow,gross_margin,operating_margin,net_margin,last_updated) VALUES ('{{$json.ticker}}','{{$json.period_date}}','annual',{{$json.revenue}},{{$json.net_income}},{{$json.eps}},{{$json.pe_ratio}},{{$json.pb_ratio}},{{$json.ps_ratio}},{{$json.debt_to_equity}},{{$json.roe}},{{$json.roa}},{{$json.current_ratio}},{{$json.dividend_yield}},{{$json.payout_ratio}},{{$json.revenue_growth}},{{$json.earnings_growth}},{{$json.free_cash_flow}},{{$json.gross_margin}},{{$json.operating_margin}},{{$json.net_margin}},NOW()) ON CONFLICT (ticker,period_date,period_type) DO UPDATE SET revenue=EXCLUDED.revenue,pe_ratio=EXCLUDED.pe_ratio,roe=EXCLUDED.roe,dividend_yield=EXCLUDED.dividend_yield,last_updated=NOW();"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "tks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tks": {
+      "main": [
+        [
+          {
+            "node": "loop1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "loop1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "fr",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "fp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fr": {
+      "main": [
+        [
+          {
+            "node": "tx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fp": {
+      "main": [
+        [
+          {
+            "node": "tx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tx": {
+      "main": [
+        [
+          {
+            "node": "fl",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fl": {
+      "main": [
+        [
+          {
+            "node": "pg1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

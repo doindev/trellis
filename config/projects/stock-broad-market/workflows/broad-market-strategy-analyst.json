@@ -1,0 +1,255 @@
+{
+  "configId": "broad-market-strategy-analyst",
+  "name": "Broad Market Strategy Analyst",
+  "description": "AI agent for broad market strategies: index investing, sector rotation, DCA, macro analysis. Sub-agents: Sector Rotation Analyst, Macro Economist.",
+  "type": "AGENT",
+  "nodes": [
+    {
+      "id": "agent1",
+      "name": "Broad Market Analyst",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "systemMessage": "You are a Broad Market Strategy Analyst.\n\nPhilosophy:\n- Market timing is futile; DCA wins long-term\n- Sector rotation by economic cycle adds alpha\n- Monitor: yield curve, VIX, unemployment, consumer confidence\n- Recommend ETF allocation over individual picks\n\nAnalysis:\n1. Economic cycle stage (expansion/peak/contraction/trough)\n2. Leading indicators (yield curve, PMI, housing)\n3. Sector rotation patterns\n4. Sector over/underweights\n5. DCA deployment timing\n\nOutput JSON: market_phase, economic_cycle_stage, sector_recommendations [{sector,weight,rationale}], dca_recommendation, risk_level, market_outlook.",
+        "prompt": "{{$json.context}}",
+        "maxIterations": 12
+      }
+    },
+    {
+      "id": "model1",
+      "name": "Claude Sonnet",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        300,
+        450
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.3,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "memory1",
+      "name": "Memory",
+      "type": "memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        420,
+        450
+      ],
+      "parameters": {
+        "sessionId": "broad_market_analyst"
+      }
+    },
+    {
+      "id": "think1",
+      "name": "Think",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [
+        540,
+        450
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "httpTool1",
+      "name": "Data",
+      "type": "httpRequestTool",
+      "typeVersion": 1,
+      "position": [
+        660,
+        450
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://financialmodelingprep.com/api/v3/{endpoint}",
+        "description": "FMP: sector-performance, market-risk-premium, treasury. Append ?apikey=."
+      }
+    },
+    {
+      "id": "sub1",
+      "name": "Sector Rotation Analyst",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        500,
+        650
+      ],
+      "parameters": {
+        "agentName": "sector_rotation_analyst",
+        "agentDescription": "Analyzes sector rotation patterns by economic cycle.",
+        "systemMessage": "Map to cycle: Early Recovery (Financials, Discretionary), Mid Expansion (Tech, Comm), Late Expansion (Energy, Materials), Contraction (Healthcare, Utilities, Staples). Return sector_weights, rotation_signals, cycle_confidence.",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model2",
+      "name": "Sector Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        300,
+        800
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.3,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "sub2",
+      "name": "Macro Economist",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        800,
+        650
+      ],
+      "parameters": {
+        "agentName": "macro_economist",
+        "agentDescription": "Interprets macro data: GDP, CPI, unemployment, Fed policy, yield curve.",
+        "systemMessage": "Interpret: 1) GDP trajectory, 2) Inflation (CPI,PPI,PCE), 3) Labor market, 4) Fed stance, 5) Yield curve shape, 6) Consumer confidence, 7) Global risks. Return: outlook, recession_probability, inflation_trajectory, key_risks.",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model3",
+      "name": "Macro Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        700,
+        800
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.3,
+        "maxTokens": 2048
+      }
+    }
+  ],
+  "connections": {
+    "model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "think1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "httpTool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub2": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "icon": "📊"
+}

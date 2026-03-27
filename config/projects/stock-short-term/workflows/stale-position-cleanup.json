@@ -1,0 +1,119 @@
+{
+  "configId": "stale-position-cleanup",
+  "name": "Stale Position Cleanup",
+  "description": "Daily (8 PM ET, Mon-Fri): Removes tickers from the short-term watchlist that haven't triggered a setup in 7 days or whose setups have expired. Keeps the watchlist fresh and focused on active opportunities.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 8PM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 20 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Stale Position Cleanup\n\nRequired: postgresApi, neo4j\nRemoves stale short-term candidates (>7 days old)\nKeeps watchlist fresh"
+      }
+    },
+    {
+      "id": "cleanup_pg",
+      "name": "Deactivate Stale PG",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "UPDATE watchlists SET status = 'expired' WHERE strategy = 'short_term' AND status = 'active' AND added_at < NOW() - INTERVAL '7 days' AND ticker NOT IN (SELECT DISTINCT ticker FROM alerts WHERE strategy = 'short_term' AND alert_type LIKE 'trade_setup_%' AND triggered_at > NOW() - INTERVAL '3 days');"
+      }
+    },
+    {
+      "id": "cleanup_neo",
+      "name": "Remove Stale Neo4j",
+      "type": "neo4j",
+      "typeVersion": 1,
+      "position": [
+        450,
+        450
+      ],
+      "parameters": {
+        "operation": "executeStatement",
+        "query": "MATCH (c:Company)-[r:IN_WATCHLIST]->(w:Watchlist {name: 'short_term'}) WHERE r.updatedAt < datetime() - duration('P7D') DELETE r;",
+        "parameters": "{}"
+      }
+    },
+    {
+      "id": "count1",
+      "name": "Count Active",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as active_count, (SELECT COUNT(*) FROM watchlists WHERE strategy='short_term' AND status='expired') as expired_count FROM watchlists WHERE strategy='short_term' AND status='active'"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "cleanup_pg",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "cleanup_neo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cleanup_pg": {
+      "main": [
+        [
+          {
+            "node": "count1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cleanup_neo": {
+      "main": [
+        [
+          {
+            "node": "count1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

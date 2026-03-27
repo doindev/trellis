@@ -1,0 +1,343 @@
+{
+  "configId": "short-term-trading-analyst",
+  "name": "Short-Term Trading Analyst",
+  "description": "AI agent for short-term trading (1-30 day holds). Evaluates swing setups, momentum breakouts, bull flag patterns, and event-driven catalysts. Sub-agents: Swing Setup Scanner, Momentum/Pattern Detector, Risk Manager.",
+  "type": "AGENT",
+  "nodes": [
+    {
+      "id": "agent1",
+      "name": "Short-Term Trading Analyst",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        832,
+        304
+      ],
+      "parameters": {
+        "systemMessage": "You are a Short-Term Trading Analyst specializing in 1-30 day holding periods.\n\nYour trading philosophy:\n- Capital preservation first: never risk more than 2% of portfolio per trade\n- Use strict stop-losses (typically 5-8% below entry) and take-profit targets (2:1 reward-to-risk minimum)\n- Trade WITH the trend, not against it. Confirm signals with volume.\n- Prefer liquid, high-volume stocks (avg volume >1M shares/day)\n- Catalyst-aware: earnings, FDA decisions, sector momentum shifts\n\nWhen analyzing a short-term setup:\n1. Identify the pattern: swing reversal, momentum breakout, bull flag, mean reversion\n2. Confirm with volume (breakout volume should be >1.5x average)\n3. Check RSI for overbought/oversold extremes\n4. Identify precise entry price, stop-loss level, and profit target(s)\n5. Calculate position size based on risk parameters\n6. Assess holding period (1-5 days for momentum, 5-15 days for swing, 15-30 for position)\n7. Check for upcoming catalysts (earnings dates, ex-div dates) that could disrupt the trade\n\nRisk rules:\n- Max loss per trade: 2% of portfolio\n- Max open positions: 5-8 concurrent\n- Close positions before earnings unless explicitly playing the event\n- Use trailing stops once trade is profitable\n- No averaging down on losing positions\n\nOutput structured JSON: ticker, setup_type (swing/momentum/bull_flag/mean_reversion/event_driven), entry_price, stop_loss, target_1, target_2, reward_risk_ratio, position_size_pct, holding_period_days, volume_confirmation, catalyst_check, confidence (1-10), recommendation (ENTER/WATCH/SKIP), rationale.",
+        "prompt": "{{$json.context}}",
+        "maxIterations": 15
+      }
+    },
+    {
+      "id": "model1",
+      "name": "Claude Sonnet",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        304,
+        480
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.3,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "memory1",
+      "name": "Memory",
+      "type": "memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        416,
+        480
+      ],
+      "parameters": {
+        "sessionId": "shortterm_analyst_{{$json.ticker}}"
+      }
+    },
+    {
+      "id": "think1",
+      "name": "Think",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [
+        784,
+        480
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "httpTool1",
+      "name": "Market Data",
+      "type": "httpRequestTool",
+      "typeVersion": 1,
+      "position": [
+        896,
+        480
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://financialmodelingprep.com/api/v3/{endpoint}",
+        "description": "FMP API: quote/{ticker}, technical_indicator/daily/{ticker}?period=14&type=rsi, historical-price-full/{ticker}?timeseries=60, stock-screener?volumeMoreThan=1000000. Append ?apikey=."
+      }
+    },
+    {
+      "id": "codeTool1",
+      "name": "Risk Calculator",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        480
+      ],
+      "parameters": {
+        "language": "js",
+        "code": "try{const d=JSON.parse(input);const entry=d.entry_price||0;const stop=d.stop_loss||0;const target=d.target_price||0;const portfolio=d.portfolio_value||100000;const maxRiskPct=d.max_risk_pct||0.02;const riskPerShare=Math.abs(entry-stop);const rewardPerShare=Math.abs(target-entry);const riskReward=riskPerShare>0?rewardPerShare/riskPerShare:0;const maxLoss=portfolio*maxRiskPct;const shares=riskPerShare>0?Math.floor(maxLoss/riskPerShare):0;const positionValue=shares*entry;const positionPct=(positionValue/portfolio*100);return JSON.stringify({shares_to_buy:shares,position_value:'$'+positionValue.toFixed(0),position_pct:positionPct.toFixed(1)+'%',max_loss:'$'+maxLoss.toFixed(0),reward_risk_ratio:riskReward.toFixed(2)+':1',risk_per_share:'$'+riskPerShare.toFixed(2),reward_per_share:'$'+rewardPerShare.toFixed(2),viable:riskReward>=2?'YES - meets 2:1 minimum':'NO - below 2:1 threshold'});}catch(e){return'Error: '+e.message;}"
+      }
+    },
+    {
+      "id": "sub1",
+      "name": "Swing Setup Scanner",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        528,
+        480
+      ],
+      "parameters": {
+        "agentName": "swing_setup_scanner",
+        "agentDescription": "Identifies swing trading setups: pullbacks to support in uptrends, oversold bounces, breakouts from consolidation ranges. Evaluates 5-20 day holding period opportunities.",
+        "systemMessage": "You are a swing trading setup specialist. Identify:\n1. Pullback-to-support: stock in uptrend pulling back to 20/50-day MA or horizontal support\n2. Oversold bounce: RSI <30 with reversal candle pattern (hammer, bullish engulfing)\n3. Range breakout: price breaking above consolidation range with volume surge\n4. Mean reversion: stock >2 standard deviations from 20-day MA, expect snap-back\n\nFor each setup evaluate: trend context (higher timeframe), volume profile, nearby resistance levels, upcoming earnings/events.\n\nReturn: setup_type, entry_zone, stop_loss_level, target_levels, holding_period_estimate, confidence (1-10), and key_risk.",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model2",
+      "name": "Swing Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        544,
+        656
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "sub2",
+      "name": "Momentum & Pattern Detector",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        480
+      ],
+      "parameters": {
+        "agentName": "momentum_pattern_detector",
+        "agentDescription": "Detects momentum breakouts and chart patterns: bull flags, ascending triangles, cup-and-handle. Evaluates volume confirmation and relative strength for 1-10 day trades.",
+        "systemMessage": "You detect momentum and chart patterns:\n1. Bull flag: sharp rise (flagpole) \u2192 tight consolidation (flag) \u2192 breakout. Volume should contract during flag, expand on breakout.\n2. Momentum breakout: stock breaking to new highs with >1.5x average volume and accelerating RSI\n3. Ascending triangle: rising lows, flat resistance \u2192 breakout above resistance\n4. Cup-and-handle: rounded bottom (cup) \u2192 small pullback (handle) \u2192 breakout\n5. MACD bullish crossover with price above 20-day MA\n\nFor each pattern: measure the expected move (flagpole height for bull flags, cup depth for C&H), calculate target, assess volume confirmation.\n\nReturn: pattern_type, breakout_level, measured_move_target, volume_ratio, momentum_strength (1-10), false_breakout_risk (low/medium/high).",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model3",
+      "name": "Pattern Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        672
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "sub3",
+      "name": "Risk Manager",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        480
+      ],
+      "parameters": {
+        "agentName": "risk_manager",
+        "agentDescription": "Evaluates trade risk: position sizing, stop-loss placement, portfolio exposure, correlation with existing positions, and upcoming event risk (earnings, ex-div dates).",
+        "systemMessage": "You are the risk management specialist. Evaluate:\n1. Position sizing: max 2% portfolio risk per trade, calculate shares based on entry-to-stop distance\n2. Stop-loss placement: below nearest support, below pattern low, or ATR-based (1.5-2x ATR)\n3. Portfolio exposure: max 5-8 open positions, max 25% in one sector\n4. Correlation risk: avoid adding positions highly correlated with existing holdings\n5. Event risk: flag if earnings within holding period, ex-div dates, FDA decisions\n6. Liquidity check: avg volume must be >500K shares/day, bid-ask spread reasonable\n7. Volatility assessment: is current IV elevated? (options premium expensive = market expects move)\n\nReturn: position_size_recommendation, stop_loss_level, risk_per_trade_pct, portfolio_exposure_check (ok/warning/exceeded), event_risks, liquidity_grade (A/B/C/F), overall_risk_rating (low/moderate/high/extreme).",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model4",
+      "name": "Risk Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        640
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    }
+  ],
+  "connections": {
+    "model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "think1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "httpTool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "codeTool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub2": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub3": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "icon": "\u26a1"
+}

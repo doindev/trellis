@@ -1,0 +1,7 @@
+{
+  "configId": "stock-dividend",
+  "name": "Stock Research - Income & Dividend Investing",
+  "type": "TEAM",
+  "contextPath": "stock-dividend",
+  "description": "Income/dividend strategy: generates regular cash flow from dividend-paying stocks. Tracks Dividend Aristocrats, payout ratios, dividend safety scores, yield analysis, and ex-dividend calendars."
+}

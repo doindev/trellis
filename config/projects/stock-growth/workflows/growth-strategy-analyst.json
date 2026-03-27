@@ -1,0 +1,285 @@
+{
+  "configId": "growth-strategy-analyst",
+  "name": "Growth Strategy Analyst",
+  "description": "AI agent for growth investing. Evaluates companies for above-average earnings growth, revenue acceleration, expanding margins. Sub-agents: Fundamental Screener, Momentum Analyst.",
+  "type": "AGENT",
+  "nodes": [
+    {
+      "id": "agent1",
+      "name": "Growth Strategy Analyst",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        704,
+        304
+      ],
+      "parameters": {
+        "systemMessage": "You are a Growth Strategy Analyst specializing in high-growth companies.\n\nPhilosophy:\n- Revenue growth >15% YoY, expanding margins, strong forward guidance\n- Evaluate TAM, competitive moats, accept higher P/E if justified by trajectory\n- Target: Tech, Biotech, Clean Energy, AI/ML, SaaS\n\nAnalysis steps:\n1. Revenue growth trends (3-5yr CAGR)\n2. Earnings acceleration/deceleration\n3. Management execution vs guidance\n4. Competitive positioning, market share gains\n5. Score 1-10 with justification\n\nOutput JSON: ticker, growth_score, revenue_growth_rate, earnings_trajectory, competitive_moat_rating, risk_factors, recommendation (STRONG_BUY/BUY/HOLD/AVOID), thesis.",
+        "prompt": "{{$json.context}}",
+        "maxIterations": 15
+      }
+    },
+    {
+      "id": "model1",
+      "name": "Claude Sonnet",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        304,
+        480
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.3,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "memory1",
+      "name": "Memory",
+      "type": "memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        416,
+        480
+      ],
+      "parameters": {
+        "sessionId": "growth_analyst_{{$json.ticker}}"
+      }
+    },
+    {
+      "id": "think1",
+      "name": "Think",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [
+        800,
+        480
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "httpTool1",
+      "name": "Market Data",
+      "type": "httpRequestTool",
+      "typeVersion": 1,
+      "position": [
+        912,
+        480
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://financialmodelingprep.com/api/v3/{endpoint}",
+        "description": "FMP API: profile/{ticker}, ratios/{ticker}, income-statement/{ticker}, key-metrics/{ticker}. Append ?apikey=."
+      }
+    },
+    {
+      "id": "codeTool1",
+      "name": "Growth Calc",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        480
+      ],
+      "parameters": {
+        "language": "js",
+        "code": "try{const d=JSON.parse(input);const r=d.revenues||[];const cagr=(a)=>{if(a.length<2)return 0;return(Math.pow(a[0]/a[a.length-1],1/(a.length-1))-1)*100;};return JSON.stringify({revenue_cagr:cagr(r).toFixed(2)+'%',latest_growth:r.length>=2?((r[0]-r[1])/Math.abs(r[1])*100).toFixed(2)+'%':'N/A'});}catch(e){return'Error: '+e.message;}"
+      }
+    },
+    {
+      "id": "sub1",
+      "name": "Fundamental Screener",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        528,
+        480
+      ],
+      "parameters": {
+        "agentName": "fundamental_screener",
+        "agentDescription": "Screens stocks on fundamental growth criteria: revenue growth >15%, margins >40%, positive FCF, reasonable debt.",
+        "systemMessage": "Screen growth stocks: revenue growth >15% YoY, gross margin >40%, positive operating cash flow, D/E <2.0. Return pass/fail per criterion and fundamental_score (1-10).",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model2",
+      "name": "Screener Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        300,
+        800
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "sub2",
+      "name": "Momentum Analyst",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        480
+      ],
+      "parameters": {
+        "agentName": "momentum_analyst",
+        "agentDescription": "Analyzes price momentum: relative strength, volume trends, MA alignment, institutional accumulation.",
+        "systemMessage": "Evaluate momentum: RS vs S&P 500, price above 50/200-day MA, volume trend, institutional ownership changes. Return momentum_score (1-10), trend_direction, key levels.",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model3",
+      "name": "Momentum Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        700,
+        800
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    }
+  ],
+  "connections": {
+    "model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "think1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "httpTool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "codeTool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub2": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "icon": "🚀"
+}

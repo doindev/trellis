@@ -1,0 +1,114 @@
+{
+  "configId": "consolidated-scorecard-generator",
+  "name": "Consolidated Scorecard Generator",
+  "description": "Daily (12 PM ET, Mon-Fri): Aggregates fundamental (40%), technical (25%), sentiment (20%), valuation (15%) scores into weighted composite. Ranks all watchlist stocks.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 12PM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 12 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Scorecard Generator\n\nRequired: postgresApi\nWeights: Fund 40%, Tech 25%, Sent 20%, Val 15%"
+      }
+    },
+    {
+      "id": "g1",
+      "name": "Gather",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH tech AS (SELECT ticker,CASE WHEN signal='bullish' THEN 8 WHEN signal='neutral' THEN 5 ELSE 3 END as ts FROM technical_indicators WHERE indicator_date=CURRENT_DATE AND indicator_name='TREND'),sent AS (SELECT ticker,AVG(sentiment_score) as ss FROM news_articles WHERE published_at>NOW()-INTERVAL '7 days' AND sentiment_score IS NOT NULL GROUP BY ticker) SELECT w.ticker,w.strategy,t2.company_name,COALESCE(fs.overall_score,5) as fund,COALESCE(tech.ts,5) as tech,COALESCE((sent.ss+1)*5,5) as sent FROM watchlists w JOIN tickers t2 ON w.ticker=t2.ticker LEFT JOIN investment_scores fs ON w.ticker=fs.ticker AND w.strategy=fs.strategy AND fs.score_date=CURRENT_DATE LEFT JOIN tech ON w.ticker=tech.ticker LEFT JOIN sent ON w.ticker=sent.ticker WHERE w.status='active'"
+      }
+    },
+    {
+      "id": "c1",
+      "name": "Composite",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForEachItem",
+        "jsCode": "const d=$json;const f=d.fund||5,t=d.tech||5,s=d.sent||5,v=(f+t)/2;\nconst c=f*0.40+t*0.25+s*0.20+v*0.15;let r='HOLD';if(c>=7.5)r='STRONG_BUY';else if(c>=6.5)r='BUY';else if(c<4)r='AVOID';\nreturn [{json:{ticker:d.ticker,strategy:d.strategy,company_name:d.company_name,overall_score:Math.round(c*100)/100,fundamental_score:f,technical_score:t,sentiment_score:s,valuation_score:Math.round(v*100)/100,recommendation:r}}];"
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Store",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO investment_scores (ticker,strategy,score_date,overall_score,fundamental_score,technical_score,sentiment_score,valuation_score,recommendation,created_at) VALUES ('{{$json.ticker}}','{{$json.strategy}}',CURRENT_DATE,{{$json.overall_score}},{{$json.fundamental_score}},{{$json.technical_score}},{{$json.sentiment_score}},{{$json.valuation_score}},'{{$json.recommendation}}',NOW()) ON CONFLICT (ticker,strategy,score_date) DO UPDATE SET overall_score=EXCLUDED.overall_score,fundamental_score=EXCLUDED.fundamental_score,technical_score=EXCLUDED.technical_score,sentiment_score=EXCLUDED.sentiment_score,valuation_score=EXCLUDED.valuation_score,recommendation=EXCLUDED.recommendation;"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "g1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "g1": {
+      "main": [
+        [
+          {
+            "node": "c1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "c1": {
+      "main": [
+        [
+          {
+            "node": "pg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

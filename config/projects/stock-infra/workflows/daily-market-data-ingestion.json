@@ -1,0 +1,171 @@
+{
+  "configId": "daily-market-data-ingestion",
+  "name": "Daily Market Data Ingestion",
+  "description": "Daily (6 PM ET, Mon-Fri): Fetches end-of-day OHLCV from Polygon.io grouped daily endpoint for all active tickers. Stores in daily_prices table.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 6PM ET",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 18 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Daily Market Data\n\nRequired: httpHeaderAuth (Polygon.io Key), postgresApi\nAPI: Polygon.io grouped daily. Free: 5 req/min"
+      }
+    },
+    {
+      "id": "dt",
+      "name": "Trade Date",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const d=new Date(); return [{json:{trade_date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}}];"
+      }
+    },
+    {
+      "id": "fetch1",
+      "name": "Fetch Prices",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        700,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/{{$json.trade_date}}?adjusted=true&apiKey={{$credentials.httpHeaderAuth.value}}",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "tickers",
+      "name": "Active Tickers",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        700,
+        450
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ticker FROM tickers WHERE is_active=true"
+      }
+    },
+    {
+      "id": "transform1",
+      "name": "Filter & Transform",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items=$input.all(); const pd=items[0]?.json; const results=pd?.results||[]; const tks=new Set(items.slice(1).map(i=>i.json.ticker));\nreturn results.filter(r=>tks.has(r.T)).map(r=>({json:{ticker:r.T,price_date:new Date(r.t).toISOString().split('T')[0],open_price:r.o,high_price:r.h,low_price:r.l,close_price:r.c,adj_close:r.c,volume:r.v}}));"
+      }
+    },
+    {
+      "id": "pg1",
+      "name": "Store",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO daily_prices (ticker,price_date,open_price,high_price,low_price,close_price,adj_close,volume) VALUES ('{{$json.ticker}}','{{$json.price_date}}',{{$json.open_price}},{{$json.high_price}},{{$json.low_price}},{{$json.close_price}},{{$json.adj_close}},{{$json.volume}}) ON CONFLICT (ticker,price_date) DO UPDATE SET open_price=EXCLUDED.open_price,high_price=EXCLUDED.high_price,low_price=EXCLUDED.low_price,close_price=EXCLUDED.close_price,volume=EXCLUDED.volume;"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "dt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dt": {
+      "main": [
+        [
+          {
+            "node": "fetch1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "tickers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch1": {
+      "main": [
+        [
+          {
+            "node": "transform1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tickers": {
+      "main": [
+        [
+          {
+            "node": "transform1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "transform1": {
+      "main": [
+        [
+          {
+            "node": "pg1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,191 @@
+{
+  "configId": "ticker-universe-sync",
+  "name": "Ticker Universe Sync",
+  "description": "Weekly (Sunday 6 PM ET): Fetches S&P 500 and NASDAQ 100 constituents from Financial Modeling Prep API. Upserts to PostgreSQL tickers table and Neo4j Company nodes with sector/industry relationships.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Sunday 6PM ET",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 18 * * 0",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Ticker Universe Sync\n\nRequired: httpHeaderAuth (FMP API Key), postgresApi, neo4j\nAPIs: FMP /api/v3/sp500_constituent, /api/v3/nasdaq_constituent"
+      }
+    },
+    {
+      "id": "fetch_sp",
+      "name": "Fetch S&P 500",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://financialmodelingprep.com/api/v3/sp500_constituent?apikey={{$credentials.httpHeaderAuth.value}}",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "fetch_nq",
+      "name": "Fetch NASDAQ 100",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        450
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://financialmodelingprep.com/api/v3/nasdaq_constituent?apikey={{$credentials.httpHeaderAuth.value}}",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "merge1",
+      "name": "Merge & Dedupe",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const sp=$input.first().json; const nq=$input.last().json; const m=new Map();\nif(Array.isArray(sp)){for(const i of sp) m.set(i.symbol,{ticker:i.symbol,company_name:i.name,sector:i.sector||'Unknown',industry:i.subSector||i.sector||'Unknown',exchange:i.exchange||'NYSE',index_membership:['SP500']});}\nif(Array.isArray(nq)){for(const i of nq){if(m.has(i.symbol))m.get(i.symbol).index_membership.push('NASDAQ100'); else m.set(i.symbol,{ticker:i.symbol,company_name:i.name,sector:i.sector||'Unknown',industry:i.subSector||i.sector||'Unknown',exchange:i.exchange||'NASDAQ',index_membership:['NASDAQ100']});}}\nreturn Array.from(m.values()).map(t=>({json:t}));"
+      }
+    },
+    {
+      "id": "loop1",
+      "name": "Process Each",
+      "type": "loopOverItems",
+      "typeVersion": 1,
+      "position": [
+        950,
+        300
+      ],
+      "parameters": {
+        "batchSize": 50
+      }
+    },
+    {
+      "id": "pg1",
+      "name": "Upsert PG",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO tickers (ticker,company_name,sector,industry,exchange,index_membership,is_active,last_updated) VALUES ('{{$json.ticker}}','{{$json.company_name}}','{{$json.sector}}','{{$json.industry}}','{{$json.exchange}}',ARRAY[{{$json.index_membership.map(i=>\"'\"+i+\"'\").join(',')}}],true,NOW()) ON CONFLICT (ticker) DO UPDATE SET company_name=EXCLUDED.company_name,sector=EXCLUDED.sector,industry=EXCLUDED.industry,index_membership=EXCLUDED.index_membership,is_active=true,last_updated=NOW();"
+      }
+    },
+    {
+      "id": "neo1",
+      "name": "Upsert Neo4j",
+      "type": "neo4j",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        450
+      ],
+      "parameters": {
+        "operation": "executeStatement",
+        "query": "MERGE (c:Company {ticker:$ticker}) SET c.name=$name,c.exchange=$exchange,c.lastUpdated=datetime() WITH c MERGE (s:Sector {name:$sector}) MERGE (c)-[:BELONGS_TO_SECTOR]->(s) WITH c MERGE (i:Industry {name:$industry}) MERGE (c)-[:BELONGS_TO_INDUSTRY]->(i);",
+        "parameters": "{\"ticker\":\"{{$json.ticker}}\",\"name\":\"{{$json.company_name}}\",\"sector\":\"{{$json.sector}}\",\"industry\":\"{{$json.industry}}\",\"exchange\":\"{{$json.exchange}}\"}"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "fetch_sp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "fetch_nq",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch_sp": {
+      "main": [
+        [
+          {
+            "node": "merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch_nq": {
+      "main": [
+        [
+          {
+            "node": "merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "merge1": {
+      "main": [
+        [
+          {
+            "node": "loop1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "loop1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "pg1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "neo1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

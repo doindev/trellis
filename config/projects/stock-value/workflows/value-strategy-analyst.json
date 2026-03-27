@@ -1,0 +1,285 @@
+{
+  "configId": "value-strategy-analyst",
+  "name": "Value Strategy Analyst",
+  "description": "AI agent for value investing. Identifies undervalued stocks via DCF, margin-of-safety, peer comparisons. Sub-agents: Intrinsic Value Analyst, Value Trap Detector.",
+  "type": "AGENT",
+  "nodes": [
+    {
+      "id": "agent1",
+      "name": "Value Strategy Analyst",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "systemMessage": "You are a Value Strategy Analyst (Graham/Buffett tradition).\n\nPhilosophy:\n- Margin of safety >20% before recommending\n- Prefer low P/E (<15), low P/B (<1.5), low debt\n- Look for catalysts: management changes, spinoffs, sector recovery\n\nAnalysis:\n1. Calculate intrinsic value (DCF + comparables)\n2. Assess balance sheet strength\n3. Evaluate earnings quality (5yr track record)\n4. Identify why stock is cheap - temporary vs structural\n5. Check for value traps\n\nOutput JSON: ticker, value_score, intrinsic_value_estimate, current_price, margin_of_safety_pct, pe_ratio, pb_ratio, catalyst, value_trap_risk, recommendation, thesis.",
+        "prompt": "{{$json.context}}",
+        "maxIterations": 15
+      }
+    },
+    {
+      "id": "model1",
+      "name": "Claude Sonnet",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        300,
+        450
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.3,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "memory1",
+      "name": "Memory",
+      "type": "memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        420,
+        450
+      ],
+      "parameters": {
+        "sessionId": "value_analyst_{{$json.ticker}}"
+      }
+    },
+    {
+      "id": "think1",
+      "name": "Think",
+      "type": "toolThink",
+      "typeVersion": 1,
+      "position": [
+        540,
+        450
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "httpTool1",
+      "name": "Financial Data",
+      "type": "httpRequestTool",
+      "typeVersion": 1,
+      "position": [
+        660,
+        450
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://financialmodelingprep.com/api/v3/{endpoint}",
+        "description": "FMP: profile/{ticker}, ratios/{ticker}, balance-sheet-statement/{ticker}, cash-flow-statement/{ticker}, discounted-cash-flow/{ticker}. Append ?apikey=."
+      }
+    },
+    {
+      "id": "codeTool1",
+      "name": "DCF Calc",
+      "type": "codeTool",
+      "typeVersion": 1,
+      "position": [
+        780,
+        450
+      ],
+      "parameters": {
+        "language": "js",
+        "code": "try{const d=JSON.parse(input);const fcf=d.free_cash_flow||0,gr=d.growth_rate||0.05,dr=d.discount_rate||0.10,tg=d.terminal_growth||0.025,sh=d.shares_outstanding||1;let pv=0,proj=fcf;for(let i=1;i<=10;i++){proj*=(1+gr);pv+=proj/Math.pow(1+dr,i);}const tv=proj*(1+tg)/(dr-tg);const pvt=tv/Math.pow(1+dr,10);const ev=pv+pvt;const ips=ev/sh;const cp=d.current_price||0;const mos=cp>0?((ips-cp)/ips*100):0;return JSON.stringify({intrinsic_value:ips.toFixed(2),margin_of_safety:mos.toFixed(1)+'%',is_undervalued:mos>20});}catch(e){return'Error: '+e.message;}"
+      }
+    },
+    {
+      "id": "sub1",
+      "name": "Intrinsic Value Analyst",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        500,
+        650
+      ],
+      "parameters": {
+        "agentName": "intrinsic_value_analyst",
+        "agentDescription": "Calculates intrinsic value via DCF, Graham Number, PEG ratio, peer comparison.",
+        "systemMessage": "Calculate intrinsic value: 1) DCF (10yr FCF), 2) Graham Number sqrt(22.5*EPS*BVPS), 3) PEG analysis, 4) Peer comparison. Return range (low/mid/high), method, confidence (1-10).",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model2",
+      "name": "Value Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        300,
+        800
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "sub2",
+      "name": "Value Trap Detector",
+      "type": "aiSubAgent",
+      "typeVersion": 1,
+      "position": [
+        800,
+        650
+      ],
+      "parameters": {
+        "agentName": "value_trap_detector",
+        "agentDescription": "Identifies value traps: declining revenue, unsustainable dividends, structural decline.",
+        "systemMessage": "Detect value traps: 1) Revenue declining >2yr, 2) Margins compressing, 3) Debt growing faster than revenue, 4) Payout >90%, 5) Structural industry decline, 6) Accounting red flags, 7) Insider selling. Return: value_trap_risk, red_flags, confidence.",
+        "maxIterations": 8
+      }
+    },
+    {
+      "id": "model3",
+      "name": "Trap Model",
+      "type": "anthropicChatModel",
+      "typeVersion": 1,
+      "position": [
+        700,
+        800
+      ],
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    }
+  ],
+  "connections": {
+    "model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_memory",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "think1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "httpTool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "codeTool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub1": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "sub2": {
+      "ai_tool": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "agent1",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "sub2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "icon": "💎"
+}

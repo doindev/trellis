@@ -1,0 +1,130 @@
+{
+  "configId": "sector-concentration-alert",
+  "name": "Sector Concentration Alert",
+  "description": "Daily (11:45 AM ET, Mon-Fri): Queries Neo4j to detect if any strategy watchlist is overweight in a single sector (>40% of stocks). Creates diversification warnings before the scorecard runs.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 11:45AM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        512,
+        128
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "45 11 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        496,
+        -48
+      ],
+      "parameters": {
+        "content": "## Sector Concentration Alert\n\nRequired: neo4j, postgresApi\nFlags watchlists with >40% in one sector\nReads FROM Neo4j graph relationships"
+      }
+    },
+    {
+      "id": "n4_conc",
+      "name": "Neo4j: Sector Concentration",
+      "type": "neo4j",
+      "typeVersion": 1,
+      "position": [
+        704,
+        128
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "MATCH (c:Company)-[:IN_WATCHLIST]->(w:Watchlist) MATCH (c)-[:BELONGS_TO_SECTOR]->(s:Sector) WITH w.name AS strategy, s.name AS sector, count(c) AS sector_count WITH strategy, sector, sector_count, sum(sector_count) OVER (PARTITION BY strategy) AS total_in_strategy WITH strategy, sector, sector_count, total_in_strategy, toFloat(sector_count) / total_in_strategy AS concentration WHERE concentration > 0.4 RETURN strategy, sector, sector_count, total_in_strategy, round(concentration * 100, 1) AS concentration_pct ORDER BY concentration DESC",
+        "parameters": "{}"
+      }
+    },
+    {
+      "id": "has_results",
+      "name": "Any Concentrated?",
+      "type": "if",
+      "typeVersion": 1,
+      "position": [
+        896,
+        128
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              },
+              "leftValue": "={{$json.strategy}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "alert1",
+      "name": "Create Concentration Alert",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        128
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) SELECT '', 'sector_concentration', '{{$json.strategy}}', 'Watchlist {{$json.strategy}} is {{$json.concentration_pct}}% concentrated in {{$json.sector}} ({{$json.sector_count}}/{{$json.total_in_strategy}} stocks). Consider diversification.', 'warning', '{\"sector\": \"{{$json.sector}}\", \"concentration\": {{$json.concentration_pct}}, \"count\": {{$json.sector_count}}, \"total\": {{$json.total_in_strategy}}}' WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE alert_type='sector_concentration' AND strategy='{{$json.strategy}}' AND triggered_at::date=CURRENT_DATE);"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "n4_conc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n4_conc": {
+      "main": [
+        [
+          {
+            "node": "has_results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "has_results": {
+      "main": [
+        [
+          {
+            "node": "alert1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

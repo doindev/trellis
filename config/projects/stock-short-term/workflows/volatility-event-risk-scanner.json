@@ -1,0 +1,170 @@
+{
+  "configId": "volatility-event-risk-scanner",
+  "name": "Volatility & Event Risk Scanner",
+  "description": "Daily (7 AM ET, Mon-Fri): Checks short-term watchlist stocks for upcoming earnings, ex-dividend dates, and unusual volatility. Creates risk warnings to prevent holding through events unintentionally.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 7AM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 7 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Volatility & Event Risk Scanner\n\nRequired: postgresApi\nFlags earnings and ex-div dates within 5 days\nfor short-term watchlist stocks"
+      }
+    },
+    {
+      "id": "earnings_risk",
+      "name": "Earnings Within 5 Days",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT e.ticker, e.report_date, e.fiscal_quarter, t.company_name FROM earnings_calendar e JOIN watchlists w ON e.ticker = w.ticker AND w.strategy = 'short_term' JOIN tickers t ON e.ticker = t.ticker WHERE e.report_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '5 days'"
+      }
+    },
+    {
+      "id": "div_risk",
+      "name": "Ex-Div Within 5 Days",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        450
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT d.ticker, d.ex_date, d.amount, t.company_name FROM dividend_history d JOIN watchlists w ON d.ticker = w.ticker AND w.strategy = 'short_term' JOIN tickers t ON d.ticker = t.ticker WHERE d.ex_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '5 days'"
+      }
+    },
+    {
+      "id": "process_earnings",
+      "name": "Earnings Alerts",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        750,
+        200
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().filter(i => i.json.ticker).map(i => ({json: {ticker: i.json.ticker, alert_type: 'earnings_risk', message: `EVENT RISK: ${i.json.company_name} (${i.json.ticker}) reports earnings on ${i.json.report_date} (${i.json.fiscal_quarter}). Close or reduce position before earnings unless intentionally playing the event.`, severity: 'warning'}}));"
+      }
+    },
+    {
+      "id": "process_divs",
+      "name": "Div Alerts",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        750,
+        450
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().filter(i => i.json.ticker).map(i => ({json: {ticker: i.json.ticker, alert_type: 'exdiv_risk', message: `EVENT RISK: ${i.json.company_name} (${i.json.ticker}) goes ex-dividend on ${i.json.ex_date} ($${i.json.amount}). Price typically drops by dividend amount on ex-date.`, severity: 'info'}}));"
+      }
+    },
+    {
+      "id": "pg_alert",
+      "name": "Store Alerts",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO alerts (ticker, alert_type, strategy, message, severity) SELECT '{{$json.ticker}}', '{{$json.alert_type}}', 'short_term', '{{$json.message}}', '{{$json.severity}}' WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE ticker='{{$json.ticker}}' AND alert_type='{{$json.alert_type}}' AND triggered_at::date=CURRENT_DATE);"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "earnings_risk",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "div_risk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "earnings_risk": {
+      "main": [
+        [
+          {
+            "node": "process_earnings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "div_risk": {
+      "main": [
+        [
+          {
+            "node": "process_divs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "process_earnings": {
+      "main": [
+        [
+          {
+            "node": "pg_alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "process_divs": {
+      "main": [
+        [
+          {
+            "node": "pg_alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

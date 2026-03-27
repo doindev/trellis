@@ -1,0 +1,170 @@
+{
+  "configId": "weekend-strategy-review",
+  "name": "Weekend Strategy Review",
+  "description": "Weekly (Saturday 10 AM ET): Comprehensive weekly review with focus on strategy research and platform improvement proposals.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Saturday 10AM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 10 * * 6",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Weekend Strategy Review\n\nRequired: postgresApi, anthropicApi, tavilyApi\nComprehensive weekly analysis + strategy research"
+      }
+    },
+    {
+      "id": "we",
+      "name": "Weekly Executions",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT workflow_name,COUNT(*) as runs,COUNT(CASE WHEN status='error' THEN 1 END) as failures,AVG(duration_ms) as avg_dur FROM workflow_execution_log WHERE started_at>NOW()-INTERVAL '7 days' GROUP BY workflow_name ORDER BY failures DESC"
+      }
+    },
+    {
+      "id": "wsc",
+      "name": "Score Trends",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        450
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT strategy,score_date,COUNT(*) as cnt,AVG(overall_score) as avg,STDDEV(overall_score) as std FROM investment_scores WHERE score_date>=CURRENT_DATE-INTERVAL '7 days' GROUP BY strategy,score_date ORDER BY strategy,score_date"
+      }
+    },
+    {
+      "id": "ctx",
+      "name": "Build Context",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items=$input.all();const exec=items[0]?.json||[];const scores=items[1]?.json||[];\nlet ctx=`=== WEEKLY REVIEW ===\\nWeek Ending: ${new Date().toISOString().split('T')[0]}\\n\\n--- EXECUTION RELIABILITY ---\\n`;\nconst ea=Array.isArray(exec)?exec:[exec];for(const e of ea){if(e.workflow_name)ctx+=`${e.workflow_name}: ${e.runs} runs, ${e.failures} failures, avg ${Math.round(e.avg_dur)}ms\\n`;}\nctx+='\\n--- SCORE TRENDS ---\\n';const sa=Array.isArray(scores)?scores:[scores];for(const s of sa){if(s.strategy)ctx+=`${s.strategy} (${s.score_date}): ${s.cnt} stocks, avg ${parseFloat(s.avg).toFixed(1)}\\n`;}\nctx+='\\n--- WEEKLY TASKS ---\\n1. Deep-dive strategy trends\\n2. Research 2+ new strategy ideas\\n3. Propose improvements\\n4. Check for new free APIs\\n5. Write weekly report';return [{json:{context:ctx}}];"
+      }
+    },
+    {
+      "id": "ag",
+      "name": "AI Ops",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        300
+      ],
+      "parameters": {
+        "agentDefinitionId": "0mNYJosp3x1WHHRnXJ0lp",
+        "prompt": "{{$json.context}}",
+        "maxIterations": 30
+      }
+    },
+    {
+      "id": "st",
+      "name": "Store",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,created_at) VALUES ('ai_ops_orchestrator',CURRENT_DATE,'weekly_review','{{$json.output}}',NOW());"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "we",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "wsc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "we": {
+      "main": [
+        [
+          {
+            "node": "ctx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "wsc": {
+      "main": [
+        [
+          {
+            "node": "ctx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ctx": {
+      "main": [
+        [
+          {
+            "node": "ag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ag": {
+      "main": [
+        [
+          {
+            "node": "st",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

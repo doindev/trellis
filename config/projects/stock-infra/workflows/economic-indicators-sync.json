@@ -1,0 +1,166 @@
+{
+  "configId": "economic-indicators-sync",
+  "name": "Economic Indicators Sync",
+  "description": "Weekly (Sunday 8 AM ET): Fetches GDP, CPI, unemployment, fed funds rate, 10Y treasury, VIX, consumer sentiment, yield spread, and jobless claims from FRED API.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Sunday 8AM ET",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 8 * * 0",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Economic Indicators\n\nRequired: httpHeaderAuth (FRED API Key), postgresApi\nSeries: GDP, CPIAUCSL, UNRATE, DFF, DGS10, UMCSENT, VIXCLS, T10Y2Y, ICSA"
+      }
+    },
+    {
+      "id": "defs",
+      "name": "Define Series",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "return ['GDP','CPIAUCSL','UNRATE','DFF','DGS10','UMCSENT','VIXCLS','T10Y2Y','ICSA'].map(s=>({json:{series_id:s}}));"
+      }
+    },
+    {
+      "id": "loop1",
+      "name": "Each",
+      "type": "loopOverItems",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "fetch1",
+      "name": "FRED API",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        950,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.stlouisfed.org/fred/series/observations?series_id={{$json.series_id}}&api_key={{$credentials.httpHeaderAuth.value}}&file_type=json&sort_order=desc&limit=10",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "tx",
+      "name": "Transform",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const d=$input.first().json; const obs=d.observations||[];\nreturn obs.filter(o=>o.value!=='.').map(o=>({json:{indicator_id:d.series_id||'',observation_date:o.date,value:parseFloat(o.value)}}));"
+      }
+    },
+    {
+      "id": "pg1",
+      "name": "Store",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO economic_indicators (indicator_id,indicator_name,observation_date,value,unit) VALUES ('{{$json.indicator_id}}','','{{$json.observation_date}}',{{$json.value}},'') ON CONFLICT (indicator_id,observation_date) DO UPDATE SET value=EXCLUDED.value;"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "defs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "defs": {
+      "main": [
+        [
+          {
+            "node": "loop1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "loop1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "fetch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch1": {
+      "main": [
+        [
+          {
+            "node": "tx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tx": {
+      "main": [
+        [
+          {
+            "node": "pg1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

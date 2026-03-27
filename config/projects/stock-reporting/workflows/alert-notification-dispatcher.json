@@ -1,0 +1,182 @@
+{
+  "configId": "alert-notification-dispatcher",
+  "name": "Alert Notification Dispatcher",
+  "description": "Every 30 min (Mon-Fri market hours): Sends unsent alerts via email, marks as sent.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Every 30min",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "*/30 8-17 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Alert Dispatcher\n\nRequired: postgresApi, smtp\nSends unsent alerts via email"
+      }
+    },
+    {
+      "id": "g1",
+      "name": "Unsent",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id,ticker,alert_type,strategy,message,severity FROM alerts WHERE sent=false AND triggered_at>NOW()-INTERVAL '24 hours' ORDER BY CASE severity WHEN 'critical' THEN 1 WHEN 'warning' THEN 2 ELSE 3 END LIMIT 20"
+      }
+    },
+    {
+      "id": "if1",
+      "name": "Any?",
+      "type": "if",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              },
+              "leftValue": "={{$json.ticker}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bld",
+      "name": "Build Email",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        950,
+        200
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const a=$input.all().map(i=>i.json);let b='<h2>Stock Alerts</h2><table border=1 cellpadding=5><tr><th>Ticker</th><th>Type</th><th>Strategy</th><th>Message</th></tr>';const ids=[];for(const x of a){b+=`<tr><td>${x.ticker}</td><td>${x.alert_type}</td><td>${x.strategy}</td><td>${x.message}</td></tr>`;ids.push(x.id);}b+='</table>';return [{json:{html_body:b,alert_ids:ids,subject:`Stock Alerts: ${a.length} new (${new Date().toISOString().split('T')[0]})`}}];"
+      }
+    },
+    {
+      "id": "em",
+      "name": "Send",
+      "type": "emailSend",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "fromEmail": "alerts@stockresearch.local",
+        "toEmail": "investor@example.com",
+        "subject": "={{$json.subject}}",
+        "html": "={{$json.html_body}}"
+      }
+    },
+    {
+      "id": "mk",
+      "name": "Mark Sent",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        200
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "UPDATE alerts SET sent=true,sent_via='email' WHERE id=ANY(ARRAY[{{$json.alert_ids}}]);"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "g1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "g1": {
+      "main": [
+        [
+          {
+            "node": "if1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if1": {
+      "main": [
+        [
+          {
+            "node": "bld",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "bld": {
+      "main": [
+        [
+          {
+            "node": "em",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "em": {
+      "main": [
+        [
+          {
+            "node": "mk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "configId": "entry-exit-signal-generator",
+  "name": "Entry/Exit Signal Generator",
+  "description": "Daily (5:30 PM ET, Mon-Fri): Detects RSI extremes, MACD crossovers, volume breakouts. Creates alerts for actionable signals.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 5:30PM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "30 17 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "q1",
+      "name": "Detect",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH latest AS (SELECT ticker,indicator_name,value,signal FROM technical_indicators WHERE indicator_date=CURRENT_DATE),pivoted AS (SELECT ticker,MAX(CASE WHEN indicator_name='RSI_14' THEN value END) as rsi,MAX(CASE WHEN indicator_name='RSI_14' THEN signal END) as rsi_sig,MAX(CASE WHEN indicator_name='MACD' THEN signal END) as macd_sig,MAX(CASE WHEN indicator_name='TREND' THEN signal END) as trend_sig,MAX(CASE WHEN indicator_name='VOL_SMA_20' THEN signal END) as vol_sig FROM latest GROUP BY ticker) SELECT p.*,t.company_name FROM pivoted p JOIN tickers t ON p.ticker=t.ticker WHERE p.rsi_sig='oversold' OR (p.macd_sig='bullish' AND p.trend_sig='bullish') OR p.rsi_sig='overbought'"
+      }
+    },
+    {
+      "id": "cl",
+      "name": "Classify",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForEachItem",
+        "jsCode": "const d=$json;let type='',msg='',sev='info';\nif(d.rsi_sig==='oversold'&&d.macd_sig==='bullish'){type='strong_buy';msg=`${d.company_name} (${d.ticker}): RSI oversold + MACD bullish`;sev='warning';}\nelse if(d.rsi_sig==='oversold'){type='buy_signal';msg=`${d.company_name} (${d.ticker}): RSI oversold at ${d.rsi?.toFixed(1)}`;}\nelse if(d.rsi_sig==='overbought'){type='sell_signal';msg=`${d.company_name} (${d.ticker}): RSI overbought at ${d.rsi?.toFixed(1)}`;sev='warning';}\nreturn [{json:{ticker:d.ticker,signal_type:type,message:msg,severity:sev}}];"
+      }
+    },
+    {
+      "id": "fl",
+      "name": "Has Signal?",
+      "type": "filter",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              },
+              "leftValue": "={{$json.signal_type}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Alert",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO alerts (ticker,alert_type,strategy,message,severity) VALUES ('{{$json.ticker}}','{{$json.signal_type}}','technical','{{$json.message}}','{{$json.severity}}');"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "q1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "q1": {
+      "main": [
+        [
+          {
+            "node": "cl",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cl": {
+      "main": [
+        [
+          {
+            "node": "fl",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fl": {
+      "main": [
+        [
+          {
+            "node": "pg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

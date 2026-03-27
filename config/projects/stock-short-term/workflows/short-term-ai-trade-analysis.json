@@ -1,0 +1,190 @@
+{
+  "configId": "short-term-ai-trade-analysis",
+  "name": "Short-Term AI Trade Analysis",
+  "description": "Daily (5 PM ET, Mon-Fri): Pulls detected trade setups, gathers price data and Neo4j peer context, feeds to Short-Term Trading Analyst agent for full analysis with entry/stop/target/position sizing. Stores recommendations.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 5PM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 17 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Short-Term AI Trade Analysis\n\nRequired: postgresApi, anthropicApi, neo4j\nUses: Short-Term Trading Analyst agent\nAnalyzes detected patterns with full risk assessment"
+      }
+    },
+    {
+      "id": "get_setups",
+      "name": "Today's Setups",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT a.ticker, a.alert_type, a.metadata, t.company_name, t.sector, t.industry, t.market_cap, w.metadata as wl_meta FROM alerts a JOIN tickers t ON a.ticker = t.ticker LEFT JOIN watchlists w ON a.ticker = w.ticker AND w.strategy = 'short_term' WHERE a.strategy = 'short_term' AND a.alert_type LIKE 'trade_setup_%' AND a.triggered_at::date = CURRENT_DATE ORDER BY (a.metadata->>'confidence')::int DESC LIMIT 10"
+      }
+    },
+    {
+      "id": "peers",
+      "name": "Neo4j Peers",
+      "type": "neo4j",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "MATCH (c:Company {ticker:$ticker})-[:BELONGS_TO_INDUSTRY]->(i:Industry)<-[:BELONGS_TO_INDUSTRY]-(peer:Company) WHERE peer.ticker <> $ticker OPTIONAL MATCH (peer)-[w:IN_WATCHLIST]->(wl:Watchlist) RETURN peer.ticker AS peer_ticker, peer.name AS peer_name, collect(DISTINCT wl.name) AS on_watchlists LIMIT 5",
+        "parameters": "={\"ticker\":\"{{$json.ticker}}\"}"
+      }
+    },
+    {
+      "id": "ctx",
+      "name": "Build Context",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        950,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\nconst d = items[0]?.json || {};\nconst peers = items.slice(1).map(i => i.json).filter(p => p.peer_ticker);\nconst meta = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : (d.metadata || {});\nconst wlMeta = typeof d.wl_meta === 'string' ? JSON.parse(d.wl_meta) : (d.wl_meta || {});\n\nlet peerInfo = '';\nif (peers.length > 0) {\n  peerInfo = '\\n\\nIndustry Peers:';\n  for (const p of peers) peerInfo += `\\n- ${p.peer_name} (${p.peer_ticker})${p.on_watchlists?.length ? ' [' + p.on_watchlists.join(', ') + ']' : ''}`;\n}\n\nreturn [{json: {ticker: d.ticker, context: `Analyze short-term trade setup:\\nTicker: ${d.ticker} (${d.company_name})\\nSector: ${d.sector} | Cap: $${((d.market_cap||0)/1e9).toFixed(1)}B\\nSetup: ${d.alert_type?.replace('trade_setup_','')}\\nEntry: $${meta.entry} | Target: $${meta.target} | Stop: $${meta.stop}\\nConfidence: ${meta.confidence}/10\\nRSI: ${wlMeta.rsi} | Beta: ${wlMeta.beta} | Volume: ${wlMeta.volume}${peerInfo}\\nDate: ${new Date().toISOString().split('T')[0]}\\n\\nEvaluate this trade setup. Provide entry, stop-loss, targets, position sizing, holding period, and risk assessment.`}}];"
+      }
+    },
+    {
+      "id": "lp",
+      "name": "Each Setup",
+      "type": "loopOverItems",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "ag",
+      "name": "Trading Analyst",
+      "type": "aiAgent",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        300
+      ],
+      "parameters": {
+        "agentDefinitionId": "wQtl20X1p9Fo7Sc1IXq6_",
+        "prompt": "{{$json.context}}"
+      }
+    },
+    {
+      "id": "st",
+      "name": "Store Analysis",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO investment_scores (ticker, strategy, score_date, overall_score, recommendation, thesis, created_at) VALUES ('{{$json.ticker}}', 'short_term', CURRENT_DATE, 7.0, 'WATCH', '{{$json.output}}', NOW()) ON CONFLICT (ticker, strategy, score_date) DO UPDATE SET thesis = EXCLUDED.thesis;"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "get_setups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_setups": {
+      "main": [
+        [
+          {
+            "node": "peers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "peers": {
+      "main": [
+        [
+          {
+            "node": "ctx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ctx": {
+      "main": [
+        [
+          {
+            "node": "lp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "lp": {
+      "main": [
+        [],
+        [
+          {
+            "node": "ag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ag": {
+      "main": [
+        [
+          {
+            "node": "st",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

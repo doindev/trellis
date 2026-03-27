@@ -1,0 +1,7 @@
+{
+  "configId": "stock-broad-market",
+  "name": "Stock Research - Broad Market Strategies",
+  "type": "TEAM",
+  "contextPath": "stock-broad-market",
+  "description": "Broad market strategies: passive index investing, dollar-cost averaging optimization, sector rotation analysis. Tracks S&P 500, Nasdaq, and sector ETF performance with macro-level health indicators."
+}

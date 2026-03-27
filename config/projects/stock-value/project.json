@@ -1,0 +1,7 @@
+{
+  "configId": "stock-value",
+  "name": "Stock Research - Value Investing",
+  "type": "TEAM",
+  "contextPath": "stock-value",
+  "description": "Value investing strategy: finds undervalued stocks via DCF analysis, P/E and P/B comparisons, and margin-of-safety calculations. Targets established companies temporarily punished by the market."
+}

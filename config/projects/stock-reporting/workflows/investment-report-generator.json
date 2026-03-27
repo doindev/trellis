@@ -1,0 +1,174 @@
+{
+  "configId": "investment-report-generator",
+  "name": "Investment Report Generator",
+  "description": "Daily (1 PM ET, Mon-Fri): Compiles top picks, active alerts, and market outlook into an HTML investment report.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 1PM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 13 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Report Generator\n\nRequired: postgresApi\nHTML report: top picks, alerts, outlook"
+      }
+    },
+    {
+      "id": "pk",
+      "name": "Top Picks",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ticker,strategy,overall_score,fundamental_score,technical_score,sentiment_score,recommendation,thesis FROM investment_scores WHERE score_date=CURRENT_DATE AND overall_score>=6.0 ORDER BY strategy,overall_score DESC"
+      }
+    },
+    {
+      "id": "al",
+      "name": "Alerts",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        450
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ticker,alert_type,strategy,message,severity FROM alerts WHERE triggered_at::date=CURRENT_DATE ORDER BY severity DESC LIMIT 20"
+      }
+    },
+    {
+      "id": "mk",
+      "name": "Outlook",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        650
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT summary FROM ai_agent_reports WHERE agent_name='broad_market_analyst' AND report_date=CURRENT_DATE ORDER BY created_at DESC LIMIT 1"
+      }
+    },
+    {
+      "id": "bld",
+      "name": "Build HTML",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        800,
+        400
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items=$input.all();const picks=items[0]?.json||[];const alerts=items[1]?.json||[];const mkt=items[2]?.json||{};const today=new Date().toISOString().split('T')[0];const pl=Array.isArray(picks)?picks:[picks];const al=Array.isArray(alerts)?alerts:[alerts];\nlet h=`<html><head><style>body{font-family:Arial;max-width:900px;margin:0 auto;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#2c3e50;color:white}.hi{color:#27ae60;font-weight:bold}.wr{background:#fff3cd}</style></head><body><h1>Stock Report - ${today}</h1><h2>Market Outlook</h2><p>${mkt.summary||'No analysis available.'}</p><h2>Top Picks</h2><table><tr><th>Ticker</th><th>Strategy</th><th>Score</th><th>Fund</th><th>Tech</th><th>Sent</th><th>Rec</th></tr>`;\nfor(const p of pl){if(!p.ticker)continue;h+=`<tr><td><b>${p.ticker}</b></td><td>${p.strategy}</td><td class='${p.overall_score>=7?\"hi\":\"\"}'>${p.overall_score}</td><td>${p.fundamental_score}</td><td>${p.technical_score}</td><td>${p.sentiment_score}</td><td>${p.recommendation}</td></tr>`;}\nh+=`</table><h2>Alerts</h2><table><tr><th>Ticker</th><th>Type</th><th>Message</th><th>Severity</th></tr>`;for(const a of al){if(!a.ticker)continue;h+=`<tr class='${a.severity===\"warning\"?\"wr\":\"\"}'><td>${a.ticker}</td><td>${a.alert_type}</td><td>${a.message}</td><td>${a.severity}</td></tr>`;}\nh+=`</table></body></html>`;return [{json:{report_date:today,html_report:h,picks_count:pl.length,alerts_count:al.length}}];"
+      }
+    },
+    {
+      "id": "st",
+      "name": "Store",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        400
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,findings,created_at) VALUES ('report_generator',CURRENT_DATE,'daily_investment_report','{{$json.html_report}}','{\"picks\":{{$json.picks_count}},\"alerts\":{{$json.alerts_count}}}',NOW());"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "pk",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "al",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "mk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pk": {
+      "main": [
+        [
+          {
+            "node": "bld",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "al": {
+      "main": [
+        [
+          {
+            "node": "bld",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mk": {
+      "main": [
+        [
+          {
+            "node": "bld",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "bld": {
+      "main": [
+        [
+          {
+            "node": "st",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

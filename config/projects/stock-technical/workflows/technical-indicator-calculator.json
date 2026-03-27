@@ -1,0 +1,164 @@
+{
+  "configId": "technical-indicator-calculator",
+  "name": "Technical Indicator Calculator",
+  "description": "Daily (5 PM ET, Mon-Fri): Calculates RSI(14), MACD(12/26/9), SMA 50/200, Bollinger Bands, volume analysis for all watchlist tickers.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Weekday 5PM",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        512,
+        128
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 17 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        544,
+        -80
+      ],
+      "parameters": {
+        "content": "## Technical Indicators\n\nRequired: postgresApi\nRSI(14), MACD(12/26/9), SMA 50/200, BB(20,2), Vol SMA(20)"
+      }
+    },
+    {
+      "id": "tks",
+      "name": "Tickers",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        704,
+        128
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT DISTINCT w.ticker FROM watchlists w WHERE w.status='active'"
+      }
+    },
+    {
+      "id": "lp",
+      "name": "Each",
+      "type": "loopOverItems",
+      "typeVersion": 1,
+      "position": [
+        896,
+        128
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "pr",
+      "name": "Prices",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        128
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT price_date,close_price,high_price,low_price,volume FROM daily_prices WHERE ticker='{{$json.ticker}}' ORDER BY price_date DESC LIMIT 250"
+      }
+    },
+    {
+      "id": "calc",
+      "name": "Calculate",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        128
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const prices=$input.all().map(i=>i.json);if(prices.length<50)return [{json:{skip:true}}];\nconst closes=prices.map(p=>p.close_price).reverse();const volumes=prices.map(p=>p.volume).reverse();\nconst ticker=prices[0].ticker||'';const today=prices[0].price_date;\nconst sma=(a,p)=>{if(a.length<p)return null;return a.slice(a.length-p).reduce((s,v)=>s+v,0)/p;};\nconst calcRSI=(c,p=14)=>{if(c.length<p+1)return null;let g=0,l=0;for(let i=c.length-p;i<c.length;i++){const ch=c[i]-c[i-1];if(ch>0)g+=ch;else l-=ch;}return 100-(100/(1+g/(l||1)));};\nconst ema=(a,p)=>{const k=2/(p+1);let e=a[0];for(let i=1;i<a.length;i++)e=a[i]*k+e*(1-k);return e;};\nconst s50=sma(closes,50),s200=sma(closes,200),rsi=calcRSI(closes,14),macd=ema(closes,12)-ema(closes,26),bb=sma(closes,20),vs=sma(volumes,20),cp=closes[closes.length-1];\nconst rs=rsi>70?'overbought':rsi<30?'oversold':'neutral';const tr=cp>s50&&s50>s200?'bullish':cp<s50&&s50<s200?'bearish':'neutral';\nreturn [{indicator_name:'RSI_14',value:rsi,signal:rs},{indicator_name:'SMA_50',value:s50,signal:cp>s50?'above':'below'},{indicator_name:'SMA_200',value:s200,signal:cp>s200?'above':'below'},{indicator_name:'MACD',value:macd,signal:macd>0?'bullish':'bearish'},{indicator_name:'BB_MIDDLE',value:bb,signal:'reference'},{indicator_name:'VOL_SMA_20',value:vs,signal:volumes[volumes.length-1]>vs?'above_avg':'below_avg'},{indicator_name:'TREND',value:cp,signal:tr}].map(r=>({json:{ticker,indicator_date:today,...r}}));"
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Store",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        128
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO technical_indicators (ticker,indicator_date,indicator_name,value,signal) VALUES ('{{$json.ticker}}','{{$json.indicator_date}}','{{$json.indicator_name}}',{{$json.value}},'{{$json.signal}}') ON CONFLICT (ticker,indicator_date,indicator_name) DO UPDATE SET value=EXCLUDED.value,signal=EXCLUDED.signal;"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "tks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tks": {
+      "main": [
+        [
+          {
+            "node": "lp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pr": {
+      "main": [
+        [
+          {
+            "node": "calc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calc": {
+      "main": [
+        [
+          {
+            "node": "pg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "lp": {
+      "main": [
+        [],
+        [
+          {
+            "node": "pr",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

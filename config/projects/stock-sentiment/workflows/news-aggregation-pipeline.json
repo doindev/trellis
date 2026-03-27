@@ -1,0 +1,191 @@
+{
+  "configId": "news-aggregation-pipeline",
+  "name": "News Aggregation Pipeline",
+  "description": "Every 4 hours (Mon-Fri): Aggregates financial news from Finnhub for all watchlist tickers. Deduplicates and stores in news_articles table.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "4-Hourly Weekdays",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "0 6,10,14,18 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## News Aggregation\n\nRequired: httpHeaderAuth (Finnhub), postgresApi\nRuns 4x daily on weekdays"
+      }
+    },
+    {
+      "id": "tks",
+      "name": "Watchlist Tickers",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT DISTINCT ticker FROM watchlists WHERE status='active' ORDER BY ticker LIMIT 30"
+      }
+    },
+    {
+      "id": "dr",
+      "name": "Dates",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const tks=$input.all().map(i=>i.json.ticker);const t=new Date();const y=new Date(t.getTime()-86400000);return tks.map(tk=>({json:{ticker:tk,from_date:y.toISOString().split('T')[0],to_date:t.toISOString().split('T')[0]}}));"
+      }
+    },
+    {
+      "id": "lp",
+      "name": "Each",
+      "type": "loopOverItems",
+      "typeVersion": 1,
+      "position": [
+        950,
+        300
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "f1",
+      "name": "Fetch News",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://finnhub.io/api/v1/company-news?symbol={{$json.ticker}}&from={{$json.from_date}}&to={{$json.to_date}}&token={{$credentials.httpHeaderAuth.value}}",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "tx",
+      "name": "Transform",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const a=$input.first().json;if(!Array.isArray(a))return [];return a.slice(0,10).map(x=>({json:{ticker:x.related||'',headline:(x.headline||'').replace(/'/g,''),source:x.source||'',url:x.url||'',published_at:x.datetime?new Date(x.datetime*1000).toISOString():null,summary:(x.summary||'').substring(0,500).replace(/'/g,''),category:x.category||'general'}}));"
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Store",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        300
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO news_articles (ticker,headline,source,url,published_at,summary,category) SELECT '{{$json.ticker}}','{{$json.headline}}','{{$json.source}}','{{$json.url}}','{{$json.published_at}}','{{$json.summary}}','{{$json.category}}' WHERE NOT EXISTS (SELECT 1 FROM news_articles WHERE url='{{$json.url}}');"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "tks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tks": {
+      "main": [
+        [
+          {
+            "node": "dr",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dr": {
+      "main": [
+        [
+          {
+            "node": "lp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "lp": {
+      "main": [
+        [],
+        [
+          {
+            "node": "f1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "f1": {
+      "main": [
+        [
+          {
+            "node": "tx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tx": {
+      "main": [
+        [
+          {
+            "node": "pg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

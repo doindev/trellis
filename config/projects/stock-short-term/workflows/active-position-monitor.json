@@ -1,0 +1,223 @@
+{
+  "configId": "active-position-monitor",
+  "name": "Active Position Monitor",
+  "description": "Every 30 min (9:30AM-4PM ET, Mon-Fri): Monitors open short-term positions against their stop-loss and take-profit levels. Creates urgent alerts when stops are hit or targets reached. Tracks trailing stops for profitable positions.",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Every 30min Market Hours",
+      "type": "scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": "cronExpression",
+        "cronExpression": "*/30 9-16 * * 1-5",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Active Position Monitor\n\nRequired: postgresApi, httpHeaderAuth (FMP)\nMonitors stop-loss and take-profit levels\nEvery 30 min during market hours"
+      }
+    },
+    {
+      "id": "get_positions",
+      "name": "Active Positions",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.ticker, s.thesis, s.created_at, a.metadata FROM investment_scores s LEFT JOIN LATERAL (SELECT metadata FROM alerts WHERE ticker = s.ticker AND strategy = 'short_term' AND alert_type LIKE 'trade_setup_%' ORDER BY triggered_at DESC LIMIT 1) a ON true WHERE s.strategy = 'short_term' AND s.recommendation IN ('ENTER', 'WATCH') AND s.score_date >= CURRENT_DATE - INTERVAL '30 days'"
+      }
+    },
+    {
+      "id": "has_positions",
+      "name": "Any Active?",
+      "type": "if",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              },
+              "leftValue": "={{$json.ticker}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch_prices",
+      "name": "Get Current Prices",
+      "type": "httpRequest",
+      "typeVersion": 1,
+      "position": [
+        950,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://financialmodelingprep.com/api/v3/quote/{{$json.ticker}}?apikey={{$credentials.httpHeaderAuth.value}}",
+        "authentication": "none"
+      }
+    },
+    {
+      "id": "check_levels",
+      "name": "Check Stop/Target",
+      "type": "code",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\nconst alerts = [];\n\nfor (const item of items) {\n  const quote = Array.isArray(item.json) ? item.json[0] : item.json;\n  if (!quote?.symbol) continue;\n  \n  const price = quote.price || 0;\n  const ticker = quote.symbol;\n  const meta = typeof item.json.metadata === 'string' ? JSON.parse(item.json.metadata) : (item.json.metadata || {});\n  const stop = parseFloat(meta.stop) || 0;\n  const target = parseFloat(meta.target) || 0;\n  \n  if (stop > 0 && price <= stop) {\n    alerts.push({json: {ticker, alert_type: 'stop_loss_hit', message: `STOP HIT: ${ticker} at $${price.toFixed(2)} (stop was $${stop.toFixed(2)}). EXIT POSITION.`, severity: 'critical', price, level: stop}});\n  } else if (target > 0 && price >= target) {\n    alerts.push({json: {ticker, alert_type: 'target_reached', message: `TARGET REACHED: ${ticker} at $${price.toFixed(2)} (target was $${target.toFixed(2)}). Consider taking profits.`, severity: 'warning', price, level: target}});\n  } else if (stop > 0 && price < stop * 1.02) {\n    alerts.push({json: {ticker, alert_type: 'approaching_stop', message: `WARNING: ${ticker} at $${price.toFixed(2)} approaching stop $${stop.toFixed(2)} (${((price/stop-1)*100).toFixed(1)}% away)`, severity: 'warning', price, level: stop}});\n  }\n}\n\nreturn alerts.length > 0 ? alerts : [{json: {skip: true}}];"
+      }
+    },
+    {
+      "id": "filter1",
+      "name": "Has Alerts?",
+      "type": "filter",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              },
+              "leftValue": "={{$json.skip}}",
+              "rightValue": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "create_alert",
+      "name": "Create Alert",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        1700,
+        200
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) VALUES ('{{$json.ticker}}', '{{$json.alert_type}}', 'short_term', '{{$json.message}}', '{{$json.severity}}', '{\"price\": {{$json.price}}, \"level\": {{$json.level}}}');"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "get_positions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_positions": {
+      "main": [
+        [
+          {
+            "node": "has_positions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "has_positions": {
+      "main": [
+        [
+          {
+            "node": "fetch_prices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch_prices": {
+      "main": [
+        [
+          {
+            "node": "check_levels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_levels": {
+      "main": [
+        [
+          {
+            "node": "filter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filter1": {
+      "main": [
+        [
+          {
+            "node": "create_alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

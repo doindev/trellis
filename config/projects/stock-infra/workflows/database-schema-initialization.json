@@ -1,0 +1,165 @@
+{
+  "configId": "database-schema-initialization",
+  "name": "Database Schema Initialization",
+  "description": "One-time manual workflow: creates all PostgreSQL tables (16 tables) and Neo4j graph schema for the stock research platform. Safe to re-run (IF NOT EXISTS).",
+  "type": "WORKFLOW",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Run Manually",
+      "type": "manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "note1",
+      "name": "Setup",
+      "type": "stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        80
+      ],
+      "parameters": {
+        "content": "## Database Schema Init\n\nRequired Credentials:\n1. postgresApi - PostgreSQL connection\n2. neo4j - Neo4j connection\n\nRun once to initialize. Safe to re-run."
+      }
+    },
+    {
+      "id": "pg_core",
+      "name": "Core Tables",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "CREATE TABLE IF NOT EXISTS tickers (ticker VARCHAR(10) PRIMARY KEY, company_name VARCHAR(255) NOT NULL, sector VARCHAR(100), industry VARCHAR(200), market_cap BIGINT, exchange VARCHAR(20), index_membership TEXT[], ipo_date DATE, is_active BOOLEAN DEFAULT true, last_updated TIMESTAMP DEFAULT NOW()); CREATE TABLE IF NOT EXISTS daily_prices (ticker VARCHAR(10) REFERENCES tickers(ticker), price_date DATE NOT NULL, open_price NUMERIC(12,4), high_price NUMERIC(12,4), low_price NUMERIC(12,4), close_price NUMERIC(12,4), adj_close NUMERIC(12,4), volume BIGINT, PRIMARY KEY (ticker, price_date)); CREATE TABLE IF NOT EXISTS fundamentals (ticker VARCHAR(10) REFERENCES tickers(ticker), period_date DATE NOT NULL, period_type VARCHAR(10) DEFAULT 'annual', revenue BIGINT, net_income BIGINT, eps NUMERIC(10,4), pe_ratio NUMERIC(10,4), pb_ratio NUMERIC(10,4), ps_ratio NUMERIC(10,4), debt_to_equity NUMERIC(10,4), roe NUMERIC(10,4), roa NUMERIC(10,4), current_ratio NUMERIC(10,4), dividend_yield NUMERIC(10,6), payout_ratio NUMERIC(10,4), revenue_growth NUMERIC(10,4), earnings_growth NUMERIC(10,4), free_cash_flow BIGINT, gross_margin NUMERIC(10,4), operating_margin NUMERIC(10,4), net_margin NUMERIC(10,4), raw_data JSONB, last_updated TIMESTAMP DEFAULT NOW(), PRIMARY KEY (ticker, period_date, period_type)); CREATE INDEX IF NOT EXISTS idx_prices_date ON daily_prices(price_date); CREATE INDEX IF NOT EXISTS idx_fund_ticker ON fundamentals(ticker);"
+      }
+    },
+    {
+      "id": "pg_analysis",
+      "name": "Analysis Tables",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        450,
+        450
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "CREATE TABLE IF NOT EXISTS technical_indicators (ticker VARCHAR(10), indicator_date DATE NOT NULL, indicator_name VARCHAR(50) NOT NULL, value NUMERIC(16,6), signal VARCHAR(20), metadata JSONB, PRIMARY KEY (ticker, indicator_date, indicator_name)); CREATE TABLE IF NOT EXISTS news_articles (id SERIAL PRIMARY KEY, ticker VARCHAR(10), headline TEXT NOT NULL, source VARCHAR(100), url TEXT, published_at TIMESTAMP, sentiment_score NUMERIC(6,4), sentiment_label VARCHAR(20), summary TEXT, category VARCHAR(50), created_at TIMESTAMP DEFAULT NOW()); CREATE TABLE IF NOT EXISTS sec_filings (id SERIAL PRIMARY KEY, ticker VARCHAR(10), filing_type VARCHAR(20) NOT NULL, filing_date DATE, url TEXT, summary TEXT, key_metrics JSONB, created_at TIMESTAMP DEFAULT NOW()); CREATE TABLE IF NOT EXISTS economic_indicators (indicator_id VARCHAR(50) NOT NULL, indicator_name VARCHAR(200), observation_date DATE NOT NULL, value NUMERIC(16,6), unit VARCHAR(50), PRIMARY KEY (indicator_id, observation_date)); CREATE INDEX IF NOT EXISTS idx_news_ticker ON news_articles(ticker); CREATE INDEX IF NOT EXISTS idx_news_pub ON news_articles(published_at); CREATE INDEX IF NOT EXISTS idx_tech_td ON technical_indicators(ticker, indicator_date);"
+      }
+    },
+    {
+      "id": "pg_strategy",
+      "name": "Strategy Tables",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        750,
+        200
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "CREATE TABLE IF NOT EXISTS watchlists (id SERIAL PRIMARY KEY, strategy VARCHAR(50) NOT NULL, ticker VARCHAR(10) NOT NULL, added_at TIMESTAMP DEFAULT NOW(), score NUMERIC(5,2), status VARCHAR(20) DEFAULT 'active', notes TEXT, metadata JSONB, UNIQUE(strategy, ticker)); CREATE TABLE IF NOT EXISTS investment_scores (id SERIAL PRIMARY KEY, ticker VARCHAR(10) NOT NULL, strategy VARCHAR(50) NOT NULL, score_date DATE NOT NULL, overall_score NUMERIC(4,2), fundamental_score NUMERIC(4,2), technical_score NUMERIC(4,2), sentiment_score NUMERIC(4,2), valuation_score NUMERIC(4,2), component_scores JSONB, recommendation VARCHAR(20), price_target NUMERIC(12,4), thesis TEXT, created_at TIMESTAMP DEFAULT NOW(), UNIQUE(ticker, strategy, score_date)); CREATE TABLE IF NOT EXISTS alerts (id SERIAL PRIMARY KEY, ticker VARCHAR(10), alert_type VARCHAR(50) NOT NULL, strategy VARCHAR(50), message TEXT NOT NULL, severity VARCHAR(20) DEFAULT 'info', triggered_at TIMESTAMP DEFAULT NOW(), sent BOOLEAN DEFAULT false, sent_via VARCHAR(20), metadata JSONB); CREATE TABLE IF NOT EXISTS workflow_execution_log (id SERIAL PRIMARY KEY, workflow_id VARCHAR(100) NOT NULL, workflow_name VARCHAR(200), project_name VARCHAR(200), execution_id VARCHAR(100), status VARCHAR(20) NOT NULL, started_at TIMESTAMP, completed_at TIMESTAMP, duration_ms INTEGER, items_processed INTEGER, error_message TEXT, metadata JSONB, created_at TIMESTAMP DEFAULT NOW()); CREATE TABLE IF NOT EXISTS strategy_performance (id SERIAL PRIMARY KEY, strategy VARCHAR(50) NOT NULL, metric_date DATE NOT NULL, total_watchlist_stocks INTEGER, avg_score NUMERIC(5,2), top_picks JSONB, accuracy_rate NUMERIC(5,4), notes TEXT, created_at TIMESTAMP DEFAULT NOW(), UNIQUE(strategy, metric_date)); CREATE INDEX IF NOT EXISTS idx_wl_strat ON watchlists(strategy); CREATE INDEX IF NOT EXISTS idx_scores_tk ON investment_scores(ticker); CREATE INDEX IF NOT EXISTS idx_alerts_tk ON alerts(ticker); CREATE INDEX IF NOT EXISTS idx_exec_wf ON workflow_execution_log(workflow_id);"
+      }
+    },
+    {
+      "id": "pg_extra",
+      "name": "Supplemental Tables",
+      "type": "postgres",
+      "typeVersion": 1,
+      "position": [
+        750,
+        450
+      ],
+      "parameters": {
+        "operation": "executeSql",
+        "query": "CREATE TABLE IF NOT EXISTS dividend_history (ticker VARCHAR(10) NOT NULL, ex_date DATE NOT NULL, payment_date DATE, record_date DATE, declaration_date DATE, amount NUMERIC(10,6), frequency VARCHAR(20), PRIMARY KEY (ticker, ex_date)); CREATE TABLE IF NOT EXISTS earnings_calendar (ticker VARCHAR(10) NOT NULL, report_date DATE NOT NULL, fiscal_quarter VARCHAR(10), eps_estimate NUMERIC(10,4), eps_actual NUMERIC(10,4), revenue_estimate BIGINT, revenue_actual BIGINT, surprise_percent NUMERIC(10,4), PRIMARY KEY (ticker, report_date)); CREATE TABLE IF NOT EXISTS sector_performance (sector VARCHAR(100) NOT NULL, perf_date DATE NOT NULL, daily_return NUMERIC(10,6), weekly_return NUMERIC(10,6), monthly_return NUMERIC(10,6), ytd_return NUMERIC(10,6), PRIMARY KEY (sector, perf_date)); CREATE TABLE IF NOT EXISTS ai_agent_reports (id SERIAL PRIMARY KEY, agent_name VARCHAR(100) NOT NULL, report_date DATE NOT NULL, report_type VARCHAR(50), summary TEXT, findings JSONB, recommendations JSONB, actions_taken JSONB, created_at TIMESTAMP DEFAULT NOW()); CREATE INDEX IF NOT EXISTS idx_div_tk ON dividend_history(ticker); CREATE INDEX IF NOT EXISTS idx_earn_tk ON earnings_calendar(ticker); CREATE INDEX IF NOT EXISTS idx_ai_dt ON ai_agent_reports(report_date);"
+      }
+    },
+    {
+      "id": "neo4j1",
+      "name": "Neo4j Schema",
+      "type": "neo4j",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "parameters": {
+        "operation": "executeStatement",
+        "query": "CREATE CONSTRAINT IF NOT EXISTS FOR (c:Company) REQUIRE c.ticker IS UNIQUE; CREATE CONSTRAINT IF NOT EXISTS FOR (s:Sector) REQUIRE s.name IS UNIQUE; CREATE CONSTRAINT IF NOT EXISTS FOR (i:Industry) REQUIRE i.name IS UNIQUE; CREATE CONSTRAINT IF NOT EXISTS FOR (idx:MarketIndex) REQUIRE idx.name IS UNIQUE; CREATE CONSTRAINT IF NOT EXISTS FOR (w:Watchlist) REQUIRE w.name IS UNIQUE; MERGE (sp:MarketIndex {name: 'SP500'}) MERGE (nq:MarketIndex {name: 'NASDAQ100'}) MERGE (dj:MarketIndex {name: 'DowJones'}) MERGE (wg:Watchlist {name: 'growth', strategy: 'Growth Investing'}) MERGE (wv:Watchlist {name: 'value', strategy: 'Value Investing'}) MERGE (wd:Watchlist {name: 'dividend', strategy: 'Income Dividend'}) MERGE (wb:Watchlist {name: 'broad_market', strategy: 'Broad Market'});",
+        "parameters": "{}"
+      }
+    }
+  ],
+  "connections": {
+    "trigger1": {
+      "main": [
+        [
+          {
+            "node": "pg_core",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "pg_analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pg_core": {
+      "main": [
+        [
+          {
+            "node": "pg_strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pg_analysis": {
+      "main": [
+        [
+          {
+            "node": "pg_extra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pg_strategy": {
+      "main": [
+        [
+          {
+            "node": "neo4j1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pg_extra": {
+      "main": [
+        [
+          {
+            "node": "neo4j1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
