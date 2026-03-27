@@ -504,6 +504,36 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
       this.webhookPathError = '';
     }
     const updated = { ...this.node.parameters, [name]: value };
+
+    // When a predefined agent is selected, populate systemMessage and maxIterations
+    // from the agent definition so the user can see and optionally edit them
+    if (name === 'agentDefinitionId' && value && this.node?.type === 'aiAgent') {
+      this.workflowService.get(value).subscribe({
+        next: (agentDef) => {
+          // Find the aiAgent node in the definition
+          const agentNode = agentDef.nodes?.find((n: any) => n.type === 'aiAgent');
+          if (agentNode?.parameters) {
+            const defSystemMsg = agentNode.parameters['systemMessage'];
+            const defMaxIter = agentNode.parameters['maxIterations'];
+            const cascaded = { ...updated };
+            if (defSystemMsg) cascaded['systemMessage'] = defSystemMsg;
+            if (defMaxIter != null) cascaded['maxIterations'] = defMaxIter;
+            this.parameterChanged.emit(cascaded);
+            return;
+          }
+          this.parameterChanged.emit(updated);
+        },
+        error: () => this.parameterChanged.emit(updated)
+      });
+      return;
+    }
+
+    // When clearing the predefined agent, reset to defaults
+    if (name === 'agentDefinitionId' && !value && this.node?.type === 'aiAgent') {
+      updated['systemMessage'] = 'You are a helpful assistant.';
+      updated['maxIterations'] = 10;
+    }
+
     this.parameterChanged.emit(updated);
   }
 

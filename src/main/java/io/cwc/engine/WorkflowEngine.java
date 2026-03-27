@@ -44,6 +44,7 @@ public class WorkflowEngine {
     private final WorkflowVersionRepository workflowVersionRepository;
     private final io.cwc.service.CacheRegistryService cacheRegistryService;
     private final io.cwc.service.ExecutionSettingsResolver executionSettingsResolver;
+    private final AgentConfigService agentConfigService;
 
     @Resource(name = "branchExecutorService")
     private ExecutorService branchExecutorService;
@@ -513,6 +514,14 @@ public class WorkflowEngine {
             // Collect AI inputs from sub-node connections
             Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
 
+            // If this is an aiAgent with a predefined agent definition, merge it
+            if ("aiAgent".equals(graphNode.getType())) {
+                String agentDefId = resolvedParams.get("agentDefinitionId") instanceof String s && !s.isBlank() ? s : null;
+                if (agentDefId != null) {
+                    aiInputData = mergeAgentDefinition(agentDefId, aiInputData, resolvedParams, executionId);
+                }
+            }
+
             // For sub-agent nodes, collect the parent agent's AI inputs for model inheritance
             Map<String, List<Object>> parentAiInputData = null;
             if (nodeInstance instanceof AiSubNodeInterface) {
@@ -879,6 +888,14 @@ public class WorkflowEngine {
 
             // Collect AI inputs from sub-node connections
             Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
+
+            // If this is an aiAgent with a predefined agent definition, merge it
+            if ("aiAgent".equals(graphNode.getType())) {
+                String agentDefId = resolvedParams.get("agentDefinitionId") instanceof String s && !s.isBlank() ? s : null;
+                if (agentDefId != null) {
+                    aiInputData = mergeAgentDefinition(agentDefId, aiInputData, resolvedParams, executionId);
+                }
+            }
 
             // For sub-agent nodes, collect the parent agent's AI inputs for model inheritance
             Map<String, List<Object>> parentAiInputData = null;
@@ -1346,6 +1363,270 @@ public class WorkflowEngine {
             }
         }
         return null;
+    }
+
+    /**
+     * Resolves a predefined agent definition and merges its AI inputs with the workflow's
+     * directly-connected AI inputs. Override rules:
+     * <ul>
+     *   <li><b>ai_languageModel</b>: Workflow connection OVERRIDES the definition's model</li>
+     *   <li><b>ai_memory</b>: Workflow connection OVERRIDES the definition's memory</li>
+     *   <li><b>ai_tool</b>: Workflow connections are ADDITIVE (merged with definition's tools)</li>
+     *   <li><b>systemMessage</b>: If the workflow's parameter differs from the default,
+     *       it overrides the definition's system message (handled in AiAgentNode)</li>
+     * </ul>
+     *
+     * @param agentDefinitionId the ID of the predefined agent (type=AGENT workflow)
+     * @param workflowAiInputs  AI inputs already connected in the workflow
+     * @param resolvedParams    the node's resolved parameters (mutated to apply defaults from definition)
+     * @param executionId       for logging
+     * @return merged AI inputs map
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, List<Object>> mergeAgentDefinition(
+            String agentDefinitionId,
+            Map<String, List<Object>> workflowAiInputs,
+            Map<String, Object> resolvedParams,
+            String executionId) {
+
+        AgentConfigService.AgentConfig config = agentConfigService.loadAgentConfig(agentDefinitionId);
+        if (config == null) {
+            log.warn("[{}] Agent definition '{}' not found or invalid, proceeding without it", executionId, agentDefinitionId);
+            return workflowAiInputs;
+        }
+
+        log.info("[{}] Merging predefined agent definition '{}'", executionId, agentDefinitionId);
+
+        // --- Parameter overrides: definition values are used unless the workflow explicitly changed them ---
+        // systemMessage: use definition's unless the workflow's value differs from the definition's
+        // (When the frontend populates the field from the definition, it will match. If the user
+        //  edited it, it won't match — and that edited value should be used as the override.)
+        String workflowSystemMsg = (String) resolvedParams.get("systemMessage");
+        String defSystemMsg = config.systemMessage();
+        if (workflowSystemMsg == null || workflowSystemMsg.equals(defSystemMsg)) {
+            // Workflow matches definition (or is null) — use definition's value as-is
+            resolvedParams.put("systemMessage", defSystemMsg);
+        }
+        // else: workflow has a different system message — it's an intentional override, keep it
+
+        // maxIterations: use definition's unless workflow explicitly set a different value
+        Object workflowMaxIter = resolvedParams.get("maxIterations");
+        int workflowMaxIterVal = workflowMaxIter instanceof Number n ? n.intValue() : 10;
+        if (workflowMaxIterVal == config.maxIterations()) {
+            resolvedParams.put("maxIterations", config.maxIterations());
+        }
+
+        // --- Execute predefined agent's sub-nodes to produce AI data ---
+        // Load the full agent workflow to get all nodes and connections
+        var agentEntity = workflowRepository.findById(agentDefinitionId).orElse(null);
+        if (agentEntity == null) return workflowAiInputs;
+
+        Object nodesObj = agentEntity.getNodes();
+        Object connectionsObj = agentEntity.getConnections();
+        if (!(nodesObj instanceof List<?> nodeList)) return workflowAiInputs;
+
+        Map<String, Object> connectionsMap = connectionsObj instanceof Map<?, ?>
+                ? (Map<String, Object>) connectionsObj : Map.of();
+
+        // Build the agent definition's graph
+        WorkflowGraph defGraph = WorkflowGraph.parse(nodeList, connectionsMap, objectMapper);
+        WorkflowExecutionState defState = new WorkflowExecutionState(executionId + "_agentDef", agentDefinitionId, defGraph);
+
+        // Find the aiAgent node in the definition
+        String agentNodeId = null;
+        for (Object item : nodeList) {
+            if (item instanceof Map<?, ?> nodeMap && "aiAgent".equals(nodeMap.get("type"))) {
+                agentNodeId = (String) nodeMap.get("id");
+                break;
+            }
+        }
+        if (agentNodeId == null) return workflowAiInputs;
+
+        // Execute all AI sub-nodes in the definition (models, memory, tools, sub-agents)
+        // by doing a topological traversal of nodes that feed into the agent node
+        Set<String> subNodeIds = new HashSet<>();
+        for (Map.Entry<String, Object> entry : connectionsMap.entrySet()) {
+            String sourceId = entry.getKey();
+            if (!(entry.getValue() instanceof Map<?, ?> typeMap)) continue;
+            for (Map.Entry<?, ?> typeEntry : typeMap.entrySet()) {
+                String connType = typeEntry.getKey().toString();
+                if ("main".equals(connType)) continue;
+                if (!(typeEntry.getValue() instanceof List<?> outputs)) continue;
+                for (Object output : outputs) {
+                    if (!(output instanceof List<?> targets)) continue;
+                    for (Object target : targets) {
+                        if (target instanceof Map<?, ?> tm && agentNodeId.equals(((Map<String, Object>) tm).get("node"))) {
+                            subNodeIds.add(sourceId);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Also find nodes that connect to sub-agents (recursive sub-node dependencies)
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (Map.Entry<String, Object> entry : connectionsMap.entrySet()) {
+                String sourceId = entry.getKey();
+                if (subNodeIds.contains(sourceId)) continue;
+                if (!(entry.getValue() instanceof Map<?, ?> typeMap)) continue;
+                for (Map.Entry<?, ?> typeEntry : typeMap.entrySet()) {
+                    if ("main".equals(typeEntry.getKey().toString())) continue;
+                    if (!(typeEntry.getValue() instanceof List<?> outputs)) continue;
+                    for (Object output : outputs) {
+                        if (!(output instanceof List<?> targets)) continue;
+                        for (Object target : targets) {
+                            if (target instanceof Map<?, ?> tm) {
+                                String targetId = ((Map<String, Object>) tm).get("node").toString();
+                                if (subNodeIds.contains(targetId)) {
+                                    subNodeIds.add(sourceId);
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Build node map for lookup
+        Map<String, Map<String, Object>> nodeById = new HashMap<>();
+        for (Object item : nodeList) {
+            if (item instanceof Map<?, ?> nodeMap) {
+                String id = (String) ((Map<String, Object>) nodeMap).get("id");
+                if (id != null) nodeById.put(id, (Map<String, Object>) nodeMap);
+            }
+        }
+
+        // Execute sub-nodes in dependency order (leaves first)
+        Set<String> executed = new HashSet<>();
+        int maxPasses = subNodeIds.size() + 1;
+        for (int pass = 0; pass < maxPasses && executed.size() < subNodeIds.size(); pass++) {
+            for (String subNodeId : subNodeIds) {
+                if (executed.contains(subNodeId)) continue;
+
+                // Check if all dependencies are already executed
+                List<WorkflowGraph.Connection> incoming = defGraph.getIncomingConnections()
+                        .getOrDefault(subNodeId, List.of());
+                boolean depsReady = incoming.stream()
+                        .filter(c -> !"main".equals(c.getType()))
+                        .allMatch(c -> executed.contains(c.getSourceNodeId()) || !subNodeIds.contains(c.getSourceNodeId()));
+                if (!depsReady) continue;
+
+                Map<String, Object> nodeDef = nodeById.get(subNodeId);
+                if (nodeDef == null) continue;
+                String nodeType = (String) nodeDef.get("type");
+                if (nodeType == null || "stickyNote".equals(nodeType) || "aiAgent".equals(nodeType)) {
+                    executed.add(subNodeId);
+                    continue;
+                }
+
+                try {
+                    var regOpt = nodeRegistry.getNode(nodeType);
+                    if (regOpt.isEmpty()) { executed.add(subNodeId); continue; }
+                    NodeInterface nodeInstance = regOpt.get().getNodeInstance();
+                    if (!(nodeInstance instanceof AiSubNodeInterface aiSubNode)) { executed.add(subNodeId); continue; }
+
+                    Map<String, Object> nodeParams = nodeDef.get("parameters") instanceof Map<?, ?>
+                            ? (Map<String, Object>) nodeDef.get("parameters") : Map.of();
+
+                    // Resolve credentials for this sub-node
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> credRefs = nodeDef.get("credentials") instanceof Map<?, ?>
+                            ? (Map<String, Object>) nodeDef.get("credentials") : Map.of();
+                    Map<String, Object> creds = resolveCredentials(
+                            credRefs, List.of(), defState, Collections.emptyMap(), executionId);
+                    String credType = extractCredentialType(credRefs);
+
+                    // Collect AI inputs for this sub-node from already-executed definition nodes
+                    Map<String, List<Object>> subNodeAiInputs = new HashMap<>();
+                    for (WorkflowGraph.Connection conn : incoming) {
+                        if ("main".equals(conn.getType())) continue;
+                        Object aiData = defState.getAiData(conn.getSourceNodeId());
+                        if (aiData != null) {
+                            subNodeAiInputs.computeIfAbsent(conn.getType(), k -> new ArrayList<>()).add(aiData);
+                        }
+                    }
+
+                    NodeExecutionContext subCtx = NodeExecutionContext.builder()
+                            .executionId(executionId)
+                            .workflowId(agentDefinitionId)
+                            .nodeId(subNodeId)
+                            .nodeType(nodeType)
+                            .nodeVersion(1)
+                            .inputData(List.of())
+                            .parameters(new HashMap<>(nodeParams))
+                            .credentials(creds)
+                            .credentialType(credType)
+                            .staticData(new HashMap<>())
+                            .workflowStaticData(new HashMap<>())
+                            .nodeContextData(new HashMap<>())
+                            .aiInputData(subNodeAiInputs)
+                            .executionMode(NodeExecutionContext.ExecutionMode.INTERNAL)
+                            .build();
+
+                    Object aiData = aiSubNode.supplyData(subCtx);
+                    defState.storeAiData(subNodeId, aiData);
+                    executed.add(subNodeId);
+                    log.debug("[{}] Executed agent definition sub-node: {} ({})", executionId, subNodeId, nodeType);
+                } catch (Exception e) {
+                    log.warn("[{}] Failed to execute agent definition sub-node {}: {}", executionId, subNodeId, e.getMessage());
+                    executed.add(subNodeId);
+                }
+            }
+        }
+
+        // Collect the definition's AI inputs targeting the agent node
+        Map<String, List<Object>> defAiInputs = new HashMap<>();
+        for (String subNodeId : subNodeIds) {
+            List<WorkflowGraph.Connection> outgoing = defGraph.getOutgoingConnections()
+                    .getOrDefault(subNodeId, List.of());
+            for (WorkflowGraph.Connection conn : outgoing) {
+                if (agentNodeId.equals(conn.getTargetNodeId()) && !"main".equals(conn.getType())) {
+                    Object aiData = defState.getAiData(subNodeId);
+                    if (aiData != null) {
+                        defAiInputs.computeIfAbsent(conn.getType(), k -> new ArrayList<>()).add(aiData);
+                    }
+                }
+            }
+        }
+
+        // --- Apply merge rules ---
+        Map<String, List<Object>> merged = new HashMap<>(defAiInputs);
+
+        boolean workflowHasModel = workflowAiInputs.containsKey("ai_languageModel")
+                && !workflowAiInputs.get("ai_languageModel").isEmpty();
+        boolean workflowHasMemory = workflowAiInputs.containsKey("ai_memory")
+                && !workflowAiInputs.get("ai_memory").isEmpty();
+        boolean workflowHasTools = workflowAiInputs.containsKey("ai_tool")
+                && !workflowAiInputs.get("ai_tool").isEmpty();
+
+        // Model: workflow OVERRIDES definition
+        if (workflowHasModel) {
+            merged.put("ai_languageModel", workflowAiInputs.get("ai_languageModel"));
+        }
+
+        // Memory: workflow OVERRIDES definition
+        if (workflowHasMemory) {
+            merged.put("ai_memory", workflowAiInputs.get("ai_memory"));
+        }
+
+        // Tools: ADDITIVE — merge workflow tools into definition tools
+        if (workflowHasTools) {
+            List<Object> mergedTools = new ArrayList<>(merged.getOrDefault("ai_tool", List.of()));
+            mergedTools.addAll(workflowAiInputs.get("ai_tool"));
+            merged.put("ai_tool", mergedTools);
+        }
+
+        log.info("[{}] Agent definition merge complete. Model: {}, Memory: {}, Tools: {} (def) + {} (workflow)",
+                executionId,
+                workflowHasModel ? "workflow override" : "from definition",
+                workflowHasMemory ? "workflow override" : "from definition",
+                defAiInputs.getOrDefault("ai_tool", List.of()).size(),
+                workflowHasTools ? workflowAiInputs.get("ai_tool").size() : 0);
+
+        return merged;
     }
 
     /**

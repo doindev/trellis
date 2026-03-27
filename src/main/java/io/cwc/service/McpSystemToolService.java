@@ -2119,7 +2119,158 @@ public class McpSystemToolService {
 
 
             ═══════════════════════════════════════════════════════════════════
-            7. COMMON MISTAKES & TROUBLESHOOTING
+            7. REUSABLE AGENT DEFINITIONS & THE agentDefinitionId PATTERN
+            ═══════════════════════════════════════════════════════════════════
+
+            CONCEPT — Agent Definitions vs Agent Runner Workflows:
+
+            Complex AI agents (with sub-agents, multiple tools, memory, etc.)
+            should be split into TWO parts:
+
+            1. **Agent Definition** (created with cwc_create_agent):
+               - Contains ONLY the AI configuration: the aiAgent node,
+                 its chat model, memory, tools, and sub-agents with their
+                 own models/tools.
+               - Has NO triggers, NO data-gathering nodes, NO output/storage
+                 nodes. NO "main" type connections at all.
+               - Only uses the BOTTOM connectors: ai_languageModel, ai_memory,
+                 ai_tool.
+               - Think of it as a reusable "agent template" that defines
+                 WHO the agent is, not WHEN or HOW it runs.
+
+            2. **Runner Workflow** (created with cwc_create_workflow):
+               - Contains the execution pipeline: trigger → data gathering →
+                 AI Agent node → output/storage.
+               - The AI Agent node in this workflow sets `agentDefinitionId`
+                 to the agent definition's ID. This inherits all model,
+                 memory, tools, sub-agents, and system prompt from the
+                 definition automatically.
+               - The workflow only configures `prompt` (to inject context)
+                 and optionally overrides `maxIterations`.
+               - The workflow canvas stays clean: just 3-4 nodes
+                 (trigger → context → agent → store) instead of 20+.
+
+            WHY this pattern matters:
+            - **Visual clarity**: Runner workflows are clean and readable.
+              All the complex AI wiring (sub-agents, tools, models) lives
+              in the agent definition where it can be configured once.
+            - **Reusability**: The same agent definition can be referenced
+              by multiple workflows (e.g., a scheduled runner AND a manual
+              trigger workflow AND a webhook-triggered workflow).
+            - **Separation of concerns**: Change the agent's behavior
+              (system prompt, tools, sub-agents) without touching the
+              workflow pipeline. Change the schedule or data gathering
+              without touching the agent configuration.
+
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ AGENT DEFINITION (cwc_create_agent)                             │
+            │                                                                 │
+            │   Only bottom connectors — NO main input/output:                │
+            │                                                                 │
+            │     [Model] ──ai_languageModel──┐                               │
+            │     [Memory] ──ai_memory────────┤                               │
+            │     [Think] ──ai_tool───────────┤                               │
+            │     [Platform Tool] ──ai_tool───┼──► [aiAgent]                  │
+            │     [SubAgent1] ──ai_tool───────┤                               │
+            │     [SubAgent2] ──ai_tool───────┘                               │
+            │       ├── [Model] ──ai_languageModel──► [SubAgent1]             │
+            │       ├── [Tool] ──ai_tool────────────► [SubAgent1]             │
+            │       └── [Model] ──ai_languageModel──► [SubAgent2]             │
+            │                                                                 │
+            └─────────────────────────────────────────────────────────────────┘
+
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ RUNNER WORKFLOW (cwc_create_workflow)                            │
+            │                                                                 │
+            │   Clean pipeline — only main connections:                        │
+            │                                                                 │
+            │   [Schedule Trigger] ──main──► [Gather Context (Postgres)]      │
+            │                        ──main──► [AI Agent]                     │
+            │                                    agentDefinitionId: "<id>"    │
+            │                                    prompt: "{{$json.context}}"  │
+            │                        ──main──► [Store Report (Postgres)]      │
+            │                                                                 │
+            └─────────────────────────────────────────────────────────────────┘
+
+            EXAMPLE — Agent Definition nodes (NO triggers, NO main connections):
+
+            Nodes:
+            [
+              { "id": "agent1", "name": "My Agent", "type": "aiAgent", "typeVersion": 1,
+                "position": [700, 300],
+                "parameters": {
+                  "systemMessage": "You are a specialized agent...",
+                  "prompt": "{{input}}",
+                  "maxIterations": 15
+                }
+              },
+              { "id": "model1", "name": "Model", "type": "anthropicChatModel", "typeVersion": 1,
+                "position": [300, 450],
+                "parameters": { "model": "claude-sonnet-4-20250514" }
+              },
+              { "id": "memory1", "name": "Memory", "type": "memoryPostgresChat", "typeVersion": 1,
+                "position": [420, 450],
+                "parameters": { "sessionId": "my_agent_session" }
+              },
+              { "id": "tool1", "name": "Think", "type": "toolThink", "typeVersion": 1,
+                "position": [540, 450], "parameters": {} }
+            ]
+
+            Connections (ONLY ai_* types — no "main"):
+            {
+              "model1":  { "ai_languageModel": [[{ "node": "agent1", "type": "ai_languageModel", "index": 0 }]] },
+              "memory1": { "ai_memory": [[{ "node": "agent1", "type": "ai_memory", "index": 0 },
+                                          { "node": "agent1", "type": "ai_memory", "index": 1 }]] },
+              "tool1":   { "ai_tool": [[{ "node": "agent1", "type": "ai_tool", "index": 0 },
+                                        { "node": "agent1", "type": "ai_tool", "index": 2 }]] }
+            }
+
+            EXAMPLE — Runner Workflow referencing the agent:
+
+            Nodes:
+            [
+              { "id": "trigger1", "name": "Daily 9PM", "type": "scheduleTrigger", "typeVersion": 1,
+                "position": [200, 300],
+                "parameters": { "rule": "cronExpression", "cronExpression": "0 21 * * 1-5" }
+              },
+              { "id": "context1", "name": "Gather Context", "type": "postgres", "typeVersion": 1,
+                "position": [450, 300],
+                "parameters": { "operation": "executeQuery", "query": "SELECT ... AS context" }
+              },
+              { "id": "agent1", "name": "My Agent", "type": "aiAgent", "typeVersion": 1,
+                "position": [750, 300],
+                "parameters": {
+                  "agentDefinitionId": "<agent-id-from-cwc_create_agent>",
+                  "prompt": "{{$json.context}}\\n\\nDate: {{$now.format('yyyy-MM-dd')}}"
+                }
+              },
+              { "id": "store1", "name": "Store Output", "type": "postgres", "typeVersion": 1,
+                "position": [1050, 300],
+                "parameters": { "operation": "executeSql", "query": "INSERT INTO ..." }
+              }
+            ]
+
+            Connections (ONLY "main" — agent inherits AI config from definition):
+            {
+              "trigger1":  { "main": [[{ "node": "context1", "type": "main", "index": 0 }]] },
+              "context1":  { "main": [[{ "node": "agent1",  "type": "main", "index": 0 }]] },
+              "agent1":    { "main": [[{ "node": "store1",  "type": "main", "index": 0 }]] }
+            }
+
+            IMPORTANT RULES:
+            - Agent definitions use ONLY ai_* connection types (bottom connectors).
+            - Runner workflows use ONLY "main" connection types (side connectors).
+            - The aiAgent node's `prompt` parameter in the runner is how you inject
+              runtime context (e.g., data from a Postgres query or HTTP request).
+            - The agent definition's `prompt` should use "{{input}}" as a placeholder
+              that gets replaced by the runner's prompt value.
+            - Always prefer this split pattern for complex agents (3+ tools or any
+              sub-agents). Simple agents with just a model and one tool can be
+              defined inline in the workflow if preferred.
+
+
+            ═══════════════════════════════════════════════════════════════════
+            8. COMMON MISTAKES & TROUBLESHOOTING
             ═══════════════════════════════════════════════════════════════════
 
             ❌ MISTAKE: Incrementing ai_tool index per tool (index 2, 3, 4...)
@@ -2144,6 +2295,15 @@ public class McpSystemToolService {
 
             ❌ MISTAKE: Creating an agent with cwc_create_workflow
             ✅ FIX: Use cwc_create_agent to get type=AGENT and the agent chat UI.
+
+            ❌ MISTAKE: Putting triggers and data-gathering nodes in an agent definition
+            ✅ FIX: Agent definitions should ONLY contain AI configuration (aiAgent,
+               models, memory, tools, sub-agents). Use a separate runner workflow with
+               agentDefinitionId to handle triggers, data gathering, and output storage.
+
+            ❌ MISTAKE: Using "main" connections in an agent definition
+            ✅ FIX: Agent definitions have NO main connections. Only ai_languageModel,
+               ai_memory, and ai_tool connections between sub-nodes and the aiAgent node.
 
             """;
 
