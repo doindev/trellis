@@ -170,7 +170,8 @@
       "Bash(tasklist)",
       "mcp__cwc-agent__cwc_create_project",
       "Read(//c/Users/timhj/.claude/**)",
-      "Bash(grep -c '\"\"type\"\":\"\"tool_use\"\"' \"/c/Users/timhj/AppData/Local/Temp/claude/C--Users-timhj-eclipse-workspace-Cwc/385a0633-c97a-4be4-94a0-ae08fc316606/tasks/ac71fe99cc8ab242a.output\")"
+      "Bash(grep -c '\"\"type\"\":\"\"tool_use\"\"' \"/c/Users/timhj/AppData/Local/Temp/claude/C--Users-timhj-eclipse-workspace-Cwc/385a0633-c97a-4be4-94a0-ae08fc316606/tasks/ac71fe99cc8ab242a.output\")",
+      "Read(//c/tmp/**)"
     ]
   }
 }
