@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class ExpressionEvaluator {
 
-    private static final Pattern EXPRESSION_PATTERN = Pattern.compile("=?\\{\\{(.+?)\\}\\}", Pattern.DOTALL);
+    private static final Pattern EXPRESSION_PATTERN = Pattern.compile("\\{\\{(.+?)\\}\\}", Pattern.DOTALL);
     private final ObjectMapper objectMapper;
 
     @SuppressWarnings("unchecked")
@@ -42,7 +42,10 @@ public class ExpressionEvaluator {
     }
 
     private Object resolveString(String str, ExpressionContext ctx) {
-        Matcher matcher = EXPRESSION_PATTERN.matcher(str);
+        // Strip leading '=' expression prefix (used by the UI to mark a value as an expression)
+        String input = str.startsWith("=") ? str.substring(1) : str;
+
+        Matcher matcher = EXPRESSION_PATTERN.matcher(input);
 
         if (matcher.matches()) {
             String expression = matcher.group(1).trim();
@@ -92,6 +95,7 @@ public class ExpressionEvaluator {
 
             setup.append("var $env = ").append(toJson(ctx.getEnvVars() != null ? ctx.getEnvVars() : Map.of())).append(";\n");
             setup.append("var $vars = ").append(toJson(ctx.getVariables() != null ? ctx.getVariables() : Map.of())).append(";\n");
+            setup.append("var $credentials = ").append(toJson(ctx.getCredentials() != null ? ctx.getCredentials() : Map.of())).append(";\n");
 
             setup.append("var $execution = { id: '").append(ctx.getExecutionId() != null ? ctx.getExecutionId() : "").append("' };\n");
             setup.append("var $now = '").append(Instant.now().toString()).append("';\n");
@@ -181,6 +185,7 @@ public class ExpressionEvaluator {
         private Map<String, String> envVars;
         private Map<String, String> variables;
         private Map<String, Object> authData;
+        private Map<String, Object> credentials;
         private String executionId;
         private int runIndex;
     }

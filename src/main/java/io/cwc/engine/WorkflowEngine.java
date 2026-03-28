@@ -504,12 +504,17 @@ public class WorkflowEngine {
         webSocketService.sendNodeStarted(executionId, nodeId, graphNode.getName());
 
         try {
-            Map<String, Object> resolvedParams = resolveParameters(
-                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
-
             Map<String, Object> credentials = resolveCredentials(
                     graphNode.getCredentials(), nodeInput, state, variables, executionId);
             String credentialType = extractCredentialType(graphNode.getCredentials());
+
+            // Merge project-level credentials for expression resolution and secret redaction
+            Map<String, Object> projectCreds = loadProjectCredentials(workflowId);
+            Map<String, Object> allCredentials = new LinkedHashMap<>(projectCreds);
+            allCredentials.putAll(credentials);
+
+            Map<String, Object> resolvedParams = resolveParameters(
+                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId, allCredentials);
 
             // Collect AI inputs from sub-node connections
             Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
@@ -536,7 +541,7 @@ public class WorkflowEngine {
                     .nodeVersion(graphNode.getTypeVersion())
                     .inputData(nodeInput)
                     .parameters(resolvedParams)
-                    .credentials(credentials)
+                    .credentials(allCredentials)
                     .credentialType(credentialType)
                     .staticData(new HashMap<>())
                     .workflowStaticData(state.getWorkflowStaticData())
@@ -879,12 +884,17 @@ public class WorkflowEngine {
         webSocketService.sendNodeStarted(executionId, nodeId, graphNode.getName());
 
         try {
-            Map<String, Object> resolvedParams = resolveParameters(
-                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
-
             Map<String, Object> credentials = resolveCredentials(
                     graphNode.getCredentials(), nodeInput, state, variables, executionId);
             String credentialType = extractCredentialType(graphNode.getCredentials());
+
+            // Merge project-level credentials for expression resolution and secret redaction
+            Map<String, Object> projectCreds = loadProjectCredentials(workflow.getId());
+            Map<String, Object> allCredentials = new LinkedHashMap<>(projectCreds);
+            allCredentials.putAll(credentials);
+
+            Map<String, Object> resolvedParams = resolveParameters(
+                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId, allCredentials);
 
             // Collect AI inputs from sub-node connections
             Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
@@ -912,7 +922,7 @@ public class WorkflowEngine {
                     .inputData(nodeInput)
                     .parameters(resolvedParams)
                     .rawParameters(graphNode.getParameters())
-                    .credentials(credentials)
+                    .credentials(allCredentials)
                     .credentialType(credentialType)
                     .staticData(new HashMap<>())
                     .workflowStaticData(state.getWorkflowStaticData())
@@ -1235,11 +1245,17 @@ public class WorkflowEngine {
                 try { projectId = workflowService.findById(workflowId).getProjectId(); } catch (Exception ignored) {}
             }
             Map<String, String> variables = variableService.getVariablesForProject(projectId);
-            Map<String, Object> resolvedParams = resolveParameters(
-                    parameters, inputData, null, null, variables, "single-node");
             Map<String, Object> credentials = resolveCredentials(
                     credentialRefs, inputData, null, variables, "single-node");
             String credentialType = extractCredentialType(credentialRefs);
+
+            // Merge project-level credentials for expression resolution and secret redaction
+            Map<String, Object> projectCreds = loadProjectCredentials(workflowId);
+            Map<String, Object> allCredentials = new LinkedHashMap<>(projectCreds);
+            allCredentials.putAll(credentials);
+
+            Map<String, Object> resolvedParams = resolveParameters(
+                    parameters, inputData, null, null, variables, "single-node", allCredentials, workflowId);
 
             NodeExecutionContext context = NodeExecutionContext.builder()
                     .executionId("single-node-" + System.currentTimeMillis())
@@ -1249,7 +1265,7 @@ public class WorkflowEngine {
                     .nodeVersion(typeVersion)
                     .inputData(inputData)
                     .parameters(resolvedParams)
-                    .credentials(credentials)
+                    .credentials(allCredentials)
                     .credentialType(credentialType)
                     .staticData(new HashMap<>())
                     .workflowStaticData(new HashMap<>())
@@ -1736,13 +1752,26 @@ public class WorkflowEngine {
         return 0;
     }
 
+    private Map<String, Object> resolveParameters(Map<String, Object> parameters,
+                                                    List<Map<String, Object>> inputItems,
+                                                    WorkflowExecutionState state,
+                                                    WorkflowGraph graph,
+                                                    Map<String, String> variables,
+                                                    String executionId,
+                                                    Map<String, Object> credentials) {
+        String wfId = state != null ? state.getWorkflowId() : null;
+        return resolveParameters(parameters, inputItems, state, graph, variables, executionId, credentials, wfId);
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> resolveParameters(Map<String, Object> parameters,
                                                     List<Map<String, Object>> inputItems,
                                                     WorkflowExecutionState state,
                                                     WorkflowGraph graph,
                                                     Map<String, String> variables,
-                                                    String executionId) {
+                                                    String executionId,
+                                                    Map<String, Object> credentials,
+                                                    String workflowId) {
         if (parameters == null) return Map.of();
 
         Map<String, Object> currentItemData = Map.of();
@@ -1775,6 +1804,11 @@ public class WorkflowEngine {
             }
         }
 
+        // Build $credentials: merge project-level credentials with node-level credentials
+        Map<String, Object> allCredentials = loadProjectCredentials(workflowId);
+        // Node-level credentials override project-level
+        if (credentials != null) allCredentials.putAll(credentials);
+
         ExpressionEvaluator.ExpressionContext ctx = ExpressionEvaluator.ExpressionContext.builder()
                 .currentItemData(currentItemData)
                 .inputItems(inputItems)
@@ -1782,6 +1816,7 @@ public class WorkflowEngine {
                 .envVars(new LinkedHashMap<>(System.getenv()))
                 .variables(variables)
                 .authData(state != null ? state.getAuthData() : null)
+                .credentials(allCredentials)
                 .executionId(executionId)
                 .runIndex(0)
                 .build();
@@ -1798,6 +1833,30 @@ public class WorkflowEngine {
         return credentialRefs.keySet().iterator().next();
     }
 
+    /**
+     * Loads all project-level credentials, keyed by name and normalized name,
+     * for use in $credentials expressions and in redactSecrets().
+     */
+    private Map<String, Object> loadProjectCredentials(String workflowId) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (workflowId == null || workflowId.isEmpty()) return result;
+        try {
+            String projectId = workflowService.findById(workflowId).getProjectId();
+            if (projectId != null) {
+                for (var cred : credentialService.listCredentialsByProject(projectId)) {
+                    Map<String, Object> data = credentialService.getDecryptedData(cred.getId());
+                    String name = cred.getName();
+                    result.put(name, data);
+                    String normalized = name.toLowerCase().replaceAll("[^a-z0-9]+", "_").replaceAll("^_|_$", "");
+                    if (!normalized.equals(name)) result.put(normalized, data);
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Could not load project credentials: {}", e.getMessage());
+        }
+        return result;
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> resolveCredentials(Map<String, Object> credentialRefs,
                                                      List<Map<String, Object>> inputItems,
@@ -1808,10 +1867,14 @@ public class WorkflowEngine {
 
         Map<String, Object> resolved = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : credentialRefs.entrySet()) {
+            String credType = entry.getKey();
             Object value = entry.getValue();
             String credentialId = null;
+            String credName = null;
             if (value instanceof Map) {
-                credentialId = (String) ((Map<String, Object>) value).get("id");
+                Map<String, Object> credRef = (Map<String, Object>) value;
+                credentialId = (String) credRef.get("id");
+                credName = (String) credRef.get("name");
             } else if (value instanceof String) {
                 credentialId = (String) value;
             }
@@ -1819,6 +1882,9 @@ public class WorkflowEngine {
             if (credentialId != null) {
                 Map<String, Object> data = credentialService.getDecryptedData(credentialId);
                 resolved.putAll(data);
+                // Also key by credential type and name for $credentials.{name}.{field} expressions
+                resolved.put(credType, new LinkedHashMap<>(data));
+                if (credName != null) resolved.put(credName, new LinkedHashMap<>(data));
             }
         }
 

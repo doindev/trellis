@@ -713,19 +713,21 @@ public class HttpRequestNode extends AbstractApiNode implements CacheableNode {
 
 			// Check for error status codes
 			if (!neverError && response.statusCode() >= 400) {
+				String safeUrl = context.redactSecrets(url);
+				String strBody = response.body() != null ? context.redactSecrets(truncate(response.body(), 200)) : "";
 				return NodeExecutionResult.error(
-					"HTTP " + response.statusCode() + " " + method + " " + url +
-					(response.body() != null ? " — " + truncate(response.body(), 200) : ""));
+					"HTTP " + response.statusCode() + " " + method + " " + safeUrl +
+					(!strBody.isEmpty() ? " — " + strBody : ""));
 			}
 
 			// Parse response
 			List<Map<String, Object>> items = parseHttpResponse(response, fullResponse, responseFormat, options);
 
-			log.debug("HTTP {} {} returned status {}", method, url, response.statusCode());
+			log.debug("HTTP {} {} returned status {}", method, context.redactSecrets(url), response.statusCode());
 			return NodeExecutionResult.success(items);
 
 		} catch (Exception e) {
-			return handleError(context, "HTTP request failed: " + e.getMessage(), e);
+			return handleError(context, "HTTP request failed: " + context.redactSecrets(e.getMessage()), e);
 		}
 	}
 

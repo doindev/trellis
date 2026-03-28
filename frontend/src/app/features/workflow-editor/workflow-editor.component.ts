@@ -929,11 +929,17 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     }
   }
 
-  onNodeExecuted(event: { nodeId: string; data: any }): void {
+  onNodeExecuted(event: { nodeId: string; data: any; error?: string }): void {
     const current = this.store.executionData() || {};
-    if (event.data === null) {
+    if (event.data === null && !event.error) {
       // Mark node as running (execution starting)
       this.store.setExecutionData({ ...current, [event.nodeId]: [{ status: 'running' }] });
+    } else if (event.error) {
+      // Node execution failed — preserve error status on canvas
+      this.store.setExecutionData({
+        ...current,
+        [event.nodeId]: [{ status: 'error', data: event.data, error: event.error }]
+      });
     } else {
       const mainOutput = Array.isArray(event.data) ? event.data[0] : event.data;
       const itemCount = Array.isArray(mainOutput) ? mainOutput.length : 0;

@@ -43,7 +43,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "https://financialmodelingprep.com/api/v3/sp500_constituent?apikey={{$credentials.httpHeaderAuth.value}}",
+        "url": "https://financialmodelingprep.com/api/v3/sp500_constituent?apikey={{$credentials.fmp_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -58,7 +58,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "https://financialmodelingprep.com/api/v3/nasdaq_constituent?apikey={{$credentials.httpHeaderAuth.value}}",
+        "url": "https://financialmodelingprep.com/api/v3/nasdaq_constituent?apikey={{$credentials.fmp_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -187,5 +187,12 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "",
+    "saveExecutionProgress": "default",
+    "saveManualExecutions": "default",
+    "executionTimeout": -1,
+    "parallelExecution": true
   }
 }

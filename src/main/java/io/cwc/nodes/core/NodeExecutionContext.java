@@ -92,6 +92,45 @@ public class NodeExecutionContext {
 		return value != null ? String.valueOf(value) : defaultValue;
 	}
 	
+	/**
+	 * Redacts credential values from a message string, replacing them with masked versions.
+	 * Recursively collects all string values from the credentials map (which may contain
+	 * nested maps like {name: "apikey", value: "the-secret"}).
+	 */
+	@SuppressWarnings("unchecked")
+	public String redactSecrets(String message) {
+		if (message == null || credentials == null || credentials.isEmpty()) return message;
+		java.util.Set<String> secrets = new java.util.LinkedHashSet<>();
+		collectSecretStrings(credentials, secrets);
+		String result = message;
+		// Sort by length descending so longer secrets are replaced first (avoids partial matches)
+		java.util.List<String> sorted = new java.util.ArrayList<>(secrets);
+		sorted.sort((a, b) -> b.length() - a.length());
+		for (String secret : sorted) {
+			String masked = secret.substring(0, 3) + "***" + secret.substring(secret.length() - 2);
+			result = result.replace(secret, masked);
+		}
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void collectSecretStrings(Object obj, java.util.Set<String> secrets) {
+		if (obj instanceof java.util.Map) {
+			for (Object val : ((java.util.Map<?, ?>) obj).values()) {
+				collectSecretStrings(val, secrets);
+			}
+		} else if (obj instanceof java.util.Collection) {
+			for (Object item : (java.util.Collection<?>) obj) {
+				collectSecretStrings(item, secrets);
+			}
+		} else if (obj instanceof String s && s.length() >= 8) {
+			secrets.add(s);
+		} else if (obj != null) {
+			String s = String.valueOf(obj);
+			if (s.length() >= 8) secrets.add(s);
+		}
+	}
+
 	public boolean isTriggerExecution() {
 		return executionMode == ExecutionMode.TRIGGER ||
 				executionMode == ExecutionMode.WEBHOOK ||

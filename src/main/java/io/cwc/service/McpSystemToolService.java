@@ -322,6 +322,7 @@ public class McpSystemToolService {
             "cwc_create_agent",
             "cwc_update_agent",
             "cwc_execute_workflow",
+            "cwc_create_project",
             "cwc_update_project"
     );
 

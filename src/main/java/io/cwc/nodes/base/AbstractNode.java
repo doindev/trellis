@@ -151,15 +151,17 @@ public abstract class AbstractNode implements NodeInterface {
 	}
 	
 	protected NodeExecutionResult handleError(NodeExecutionContext context, String message, Exception e) {
-		log.error(message, e);
+		String safeMessage = context.redactSecrets(message);
+		String safeCause = e != null ? context.redactSecrets(e.getMessage()) : null;
+		log.error(safeMessage);
 		if (context.isContinueOnFail()) {
 			Map<String, Object> errorItem = new HashMap<>();
 			errorItem.put("json", Map.of(
-					"error", message,
-					"message", e != null ? e.getMessage() : message
+					"error", safeMessage,
+					"message", safeCause != null ? safeCause : safeMessage
 				));
 			return NodeExecutionResult.success(List.of(errorItem));
 		}
-		return NodeExecutionResult.error(message, e);
+		return NodeExecutionResult.error(safeMessage);
 	}
 }

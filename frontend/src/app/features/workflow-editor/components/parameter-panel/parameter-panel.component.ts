@@ -122,7 +122,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   @Output() close = new EventEmitter<void>();
   @Output() deleteNode = new EventEmitter<void>();
   @Output() navigateToNode = new EventEmitter<string>();
-  @Output() nodeExecuted = new EventEmitter<{ nodeId: string; data: any }>();
+  @Output() nodeExecuted = new EventEmitter<{ nodeId: string; data: any; error?: string }>();
   @Output() nameChanged = new EventEmitter<string>();
 
   @ViewChild('inputSearchEl') inputSearchEl?: ElementRef<HTMLInputElement>;
@@ -1302,12 +1302,15 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
         this.isNodeExecuting = false;
         if (res.error) {
           this._singleNodeError = res.error;
+          this.nodeExecuted.emit({ nodeId: this.node.id, data: res.output, error: res.error });
+        } else {
+          this.nodeExecuted.emit({ nodeId: this.node.id, data: res.output });
         }
-        this.nodeExecuted.emit({ nodeId: this.node.id, data: res.output });
       },
       error: (err) => {
         this.isNodeExecuting = false;
         this._singleNodeError = err.message || 'Execution failed';
+        this.nodeExecuted.emit({ nodeId: this.node.id, data: null, error: err.message || 'Execution failed' });
       }
     });
   }
