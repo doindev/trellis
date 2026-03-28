@@ -119,30 +119,56 @@ public class Neo4jNode extends AbstractNode implements CacheableNode {
 		}
 	}
 
+	private List<String> splitStatements(String query) {
+		List<String> statements = new ArrayList<>();
+		for (String stmt : query.split(";")) {
+			String trimmed = stmt.trim();
+			if (!trimmed.isEmpty()) {
+				statements.add(trimmed);
+			}
+		}
+		return statements;
+	}
+
 	private NodeExecutionResult executeRead(Session session, String query, Map<String, Object> params) {
-		Result result = session.run(query, params);
-		List<Map<String, Object>> items = convertResults(result);
-		return items.isEmpty() ? NodeExecutionResult.empty() : NodeExecutionResult.success(items);
+		List<String> statements = splitStatements(query);
+		List<Map<String, Object>> allItems = new ArrayList<>();
+		for (String stmt : statements) {
+			Result result = session.run(stmt, params);
+			allItems.addAll(convertResults(result));
+		}
+		return allItems.isEmpty() ? NodeExecutionResult.empty() : NodeExecutionResult.success(allItems);
 	}
 
 	private NodeExecutionResult executeWrite(Session session, String query, Map<String, Object> params) {
-		Result result = session.run(query, params);
-		List<Map<String, Object>> items = convertResults(result);
+		List<String> statements = splitStatements(query);
+		List<Map<String, Object>> allItems = new ArrayList<>();
+		int nodesCreated = 0, nodesDeleted = 0, relsCreated = 0, relsDeleted = 0, propsSet = 0;
 
-		var summary = result.consume();
+		for (String stmt : statements) {
+			Result result = session.run(stmt, params);
+			allItems.addAll(convertResults(result));
+			var summary = result.consume();
+			nodesCreated += summary.counters().nodesCreated();
+			nodesDeleted += summary.counters().nodesDeleted();
+			relsCreated += summary.counters().relationshipsCreated();
+			relsDeleted += summary.counters().relationshipsDeleted();
+			propsSet += summary.counters().propertiesSet();
+		}
+
 		Map<String, Object> stats = new LinkedHashMap<>();
-		stats.put("nodesCreated", summary.counters().nodesCreated());
-		stats.put("nodesDeleted", summary.counters().nodesDeleted());
-		stats.put("relationshipsCreated", summary.counters().relationshipsCreated());
-		stats.put("relationshipsDeleted", summary.counters().relationshipsDeleted());
-		stats.put("propertiesSet", summary.counters().propertiesSet());
+		stats.put("nodesCreated", nodesCreated);
+		stats.put("nodesDeleted", nodesDeleted);
+		stats.put("relationshipsCreated", relsCreated);
+		stats.put("relationshipsDeleted", relsDeleted);
+		stats.put("propertiesSet", propsSet);
 
-		if (items.isEmpty()) {
+		if (allItems.isEmpty()) {
 			return NodeExecutionResult.success(List.of(wrapInJson(stats)));
 		}
 		// Add stats to last item
-		items.add(wrapInJson(Map.of("_stats", stats)));
-		return NodeExecutionResult.success(items);
+		allItems.add(wrapInJson(Map.of("_stats", stats)));
+		return NodeExecutionResult.success(allItems);
 	}
 
 	private List<Map<String, Object>> convertResults(Result result) {
