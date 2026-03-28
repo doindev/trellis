@@ -504,12 +504,13 @@ public class WorkflowEngine {
         webSocketService.sendNodeStarted(executionId, nodeId, graphNode.getName());
 
         try {
-            Map<String, Object> resolvedParams = resolveParameters(
-                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
-
-            Map<String, Object> credentials = resolveCredentials(
+            Map<String, Map<String, Object>> namedCredentials = resolveNamedCredentials(
                     graphNode.getCredentials(), nodeInput, state, variables, executionId);
+            Map<String, Object> credentials = flattenCredentials(namedCredentials);
             String credentialType = extractCredentialType(graphNode.getCredentials());
+
+            Map<String, Object> resolvedParams = resolveParameters(
+                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId, namedCredentials);
 
             // Collect AI inputs from sub-node connections
             Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
@@ -879,12 +880,13 @@ public class WorkflowEngine {
         webSocketService.sendNodeStarted(executionId, nodeId, graphNode.getName());
 
         try {
-            Map<String, Object> resolvedParams = resolveParameters(
-                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId);
-
-            Map<String, Object> credentials = resolveCredentials(
+            Map<String, Map<String, Object>> namedCredentials = resolveNamedCredentials(
                     graphNode.getCredentials(), nodeInput, state, variables, executionId);
+            Map<String, Object> credentials = flattenCredentials(namedCredentials);
             String credentialType = extractCredentialType(graphNode.getCredentials());
+
+            Map<String, Object> resolvedParams = resolveParameters(
+                    graphNode.getParameters(), nodeInput, state, graph, variables, executionId, namedCredentials);
 
             // Collect AI inputs from sub-node connections
             Map<String, List<Object>> aiInputData = collectAllAiInputs(nodeId, graph, state);
@@ -1235,11 +1237,12 @@ public class WorkflowEngine {
                 try { projectId = workflowService.findById(workflowId).getProjectId(); } catch (Exception ignored) {}
             }
             Map<String, String> variables = variableService.getVariablesForProject(projectId);
-            Map<String, Object> resolvedParams = resolveParameters(
-                    parameters, inputData, null, null, variables, "single-node");
-            Map<String, Object> credentials = resolveCredentials(
+            Map<String, Map<String, Object>> namedCredentials = resolveNamedCredentials(
                     credentialRefs, inputData, null, variables, "single-node");
+            Map<String, Object> credentials = flattenCredentials(namedCredentials);
             String credentialType = extractCredentialType(credentialRefs);
+            Map<String, Object> resolvedParams = resolveParameters(
+                    parameters, inputData, null, null, variables, "single-node", namedCredentials);
 
             NodeExecutionContext context = NodeExecutionContext.builder()
                     .executionId("single-node-" + System.currentTimeMillis())
@@ -1536,8 +1539,9 @@ public class WorkflowEngine {
                     // Resolve credentials for this sub-node
                     Map<String, Object> credRefs = nodeDef.get("credentials") instanceof Map<?, ?>
                             ? (Map<String, Object>) nodeDef.get("credentials") : Map.of();
-                    Map<String, Object> creds = resolveCredentials(
+                    Map<String, Map<String, Object>> namedCreds = resolveNamedCredentials(
                             credRefs, List.of(), defState, Collections.emptyMap(), executionId);
+                    Map<String, Object> creds = flattenCredentials(namedCreds);
                     String credType = extractCredentialType(credRefs);
 
                     // Collect AI inputs for this sub-node from already-executed definition nodes
@@ -1742,7 +1746,8 @@ public class WorkflowEngine {
                                                     WorkflowExecutionState state,
                                                     WorkflowGraph graph,
                                                     Map<String, String> variables,
-                                                    String executionId) {
+                                                    String executionId,
+                                                    Map<String, Map<String, Object>> namedCredentials) {
         if (parameters == null) return Map.of();
 
         Map<String, Object> currentItemData = Map.of();
@@ -1775,6 +1780,10 @@ public class WorkflowEngine {
             }
         }
 
+        // Build $credentials map keyed by credential name/configId for expression access
+        // e.g. $credentials.fmp_api_key.value or $credentials['fmp-api-key'].value
+        Map<String, Object> credentialsForExpr = new LinkedHashMap<>(namedCredentials);
+
         ExpressionEvaluator.ExpressionContext ctx = ExpressionEvaluator.ExpressionContext.builder()
                 .currentItemData(currentItemData)
                 .inputItems(inputItems)
@@ -1782,6 +1791,7 @@ public class WorkflowEngine {
                 .envVars(new LinkedHashMap<>(System.getenv()))
                 .variables(variables)
                 .authData(state != null ? state.getAuthData() : null)
+                .credentials(credentialsForExpr)
                 .executionId(executionId)
                 .runIndex(0)
                 .build();
@@ -1798,15 +1808,20 @@ public class WorkflowEngine {
         return credentialRefs.keySet().iterator().next();
     }
 
+    /**
+     * Resolves credentials for a node, returning a named map keyed by credential configId/name.
+     * Each value is the decrypted credential data map (e.g. { "name": "apikey", "value": "..." }).
+     * This allows expressions to reference credentials by name: $credentials.fmp_api_key.value
+     */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> resolveCredentials(Map<String, Object> credentialRefs,
-                                                     List<Map<String, Object>> inputItems,
-                                                     WorkflowExecutionState state,
-                                                     Map<String, String> variables,
-                                                     String executionId) {
+    private Map<String, Map<String, Object>> resolveNamedCredentials(Map<String, Object> credentialRefs,
+                                                                      List<Map<String, Object>> inputItems,
+                                                                      WorkflowExecutionState state,
+                                                                      Map<String, String> variables,
+                                                                      String executionId) {
         if (credentialRefs == null || credentialRefs.isEmpty()) return Map.of();
 
-        Map<String, Object> resolved = new LinkedHashMap<>();
+        Map<String, Map<String, Object>> named = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : credentialRefs.entrySet()) {
             Object value = entry.getValue();
             String credentialId = null;
@@ -1817,8 +1832,8 @@ public class WorkflowEngine {
             }
 
             if (credentialId != null) {
-                Map<String, Object> data = credentialService.getDecryptedData(credentialId);
-                resolved.putAll(data);
+                CredentialService.CredentialResolved resolved = credentialService.getDecryptedWithName(credentialId);
+                named.put(resolved.key(), resolved.data());
             }
         }
 
@@ -1842,11 +1857,29 @@ public class WorkflowEngine {
                 .runIndex(0)
                 .build();
 
-        Object result = expressionEvaluator.resolveExpressions(resolved, ctx);
-        if (result instanceof Map) {
-            return (Map<String, Object>) result;
+        // Resolve expressions within each credential's data
+        Map<String, Map<String, Object>> resolved = new LinkedHashMap<>();
+        for (Map.Entry<String, Map<String, Object>> entry : named.entrySet()) {
+            Object result = expressionEvaluator.resolveExpressions(entry.getValue(), ctx);
+            if (result instanceof Map) {
+                resolved.put(entry.getKey(), (Map<String, Object>) result);
+            } else {
+                resolved.put(entry.getKey(), entry.getValue());
+            }
         }
         return resolved;
+    }
+
+    /**
+     * Flattens a named credentials map into a single map for backward compatibility
+     * with NodeExecutionContext.credentials (used by 200+ node implementations).
+     */
+    private Map<String, Object> flattenCredentials(Map<String, Map<String, Object>> namedCredentials) {
+        Map<String, Object> flat = new LinkedHashMap<>();
+        for (Map<String, Object> data : namedCredentials.values()) {
+            flat.putAll(data);
+        }
+        return flat;
     }
 
     /**

@@ -5,8 +5,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import io.cwc.credentials.CredentialType;
+import io.cwc.credentials.CredentialTypeRegistry;
 import io.cwc.dto.*;
 import io.cwc.entity.*;
+import io.cwc.nodes.core.NodeParameter;
 import io.cwc.repository.*;
 
 import java.io.ByteArrayOutputStream;
@@ -31,6 +34,7 @@ public class ConfigExportService {
     private final CredentialEncryptionService encryptionService;
     private final VariableRepository variableRepository;
     private final CacheDefinitionRepository cacheDefinitionRepository;
+    private final CredentialTypeRegistry credentialTypeRegistry;
     private final ObjectMapper objectMapper;
 
     /**
@@ -229,18 +233,46 @@ public class ConfigExportService {
             } catch (Exception ignored) {}
         }
 
-        // Generate placeholders from actual field names
+        // Build set of sensitive field names from the credential type's properties
+        Set<String> sensitiveFields = getSensitiveFields(credential.getType());
+
+        // Generate placeholders only for sensitive fields; export non-sensitive fields as literal values
         Map<String, Object> template = new LinkedHashMap<>();
         try {
             Map<String, Object> decrypted = encryptionService.decrypt(credential.getData());
-            for (String field : decrypted.keySet()) {
-                String placeholder = generateCredentialPlaceholder(projectConfigId, credRef, field);
-                template.put(field, placeholder);
+            for (Map.Entry<String, Object> entry : decrypted.entrySet()) {
+                String field = entry.getKey();
+                if (sensitiveFields.contains(field)) {
+                    template.put(field, generateCredentialPlaceholder(projectConfigId, credRef, field));
+                } else {
+                    template.put(field, entry.getValue());
+                }
             }
         } catch (Exception e) {
             log.debug("Could not decrypt credential {} for export template: {}", credRef, e.getMessage());
         }
         return template;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> getSensitiveFields(String credentialType) {
+        Set<String> sensitive = new HashSet<>();
+        Optional<CredentialType> type = credentialTypeRegistry.getType(credentialType);
+        if (type.isPresent()) {
+            for (NodeParameter prop : type.get().getProperties()) {
+                Map<String, Object> typeOptions = prop.getTypeOptions();
+                if (typeOptions != null && Boolean.TRUE.equals(typeOptions.get("password"))) {
+                    sensitive.add(prop.getName());
+                }
+            }
+        }
+        if (sensitive.isEmpty() && type.isPresent()) {
+            // Fallback: if no fields are explicitly marked, treat all fields as sensitive
+            for (NodeParameter prop : type.get().getProperties()) {
+                sensitive.add(prop.getName());
+            }
+        }
+        return sensitive;
     }
 
     private String generateCredentialPlaceholder(String projectConfigId, String credRef, String fieldName) {

@@ -18,7 +18,10 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class ExpressionEvaluator {
 
-    private static final Pattern EXPRESSION_PATTERN = Pattern.compile("=?\\{\\{(.+?)\\}\\}", Pattern.DOTALL);
+    // Full-string pattern: optional '=' prefix signals "return native type" (e.g. ={{1+1}} returns int 2)
+    private static final Pattern FULL_EXPRESSION_PATTERN = Pattern.compile("=?\\{\\{(.+?)\\}\\}", Pattern.DOTALL);
+    // Embedded pattern: no '=' consumption — the '=' before '{{' in URLs etc. is part of the surrounding text
+    private static final Pattern EMBEDDED_EXPRESSION_PATTERN = Pattern.compile("\\{\\{(.+?)\\}\\}", Pattern.DOTALL);
     private final ObjectMapper objectMapper;
 
     @SuppressWarnings("unchecked")
@@ -42,13 +45,15 @@ public class ExpressionEvaluator {
     }
 
     private Object resolveString(String str, ExpressionContext ctx) {
-        Matcher matcher = EXPRESSION_PATTERN.matcher(str);
-
-        if (matcher.matches()) {
-            String expression = matcher.group(1).trim();
+        // Check if the entire string is a single expression (with optional '=' prefix)
+        Matcher fullMatcher = FULL_EXPRESSION_PATTERN.matcher(str);
+        if (fullMatcher.matches()) {
+            String expression = fullMatcher.group(1).trim();
             return evaluateExpression(expression, ctx);
         }
 
+        // Embedded expressions: don't consume '=' before '{{'
+        Matcher matcher = EMBEDDED_EXPRESSION_PATTERN.matcher(str);
         if (!matcher.find()) {
             return str;
         }
@@ -102,6 +107,8 @@ public class ExpressionEvaluator {
                     : Map.of("authenticated", false, "username", "", "authType", "none",
                              "roles", List.of(), "authorities", List.of(), "claims", Map.of());
             setup.append("var $auth = ").append(toJson(authForJs)).append(";\n");
+
+            setup.append("var $credentials = ").append(toJson(ctx.getCredentials() != null ? ctx.getCredentials() : Map.of())).append(";\n");
 
             String fullScript = setup + "(" + expression + ")";
 
@@ -181,6 +188,7 @@ public class ExpressionEvaluator {
         private Map<String, String> envVars;
         private Map<String, String> variables;
         private Map<String, Object> authData;
+        private Map<String, Object> credentials;
         private String executionId;
         private int runIndex;
     }

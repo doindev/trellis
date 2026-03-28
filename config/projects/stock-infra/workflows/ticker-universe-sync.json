@@ -1,8 +1,6 @@
 {
-  "configId": "ticker-universe-sync",
   "name": "Ticker Universe Sync",
   "description": "Weekly (Sunday 6 PM ET): Fetches S&P 500 and NASDAQ 100 constituents from Financial Modeling Prep API. Upserts to PostgreSQL tickers table and Neo4j Company nodes with sector/industry relationships.",
-  "type": "WORKFLOW",
   "nodes": [
     {
       "id": "trigger1",
@@ -10,8 +8,8 @@
       "type": "scheduleTrigger",
       "typeVersion": 1,
       "position": [
-        200,
-        300
+        512,
+        160
       ],
       "parameters": {
         "rule": "cronExpression",
@@ -25,11 +23,11 @@
       "type": "stickyNote",
       "typeVersion": 1,
       "position": [
-        180,
-        80
+        176,
+        128
       ],
       "parameters": {
-        "content": "## Ticker Universe Sync\n\nRequired: httpHeaderAuth (FMP API Key), postgresApi, neo4j\nAPIs: FMP /api/v3/sp500_constituent, /api/v3/nasdaq_constituent"
+        "content": "## Ticker Universe Sync\n\nRequired: fmp_api_key (httpQueryAuth), postgresApi, neo4j\nAPIs: FMP /api/v3/sp500_constituent, /api/v3/nasdaq_constituent"
       }
     },
     {
@@ -38,12 +36,18 @@
       "type": "httpRequest",
       "typeVersion": 1,
       "position": [
-        450,
-        200
+        704,
+        80
       ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "EKr3VefqxBAd5qByn8b9f",
+          "name": "fmp_api_key"
+        }
+      },
       "parameters": {
         "method": "GET",
-        "url": "https://financialmodelingprep.com/api/v3/sp500_constituent?apikey={{$credentials.httpHeaderAuth.value}}",
+        "url": "https://financialmodelingprep.com/stable/sp500-constituent?apikey={{$credentials.fmp_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -53,12 +57,18 @@
       "type": "httpRequest",
       "typeVersion": 1,
       "position": [
-        450,
-        450
+        704,
+        240
       ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "EKr3VefqxBAd5qByn8b9f",
+          "name": "fmp_api_key"
+        }
+      },
       "parameters": {
         "method": "GET",
-        "url": "https://financialmodelingprep.com/api/v3/nasdaq_constituent?apikey={{$credentials.httpHeaderAuth.value}}",
+        "url": "https://financialmodelingprep.com/stable/nasdaq-constituent?apikey={{$credentials.fmp_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -68,8 +78,8 @@
       "type": "code",
       "typeVersion": 1,
       "position": [
-        700,
-        300
+        896,
+        160
       ],
       "parameters": {
         "language": "javaScript",
@@ -83,8 +93,8 @@
       "type": "loopOverItems",
       "typeVersion": 1,
       "position": [
-        950,
-        300
+        1104,
+        160
       ],
       "parameters": {
         "batchSize": 50
@@ -96,8 +106,8 @@
       "type": "postgres",
       "typeVersion": 1,
       "position": [
-        1200,
-        200
+        1296,
+        80
       ],
       "parameters": {
         "operation": "executeSql",
@@ -110,8 +120,8 @@
       "type": "neo4j",
       "typeVersion": 1,
       "position": [
-        1200,
-        450
+        1296,
+        240
       ],
       "parameters": {
         "operation": "executeStatement",
@@ -187,5 +197,12 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "",
+    "saveExecutionProgress": "default",
+    "saveManualExecutions": "default",
+    "executionTimeout": -1,
+    "parallelExecution": true
   }
 }

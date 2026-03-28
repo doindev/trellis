@@ -88,12 +88,25 @@ public class CredentialService {
         return encryptionService.decrypt(entity.getData());
     }
 
+    /**
+     * Returns the credential's configId (falling back to name) and its decrypted data.
+     */
+    public CredentialResolved getDecryptedWithName(String id) {
+        CredentialEntity entity = findById(id);
+        String key = entity.getConfigId() != null ? entity.getConfigId() : entity.getName();
+        Map<String, Object> data = encryptionService.decrypt(entity.getData());
+        return new CredentialResolved(key, data);
+    }
+
+    public record CredentialResolved(String key, Map<String, Object> data) {}
+
     @Transactional
     public CredentialResponse createCredential(CredentialCreateRequest request) {
         CredentialEntity entity = CredentialEntity.builder()
                 .name(request.getName())
                 .type(request.getType())
                 .projectId(request.getProjectId())
+                .configId(slugify(request.getName()))
                 .data(encryptionService.encrypt(request.getData()))
                 .build();
         return toResponse(credentialRepository.save(entity));
@@ -102,9 +115,19 @@ public class CredentialService {
     @Transactional
     public CredentialResponse updateCredential(String id, CredentialUpdateRequest request) {
         CredentialEntity entity = findById(id);
-        if (request.getName() != null) entity.setName(request.getName());
+        if (request.getName() != null) {
+            entity.setName(request.getName());
+            if (entity.getConfigId() == null || entity.getConfigId().equals(slugify(entity.getName()))) {
+                entity.setConfigId(slugify(request.getName()));
+            }
+        }
         if (request.getData() != null) entity.setData(encryptionService.encrypt(request.getData()));
         return toResponse(credentialRepository.save(entity));
+    }
+
+    private String slugify(String input) {
+        if (input == null) return null;
+        return input.toLowerCase().replaceAll("[^a-z0-9]+", "_").replaceAll("^_|_$", "");
     }
 
     @Transactional
