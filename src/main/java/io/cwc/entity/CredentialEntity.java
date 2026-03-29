@@ -7,7 +7,9 @@ import java.time.Instant;
 import io.cwc.util.NanoId;
 
 @Entity
-@Table(name = "credentials")
+@Table(name = "credentials", uniqueConstraints = {
+    @UniqueConstraint(name = "uq_credential_project_configid", columnNames = {"projectId", "config_id"})
+})
 @Data
 @Builder
 @NoArgsConstructor

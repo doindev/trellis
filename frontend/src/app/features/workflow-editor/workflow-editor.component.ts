@@ -1132,10 +1132,24 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   private onDownload(): void {
     const wf = this.store.workflow();
     if (!wf) return;
+    // Strip volatile credential IDs from nodes — keep only name for portable import
+    const exportNodes = (wf.nodes || []).map((node: any) => {
+      if (!node.credentials) return node;
+      const cleanCreds: Record<string, any> = {};
+      for (const [credType, credVal] of Object.entries(node.credentials as Record<string, any>)) {
+        if (credVal && typeof credVal === 'object' && credVal.name) {
+          // Export with name only (bootstrap resolves by name+type fallback)
+          cleanCreds[credType] = { name: credVal.name };
+        } else {
+          cleanCreds[credType] = credVal;
+        }
+      }
+      return { ...node, credentials: cleanCreds };
+    });
     const exportData: Record<string, any> = {
       name: wf.name,
       description: wf.description,
-      nodes: wf.nodes,
+      nodes: exportNodes,
       connections: wf.connections,
       settings: wf.settings
     };

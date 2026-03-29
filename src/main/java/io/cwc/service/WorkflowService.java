@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import io.cwc.dto.*;
 import io.cwc.engine.TriggerSchedulerService;
+import io.cwc.entity.CredentialEntity;
 import io.cwc.entity.ProjectRelationEntity;
 import io.cwc.entity.TagEntity;
 import io.cwc.entity.UserEntity;
@@ -25,6 +26,7 @@ import io.cwc.exception.ForbiddenException;
 import io.cwc.exception.NotFoundException;
 import io.cwc.nodes.core.NodeParameter;
 import io.cwc.nodes.core.NodeRegistry;
+import io.cwc.repository.CredentialRepository;
 import io.cwc.repository.ProjectRelationRepository;
 import io.cwc.repository.ProjectRepository;
 import io.cwc.repository.TagRepository;
@@ -38,6 +40,7 @@ import io.cwc.util.SecurityContextHelper;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +62,7 @@ public class WorkflowService {
     private final ProjectRelationRepository projectRelationRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final CredentialRepository credentialRepository;
     private final SecurityContextHelper securityContextHelper;
 
     @Setter(onMethod_ = {@Autowired, @Lazy})
@@ -165,11 +169,13 @@ public class WorkflowService {
             }
         }
 
+        Object nodes = ensureNodeIds(request.getNodes());
+        nodes = resolveNodeCredentialRefs(nodes, projectId);
         var builder = WorkflowEntity.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .projectId(projectId)
-                .nodes(ensureNodeIds(request.getNodes()))
+                .nodes(nodes)
                 .connections(request.getConnections())
                 .settings(request.getSettings());
         if (request.getType() != null) builder.type(request.getType());
@@ -203,7 +209,11 @@ public class WorkflowService {
         if (request.getDescription() != null) entity.setDescription(request.getDescription());
         if (request.getType() != null) entity.setType(request.getType());
         if (request.getIcon() != null) entity.setIcon(request.getIcon());
-        if (request.getNodes() != null) entity.setNodes(ensureNodeIds(request.getNodes()));
+        if (request.getNodes() != null) {
+            Object updatedNodes = ensureNodeIds(request.getNodes());
+            updatedNodes = resolveNodeCredentialRefs(updatedNodes, entity.getProjectId());
+            entity.setNodes(updatedNodes);
+        }
         if (request.getConnections() != null) entity.setConnections(request.getConnections());
         if (request.getSettings() != null) entity.setSettings(request.getSettings());
         if (request.getStaticData() != null) entity.setStaticData(request.getStaticData());
@@ -684,6 +694,60 @@ public class WorkflowService {
                     if (name != null) {
                         mutable.put("id", name);
                     }
+                }
+            }
+        }
+        return nodesObj;
+    }
+
+    /**
+     * Resolves portable credential references ({ref: "..."} or {name: "..."}) in workflow nodes
+     * to actual database IDs. This handles imported workflows where credential IDs are not yet resolved.
+     */
+    @SuppressWarnings("unchecked")
+    private Object resolveNodeCredentialRefs(Object nodesObj, String projectId) {
+        if (!(nodesObj instanceof List<?> nodeList) || projectId == null) return nodesObj;
+
+        // Build lookup maps: ref/configId -> dbId, and name+type -> dbId
+        List<CredentialEntity> projectCreds = credentialRepository.findByProjectId(projectId);
+        Map<String, String> refToId = new HashMap<>();
+        Map<String, String> nameTypeToId = new HashMap<>();
+        for (CredentialEntity c : projectCreds) {
+            if (c.getConfigId() != null) refToId.put(c.getConfigId(), c.getId());
+            nameTypeToId.put(c.getName() + "|" + c.getType(), c.getId());
+        }
+
+        for (Object item : nodeList) {
+            if (!(item instanceof Map<?, ?> nodeMap)) continue;
+            Object credentials = ((Map<String, Object>) nodeMap).get("credentials");
+            if (!(credentials instanceof Map)) continue;
+
+            Map<String, Object> credMap = (Map<String, Object>) credentials;
+            for (Map.Entry<String, Object> entry : credMap.entrySet()) {
+                String credType = entry.getKey();
+                if (!(entry.getValue() instanceof Map)) continue;
+                Map<String, Object> credVal = (Map<String, Object>) entry.getValue();
+
+                // Skip if already has a valid id
+                if (credVal.containsKey("id")) continue;
+
+                String resolved = null;
+                // Try ref-based resolution
+                String ref = (String) credVal.get("ref");
+                if (ref != null) {
+                    resolved = refToId.get(ref);
+                }
+                // Try name-based resolution
+                if (resolved == null) {
+                    String name = (String) credVal.get("name");
+                    if (name != null) {
+                        resolved = nameTypeToId.get(name + "|" + credType);
+                    }
+                }
+                // Replace with resolved id+name
+                if (resolved != null) {
+                    String displayName = ref != null ? ref : (String) credVal.get("name");
+                    credMap.put(credType, Map.of("id", resolved, "name", displayName != null ? displayName : credType));
                 }
             }
         }

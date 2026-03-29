@@ -105,6 +105,11 @@
       "parameters": {
         "operation": "executeSql",
         "query": "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,created_at) VALUES ('broad_market_analyst',CURRENT_DATE,'daily_market_analysis','{{$json.output}}',NOW());"
+      },
+	  "credentials": {
+        "postgresApi": {
+          "ref": "postgresql-account"
+        }
       }
     }
   ],
