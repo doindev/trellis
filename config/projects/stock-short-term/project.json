@@ -3,5 +3,20 @@
   "name": "Stock Research - Short-Term Trading",
   "type": "TEAM",
   "contextPath": "stock-short-term",
-  "description": "Short-term trading strategies: swing trading (days-weeks), momentum trading, technical breakout patterns (bull flags, MACD crossovers), and event-driven plays. Active management with strict risk controls (stop-loss, take-profit), position sizing, and real-time volatility monitoring. Targets 1-30 day holding periods."
+  "description": "Short-term trading strategies: swing trading (days-weeks), momentum trading, technical breakout patterns (bull flags, MACD crossovers), and event-driven plays. Active management with strict risk controls (stop-loss, take-profit), position sizing, and real-time volatility monitoring. Targets 1-30 day holding periods.",
+  "credentials": [
+    {
+      "ref": "postgresql-account",
+      "name": "PostgreSQL account",
+      "type": "postgresApi",
+      "data": {
+        "host": "{{env:postgresql.host}}",
+        "port": "{{env:postgresql.port}}",
+        "ssl": "{{env:postgresql.ssl}}",
+        "database": "{{env:postgresql.database}}",
+        "username": "{{env:postgresql.username}}",
+        "password": "{{env:postgresql.password}}"
+      }
+    }
+  ]
 }

@@ -3,5 +3,20 @@
   "name": "Stock Research - Valuation & Reporting",
   "type": "TEAM",
   "contextPath": "stock-reporting",
-  "description": "Consolidation layer: generates investment scorecards (1-10), compiles HTML investment reports, calculates intrinsic values, sends alert notifications via email when trigger conditions are met."
+  "description": "Consolidation layer: generates investment scorecards (1-10), compiles HTML investment reports, calculates intrinsic values, sends alert notifications via email when trigger conditions are met.",
+  "credentials": [
+    {
+      "ref": "postgresql-account",
+      "name": "PostgreSQL account",
+      "type": "postgresApi",
+      "data": {
+        "host": "{{env:postgresql.host}}",
+        "port": "{{env:postgresql.port}}",
+        "ssl": "{{env:postgresql.ssl}}",
+        "database": "{{env:postgresql.database}}",
+        "username": "{{env:postgresql.username}}",
+        "password": "{{env:postgresql.password}}"
+      }
+    }
+  ]
 }

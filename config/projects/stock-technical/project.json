@@ -3,5 +3,20 @@
   "name": "Stock Research - Technical Analysis",
   "type": "TEAM",
   "contextPath": "stock-technical",
-  "description": "Technical analysis pipeline: calculates RSI, MACD, Bollinger Bands, Moving Averages, detects chart patterns, identifies entry/exit signals. Stores computed technicals in PostgreSQL."
+  "description": "Technical analysis pipeline: calculates RSI, MACD, Bollinger Bands, Moving Averages, detects chart patterns, identifies entry/exit signals. Stores computed technicals in PostgreSQL.",
+  "credentials": [
+    {
+      "ref": "postgresql-account",
+      "name": "PostgreSQL account",
+      "type": "postgresApi",
+      "data": {
+        "host": "{{env:postgresql.host}}",
+        "port": "{{env:postgresql.port}}",
+        "ssl": "{{env:postgresql.ssl}}",
+        "database": "{{env:postgresql.database}}",
+        "username": "{{env:postgresql.username}}",
+        "password": "{{env:postgresql.password}}"
+      }
+    }
+  ]
 }

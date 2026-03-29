@@ -102,7 +102,7 @@
       "parameters": {
         "language": "javaScript",
         "mode": "runOnceForAllItems",
-        "jsCode": "// FMP returns an array — each item arrives as a separate input item\nconst items = $input.all();\nreturn items.map(item => {\n  const x = item.json;\n  return {\n    json: {\n      ticker: x.symbol,\n      ex_date: x.date,\n      payment_date: x.paymentDate || null,\n      record_date: x.recordDate || null,\n      declaration_date: x.declarationDate || null,\n      amount: x.dividend != null ? x.dividend : (x.adjDividend != null ? x.adjDividend : null),\n      frequency: x.frequency || null\n    }\n  };\n});"
+        "jsCode": "// FMP returns an array \u00e2\u20ac\u201d each item arrives as a separate input item\nconst items = $input.all();\nreturn items.map(item => {\n  const x = item.json;\n  return {\n    json: {\n      ticker: x.symbol,\n      ex_date: x.date,\n      payment_date: x.paymentDate || null,\n      record_date: x.recordDate || null,\n      declaration_date: x.declarationDate || null,\n      amount: x.dividend != null ? x.dividend : (x.adjDividend != null ? x.adjDividend : null),\n      frequency: x.frequency || null\n    }\n  };\n});"
       }
     },
     {
@@ -120,7 +120,7 @@
       },
       "credentials": {
         "postgresApi": {
-          "id": "TUWidmau0oQo85XCwsfLc"
+          "ref": "postgresql-account"
         }
       }
     },
@@ -139,7 +139,7 @@
       },
       "credentials": {
         "postgresApi": {
-          "id": "TUWidmau0oQo85XCwsfLc"
+          "ref": "postgresql-account"
         }
       }
     }

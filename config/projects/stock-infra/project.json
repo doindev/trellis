@@ -40,6 +40,19 @@
         "name": "fred_api_key",
         "value": "{{env:fred.api.key}}"
       }
+    },
+    {
+      "ref": "postgresql-account",
+      "name": "PostgreSQL account",
+      "type": "postgresApi",
+      "data": {
+        "host": "{{env:postgresql.host}}",
+        "port": "{{env:postgresql.port}}",
+        "ssl": "{{env:postgresql.ssl}}",
+        "database": "{{env:postgresql.database}}",
+        "username": "{{env:postgresql.username}}",
+        "password": "{{env:postgresql.password}}"
+      }
     }
   ]
 }

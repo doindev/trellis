@@ -3,5 +3,20 @@
   "name": "Stock Research - Growth Investing",
   "type": "TEAM",
   "contextPath": "stock-growth",
-  "description": "Growth investing strategy: identifies companies with above-average earnings growth, expanding margins, and strong forward guidance. Targets tech, biotech, and disruptive innovators."
+  "description": "Growth investing strategy: identifies companies with above-average earnings growth, expanding margins, and strong forward guidance. Targets tech, biotech, and disruptive innovators.",
+  "credentials": [
+    {
+      "ref": "postgresql-account",
+      "name": "PostgreSQL account",
+      "type": "postgresApi",
+      "data": {
+        "host": "{{env:postgresql.host}}",
+        "port": "{{env:postgresql.port}}",
+        "ssl": "{{env:postgresql.ssl}}",
+        "database": "{{env:postgresql.database}}",
+        "username": "{{env:postgresql.username}}",
+        "password": "{{env:postgresql.password}}"
+      }
+    }
+  ]
 }

@@ -45,7 +45,7 @@
       },
       "credentials": {
         "postgresApi": {
-          "id": "tS4_hUA3k4_Re6yubf0CB"
+          "ref": "postgresql-account"
         }
       }
     },

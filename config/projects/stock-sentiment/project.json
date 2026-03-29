@@ -3,5 +3,20 @@
   "name": "Stock Research - Sentiment & News Analysis",
   "type": "TEAM",
   "contextPath": "stock-sentiment",
-  "description": "News and sentiment pipeline: aggregates financial news from Finnhub, uses NLP sentiment scoring (bullish/bearish/neutral), monitors SEC filings (10-K/10-Q/8-K), and analyzes earnings calls. Feeds sentiment data to all strategy projects."
+  "description": "News and sentiment pipeline: aggregates financial news from Finnhub, uses NLP sentiment scoring (bullish/bearish/neutral), monitors SEC filings (10-K/10-Q/8-K), and analyzes earnings calls. Feeds sentiment data to all strategy projects.",
+  "credentials": [
+    {
+      "ref": "postgresql-account",
+      "name": "PostgreSQL account",
+      "type": "postgresApi",
+      "data": {
+        "host": "{{env:postgresql.host}}",
+        "port": "{{env:postgresql.port}}",
+        "ssl": "{{env:postgresql.ssl}}",
+        "database": "{{env:postgresql.database}}",
+        "username": "{{env:postgresql.username}}",
+        "password": "{{env:postgresql.password}}"
+      }
+    }
+  ]
 }
