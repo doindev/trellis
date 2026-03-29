@@ -796,6 +796,16 @@
   margin-bottom: 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid hsl(0, 0%, 20%);
+
+  .output-label {
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 0.65rem;
+    font-weight: 500;
+    border-radius: 3px;
+    background: hsla(247, 49%, 53%, 0.15);
+    color: hsl(247, 49%, 68%);
+  }
 }
 
 .data-json {

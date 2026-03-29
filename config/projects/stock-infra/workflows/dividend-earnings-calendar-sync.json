@@ -1,8 +1,6 @@
 {
-  "configId": "dividend-earnings-calendar-sync",
   "name": "Dividend & Earnings Calendar Sync",
   "description": "Weekly (Sunday 9 AM ET): Fetches upcoming dividend ex-dates from FMP and earnings dates from Finnhub. Populates dividend_history and earnings_calendar tables.",
-  "type": "WORKFLOW",
   "nodes": [
     {
       "id": "trigger1",
@@ -10,8 +8,8 @@
       "type": "scheduleTrigger",
       "typeVersion": 1,
       "position": [
-        200,
-        300
+        512,
+        160
       ],
       "parameters": {
         "rule": "cronExpression",
@@ -25,8 +23,8 @@
       "type": "stickyNote",
       "typeVersion": 1,
       "position": [
-        180,
-        80
+        176,
+        128
       ],
       "parameters": {
         "content": "## Dividend & Earnings Calendar\n\nRequired: httpHeaderAuth (Finnhub/FMP), postgresApi"
@@ -38,8 +36,8 @@
       "type": "code",
       "typeVersion": 1,
       "position": [
-        450,
-        300
+        704,
+        160
       ],
       "parameters": {
         "language": "javaScript",
@@ -53,12 +51,12 @@
       "type": "httpRequest",
       "typeVersion": 1,
       "position": [
-        700,
-        200
+        896,
+        80
       ],
       "parameters": {
         "method": "GET",
-        "url": "=https://finnhub.io/api/v1/calendar/earnings?from={{$json.from_date}}&to={{$json.to_date}}&token={{$credentials.httpHeaderAuth.value}}",
+        "url": "=https://finnhub.io/api/v1/calendar/earnings?from={{$json.from_date}}&to={{$json.to_date}}&token={{$credentials.finnhub_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -68,12 +66,12 @@
       "type": "httpRequest",
       "typeVersion": 1,
       "position": [
-        700,
-        450
+        896,
+        240
       ],
       "parameters": {
         "method": "GET",
-        "url": "=https://financialmodelingprep.com/api/v3/stock_dividend_calendar?from={{$json.from_date}}&to={{$json.to_date}}&apikey={{$credentials.httpHeaderAuth.value}}",
+        "url": "=https://financialmodelingprep.com/stable/dividends-calendar?from={{$json.from_date}}&to={{$json.to_date}}&apikey={{$credentials.fmp_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -83,13 +81,13 @@
       "type": "code",
       "typeVersion": 1,
       "position": [
-        1000,
-        200
+        1104,
+        80
       ],
       "parameters": {
         "language": "javaScript",
         "mode": "runOnceForAllItems",
-        "jsCode": "const d=$input.first().json; return (d.earningsCalendar||[]).map(e=>({json:{ticker:e.symbol,report_date:e.date,fiscal_quarter:'Q'+(e.quarter||''),eps_estimate:e.epsEstimate||null,eps_actual:e.epsActual||null,revenue_estimate:e.revenueEstimate||null,revenue_actual:e.revenueActual||null,surprise_percent:e.surprisePercent||null}}));"
+        "jsCode": "const d = $input.first().json;\nreturn (d.earningsCalendar || []).map(e => ({\n  json: {\n    ticker: e.symbol,\n    report_date: e.date,\n    fiscal_quarter: 'Q' + (e.quarter || ''),\n    eps_estimate: e.epsEstimate != null ? e.epsEstimate : null,\n    eps_actual: e.epsActual != null ? e.epsActual : null,\n    revenue_estimate: e.revenueEstimate != null ? e.revenueEstimate : null,\n    revenue_actual: e.revenueActual != null ? e.revenueActual : null,\n    surprise_percent: e.surprisePercent != null ? e.surprisePercent : null\n  }\n}));"
       }
     },
     {
@@ -98,13 +96,13 @@
       "type": "code",
       "typeVersion": 1,
       "position": [
-        1000,
-        450
+        1104,
+        240
       ],
       "parameters": {
         "language": "javaScript",
         "mode": "runOnceForAllItems",
-        "jsCode": "const d=$input.first().json; if(!Array.isArray(d))return []; return d.map(x=>({json:{ticker:x.symbol,ex_date:x.date,payment_date:x.paymentDate||null,record_date:x.recordDate||null,declaration_date:x.declarationDate||null,amount:x.dividend||x.adjDividend||null,frequency:x.frequency||null}}));"
+        "jsCode": "// FMP returns an array — each item arrives as a separate input item\nconst items = $input.all();\nreturn items.map(item => {\n  const x = item.json;\n  return {\n    json: {\n      ticker: x.symbol,\n      ex_date: x.date,\n      payment_date: x.paymentDate || null,\n      record_date: x.recordDate || null,\n      declaration_date: x.declarationDate || null,\n      amount: x.dividend != null ? x.dividend : (x.adjDividend != null ? x.adjDividend : null),\n      frequency: x.frequency || null\n    }\n  };\n});"
       }
     },
     {
@@ -113,12 +111,17 @@
       "type": "postgres",
       "typeVersion": 1,
       "position": [
-        1300,
-        200
+        1296,
+        80
       ],
       "parameters": {
         "operation": "executeSql",
-        "query": "INSERT INTO earnings_calendar (ticker,report_date,fiscal_quarter,eps_estimate,eps_actual,revenue_estimate,revenue_actual,surprise_percent) VALUES ('{{$json.ticker}}','{{$json.report_date}}','{{$json.fiscal_quarter}}',{{$json.eps_estimate}},{{$json.eps_actual}},{{$json.revenue_estimate}},{{$json.revenue_actual}},{{$json.surprise_percent}}) ON CONFLICT (ticker,report_date) DO UPDATE SET eps_estimate=EXCLUDED.eps_estimate,eps_actual=EXCLUDED.eps_actual;"
+        "query": "INSERT INTO earnings_calendar (ticker, report_date, fiscal_quarter, eps_estimate, eps_actual, revenue_estimate, revenue_actual, surprise_percent) VALUES ('{{$json.ticker}}', '{{$json.report_date}}', '{{$json.fiscal_quarter}}', NULLIF(NULLIF('{{$json.eps_estimate}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.eps_actual}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.revenue_estimate}}', 'null'), '')::bigint, NULLIF(NULLIF('{{$json.revenue_actual}}', 'null'), '')::bigint, NULLIF(NULLIF('{{$json.surprise_percent}}', 'null'), '')::numeric) ON CONFLICT (ticker, report_date) DO UPDATE SET eps_estimate = EXCLUDED.eps_estimate, eps_actual = EXCLUDED.eps_actual, revenue_estimate = EXCLUDED.revenue_estimate, revenue_actual = EXCLUDED.revenue_actual, surprise_percent = EXCLUDED.surprise_percent;"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "TUWidmau0oQo85XCwsfLc"
+        }
       }
     },
     {
@@ -127,12 +130,17 @@
       "type": "postgres",
       "typeVersion": 1,
       "position": [
-        1300,
-        450
+        1296,
+        240
       ],
       "parameters": {
         "operation": "executeSql",
-        "query": "INSERT INTO dividend_history (ticker,ex_date,payment_date,record_date,declaration_date,amount,frequency) VALUES ('{{$json.ticker}}','{{$json.ex_date}}','{{$json.payment_date}}','{{$json.record_date}}','{{$json.declaration_date}}',{{$json.amount}},'{{$json.frequency}}') ON CONFLICT (ticker,ex_date) DO UPDATE SET amount=EXCLUDED.amount;"
+        "query": "INSERT INTO dividend_history (ticker, ex_date, payment_date, record_date, declaration_date, amount, frequency) VALUES ('{{$json.ticker}}', '{{$json.ex_date}}', NULLIF(NULLIF('{{$json.payment_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.record_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.declaration_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.amount}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.frequency}}', 'null'), '')) ON CONFLICT (ticker, ex_date) DO UPDATE SET payment_date = EXCLUDED.payment_date, amount = EXCLUDED.amount, frequency = EXCLUDED.frequency;"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "TUWidmau0oQo85XCwsfLc"
+        }
       }
     }
   ],
@@ -208,5 +216,12 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "",
+    "saveExecutionProgress": "default",
+    "saveManualExecutions": "default",
+    "executionTimeout": -1,
+    "parallelExecution": true
   }
 }

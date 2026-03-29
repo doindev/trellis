@@ -26,18 +26,18 @@
     {
       "ref": "finnhub-api-key",
       "name": "Finnhub API Key",
-      "type": "httpHeaderAuth",
+      "type": "httpQueryAuth",
       "data": {
-        "name": "token",
+        "name": "finnhub_api_key",
         "value": "{{env:finnhub.api.key}}"
       }
     },
     {
       "ref": "fred-api-key",
       "name": "FRED API Key",
-      "type": "httpHeaderAuth",
+      "type": "httpQueryAuth",
       "data": {
-        "name": "api_key",
+        "name": "fred_api_key",
         "value": "{{env:fred.api.key}}"
       }
     }

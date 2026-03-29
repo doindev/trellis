@@ -362,20 +362,21 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     return this.parameters.filter(p => p.isNodeSetting && this.isVisible(p));
   }
 
-  /** Nodes that connect INTO this node */
-  get previousNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription }[] {
-    const results: { node: WorkflowNode; nodeType?: NodeTypeDescription }[] = [];
+  /** Nodes that connect INTO this node, with the source output index they connect from */
+  get previousNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription; sourceOutputIndex: number }[] {
+    const results: { node: WorkflowNode; nodeType?: NodeTypeDescription; sourceOutputIndex: number }[] = [];
     const seen = new Set<string>();
     for (const [sourceId, conn] of Object.entries(this.connections)) {
       if (!conn?.main) continue;
-      for (const outputs of conn.main) {
+      for (let outputIdx = 0; outputIdx < conn.main.length; outputIdx++) {
+        const outputs = conn.main[outputIdx];
         if (!outputs) continue;
         for (const c of outputs) {
           if (c.node === this.node.id && !seen.has(sourceId)) {
             seen.add(sourceId);
             const n = this.allNodes.find(nd => nd.id === sourceId);
             if (n) {
-              results.push({ node: n, nodeType: this.nodeTypeMap.get(n.type) });
+              results.push({ node: n, nodeType: this.nodeTypeMap.get(n.type), sourceOutputIndex: outputIdx });
             }
           }
         }
@@ -405,9 +406,9 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     return results;
   }
 
-  /** All ancestor nodes via BFS traversal, closest first, with depth */
-  getAncestorNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription; depth: number }[] {
-    const results: { node: WorkflowNode; nodeType?: NodeTypeDescription; depth: number }[] = [];
+  /** All ancestor nodes via BFS traversal, closest first, with depth and source output index */
+  getAncestorNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription; depth: number; sourceOutputIndex: number }[] {
+    const results: { node: WorkflowNode; nodeType?: NodeTypeDescription; depth: number; sourceOutputIndex: number }[] = [];
     const visited = new Set<string>();
     const queue: { id: string; depth: number }[] = [{ id: this.node.id, depth: 0 }];
     visited.add(this.node.id);
@@ -417,14 +418,15 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
       // Find all source nodes that connect into currentId
       for (const [sourceId, conn] of Object.entries(this.connections)) {
         if (!conn?.main) continue;
-        for (const outputs of conn.main) {
+        for (let outputIdx = 0; outputIdx < conn.main.length; outputIdx++) {
+          const outputs = conn.main[outputIdx];
           if (!outputs) continue;
           for (const c of outputs) {
             if (c.node === currentId && !visited.has(sourceId)) {
               visited.add(sourceId);
               const n = this.allNodes.find(nd => nd.id === sourceId);
               if (n) {
-                results.push({ node: n, nodeType: this.nodeTypeMap.get(n.type), depth: depth + 1 });
+                results.push({ node: n, nodeType: this.nodeTypeMap.get(n.type), depth: depth + 1, sourceOutputIndex: outputIdx });
                 queue.push({ id: sourceId, depth: depth + 1 });
               }
             }
@@ -436,11 +438,25 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /** Returns the nodes to display in the input column based on the selected ancestor */
-  get selectedInputNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription }[] {
+  get selectedInputNodes(): { node: WorkflowNode; nodeType?: NodeTypeDescription; sourceOutputIndex: number }[] {
     if (!this.selectedInputNodeId) return this.previousNodes;
+    // Check if the selected ancestor is a direct parent (with known output index)
+    const directParent = this.previousNodes.find(p => p.node.id === this.selectedInputNodeId);
+    if (directParent) return [directParent];
+    // Check BFS ancestors for the correct output index
+    const bfsAncestor = this.getAncestorNodes().find(a => a.node.id === this.selectedInputNodeId);
+    if (bfsAncestor) return [{ node: bfsAncestor.node, nodeType: bfsAncestor.nodeType, sourceOutputIndex: bfsAncestor.sourceOutputIndex }];
     const ancestor = this.allNodes.find(n => n.id === this.selectedInputNodeId);
     if (!ancestor) return this.previousNodes;
-    return [{ node: ancestor, nodeType: this.nodeTypeMap.get(ancestor.type) }];
+    return [{ node: ancestor, nodeType: this.nodeTypeMap.get(ancestor.type), sourceOutputIndex: 0 }];
+  }
+
+  /** Get the output name label for a previous node's source output index */
+  getSourceOutputName(prev: { node: WorkflowNode; nodeType?: NodeTypeDescription; sourceOutputIndex: number }): string | null {
+    const outputs = prev.nodeType?.outputs;
+    if (!outputs || outputs.length <= 1) return null;
+    const output = outputs[prev.sourceOutputIndex];
+    return output?.displayName || output?.name || `Output ${prev.sourceOutputIndex}`;
   }
 
   get nodeExecutionData(): any {
@@ -468,7 +484,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     let count = 0;
     for (const prev of this.previousNodes) {
       const data = this.getPreviousNodeData(prev.node.id);
-      if (data) count += this.extractItems(data).length;
+      if (data) count += this.extractItems(data, prev.sourceOutputIndex).length;
     }
     return count;
   }
@@ -925,7 +941,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     const items: Record<string, any>[] = [];
     for (const prev of this.selectedInputNodes) {
       const data = this.getPreviousNodeData(prev.node.id);
-      if (data) items.push(...this.extractItems(data));
+      if (data) items.push(...this.extractItems(data, prev.sourceOutputIndex));
     }
     if (items.length === 0) return [];
     const tree = this.buildSchema(items);
@@ -977,11 +993,11 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     return filtered.length > 0 ? JSON.stringify(filtered, null, 2) : '';
   }
 
-  /** Get parsed input items for a node (for structured JSON rendering) */
-  getInputItems(nodeId: string): Record<string, any>[] {
+  /** Get parsed input items for a node, using the correct source output index for multi-output nodes */
+  getInputItems(nodeId: string, sourceOutputIndex: number = 0): Record<string, any>[] {
     const data = this.getPreviousNodeData(nodeId);
     if (!data) return [];
-    const items = this.extractItems(data);
+    const items = this.extractItems(data, sourceOutputIndex);
     if (!this.inputSearch) return items;
     return this.filterRows(items, this.inputSearch);
   }
@@ -1095,12 +1111,13 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
   /** Cache for JSON tree lines per node to avoid recalculating on every render */
   private jsonTreeCache = new Map<string, { items: Record<string, any>[]; lines: JsonTreeLine[] }>();
 
-  getJsonTreeLines(nodeId: string): JsonTreeLine[] {
-    const items = this.getInputItems(nodeId);
-    const cached = this.jsonTreeCache.get(nodeId);
+  getJsonTreeLines(nodeId: string, sourceOutputIndex: number = 0): JsonTreeLine[] {
+    const cacheKey = `${nodeId}_${sourceOutputIndex}`;
+    const items = this.getInputItems(nodeId, sourceOutputIndex);
+    const cached = this.jsonTreeCache.get(cacheKey);
     if (cached && cached.items === items) return cached.lines;
     const lines = this.buildJsonTreeLines(items);
-    this.jsonTreeCache.set(nodeId, { items, lines });
+    this.jsonTreeCache.set(cacheKey, { items, lines });
     return lines;
   }
 
@@ -1242,7 +1259,7 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     const items: any[] = [];
     for (const prev of this.previousNodes) {
       const data = this.getPreviousNodeData(prev.node.id);
-      items.push(...this.extractRawItems(data));
+      items.push(...this.extractRawItems(data, prev.sourceOutputIndex));
     }
     return items;
   }
@@ -1569,10 +1586,11 @@ export class ParameterPanelComponent implements OnInit, OnDestroy, OnChanges {
     for (const anc of ancestors) {
       const data = this.getPreviousNodeData(anc.node.id);
       if (data) {
-        const rawItems = this.extractRawItems(data);
+        // Use the source output index from the BFS traversal for all ancestors
+        const rawItems = this.extractRawItems(data, anc.sourceOutputIndex);
         this.expressionEditorNodeDataMap[anc.node.id] = rawItems;
         // Build nodeOutputs keyed by node name (first item's json data)
-        const items = this.extractItems(data);
+        const items = this.extractItems(data, anc.sourceOutputIndex);
         if (items.length > 0) {
           this.expressionEditorNodeOutputs[anc.node.name] = items[0];
         }

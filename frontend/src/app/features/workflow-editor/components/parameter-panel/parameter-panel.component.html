@@ -263,8 +263,13 @@
             } @else {
               @for (prev of selectedInputNodes; track prev.node.id) {
                 <div class="data-block">
-                  <div class="data-block-header">{{ prev.node.name }}</div>
-                  @if (getJsonTreeLines(prev.node.id); as lines) {
+                  <div class="data-block-header">
+                    {{ prev.node.name }}
+                    @if (getSourceOutputName(prev); as outputName) {
+                      <span class="output-label">{{ outputName }}</span>
+                    }
+                  </div>
+                  @if (getJsonTreeLines(prev.node.id, prev.sourceOutputIndex); as lines) {
                     @if (lines.length > 0) {
                       <div class="json-tree">
                         @for (line of lines; track $index) {

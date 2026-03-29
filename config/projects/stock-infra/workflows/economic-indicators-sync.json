@@ -1,8 +1,6 @@
 {
-  "configId": "economic-indicators-sync",
   "name": "Economic Indicators Sync",
   "description": "Weekly (Sunday 8 AM ET): Fetches GDP, CPI, unemployment, fed funds rate, 10Y treasury, VIX, consumer sentiment, yield spread, and jobless claims from FRED API.",
-  "type": "WORKFLOW",
   "nodes": [
     {
       "id": "trigger1",
@@ -10,8 +8,8 @@
       "type": "scheduleTrigger",
       "typeVersion": 1,
       "position": [
-        200,
-        300
+        512,
+        160
       ],
       "parameters": {
         "rule": "cronExpression",
@@ -25,7 +23,7 @@
       "type": "stickyNote",
       "typeVersion": 1,
       "position": [
-        180,
+        176,
         80
       ],
       "parameters": {
@@ -38,8 +36,8 @@
       "type": "code",
       "typeVersion": 1,
       "position": [
-        450,
-        300
+        704,
+        160
       ],
       "parameters": {
         "language": "javaScript",
@@ -53,8 +51,8 @@
       "type": "loopOverItems",
       "typeVersion": 1,
       "position": [
-        700,
-        300
+        896,
+        160
       ],
       "parameters": {
         "batchSize": 1
@@ -66,12 +64,12 @@
       "type": "httpRequest",
       "typeVersion": 1,
       "position": [
-        950,
-        300
+        1088,
+        96
       ],
       "parameters": {
         "method": "GET",
-        "url": "=https://api.stlouisfed.org/fred/series/observations?series_id={{$json.series_id}}&api_key={{$credentials.httpHeaderAuth.value}}&file_type=json&sort_order=desc&limit=10",
+        "url": "=https://api.stlouisfed.org/fred/series/observations?series_id={{$json.series_id}}&api_key={{$credentials.fred_api_key.value}}&file_type=json&sort_order=desc&limit=10",
         "authentication": "none"
       }
     },
@@ -81,13 +79,13 @@
       "type": "code",
       "typeVersion": 1,
       "position": [
-        1200,
-        300
+        1488,
+        160
       ],
       "parameters": {
         "language": "javaScript",
         "mode": "runOnceForAllItems",
-        "jsCode": "const d=$input.first().json; const obs=d.observations||[];\nreturn obs.filter(o=>o.value!=='.').map(o=>({json:{indicator_id:d.series_id||'',observation_date:o.date,value:parseFloat(o.value)}}));"
+        "jsCode": "const items = $input.all();\n// Merge node combines: input 0 = FRED response, input 1 = Loop item with series_id\nconst fredData = items[0]?.json || {};\nconst loopItem = items[1]?.json || {};\nconst seriesId = loopItem.series_id || fredData.series_id || '';\nconst obs = fredData.observations || [];\n\nreturn obs.filter(o => o.value !== '.').map(o => ({\n  json: {\n    indicator_id: seriesId,\n    observation_date: o.date,\n    value: parseFloat(o.value)\n  }\n}));"
       }
     },
     {
@@ -96,13 +94,24 @@
       "type": "postgres",
       "typeVersion": 1,
       "position": [
-        1450,
-        300
+        1680,
+        160
       ],
       "parameters": {
         "operation": "executeSql",
         "query": "INSERT INTO economic_indicators (indicator_id,indicator_name,observation_date,value,unit) VALUES ('{{$json.indicator_id}}','','{{$json.observation_date}}',{{$json.value}},'') ON CONFLICT (indicator_id,observation_date) DO UPDATE SET value=EXCLUDED.value;"
       }
+    },
+    {
+      "id": "node_1774737593137_0",
+      "name": "Merge",
+      "type": "merge",
+      "typeVersion": 1,
+      "parameters": {},
+      "position": [
+        1296,
+        160
+      ]
     }
   ],
   "connections": {
@@ -136,6 +145,11 @@
             "node": "fetch1",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "node_1774737593137_0",
+            "type": "main",
+            "index": 1
           }
         ]
       ]
@@ -144,7 +158,7 @@
       "main": [
         [
           {
-            "node": "tx",
+            "node": "node_1774737593137_0",
             "type": "main",
             "index": 0
           }
@@ -156,6 +170,17 @@
         [
           {
             "node": "pg1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "node_1774737593137_0": {
+      "main": [
+        [
+          {
+            "node": "tx",
             "type": "main",
             "index": 0
           }
