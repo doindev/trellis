@@ -36,6 +36,17 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 )
 public class AiSubAgentNode extends AbstractAiSubNode {
 
+	/**
+	 * Custom agent interface with explicit @UserMessage so LangChain4j knows
+	 * how to construct the user message from the input map.
+	 */
+	public interface SubAgentService extends UntypedAgent {
+		@Override
+		@dev.langchain4j.agentic.Agent
+		@dev.langchain4j.service.UserMessage("{{input}}")
+		Object invoke(@dev.langchain4j.service.V("input") Map<String, Object> input);
+	}
+
 	@Override
 	public Object supplyData(NodeExecutionContext context) throws Exception {
 		// 1. Get chat model — own input first, fall back to parent's model
@@ -81,7 +92,7 @@ public class AiSubAgentNode extends AbstractAiSubNode {
 			return supervisor;
 		} else {
 			// --- Simple agent path ---
-			var builder = AgenticServices.agentBuilder()
+			var builder = AgenticServices.agentBuilder(SubAgentService.class)
 					.chatModel(model)
 					.name(agentName)
 					.description(agentDescription)
@@ -98,7 +109,7 @@ public class AiSubAgentNode extends AbstractAiSubNode {
 				builder.tools(toolMap);
 			}
 
-			UntypedAgent agent = builder.build();
+			SubAgentService agent = builder.build();
 			return agent;
 		}
 	}

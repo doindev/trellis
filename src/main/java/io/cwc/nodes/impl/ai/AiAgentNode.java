@@ -92,7 +92,7 @@ public class AiAgentNode extends AbstractNode {
 				String response = supervisor.invoke(promptTemplate);
 				results.add(wrapInJson(Map.of("output", response)));
 			} catch (Exception e) {
-				return handleError(context, "AI Agent (Supervisor) failed: " + e.getMessage(), e);
+				return handleError(context, "AI Agent (Supervisor) failed: " + getRootCauseMessage(e), e);
 			}
 		} else {
 			for (Map<String, Object> item : inputData) {
@@ -103,9 +103,9 @@ public class AiAgentNode extends AbstractNode {
 					results.add(wrapInJson(Map.of("output", response)));
 				} catch (Exception e) {
 					if (context.isContinueOnFail()) {
-						results.add(wrapInJson(Map.of("error", e.getMessage())));
+						results.add(wrapInJson(Map.of("error", getRootCauseMessage(e))));
 					} else {
-						return handleError(context, "AI Agent (Supervisor) failed: " + e.getMessage(), e);
+						return handleError(context, "AI Agent (Supervisor) failed: " + getRootCauseMessage(e), e);
 					}
 				}
 			}
@@ -165,6 +165,19 @@ public class AiAgentNode extends AbstractNode {
 		}
 
 		return NodeExecutionResult.success(results);
+	}
+
+	private String getRootCauseMessage(Throwable e) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(e.getMessage());
+		Throwable cause = e.getCause();
+		int depth = 0;
+		while (cause != null && depth < 5) {
+			sb.append(" -> ").append(cause.getMessage());
+			cause = cause.getCause();
+			depth++;
+		}
+		return sb.toString();
 	}
 
 	private String resolvePrompt(String promptTemplate, Map<String, Object> json) {

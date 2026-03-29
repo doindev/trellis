@@ -1149,10 +1149,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     const exportData: Record<string, any> = {
       name: wf.name,
       description: wf.description,
+      type: wf.type || 'WORKFLOW',
       nodes: exportNodes,
       connections: wf.connections,
       settings: wf.settings
     };
+    if (wf.icon) exportData['icon'] = wf.icon;
     if (wf.mcpEnabled) exportData['mcpEnabled'] = wf.mcpEnabled;
     if (wf.mcpDescription) exportData['mcpDescription'] = wf.mcpDescription;
     if (wf.mcpInputSchema) {

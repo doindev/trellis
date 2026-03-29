@@ -1,6 +1,7 @@
 {
   "name": "Broad Market Daily Analysis",
   "description": "Daily (8 AM ET, Mon-Fri): Gathers economic indicators and sector performance, feeds to Broad Market Strategy Analyst for cycle/rotation/DCA guidance.",
+  "type": "WORKFLOW",
   "nodes": [
     {
       "id": "trigger1",

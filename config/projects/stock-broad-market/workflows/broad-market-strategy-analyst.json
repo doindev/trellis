@@ -1,5 +1,4 @@
 {
-  "configId": "broad-market-strategy-analyst",
   "name": "Broad Market Strategy Analyst",
   "description": "AI agent for broad market strategies: index investing, sector rotation, DCA, macro analysis. Sub-agents: Sector Rotation Analyst, Macro Economist.",
   "type": "AGENT",
@@ -10,8 +9,8 @@
       "type": "aiAgent",
       "typeVersion": 1,
       "position": [
-        700,
-        300
+        576,
+        304
       ],
       "parameters": {
         "systemMessage": "You are a Broad Market Strategy Analyst.\n\nPhilosophy:\n- Market timing is futile; DCA wins long-term\n- Sector rotation by economic cycle adds alpha\n- Monitor: yield curve, VIX, unemployment, consumer confidence\n- Recommend ETF allocation over individual picks\n\nAnalysis:\n1. Economic cycle stage (expansion/peak/contraction/trough)\n2. Leading indicators (yield curve, PMI, housing)\n3. Sector rotation patterns\n4. Sector over/underweights\n5. DCA deployment timing\n\nOutput JSON: market_phase, economic_cycle_stage, sector_recommendations [{sector,weight,rationale}], dca_recommendation, risk_level, market_outlook.",
@@ -20,31 +19,21 @@
       }
     },
     {
-      "id": "model1",
-      "name": "Claude Sonnet",
-      "type": "anthropicChatModel",
-      "typeVersion": 1,
-      "position": [
-        300,
-        450
-      ],
-      "parameters": {
-        "model": "claude-sonnet-4-20250514",
-        "temperature": 0.3,
-        "maxTokens": 4096
-      }
-    },
-    {
       "id": "memory1",
       "name": "Memory",
       "type": "memoryPostgresChat",
       "typeVersion": 1,
       "position": [
-        420,
-        450
+        336,
+        480
       ],
       "parameters": {
         "sessionId": "broad_market_analyst"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "yEHksDCcp7uJrmyLlP_iu"
+        }
       }
     },
     {
@@ -53,8 +42,8 @@
       "type": "toolThink",
       "typeVersion": 1,
       "position": [
-        540,
-        450
+        720,
+        480
       ],
       "parameters": {}
     },
@@ -64,8 +53,8 @@
       "type": "httpRequestTool",
       "typeVersion": 1,
       "position": [
-        660,
-        450
+        832,
+        480
       ],
       "parameters": {
         "method": "GET",
@@ -79,8 +68,8 @@
       "type": "aiSubAgent",
       "typeVersion": 1,
       "position": [
-        500,
-        650
+        464,
+        480
       ],
       "parameters": {
         "agentName": "sector_rotation_analyst",
@@ -90,28 +79,13 @@
       }
     },
     {
-      "id": "model2",
-      "name": "Sector Model",
-      "type": "anthropicChatModel",
-      "typeVersion": 1,
-      "position": [
-        300,
-        800
-      ],
-      "parameters": {
-        "model": "claude-sonnet-4-20250514",
-        "temperature": 0.3,
-        "maxTokens": 2048
-      }
-    },
-    {
       "id": "sub2",
       "name": "Macro Economist",
       "type": "aiSubAgent",
       "typeVersion": 1,
       "position": [
-        800,
-        650
+        960,
+        480
       ],
       "parameters": {
         "agentName": "macro_economist",
@@ -121,33 +95,67 @@
       }
     },
     {
-      "id": "model3",
-      "name": "Macro Model",
-      "type": "anthropicChatModel",
+      "id": "node_1774799025867_0",
+      "name": "Ollama Chat Model",
+      "type": "ollamaChatModel",
       "typeVersion": 1,
-      "position": [
-        700,
-        800
-      ],
       "parameters": {
-        "model": "claude-sonnet-4-20250514",
         "temperature": 0.3,
-        "maxTokens": 2048
+        "numPredict": 4096,
+        "model": "glm-4.7-flash:q4_K_M"
+      },
+      "position": [
+        224,
+        480
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "SBmk2PqObbjlTG1Ux_cpS"
+        }
+      }
+    },
+    {
+      "id": "node_1774799083293_1",
+      "name": "Ollama Chat Model",
+      "type": "ollamaChatModel",
+      "typeVersion": 1,
+      "parameters": {
+        "temperature": 0.3,
+        "numPredict": 2048,
+        "model": "glm-4.7-flash:q4_K_M"
+      },
+      "position": [
+        416,
+        672
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "SBmk2PqObbjlTG1Ux_cpS"
+        }
+      }
+    },
+    {
+      "id": "node_1774799114756_2",
+      "name": "Ollama Chat Model",
+      "type": "ollamaChatModel",
+      "typeVersion": 1,
+      "parameters": {
+        "temperature": 0.3,
+        "numPredict": 2048,
+        "model": "glm-4.7-flash:q4_K_M"
+      },
+      "position": [
+        944,
+        704
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "SBmk2PqObbjlTG1Ux_cpS"
+        }
       }
     }
   ],
   "connections": {
-    "model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "agent1",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "memory1": {
       "ai_memory": [
         [
@@ -228,7 +236,18 @@
         ]
       ]
     },
-    "model2": {
+    "node_1774799025867_0": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "node_1774799083293_1": {
       "ai_languageModel": [
         [
           {
@@ -239,7 +258,7 @@
         ]
       ]
     },
-    "model3": {
+    "node_1774799114756_2": {
       "ai_languageModel": [
         [
           {
@@ -250,6 +269,5 @@
         ]
       ]
     }
-  },
-  "icon": "📊"
+  }
 }
