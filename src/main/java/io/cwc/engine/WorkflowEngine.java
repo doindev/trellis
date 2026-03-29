@@ -1350,11 +1350,15 @@ public class WorkflowEngine {
     private Map<String, List<Object>> collectAllAiInputs(String nodeId, WorkflowGraph graph,
                                                           WorkflowExecutionState state) {
         Map<String, List<Object>> aiInputs = new HashMap<>();
+        Set<String> seen = new HashSet<>();
         List<WorkflowGraph.Connection> incoming = graph.getIncomingConnections()
                 .getOrDefault(nodeId, List.of());
 
         for (WorkflowGraph.Connection conn : incoming) {
             if ("main".equals(conn.getType())) continue;
+            // Deduplicate: dual-index AI connections create multiple Connection objects per source node
+            String dedupKey = conn.getSourceNodeId() + "|" + conn.getType();
+            if (!seen.add(dedupKey)) continue;
             Object aiData = state.getAiData(conn.getSourceNodeId());
             if (aiData != null) {
                 aiInputs.computeIfAbsent(conn.getType(), k -> new ArrayList<>()).add(aiData);
@@ -1595,15 +1599,21 @@ public class WorkflowEngine {
         }
 
         // Collect the definition's AI inputs targeting the agent node
+        // Deduplicate: the dual-index connection pattern (index 0 + index 2) creates
+        // multiple Connection objects per sub-node, but we only want each sub-node's data once per type
         Map<String, List<Object>> defAiInputs = new HashMap<>();
+        Set<String> seenSubNodeType = new HashSet<>();
         for (String subNodeId : subNodeIds) {
             List<WorkflowGraph.Connection> outgoing = defGraph.getOutgoingConnections()
                     .getOrDefault(subNodeId, List.of());
             for (WorkflowGraph.Connection conn : outgoing) {
                 if (agentNodeId.equals(conn.getTargetNodeId()) && !"main".equals(conn.getType())) {
-                    Object aiData = defState.getAiData(subNodeId);
-                    if (aiData != null) {
-                        defAiInputs.computeIfAbsent(conn.getType(), k -> new ArrayList<>()).add(aiData);
+                    String dedupKey = subNodeId + "|" + conn.getType();
+                    if (seenSubNodeType.add(dedupKey)) {
+                        Object aiData = defState.getAiData(subNodeId);
+                        if (aiData != null) {
+                            defAiInputs.computeIfAbsent(conn.getType(), k -> new ArrayList<>()).add(aiData);
+                        }
                     }
                 }
             }
