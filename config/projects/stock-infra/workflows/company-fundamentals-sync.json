@@ -1,8 +1,6 @@
 {
-  "configId": "company-fundamentals-sync",
   "name": "Company Fundamentals Sync",
   "description": "Weekly (Saturday 8 AM ET): Fetches financial ratios and company profiles from FMP for all active tickers. Updates fundamentals table. Critical for Value and Growth screening.",
-  "type": "WORKFLOW",
   "nodes": [
     {
       "id": "trigger1",
@@ -10,8 +8,8 @@
       "type": "scheduleTrigger",
       "typeVersion": 1,
       "position": [
-        200,
-        300
+        512,
+        160
       ],
       "parameters": {
         "rule": "cronExpression",
@@ -25,8 +23,8 @@
       "type": "stickyNote",
       "typeVersion": 1,
       "position": [
-        180,
-        80
+        176,
+        128
       ],
       "parameters": {
         "content": "## Fundamentals Sync\n\nRequired: httpHeaderAuth (FMP), postgresApi\nAPIs: FMP /api/v3/ratios, /api/v3/profile"
@@ -38,12 +36,17 @@
       "type": "postgres",
       "typeVersion": 1,
       "position": [
-        450,
-        300
+        704,
+        160
       ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT ticker FROM tickers WHERE is_active=true ORDER BY ticker"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "DG4o4-9kIMbeDuq6vfjfk"
+        }
       }
     },
     {
@@ -52,8 +55,8 @@
       "type": "loopOverItems",
       "typeVersion": 1,
       "position": [
-        700,
-        300
+        896,
+        160
       ],
       "parameters": {
         "batchSize": 1
@@ -65,12 +68,12 @@
       "type": "httpRequest",
       "typeVersion": 1,
       "position": [
-        950,
-        200
+        1104,
+        80
       ],
       "parameters": {
         "method": "GET",
-        "url": "=https://financialmodelingprep.com/api/v3/ratios/{{$json.ticker}}?period=annual&limit=1&apikey={{$credentials.httpHeaderAuth.value}}",
+        "url": "=https://financialmodelingprep.com/api/v3/ratios/{{$json.ticker}}?period=annual&limit=1&apikey={{$credentials.fmp_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -80,12 +83,12 @@
       "type": "httpRequest",
       "typeVersion": 1,
       "position": [
-        950,
-        450
+        1104,
+        240
       ],
       "parameters": {
         "method": "GET",
-        "url": "=https://financialmodelingprep.com/api/v3/profile/{{$json.ticker}}?apikey={{$credentials.httpHeaderAuth.value}}",
+        "url": "=https://financialmodelingprep.com/api/v3/profile/{{$json.ticker}}?apikey={{$credentials.fmp_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -95,8 +98,8 @@
       "type": "code",
       "typeVersion": 1,
       "position": [
-        1250,
-        300
+        1296,
+        160
       ],
       "parameters": {
         "language": "javaScript",
@@ -110,8 +113,8 @@
       "type": "filter",
       "typeVersion": 1,
       "position": [
-        1500,
-        300
+        1488,
+        160
       ],
       "parameters": {
         "conditions": {
@@ -141,12 +144,17 @@
       "type": "postgres",
       "typeVersion": 1,
       "position": [
-        1750,
-        300
+        1680,
+        160
       ],
       "parameters": {
         "operation": "executeSql",
         "query": "INSERT INTO fundamentals (ticker,period_date,period_type,revenue,net_income,eps,pe_ratio,pb_ratio,ps_ratio,debt_to_equity,roe,roa,current_ratio,dividend_yield,payout_ratio,revenue_growth,earnings_growth,free_cash_flow,gross_margin,operating_margin,net_margin,last_updated) VALUES ('{{$json.ticker}}','{{$json.period_date}}','annual',{{$json.revenue}},{{$json.net_income}},{{$json.eps}},{{$json.pe_ratio}},{{$json.pb_ratio}},{{$json.ps_ratio}},{{$json.debt_to_equity}},{{$json.roe}},{{$json.roa}},{{$json.current_ratio}},{{$json.dividend_yield}},{{$json.payout_ratio}},{{$json.revenue_growth}},{{$json.earnings_growth}},{{$json.free_cash_flow}},{{$json.gross_margin}},{{$json.operating_margin}},{{$json.net_margin}},NOW()) ON CONFLICT (ticker,period_date,period_type) DO UPDATE SET revenue=EXCLUDED.revenue,pe_ratio=EXCLUDED.pe_ratio,roe=EXCLUDED.roe,dividend_yield=EXCLUDED.dividend_yield,last_updated=NOW();"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "DG4o4-9kIMbeDuq6vfjfk"
+        }
       }
     }
   ],
@@ -234,5 +242,12 @@
         ]
       ]
     }
+  },
+  "settings": {
+    "errorWorkflow": "",
+    "saveExecutionProgress": "default",
+    "saveManualExecutions": "default",
+    "executionTimeout": -1,
+    "parallelExecution": true
   }
 }

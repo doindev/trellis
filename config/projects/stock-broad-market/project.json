@@ -3,5 +3,57 @@
   "name": "Stock Research - Broad Market Strategies",
   "type": "TEAM",
   "contextPath": "stock-broad-market",
-  "description": "Broad market strategies: passive index investing, dollar-cost averaging optimization, sector rotation analysis. Tracks S&P 500, Nasdaq, and sector ETF performance with macro-level health indicators."
+  "description": "Broad market strategies: passive index investing, dollar-cost averaging optimization, sector rotation analysis. Tracks S&P 500, Nasdaq, and sector ETF performance with macro-level health indicators.",
+  "credentials": [
+    {
+      "ref": "fmp-api-key",
+      "name": "FMP API Key",
+      "type": "httpQueryAuth",
+      "data": {
+        "name": "fmp_api_key",
+        "value": "{{env:fmp.api.key}}"
+      }
+    },
+    {
+      "ref": "massive-api-key",
+      "name": "Massive API Key",
+      "type": "httpQueryAuth",
+      "data": {
+        "name": "apikey",
+        "value": "{{env:massive.api.key}}"
+      }
+    },
+    {
+      "ref": "finnhub-api-key",
+      "name": "Finnhub API Key",
+      "type": "httpQueryAuth",
+      "data": {
+        "name": "finnhub_api_key",
+        "value": "{{env:finnhub.api.key}}"
+      }
+    },
+    {
+      "ref": "fred-api-key",
+      "name": "FRED API Key",
+      "type": "httpQueryAuth",
+      "data": {
+        "name": "fred_api_key",
+        "value": "{{env:fred.api.key}}"
+      }
+    },
+	{
+	  "ref": "postgresql-account",
+	  "name": "PostgreSQL account",
+	  "type": "postgresApi",
+	  "data": {
+	    "host": "{{env:postgresql.host}}",
+	    "port": "{{env:postgresql.port}}",
+	    "ssl": "{{env:postgresql.ssl}}",
+	    "database": "{{env:postgresql.database}}",
+	    "username": "{{env:postgresql.username}}",
+	    "password": "{{env:postgresql.password}}"
+	  }
+	}
+  ]
 }
+

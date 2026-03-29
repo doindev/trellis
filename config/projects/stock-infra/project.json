@@ -15,12 +15,12 @@
       }
     },
     {
-      "ref": "polygon-api-key",
-      "name": "Polygon.io API Key",
-      "type": "httpHeaderAuth",
+      "ref": "massive-api-key",
+      "name": "Massive API Key",
+      "type": "httpQueryAuth",
       "data": {
         "name": "apikey",
-        "value": "{{env:polygon.api.key}}"
+        "value": "{{env:massive.api.key}}"
       }
     },
     {

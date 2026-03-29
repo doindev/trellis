@@ -1,8 +1,6 @@
 {
-  "configId": "daily-market-data-ingestion",
   "name": "Daily Market Data Ingestion",
-  "description": "Daily (6 PM ET, Mon-Fri): Fetches end-of-day OHLCV from Polygon.io grouped daily endpoint for all active tickers. Stores in daily_prices table.",
-  "type": "WORKFLOW",
+  "description": "Daily (6 PM ET, Mon-Fri): Fetches end-of-day OHLCV from Massive (formerly Polygon.io) grouped daily endpoint for all active tickers. Stores in daily_prices table.",
   "nodes": [
     {
       "id": "trigger1",
@@ -10,8 +8,8 @@
       "type": "scheduleTrigger",
       "typeVersion": 1,
       "position": [
-        200,
-        300
+        512,
+        160
       ],
       "parameters": {
         "rule": "cronExpression",
@@ -25,11 +23,11 @@
       "type": "stickyNote",
       "typeVersion": 1,
       "position": [
-        180,
-        80
+        176,
+        128
       ],
       "parameters": {
-        "content": "## Daily Market Data\n\nRequired: httpHeaderAuth (Polygon.io Key), postgresApi\nAPI: Polygon.io grouped daily. Free: 5 req/min"
+        "content": "## Daily Market Data\n\nRequired: httpQueryAuth (Massive API Key), postgresApi\nAPI: Massive (formerly Polygon.io) grouped daily\nDocs: massive.com/docs/rest/stocks/aggregates/daily-market-summary"
       }
     },
     {
@@ -38,8 +36,8 @@
       "type": "code",
       "typeVersion": 1,
       "position": [
-        450,
-        300
+        704,
+        160
       ],
       "parameters": {
         "language": "javaScript",
@@ -53,12 +51,12 @@
       "type": "httpRequest",
       "typeVersion": 1,
       "position": [
-        700,
-        200
+        896,
+        80
       ],
       "parameters": {
         "method": "GET",
-        "url": "=https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/{{$json.trade_date}}?adjusted=true&apiKey={{$credentials.httpHeaderAuth.value}}",
+        "url": "=https://api.massive.com/v2/aggs/grouped/locale/us/market/stocks/{{$json.trade_date}}?adjusted=true&apiKey={{$credentials.massive_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -68,12 +66,17 @@
       "type": "postgres",
       "typeVersion": 1,
       "position": [
-        700,
-        450
+        896,
+        240
       ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT ticker FROM tickers WHERE is_active=true"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "DG4o4-9kIMbeDuq6vfjfk"
+        }
       }
     },
     {
@@ -82,8 +85,8 @@
       "type": "code",
       "typeVersion": 1,
       "position": [
-        1000,
-        300
+        1104,
+        160
       ],
       "parameters": {
         "language": "javaScript",
@@ -97,12 +100,17 @@
       "type": "postgres",
       "typeVersion": 1,
       "position": [
-        1300,
-        300
+        1296,
+        160
       ],
       "parameters": {
         "operation": "executeSql",
         "query": "INSERT INTO daily_prices (ticker,price_date,open_price,high_price,low_price,close_price,adj_close,volume) VALUES ('{{$json.ticker}}','{{$json.price_date}}',{{$json.open_price}},{{$json.high_price}},{{$json.low_price}},{{$json.close_price}},{{$json.adj_close}},{{$json.volume}}) ON CONFLICT (ticker,price_date) DO UPDATE SET open_price=EXCLUDED.open_price,high_price=EXCLUDED.high_price,low_price=EXCLUDED.low_price,close_price=EXCLUDED.close_price,volume=EXCLUDED.volume;"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "DG4o4-9kIMbeDuq6vfjfk"
+        }
       }
     }
   ],

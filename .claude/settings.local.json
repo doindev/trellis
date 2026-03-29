@@ -173,7 +173,10 @@
       "Bash(grep -c '\"\"type\"\":\"\"tool_use\"\"' \"/c/Users/timhj/AppData/Local/Temp/claude/C--Users-timhj-eclipse-workspace-Cwc/385a0633-c97a-4be4-94a0-ae08fc316606/tasks/ac71fe99cc8ab242a.output\")",
       "Read(//c/tmp/**)",
       "mcp__cwc-agent__cwc_list_executions",
-      "mcp__cwc-agent__cwc_get_execution"
+      "mcp__cwc-agent__cwc_get_execution",
+      "WebFetch(domain:massive.com)",
+      "WebFetch(domain:financialmodelingprep.com)",
+      "WebFetch(domain:site.financialmodelingprep.com)"
     ]
   }
 }

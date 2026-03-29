@@ -1,8 +1,6 @@
 {
-  "configId": "sector-rotation-tracker",
   "name": "Sector Rotation Tracker",
   "description": "Weekly (Monday 7 AM ET): Fetches sector ETF performance, stores in sector_performance table for rotation analysis.",
-  "type": "WORKFLOW",
   "nodes": [
     {
       "id": "trigger1",
@@ -30,7 +28,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "=https://financialmodelingprep.com/api/v3/sector-performance?apikey={{$credentials.httpHeaderAuth.value}}",
+        "url": "=https://financialmodelingprep.com/stable/sector-performance-snapshot?date={{$today}}&apikey={{$credentials.fmp_api_key.value}}",
         "authentication": "none"
       }
     },
@@ -61,6 +59,11 @@
       "parameters": {
         "operation": "executeSql",
         "query": "INSERT INTO sector_performance (sector,perf_date,daily_return) VALUES ('{{$json.sector}}','{{$json.perf_date}}',{{$json.daily_return}}) ON CONFLICT (sector,perf_date) DO UPDATE SET daily_return=EXCLUDED.daily_return;"
+      },
+      "credentials": {
+        "postgresApi": {
+          "id": "tS4_hUA3k4_Re6yubf0CB"
+        }
       }
     }
   ],
