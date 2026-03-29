@@ -159,10 +159,12 @@ public class ConfigExportService {
             wf.setPublished(w.isPublished() ? true : null);
             wf.setIcon(w.getIcon());
 
-            // Convert credential IDs to refs in nodes
+            // Convert credential IDs and agent definition IDs to portable refs in nodes
             if (w.getNodes() instanceof List) {
                 List<Map<String, Object>> nodes = (List<Map<String, Object>>) w.getNodes();
-                wf.setNodes(convertCredentialIdsToRefs(nodes, projectId));
+                nodes = convertCredentialIdsToRefs(nodes, projectId);
+                nodes = convertAgentDefinitionIdsToConfigIds(nodes);
+                wf.setNodes(nodes);
             }
 
             if (w.getConnections() instanceof Map) {
@@ -210,6 +212,38 @@ public class ConfigExportService {
                     }
                 }
                 copy.put("credentials", credMap);
+            }
+            result.add(copy);
+        }
+        return result;
+    }
+
+    /**
+     * Converts agentDefinitionId database IDs to stable configIds in aiAgent node parameters.
+     * This makes exported workflows portable across database restarts.
+     */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> convertAgentDefinitionIdsToConfigIds(List<Map<String, Object>> nodes) {
+        // Build id -> configId lookup for all AGENT-type workflows
+        Map<String, String> idToConfigId = new HashMap<>();
+        for (WorkflowEntity agent : workflowRepository.findAll()) {
+            if ("AGENT".equals(agent.getType())) {
+                String configId = agent.getConfigId() != null ? agent.getConfigId() : slugify(agent.getName());
+                idToConfigId.put(agent.getId(), configId);
+            }
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> node : nodes) {
+            Map<String, Object> copy = new LinkedHashMap<>(node);
+            Object params = copy.get("parameters");
+            if (params instanceof Map) {
+                Map<String, Object> paramMap = new LinkedHashMap<>((Map<String, Object>) params);
+                Object agentDefId = paramMap.get("agentDefinitionId");
+                if (agentDefId instanceof String id && idToConfigId.containsKey(id)) {
+                    paramMap.put("agentDefinitionId", idToConfigId.get(id));
+                    copy.put("parameters", paramMap);
+                }
             }
             result.add(copy);
         }

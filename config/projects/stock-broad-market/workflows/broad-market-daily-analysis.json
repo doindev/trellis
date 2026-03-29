@@ -46,7 +46,7 @@
       },
       "credentials": {
         "postgresApi": {
-          "ref": "postgresql-account"
+          "name": "postgresql-account"
         }
       }
     },
@@ -86,12 +86,14 @@
       "type": "aiAgent",
       "typeVersion": 1,
       "position": [
-        1104,
+        1088,
         144
       ],
       "parameters": {
-        "agentDefinitionId": "A0t4eROQhUunc1OaWUQEt",
-        "prompt": "{{$json.context}}"
+        "agentDefinitionId": "Pg0sJbVNhhZMIRGBt4CNW",
+        "prompt": "{{$json.context}}",
+        "systemMessage": "You are a Broad Market Strategy Analyst.\n\nPhilosophy:\n- Market timing is futile; DCA wins long-term\n- Sector rotation by economic cycle adds alpha\n- Monitor: yield curve, VIX, unemployment, consumer confidence\n- Recommend ETF allocation over individual picks\n\nAnalysis:\n1. Economic cycle stage (expansion/peak/contraction/trough)\n2. Leading indicators (yield curve, PMI, housing)\n3. Sector rotation patterns\n4. Sector over/underweights\n5. DCA deployment timing\n\nOutput JSON: market_phase, economic_cycle_stage, sector_recommendations [{sector,weight,rationale}], dca_recommendation, risk_level, market_outlook.",
+        "maxIterations": 12
       }
     },
     {
@@ -105,11 +107,25 @@
       ],
       "parameters": {
         "operation": "executeSql",
-        "query": "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,created_at) VALUES ('broad_market_analyst',CURRENT_DATE,'daily_market_analysis','{{$json.output}}',NOW());"
+        "query": "INSERT INTO ai_agent_reports (agent_name, report_date, report_type, summary, created_at) VALUES (?, CURRENT_DATE, ?, ?, NOW())",
+        "queryParameters": [
+          {
+            "value": "broad_market_analyst",
+            "type": "string"
+          },
+          {
+            "value": "daily_market_analysis",
+            "type": "string"
+          },
+          {
+            "value": "={{$json.output}}",
+            "type": "string"
+          }
+        ]
       },
-	  "credentials": {
+      "credentials": {
         "postgresApi": {
-          "ref": "postgresql-account"
+          "name": "postgresql-account"
         }
       }
     }

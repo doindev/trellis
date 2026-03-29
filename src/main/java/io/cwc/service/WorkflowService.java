@@ -171,6 +171,7 @@ public class WorkflowService {
 
         Object nodes = ensureNodeIds(request.getNodes());
         nodes = resolveNodeCredentialRefs(nodes, projectId);
+        nodes = resolveAgentDefinitionRefs(nodes);
         var builder = WorkflowEntity.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -212,6 +213,7 @@ public class WorkflowService {
         if (request.getNodes() != null) {
             Object updatedNodes = ensureNodeIds(request.getNodes());
             updatedNodes = resolveNodeCredentialRefs(updatedNodes, entity.getProjectId());
+            updatedNodes = resolveAgentDefinitionRefs(updatedNodes);
             entity.setNodes(updatedNodes);
         }
         if (request.getConnections() != null) entity.setConnections(request.getConnections());
@@ -704,6 +706,35 @@ public class WorkflowService {
      * Resolves portable credential references ({ref: "..."} or {name: "..."}) in workflow nodes
      * to actual database IDs. This handles imported workflows where credential IDs are not yet resolved.
      */
+    /**
+     * Resolves agentDefinitionId configId references to database IDs in aiAgent node parameters.
+     * If the value is already a valid DB ID, it's left unchanged (backward compat).
+     */
+    @SuppressWarnings("unchecked")
+    private Object resolveAgentDefinitionRefs(Object nodesObj) {
+        if (!(nodesObj instanceof List<?> nodeList)) return nodesObj;
+
+        for (Object item : nodeList) {
+            if (!(item instanceof Map<?, ?> nodeMap)) continue;
+            Object params = ((Map<String, Object>) nodeMap).get("parameters");
+            if (!(params instanceof Map)) continue;
+
+            Map<String, Object> paramMap = (Map<String, Object>) params;
+            Object agentDefId = paramMap.get("agentDefinitionId");
+            if (agentDefId instanceof String configIdOrDbId && !configIdOrDbId.isBlank()) {
+                // Check if already a valid DB ID
+                if (workflowRepository.findById(configIdOrDbId).isEmpty()) {
+                    // Not a DB ID — try to resolve as configId
+                    workflowRepository.findAll().stream()
+                            .filter(w -> "AGENT".equals(w.getType()) && configIdOrDbId.equals(w.getConfigId()))
+                            .findFirst()
+                            .ifPresent(agent -> paramMap.put("agentDefinitionId", agent.getId()));
+                }
+            }
+        }
+        return nodesObj;
+    }
+
     @SuppressWarnings("unchecked")
     private Object resolveNodeCredentialRefs(Object nodesObj, String projectId) {
         if (!(nodesObj instanceof List<?> nodeList) || projectId == null) return nodesObj;

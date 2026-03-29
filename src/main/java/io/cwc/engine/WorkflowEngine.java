@@ -1439,8 +1439,14 @@ public class WorkflowEngine {
         }
 
         // --- Execute predefined agent's sub-nodes to produce AI data ---
-        // Load the full agent workflow to get all nodes and connections
+        // Load the full agent workflow — try by DB ID first, then by configId (for portable configs)
         var agentEntity = workflowRepository.findById(agentDefinitionId).orElse(null);
+        if (agentEntity == null) {
+            // Fallback: resolve as configId
+            agentEntity = workflowRepository.findAll().stream()
+                    .filter(w -> "AGENT".equals(w.getType()) && agentDefinitionId.equals(w.getConfigId()))
+                    .findFirst().orElse(null);
+        }
         if (agentEntity == null) return workflowAiInputs;
 
         Object nodesObj = agentEntity.getNodes();

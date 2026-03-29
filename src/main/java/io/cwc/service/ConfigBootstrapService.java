@@ -636,9 +636,10 @@ public class ConfigBootstrapService {
             WorkflowEntity existing = workflowRepository.findByProjectIdAndConfigId(projectId, configId)
                     .orElse(null);
 
-            // Resolve credential refs in nodes
+            // Resolve credential refs and agent definition refs in nodes
             List<Map<String, Object>> resolvedNodes = resolveCredentialRefs(
                     wfConfig.getNodes(), credRefToDbId, projectId, configId, result);
+            resolvedNodes = resolveAgentDefinitionRefs(resolvedNodes);
 
             if (existing != null && mode == ConfigMode.SEED) {
                 result.setWorkflowsSkipped(result.getWorkflowsSkipped() + 1);
@@ -768,6 +769,41 @@ public class ConfigBootstrapService {
             resolved.add(copy);
         }
         return resolved;
+    }
+
+    /**
+     * Resolves agentDefinitionId configId references in aiAgent node parameters to database IDs.
+     * If the value is already a valid DB ID, it's left unchanged (backward compat).
+     */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> resolveAgentDefinitionRefs(List<Map<String, Object>> nodes) {
+        if (nodes == null) return List.of();
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> node : nodes) {
+            Map<String, Object> copy = new LinkedHashMap<>(node);
+            Object params = copy.get("parameters");
+            if (params instanceof Map) {
+                Map<String, Object> paramMap = (Map<String, Object>) params;
+                Object agentDefId = paramMap.get("agentDefinitionId");
+                if (agentDefId instanceof String configIdOrDbId && !configIdOrDbId.isBlank()) {
+                    // Check if it's already a valid DB ID
+                    if (workflowRepository.findById(configIdOrDbId).isEmpty()) {
+                        // Not a DB ID — try to resolve as configId
+                        workflowRepository.findAll().stream()
+                                .filter(w -> "AGENT".equals(w.getType()) && configIdOrDbId.equals(w.getConfigId()))
+                                .findFirst()
+                                .ifPresent(agent -> {
+                                    Map<String, Object> newParams = new LinkedHashMap<>(paramMap);
+                                    newParams.put("agentDefinitionId", agent.getId());
+                                    copy.put("parameters", newParams);
+                                });
+                    }
+                }
+            }
+            result.add(copy);
+        }
+        return result;
     }
 
     // ---- Logging ----
