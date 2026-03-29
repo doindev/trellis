@@ -37,14 +37,14 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 public class AiSubAgentNode extends AbstractAiSubNode {
 
 	/**
-	 * Custom agent interface with explicit @UserMessage so LangChain4j knows
-	 * how to construct the user message from the input map.
+	 * Sub-agent interface that accepts a String request from the supervisor.
+	 * The supervisor's @V("request") scope key passes a String, so the sub-agent
+	 * must accept String (not Map) to avoid type conflicts.
 	 */
-	public interface SubAgentService extends UntypedAgent {
-		@Override
+	public interface SubAgentService {
 		@dev.langchain4j.agentic.Agent
-		@dev.langchain4j.service.UserMessage("{{input}}")
-		Object invoke(@dev.langchain4j.service.V("input") Map<String, Object> input);
+		@dev.langchain4j.service.UserMessage("{{request}}")
+		String invoke(@dev.langchain4j.service.V("request") String request);
 	}
 
 	@Override
@@ -144,10 +144,18 @@ public class AiSubAgentNode extends AbstractAiSubNode {
 	}
 
 	/**
-	 * Check if an object is a langchain4j agentic agent (UntypedAgent or SupervisorAgent).
+	 * Check if an object is a langchain4j agentic agent (UntypedAgent, SupervisorAgent, or SubAgentService proxy).
 	 */
 	static boolean isAgenticAgent(Object obj) {
-		return obj instanceof UntypedAgent || obj instanceof SupervisorAgent;
+		if (obj instanceof UntypedAgent || obj instanceof SupervisorAgent || obj instanceof SubAgentService) {
+			return true;
+		}
+		// Also check for InternalAgent interface (added by AgentBuilder proxy)
+		try {
+			return Class.forName("dev.langchain4j.agentic.internal.InternalAgent").isInstance(obj);
+		} catch (ClassNotFoundException e) {
+			return false;
+		}
 	}
 
 	@Override

@@ -176,7 +176,16 @@
       "mcp__cwc-agent__cwc_get_execution",
       "WebFetch(domain:massive.com)",
       "WebFetch(domain:financialmodelingprep.com)",
-      "WebFetch(domain:site.financialmodelingprep.com)"
+      "WebFetch(domain:site.financialmodelingprep.com)",
+      "Bash(jar_file=/c/Users/timhj/.m2/repository/dev/langchain4j/langchain4j-agentic-patterns/1.12.2-beta22/langchain4j-agentic-patterns-1.12.2-beta22-sources.jar)",
+      "Bash(jar_file=/c/Users/timhj/.m2/repository/dev/langchain4j/langchain4j-agentic/1.12.2-beta22/langchain4j-agentic-1.12.2-beta22-sources.jar)",
+      "Bash(unzip -p $jar_file dev/langchain4j/agentic/supervisor/SupervisorAgent.java)",
+      "Bash(unzip -p $jar_file dev/langchain4j/agentic/supervisor/SupervisorAgentServiceImpl.java)",
+      "Bash(unzip -p $jar_file dev/langchain4j/agentic/internal/AgentUtil.java)",
+      "Bash(unzip -p \"$jar_file\" \"dev/langchain4j/agentic/supervisor/AgentInvocation.java\")",
+      "Bash(unzip -p $jar_file dev/langchain4j/agentic/scope/JacksonAgenticScopeJsonCodec.java)",
+      "Bash(unzip -p $jar_file dev/langchain4j/agentic/supervisor/SupervisorPlanner.java)",
+      "Bash(unzip -p \"$jar_file\" \"dev/langchain4j/agentic/supervisor/PlannerAgent.java\")"
     ]
   }
 }

@@ -4,14 +4,18 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.supervisor.SupervisorAgent;
 import dev.langchain4j.agentic.supervisor.SupervisorResponseStrategy;
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolExecutor;
 import io.cwc.nodes.annotation.Node;
@@ -65,13 +69,41 @@ public class AiAgentNode extends AbstractNode {
 		}
 	}
 
+	/**
+	 * Wraps a ChatModel to strip markdown code fences from AI responses.
+	 * Some models (especially smaller/local ones like Ollama) wrap JSON in ```json ... ```
+	 * which breaks LangChain4j's AgentInvocation parser.
+	 */
+	private static final Pattern MARKDOWN_FENCE = Pattern.compile("^\\s*```(?:json)?\\s*\\n?(.*?)\\n?\\s*```\\s*$", Pattern.DOTALL);
+
+	private static ChatModel stripMarkdownFences(ChatModel delegate) {
+		return new ChatModel() {
+			@Override
+			public ChatResponse chat(ChatRequest request) {
+				ChatResponse response = delegate.chat(request);
+				AiMessage ai = response.aiMessage();
+				if (ai != null && ai.text() != null) {
+					var matcher = MARKDOWN_FENCE.matcher(ai.text());
+					if (matcher.matches()) {
+						String cleaned = matcher.group(1).trim();
+						return ChatResponse.builder()
+								.aiMessage(AiMessage.from(cleaned))
+								.metadata(response.metadata())
+								.build();
+					}
+				}
+				return response;
+			}
+		};
+	}
+
 	private NodeExecutionResult executeSupervisor(NodeExecutionContext context, ChatModel model,
 			ChatMemory memory, Map<ToolSpecification, ToolExecutor> toolMap,
 			List<Object> subAgents, String systemMessageText,
 			String promptTemplate, int maxIterations) {
 
 		var supervisorBuilder = AgenticServices.supervisorBuilder()
-				.chatModel(model)
+				.chatModel(stripMarkdownFences(model))
 				.maxAgentsInvocations(maxIterations)
 				.responseStrategy(SupervisorResponseStrategy.SUMMARY);
 
