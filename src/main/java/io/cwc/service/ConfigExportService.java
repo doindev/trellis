@@ -145,42 +145,50 @@ public class ConfigExportService {
         return config;
     }
 
+    /**
+     * Exports a single workflow as a WorkflowConfigFile with portable credential/agent refs.
+     */
+    public WorkflowConfigFile exportSingleWorkflow(String projectId, String workflowId) {
+        WorkflowEntity w = workflowRepository.findById(workflowId)
+                .orElseThrow(() -> new io.cwc.exception.NotFoundException("Workflow not found: " + workflowId));
+        return buildSingleWorkflowConfig(w, projectId);
+    }
+
     @SuppressWarnings("unchecked")
+    private WorkflowConfigFile buildSingleWorkflowConfig(WorkflowEntity w, String projectId) {
+        WorkflowConfigFile wf = new WorkflowConfigFile();
+        wf.setConfigId(w.getConfigId() != null ? w.getConfigId() : slugify(w.getName()));
+        wf.setName(w.getName());
+        wf.setDescription(w.getDescription());
+        wf.setType(w.getType());
+        wf.setPublished(w.isPublished() ? true : null);
+        wf.setIcon(w.getIcon());
+
+        if (w.getNodes() instanceof List) {
+            List<Map<String, Object>> nodes = (List<Map<String, Object>>) w.getNodes();
+            nodes = convertCredentialIdsToRefs(nodes, projectId);
+            nodes = convertAgentDefinitionIdsToConfigIds(nodes);
+            wf.setNodes(nodes);
+        }
+        if (w.getConnections() instanceof Map) {
+            wf.setConnections((Map<String, Object>) w.getConnections());
+        }
+        if (w.getSettings() instanceof Map) {
+            wf.setSettings((Map<String, Object>) w.getSettings());
+        }
+        if (w.isMcpEnabled()) wf.setMcpEnabled(true);
+        if (w.getMcpDescription() != null) wf.setMcpDescription(w.getMcpDescription());
+        if (w.getMcpInputSchema() != null) wf.setMcpInputSchema(w.getMcpInputSchema());
+        if (w.getMcpOutputSchema() != null) wf.setMcpOutputSchema(w.getMcpOutputSchema());
+        if (w.isSwaggerEnabled()) wf.setSwaggerEnabled(true);
+        return wf;
+    }
+
     private List<WorkflowConfigFile> buildWorkflowConfigs(String projectId) {
         List<WorkflowConfigFile> workflows = new ArrayList<>();
         for (WorkflowEntity w : workflowRepository.findByProjectId(projectId)) {
             if (w.isArchived()) continue;
-
-            WorkflowConfigFile wf = new WorkflowConfigFile();
-            wf.setConfigId(w.getConfigId() != null ? w.getConfigId() : slugify(w.getName()));
-            wf.setName(w.getName());
-            wf.setDescription(w.getDescription());
-            wf.setType(w.getType());
-            wf.setPublished(w.isPublished() ? true : null);
-            wf.setIcon(w.getIcon());
-
-            // Convert credential IDs and agent definition IDs to portable refs in nodes
-            if (w.getNodes() instanceof List) {
-                List<Map<String, Object>> nodes = (List<Map<String, Object>>) w.getNodes();
-                nodes = convertCredentialIdsToRefs(nodes, projectId);
-                nodes = convertAgentDefinitionIdsToConfigIds(nodes);
-                wf.setNodes(nodes);
-            }
-
-            if (w.getConnections() instanceof Map) {
-                wf.setConnections((Map<String, Object>) w.getConnections());
-            }
-            if (w.getSettings() instanceof Map) {
-                wf.setSettings((Map<String, Object>) w.getSettings());
-            }
-
-            if (w.isMcpEnabled()) wf.setMcpEnabled(true);
-            if (w.getMcpDescription() != null) wf.setMcpDescription(w.getMcpDescription());
-            if (w.getMcpInputSchema() != null) wf.setMcpInputSchema(w.getMcpInputSchema());
-            if (w.getMcpOutputSchema() != null) wf.setMcpOutputSchema(w.getMcpOutputSchema());
-            if (w.isSwaggerEnabled()) wf.setSwaggerEnabled(true);
-
-            workflows.add(wf);
+            workflows.add(buildSingleWorkflowConfig(w, projectId));
         }
         return workflows;
     }

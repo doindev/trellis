@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.cwc.config.CwcProperties;
 import io.cwc.dto.*;
 import io.cwc.engine.TriggerSchedulerService;
 import io.cwc.entity.CredentialEntity;
@@ -64,12 +65,16 @@ public class WorkflowService {
     private final UserRepository userRepository;
     private final CredentialRepository credentialRepository;
     private final SecurityContextHelper securityContextHelper;
+    private final CwcProperties cwcProperties;
 
     @Setter(onMethod_ = {@Autowired, @Lazy})
     private TriggerSchedulerService triggerSchedulerService;
 
     @Setter(onMethod_ = {@Autowired, @Lazy})
     private ClusterSyncService clusterSyncService;
+
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private ConfigWritebackService configWritebackService;
 
     // --- Access control helpers ---
 
@@ -112,8 +117,15 @@ public class WorkflowService {
     private void checkPublishAccess(WorkflowEntity workflow) {
         String userId = securityContextHelper.getCurrentUserId();
         ProjectRole role = getProjectRole(workflow.getProjectId(), userId);
-        if (role == ProjectRole.PROJECT_PERSONAL_OWNER || role == ProjectRole.PROJECT_ADMIN || role == ProjectRole.PROJECT_EDITOR) {
+        if (role == ProjectRole.PROJECT_PERSONAL_OWNER || role == ProjectRole.PROJECT_ADMIN) {
             return;
+        }
+        if (role == ProjectRole.PROJECT_EDITOR) {
+            if (cwcProperties.isAllowNonOwnerChanges()) {
+                return;
+            }
+            throw new ForbiddenException("Publishing is restricted to project owners and admins. "
+                    + "Contact your admin or set cwc.allow-non-owner-changes=true.");
         }
         throw new ForbiddenException("You do not have permission to publish this workflow");
     }
@@ -316,6 +328,7 @@ public class WorkflowService {
         webhookService.registerWorkflowWebhooks(entity);
         triggerSchedulerService.registerWorkflowTriggers(entity);
         clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_TRIGGERS);
+        configWritebackService.writeWorkflow(entity.getProjectId(), id);
         log.info("Published workflow: {} ({}) as {}", entity.getName(), id, versionName);
 
         return toResponse(entity);
@@ -409,6 +422,7 @@ public class WorkflowService {
         webhookService.registerWorkflowWebhooks(entity);
         triggerSchedulerService.registerWorkflowTriggers(entity);
         clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_TRIGGERS);
+        configWritebackService.writeWorkflow(entity.getProjectId(), workflowId);
         log.info("Published workflow {} ({}) from version {} as {}", entity.getName(), workflowId, versionId, versionName);
         return toResponse(entity);
     }

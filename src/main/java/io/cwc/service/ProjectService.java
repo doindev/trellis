@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cwc.config.CwcConfigProperties;
 import io.cwc.dto.*;
 import io.cwc.entity.*;
 import io.cwc.entity.ProjectEntity.ProjectType;
@@ -14,7 +15,10 @@ import io.cwc.exception.NotFoundException;
 import io.cwc.repository.*;
 import io.cwc.util.SecurityContextHelper;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +47,9 @@ public class ProjectService {
     private final WebhookService webhookService;
     private final SecurityContextHelper securityContextHelper;
     private final ObjectMapper objectMapper;
+
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private ConfigWritebackService configWritebackService;
 
     // --- Access control helpers ---
 
@@ -133,12 +140,14 @@ public class ProjectService {
                     log.warn("Failed to re-register webhooks after context path change for project {}: {}", id, ex.getMessage());
                 }
                 log.info("Updated project: {} ({}) — context path changed to '{}'", entity.getName(), id, newContextPath);
+                configWritebackService.writeProjectSettings(id);
                 return toDetailResponse(entity);
             }
         }
 
         entity = projectRepository.save(entity);
         log.info("Updated project: {} ({})", entity.getName(), id);
+        configWritebackService.writeProjectSettings(id);
         return toDetailResponse(entity);
     }
 

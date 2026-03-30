@@ -11,6 +11,9 @@ public class CwcProperties {
     @Value("${cwc.context-path:/}")
     private String contextPath;
 
+    @Value("${cwc.allow-non-owner-changes:false}")
+    private boolean allowNonOwnerChanges;
+
     private String normalizedPath;
 
     @PostConstruct
@@ -40,5 +43,10 @@ public class CwcProperties {
     /** True when CWC is served at the root ("/"). */
     public boolean isRootContext() {
         return normalizedPath.isEmpty();
+    }
+
+    /** True when non-owner users are allowed to make and deploy changes from the UI. */
+    public boolean isAllowNonOwnerChanges() {
+        return allowNonOwnerChanges;
     }
 }

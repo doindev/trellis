@@ -3,7 +3,10 @@ package io.cwc.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +50,9 @@ public class ConfigBootstrapService {
     private final ProjectRelationRepository projectRelationRepository;
     private final WebhookService webhookService;
     private final ClusterSyncService clusterSyncService;
+
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private ProjectGitService projectGitService;
 
     private final ReentrantLock reloadLock = new ReentrantLock();
     private final AtomicBoolean bootstrapComplete = new AtomicBoolean(false);
@@ -335,6 +341,29 @@ public class ConfigBootstrapService {
                     } catch (Exception e) {
                         result.addWarning("Failed to apply MCP endpoint '" + epConfig.getName() + "': " + e.getMessage());
                     }
+                }
+            }
+        }
+
+        // Apply per-project git repos
+        if (settings.getGitRepos() != null && projectGitService != null) {
+            for (var gitRepo : settings.getGitRepos()) {
+                if (gitRepo.getUrl() == null || gitRepo.getUrl().isBlank()) continue;
+                try {
+                    String branch = gitRepo.getBranch() != null ? gitRepo.getBranch() : "main";
+                    ConfigReloadResult gitResult = projectGitService.importFromGitRepo(
+                            gitRepo.getUrl(), branch, gitRepo.getToken(),
+                            "github", null, mode.name().toLowerCase());
+                    result.setProjectsCreated(result.getProjectsCreated() + gitResult.getProjectsCreated());
+                    result.setProjectsUpdated(result.getProjectsUpdated() + gitResult.getProjectsUpdated());
+                    result.setWorkflowsCreated(result.getWorkflowsCreated() + gitResult.getWorkflowsCreated());
+                    result.setWorkflowsUpdated(result.getWorkflowsUpdated() + gitResult.getWorkflowsUpdated());
+                    log.info("Applied git repo '{}' from settings: {} projects, {} workflows",
+                            gitRepo.getConfigId(), gitResult.getProjectsCreated() + gitResult.getProjectsUpdated(),
+                            gitResult.getWorkflowsCreated() + gitResult.getWorkflowsUpdated());
+                } catch (Exception e) {
+                    result.addWarning("Failed to import git repo '" + gitRepo.getConfigId() + "': " + e.getMessage());
+                    log.warn("Failed to import git repo '{}': {}", gitRepo.getConfigId(), e.getMessage());
                 }
             }
         }

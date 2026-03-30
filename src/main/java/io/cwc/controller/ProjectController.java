@@ -6,12 +6,16 @@ import org.springframework.web.bind.annotation.*;
 
 import io.cwc.config.ProjectContextPathFilter;
 import io.cwc.dto.*;
+import io.cwc.entity.ProjectSourceControlEntity;
 import io.cwc.service.ClusterSyncService;
 import io.cwc.service.McpSettingsService;
+import io.cwc.service.ProjectGitService;
 import io.cwc.service.ProjectService;
 import io.cwc.service.CwcMcpServerManager;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -23,6 +27,7 @@ public class ProjectController {
     private final CwcMcpServerManager mcpServerManager;
     private final McpSettingsService mcpSettingsService;
     private final ClusterSyncService clusterSyncService;
+    private final ProjectGitService projectGitService;
 
     @GetMapping
     public List<ProjectResponse> list() {
@@ -100,5 +105,51 @@ public class ProjectController {
             return McpEndpointDto.builder().enabled(false).transport(request.getTransport()).build();
         }
         return dto;
+    }
+
+    // --- Source Control ---
+
+    @GetMapping("/{id}/source-control")
+    public Map<String, Object> getSourceControl(@PathVariable String id) {
+        ProjectSourceControlEntity sc = projectGitService.getLink(id);
+        if (sc == null) {
+            return Map.of("connected", false);
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("connected", true);
+        result.put("provider", sc.getProvider());
+        result.put("repoUrl", sc.getRepoUrl());
+        result.put("branch", sc.getBranch());
+        result.put("lastSyncAt", sc.getLastSyncAt() != null ? sc.getLastSyncAt().toString() : null);
+        result.put("lastSyncStatus", sc.getLastSyncStatus());
+        result.put("lastSyncError", sc.getLastSyncError());
+        return result;
+    }
+
+    @PutMapping("/{id}/source-control")
+    public Map<String, Object> updateSourceControl(@PathVariable String id,
+                                                    @RequestBody GitImportRequest request) {
+        projectGitService.linkRepo(id, request.getRepoUrl(), request.getBranch(),
+                request.getToken(), request.getProvider());
+        return getSourceControl(id);
+    }
+
+    @DeleteMapping("/{id}/source-control")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteSourceControl(@PathVariable String id) {
+        projectGitService.unlinkRepo(id);
+    }
+
+    @PostMapping("/{id}/source-control/sync")
+    public ConfigReloadResult syncSourceControl(@PathVariable String id) {
+        return projectGitService.syncProject(id);
+    }
+
+    @PostMapping("/{id}/source-control/push")
+    public Map<String, String> pushSourceControl(@PathVariable String id,
+                                                  @RequestBody(required = false) Map<String, String> request) {
+        String commitMessage = request != null ? request.get("commitMessage") : null;
+        String targetBranch = request != null ? request.get("targetBranch") : null;
+        return projectGitService.pushProject(id, commitMessage, targetBranch);
     }
 }

@@ -69,6 +69,7 @@ public class SettingsController {
         if (supportEmail != null && !supportEmail.isBlank()) {
             settings.put("supportEmail", supportEmail);
         }
+        settings.put("allowNonOwnerChanges", cwcProperties.isAllowNonOwnerChanges());
         return settings;
     }
 

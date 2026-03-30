@@ -13,6 +13,7 @@ import io.cwc.config.CwcConfigProperties.ConfigMode;
 import io.cwc.dto.*;
 import io.cwc.service.ConfigBootstrapService;
 import io.cwc.service.ConfigExportService;
+import io.cwc.service.ProjectGitService;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,6 +29,7 @@ public class ProjectImportController {
 
     private final ConfigBootstrapService configBootstrapService;
     private final ConfigExportService configExportService;
+    private final ProjectGitService projectGitService;
     private final ObjectMapper objectMapper;
 
     /**
@@ -53,6 +55,16 @@ public class ProjectImportController {
             // Cleanup temp files
             deleteRecursively(tempDir);
         }
+    }
+
+    /**
+     * Import projects/workflows from a git repository URL.
+     */
+    @PostMapping("/api/projects/import-git")
+    public ConfigReloadResult importFromGit(@RequestBody GitImportRequest request) {
+        return projectGitService.importFromGitRepo(
+                request.getRepoUrl(), request.getBranch(), request.getToken(),
+                request.getProvider(), request.getSubPath(), request.getMode());
     }
 
     /**

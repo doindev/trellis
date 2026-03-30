@@ -1,6 +1,8 @@
 package io.cwc.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,11 +13,17 @@ import io.cwc.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ProjectService projectService;
+
+    public UserService(UserRepository userRepository, @Lazy ProjectService projectService) {
+        this.userRepository = userRepository;
+        this.projectService = projectService;
+    }
 
     public List<UserEntity> listUsers() {
         return userRepository.findAll();
@@ -37,7 +45,10 @@ public class UserService {
 
     @Transactional
     public UserEntity createUser(UserEntity user) {
-        return userRepository.save(user);
+        UserEntity saved = userRepository.save(user);
+        projectService.createPersonalProject(saved.getId());
+        log.info("Created user {} with personal project", saved.getEmail());
+        return saved;
     }
 
     @Transactional

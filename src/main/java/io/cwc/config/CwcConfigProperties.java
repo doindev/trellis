@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Parses cwc.config.paths and cwc.config.mode properties for the config bootstrap system.
@@ -20,11 +21,14 @@ import java.util.List;
 @Getter
 public class CwcConfigProperties {
 
-    @Value("${cwc.config.paths:}")
+    @Value("${cwc.config.paths:.cwc}")
     private String rawPaths;
 
     @Value("${cwc.config.mode:seed}")
     private String rawMode;
+
+    @Value("${cwc.config.writeback:false}")
+    private boolean writeback;
 
     private List<Path> configPaths;
     private ConfigMode configMode;
@@ -65,6 +69,20 @@ public class CwcConfigProperties {
      */
     public boolean isEnabled() {
         return !configPaths.isEmpty();
+    }
+
+    /**
+     * Returns true if filesystem writeback is enabled.
+     */
+    public boolean isWritebackEnabled() {
+        return writeback && getWritablePath().isPresent();
+    }
+
+    /**
+     * Returns the first config path as the writable target for filesystem writeback.
+     */
+    public Optional<Path> getWritablePath() {
+        return configPaths.isEmpty() ? Optional.empty() : Optional.of(configPaths.get(0));
     }
 
     /**

@@ -8,10 +8,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import io.cwc.config.CwcConfigProperties.ConfigMode;
+import io.cwc.config.CwcProperties;
 import io.cwc.dto.ConfigReloadResult;
+import io.cwc.exception.ForbiddenException;
+import io.cwc.entity.ProjectRelationEntity;
+import io.cwc.entity.ProjectRelationEntity.ProjectRole;
+import io.cwc.repository.ProjectRelationRepository;
 import io.cwc.service.ConfigBootstrapService;
 import io.cwc.service.GitPushService;
 import io.cwc.service.GitSyncService;
+import io.cwc.util.SecurityContextHelper;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -31,6 +37,9 @@ public class AdminController {
     private final ConfigBootstrapService configBootstrapService;
     private final GitPushService gitPushService;
     private final GitSyncService gitSyncService;
+    private final CwcProperties cwcProperties;
+    private final SecurityContextHelper securityContextHelper;
+    private final ProjectRelationRepository projectRelationRepository;
 
     /**
      * Re-applies config files from cwc.config.paths to the database.
@@ -53,6 +62,15 @@ public class AdminController {
     public Map<String, String> promoteProject(
             @PathVariable String id,
             @RequestBody PromoteRequest request) {
+        if (!cwcProperties.isAllowNonOwnerChanges()) {
+            String userId = securityContextHelper.getCurrentUserId();
+            ProjectRole role = projectRelationRepository.findByProjectIdAndUserId(id, userId)
+                    .map(ProjectRelationEntity::getRole)
+                    .orElse(null);
+            if (role != ProjectRole.PROJECT_PERSONAL_OWNER && role != ProjectRole.PROJECT_ADMIN) {
+                throw new ForbiddenException("Promoting projects requires owner/admin role or cwc.allow-non-owner-changes=true");
+            }
+        }
         return gitPushService.promote(id, request.getTargetBranch(), request.getCommitMessage());
     }
 
