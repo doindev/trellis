@@ -221,23 +221,67 @@ function CwcCanvasInner({
     };
   }, [getViewport, setViewport]);
 
-  // Minimap: hidden by default, shown while panning or hovering the minimap
+  // Minimap: hidden by default, shown while panning/dragging, auto-hides after interaction ends.
+  // Tracks hover and panning separately to avoid race conditions.
   const [isMinimapVisible, setIsMinimapVisible] = useState(false);
   const minimapHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMinimapHovered = useRef(false);
+  const isPanning = useRef(false);
 
-  const showMinimap = useCallback(() => {
+  const clearHideTimeout = useCallback(() => {
     if (minimapHideTimeout.current) {
       clearTimeout(minimapHideTimeout.current);
       minimapHideTimeout.current = null;
     }
-    setIsMinimapVisible(true);
   }, []);
 
-  const hideMinimap = useCallback(() => {
+  const scheduleHide = useCallback(() => {
+    clearHideTimeout();
     minimapHideTimeout.current = setTimeout(() => {
-      setIsMinimapVisible(false);
-    }, 1000);
-  }, []);
+      // Only hide if not hovered and not actively panning
+      if (!isMinimapHovered.current && !isPanning.current) {
+        setIsMinimapVisible(false);
+      }
+    }, 1200);
+  }, [clearHideTimeout]);
+
+  const showMinimap = useCallback(() => {
+    clearHideTimeout();
+    setIsMinimapVisible(true);
+  }, [clearHideTimeout]);
+
+  const onMoveStart = useCallback(() => {
+    isPanning.current = true;
+    showMinimap();
+  }, [showMinimap]);
+
+  const onMoveEnd = useCallback(() => {
+    isPanning.current = false;
+    scheduleHide();
+  }, [scheduleHide]);
+
+  const onMinimapMouseEnter = useCallback(() => {
+    isMinimapHovered.current = true;
+    showMinimap();
+  }, [showMinimap]);
+
+  const onMinimapMouseLeave = useCallback(() => {
+    isMinimapHovered.current = false;
+    scheduleHide();
+  }, [scheduleHide]);
+
+  // Safety net: if mouse leaves the entire canvas wrapper while panning, ensure minimap hides
+  const onCanvasMouseLeave = useCallback(() => {
+    if (isPanning.current) {
+      isPanning.current = false;
+      scheduleHide();
+    }
+  }, [scheduleHide]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => { clearHideTimeout(); };
+  }, [clearHideTimeout]);
 
   // Derive trigger nodes from React Flow state
   const triggerNodes = useMemo(() =>
@@ -712,6 +756,7 @@ function CwcCanvasInner({
         className={crayonMode ? 'crayon-mode' : undefined}
         style={{ width: '100%', height: '100%', opacity: ready ? 1 : 0, transition: 'opacity 300ms ease' }}
         onKeyDown={onKeyDown}
+        onMouseLeave={onCanvasMouseLeave}
         tabIndex={0}
       >
         {/* SVG filter for crayon mode easter egg */}
@@ -746,8 +791,8 @@ function CwcCanvasInner({
           defaultViewport={{ x: 0, y: 0, zoom: 1.2 }}
           minZoom={MIN_ZOOM}
           maxZoom={MAX_ZOOM}
-          onMoveStart={showMinimap}
-          onMoveEnd={hideMinimap}
+          onMoveStart={onMoveStart}
+          onMoveEnd={onMoveEnd}
           panOnScroll
           deleteKeyCode={null}
           proOptions={proOptions}
@@ -766,8 +811,8 @@ function CwcCanvasInner({
             style={{ background: 'hsl(0, 0%, 13%)', transition: 'bottom 0.2s ease', bottom: drawerOffset ? drawerOffset + 10 : undefined }}
             position="bottom-left"
             className={isMinimapVisible ? 'minimap-visible' : 'minimap-hidden'}
-            onMouseEnter={showMinimap}
-            onMouseLeave={hideMinimap}
+            onMouseEnter={onMinimapMouseEnter}
+            onMouseLeave={onMinimapMouseLeave}
           />
           <Panel position="bottom-left" className="canvas-controls-panel" style={drawerOffset ? { bottom: drawerOffset + 10, transition: 'bottom 0.2s ease' } : { transition: 'bottom 0.2s ease' }}>
             <button className="ctrl-btn" onClick={() => zoomOut()} title="Zoom Out (Ctrl+-)">
