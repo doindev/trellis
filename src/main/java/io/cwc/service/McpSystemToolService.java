@@ -718,6 +718,9 @@ public class McpSystemToolService {
         result.put("group", node.getGroup());
         result.put("subtitle", node.getSubtitle());
         result.put("documentationUrl", node.getDocumentationUrl());
+        if (node.getImplementationNotes() != null && !node.getImplementationNotes().isBlank()) {
+            result.put("implementationNotes", node.getImplementationNotes());
+        }
 
         // Serialize parameters, inputs, outputs via ObjectMapper for clean JSON
         result.put("parameters", objectMapper.convertValue(node.getParameters(), List.class));

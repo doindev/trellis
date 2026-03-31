@@ -21,7 +21,10 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 		description = "Execute queries against a CrateDB database",
 		category = "Data & Storage / Databases",
 		icon = "cratedb",
-		credentials = {"crateDbApi"}
+		credentials = {"crateDbApi"},
+		implementationNotes = "Use '?' placeholders in SQL and supply values via queryParameters to prevent SQL injection. " +
+			"Example: query=\"SELECT * FROM users WHERE id = ?\" with queryParameters values=[\"{{$json.userId}}\"]. " +
+			"executeQuery returns rows; executeSql is for INSERT/UPDATE/DELETE."
 )
 public class CrateDbNode extends AbstractDatabaseNode {
 

@@ -62,5 +62,8 @@ public @interface Node {
 	
 	// node group
 	String group() default "";
-	
+
+	// optional implementation notes surfaced when an AI agent requests details about this node
+	String implementationNotes() default "";
+
 }

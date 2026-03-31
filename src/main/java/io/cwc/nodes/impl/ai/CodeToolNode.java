@@ -20,7 +20,10 @@ import java.util.Map;
 		description = "Tool that executes JavaScript or Python code",
 		category = "AI / Tools",
 		icon = "code",
-		searchOnly = true
+		searchOnly = true,
+		implementationNotes = "JavaScript runs on GraalVM which only supports pure ECMAScript (ES2022+). " +
+			"Node.js APIs (require, fs, path, Buffer, process, setTimeout, etc.) are NOT available. " +
+			"Use only standard JS built-ins: JSON, Math, Array, Object, Map, Set, Date, RegExp, Promise, String methods."
 )
 public class CodeToolNode extends AbstractAiToolNode {
 

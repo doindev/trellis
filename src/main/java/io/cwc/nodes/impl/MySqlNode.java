@@ -25,7 +25,10 @@ import lombok.extern.slf4j.Slf4j;
 	description = "Execute queries against a MySQL database.",
 	category = "Data & Storage / Databases",
 	icon = "mysql",
-	credentials = {"mysqlApi"}
+	credentials = {"mysqlApi"},
+	implementationNotes = "Use '?' placeholders in SQL and supply values via queryParameters to prevent SQL injection. " +
+		"Example: query=\"SELECT * FROM users WHERE id = ?\" with queryParameters values=[\"{{$json.userId}}\"]. " +
+		"executeQuery returns rows; executeSql is for INSERT/UPDATE/DELETE."
 )
 public class MySqlNode extends AbstractDatabaseNode implements CacheableNode {
 

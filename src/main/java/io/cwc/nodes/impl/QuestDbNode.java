@@ -21,7 +21,10 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 		description = "Execute queries against a QuestDB database",
 		category = "Data & Storage / Databases",
 		icon = "questdb",
-		credentials = {"questDbApi"}
+		credentials = {"questDbApi"},
+		implementationNotes = "Use '?' placeholders in SQL and supply values via queryParameters to prevent SQL injection. " +
+			"Example: query=\"SELECT * FROM sensors WHERE id = ?\" with queryParameters values=[\"{{$json.sensorId}}\"]. " +
+			"executeQuery returns rows; executeSql is for INSERT/UPDATE/DELETE."
 )
 public class QuestDbNode extends AbstractDatabaseNode {
 

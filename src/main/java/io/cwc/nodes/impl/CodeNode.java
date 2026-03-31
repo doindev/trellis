@@ -32,7 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 	displayName = "Code",
 	description = "Run custom JavaScript or Python code to transform data.",
 	category = "Core",
-	icon = "code"
+	icon = "code",
+	implementationNotes = "JavaScript runs on GraalVM which only supports pure ECMAScript (ES2022+). " +
+		"Node.js APIs (require, fs, path, Buffer, process, setTimeout, etc.) are NOT available. " +
+		"Use only standard JS built-ins: JSON, Math, Array, Object, Map, Set, Date, RegExp, Promise, " +
+		"String methods, etc. For HTTP calls or file I/O, use dedicated nodes instead of code."
 )
 public class CodeNode extends AbstractNode {
 
