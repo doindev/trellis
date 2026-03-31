@@ -1,58 +1,62 @@
 {
-  "configId": "stock-infra",
-  "name": "Stock Research - Market Infrastructure",
-  "type": "TEAM",
-  "contextPath": "stock-infra",
-  "description": "Shared data pipelines: ticker universe management, OHLCV price ingestion, company fundamentals sync, economic indicators, and database schema initialization. Backs all strategy projects via PostgreSQL and Neo4j.",
-  "credentials": [
-    {
-      "ref": "fmp-api-key",
-      "name": "FMP API Key",
-      "type": "httpQueryAuth",
-      "data": {
-        "name": "fmp_api_key",
-        "value": "{{env:fmp.api.key}}"
-      }
-    },
-    {
-      "ref": "massive-api-key",
-      "name": "Massive API Key",
-      "type": "httpQueryAuth",
-      "data": {
-        "name": "apikey",
-        "value": "{{env:massive.api.key}}"
-      }
-    },
-    {
-      "ref": "finnhub-api-key",
-      "name": "Finnhub API Key",
-      "type": "httpQueryAuth",
-      "data": {
-        "name": "finnhub_api_key",
-        "value": "{{env:finnhub.api.key}}"
-      }
-    },
-    {
-      "ref": "fred-api-key",
-      "name": "FRED API Key",
-      "type": "httpQueryAuth",
-      "data": {
-        "name": "fred_api_key",
-        "value": "{{env:fred.api.key}}"
-      }
-    },
-    {
-      "ref": "postgresql-account",
-      "name": "PostgreSQL account",
-      "type": "postgresApi",
-      "data": {
-        "host": "{{env:postgresql.host}}",
-        "port": "{{env:postgresql.port}}",
-        "ssl": "{{env:postgresql.ssl}}",
-        "database": "{{env:postgresql.database}}",
-        "username": "{{env:postgresql.username}}",
-        "password": "{{env:postgresql.password}}"
-      }
+  "configId" : "stock-infra",
+  "name" : "Stock Research - Market Infrastructure",
+  "type" : "TEAM",
+  "contextPath" : "stock-infra",
+  "description" : "Shared data pipelines: ticker universe management, OHLCV price ingestion, company fundamentals sync, economic indicators, and database schema initialization. Backs all strategy projects via PostgreSQL and Neo4j.",
+  "credentials" : [ {
+    "ref" : "neo4j-account",
+    "name" : "Neo4j account",
+    "type" : "neo4j",
+    "data" : {
+      "uri" : "{{env:STOCK_INFRA_NEO4J_ACCOUNT_URI}}",
+      "username" : "{{env:STOCK_INFRA_NEO4J_ACCOUNT_USERNAME}}",
+      "database" : "{{env:STOCK_INFRA_NEO4J_ACCOUNT_DATABASE}}",
+      "password" : "{{env:STOCK_INFRA_NEO4J_ACCOUNT_PASSWORD}}"
     }
-  ]
+  }, {
+    "ref" : "finnhub-api-key",
+    "name" : "Finnhub API Key",
+    "type" : "httpQueryAuth",
+    "data" : {
+      "name" : "finnhub_api_key",
+      "value" : "{{env:finnhub.api.key}}"
+    }
+  }, {
+    "ref" : "fmp-api-key",
+    "name" : "FMP API Key",
+    "type" : "httpQueryAuth",
+    "data" : {
+      "name" : "fmp_api_key",
+      "value" : "{{env:fmp.api.key}}"
+    }
+  }, {
+    "ref" : "fred-api-key",
+    "name" : "FRED API Key",
+    "type" : "httpQueryAuth",
+    "data" : {
+      "name" : "fred_api_key",
+      "value" : "{{env:fred.api.key}}"
+    }
+  }, {
+    "ref" : "massive-api-key",
+    "name" : "Massive API Key",
+    "type" : "httpQueryAuth",
+    "data" : {
+      "name" : "apikey",
+      "value" : "{{env:massive.api.key}}"
+    }
+  }, {
+    "ref" : "postgresql-account",
+    "name" : "PostgreSQL account",
+    "type" : "postgresApi",
+    "data" : {
+      "host" : "{{env:postgresql.host}}",
+      "port" : "{{env:postgresql.port}}",
+      "ssl" : "{{env:postgresql.ssl}}",
+      "database" : "{{env:postgresql.database}}",
+      "username" : "{{env:postgresql.username}}",
+      "password" : "{{env:postgresql.password}}"
+    }
+  } ]
 }

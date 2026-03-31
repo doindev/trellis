@@ -1,6 +1,9 @@
 package io.cwc.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +16,9 @@ import io.cwc.repository.ExecutionSettingsRepository;
 public class ExecutionSettingsService {
 
     private final ExecutionSettingsRepository repository;
+
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private SettingsWritebackService settingsWritebackService;
 
     public ExecutionSettingsDto getSettings() {
         return repository.findFirstByOrderByCreatedAtAsc()
@@ -38,6 +44,7 @@ public class ExecutionSettingsService {
         entity.setExecutionTimeout(dto.getExecutionTimeout());
         entity.setErrorWorkflow(dto.getErrorWorkflow());
         repository.save(entity);
+        if (settingsWritebackService != null) settingsWritebackService.writeSettings();
         return getSettings();
     }
 }

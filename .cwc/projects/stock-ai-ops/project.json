@@ -1,22 +1,35 @@
 {
-  "configId": "stock-ai-ops",
-  "name": "Stock Research - AI Operations",
-  "type": "TEAM",
-  "contextPath": "stock-ai-ops",
-  "description": "Meta-orchestration layer: daily AI agent monitors workflow health/failures, evaluates strategy performance, identifies optimization opportunities, researches and implements new investment strategy workflows.",
-  "credentials": [
-    {
-      "ref": "postgresql-account",
-      "name": "PostgreSQL account",
-      "type": "postgresApi",
-      "data": {
-        "host": "{{env:postgresql.host}}",
-        "port": "{{env:postgresql.port}}",
-        "ssl": "{{env:postgresql.ssl}}",
-        "database": "{{env:postgresql.database}}",
-        "username": "{{env:postgresql.username}}",
-        "password": "{{env:postgresql.password}}"
-      }
+  "configId" : "stock-ai-ops",
+  "name" : "Stock Research - AI Operations",
+  "type" : "TEAM",
+  "contextPath" : "stock-ai-ops",
+  "description" : "Meta-orchestration layer: daily AI agent monitors workflow health/failures, evaluates strategy performance, identifies optimization opportunities, researches and implements new investment strategy workflows.",
+  "credentials" : [ {
+    "ref" : "anthropic-api-account",
+    "name" : "Anthropic API account",
+    "type" : "anthropicApi",
+    "data" : {
+      "baseUrl" : "{{env:STOCK_AI_OPS_ANTHROPIC_API_ACCOUNT_BASEURL}}",
+      "apiKey" : "{{env:STOCK_AI_OPS_ANTHROPIC_API_ACCOUNT_APIKEY}}"
     }
-  ]
+  }, {
+    "ref" : "tavily-api-account",
+    "name" : "Tavily API account",
+    "type" : "tavilyApi",
+    "data" : {
+      "apiKey" : "{{env:STOCK_AI_OPS_TAVILY_API_ACCOUNT_APIKEY}}"
+    }
+  }, {
+    "ref" : "postgresql-account",
+    "name" : "PostgreSQL account",
+    "type" : "postgresApi",
+    "data" : {
+      "host" : "{{env:postgresql.host}}",
+      "port" : "{{env:postgresql.port}}",
+      "ssl" : "{{env:postgresql.ssl}}",
+      "database" : "{{env:postgresql.database}}",
+      "username" : "{{env:postgresql.username}}",
+      "password" : "{{env:postgresql.password}}"
+    }
+  } ]
 }

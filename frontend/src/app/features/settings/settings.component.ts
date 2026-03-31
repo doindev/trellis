@@ -160,6 +160,17 @@ export class SettingsComponent implements OnInit, OnDestroy {
   executionSaving = false;
   executionWorkflows: { id: string; name: string }[] = [];
 
+  // Environments / Source Control (instance-level)
+  envConnected = false;
+  envData: any = null;
+  envShowForm = false;
+  envForm = { provider: 'github', repoUrl: '', branch: 'main', token: '', enabled: true };
+  envSaving = false;
+  envSyncing = false;
+  envError = '';
+  envSyncResult = '';
+  envSyncIsError = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -209,6 +220,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
         break;
       case 'execution':
         this.loadExecutionSettings();
+        break;
+      case 'environments':
+        this.loadEnvironmentSettings();
         break;
     }
   }
@@ -415,7 +429,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       this.aiSettings.baseUrl
     ).subscribe({
       next: models => {
-        this.aiModels = models;
+        this.aiModels = models.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
         this.aiModelsLoaded = true;
         this.aiModelsLoading = false;
         if (models.length > 0) this.showModelDropdown = true;
@@ -795,5 +809,77 @@ export class SettingsComponent implements OnInit, OnDestroy {
     if ((event.target as HTMLElement).classList.contains('mcp-modal-backdrop')) {
       this.showConnectionDetailsModal = false;
     }
+  }
+
+  // ---- Environments / Source Control (instance-level) ----
+
+  loadEnvironmentSettings(): void {
+    this.envError = '';
+    this.settingsService.getSourceControlSettings().subscribe({
+      next: (data) => {
+        this.envData = data;
+        this.envConnected = data.connected === true;
+        if (this.envConnected) {
+          this.envForm.provider = data.provider || 'github';
+          this.envForm.repoUrl = data.repoUrl || '';
+          this.envForm.branch = data.branch || 'main';
+          this.envForm.token = '';
+          this.envForm.enabled = true;
+        }
+      },
+      error: () => {
+        this.envConnected = false;
+      }
+    });
+  }
+
+  saveEnvironmentSettings(): void {
+    if (!this.envForm.repoUrl) return;
+    this.envSaving = true;
+    this.envError = '';
+    this.settingsService.updateSourceControlSettings(this.envForm).subscribe({
+      next: (data) => {
+        this.envData = data;
+        this.envConnected = data.connected === true;
+        this.envSaving = false;
+        this.envShowForm = false;
+        this.envForm.token = '';
+      },
+      error: (err) => {
+        this.envSaving = false;
+        this.envError = err.message || 'Failed to save';
+      }
+    });
+  }
+
+  disconnectEnvironment(): void {
+    this.settingsService.updateSourceControlSettings({
+      provider: 'github', repoUrl: '', branch: 'main', token: '', enabled: false
+    }).subscribe({
+      next: () => {
+        this.envConnected = false;
+        this.envData = null;
+        this.envShowForm = false;
+        this.envSyncResult = '';
+      }
+    });
+  }
+
+  syncEnvironment(): void {
+    this.envSyncing = true;
+    this.envSyncResult = '';
+    this.settingsService.syncSourceControl().subscribe({
+      next: (result: any) => {
+        this.envSyncing = false;
+        this.envSyncResult = result.lastSyncStatus === 'SUCCESS' ? 'Sync successful' : 'Sync completed';
+        this.envSyncIsError = false;
+        this.loadEnvironmentSettings();
+      },
+      error: (err: any) => {
+        this.envSyncing = false;
+        this.envSyncResult = err.message || 'Sync failed';
+        this.envSyncIsError = true;
+      }
+    });
   }
 }

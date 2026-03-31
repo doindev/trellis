@@ -256,6 +256,19 @@ select.form-input {
   &:hover { background: hsl(0, 0%, 17%); border-color: hsl(0, 0%, 36%); }
 }
 
+.btn-danger-outline {
+  padding: 8px 18px;
+  background: none;
+  border: 1px solid hsl(355, 40%, 30%);
+  border-radius: 6px;
+  color: hsl(355, 50%, 65%);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover { background: hsla(355, 50%, 40%, 0.1); }
+}
+
 .btn-icon-sm {
   background: none;
   border: none;

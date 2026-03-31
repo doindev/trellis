@@ -12,6 +12,7 @@
           <button class="settings-tab" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">General</button>
           <button class="settings-tab" [class.active]="activeTab === 'execution'" (click)="activeTab = 'execution'">Execution</button>
           <button class="settings-tab" [class.active]="activeTab === 'mcp'" (click)="activeTab = 'mcp'" [disabled]="!project()?.contextPath">MCP Instance</button>
+          <button class="settings-tab" [class.active]="activeTab === 'sourcecontrol'" (click)="activeTab = 'sourcecontrol'; loadSourceControl()">Source Control</button>
         </nav>
 
         <div class="modal-body">
@@ -240,6 +241,140 @@
                   </button>
                 }
               </section>
+            }
+
+            <!-- Source Control Tab -->
+            @if (activeTab === 'sourcecontrol') {
+              @if (scLoading) {
+                <p style="color: var(--cwc-text-secondary); font-size: 0.8125rem">Loading source control settings...</p>
+              } @else if (!scConnected && !scShowConnectForm) {
+                <!-- Not Connected Placeholder -->
+                <div class="sc-placeholder">
+                  <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
+                  </svg>
+                  <h3>Source control not connected</h3>
+                  <p>Link this project to a Git repository to pull updates and push changes with your own credentials.</p>
+                  <button class="btn-save" (click)="scShowConnectForm = true">Connect repository</button>
+                </div>
+              } @else if (!scConnected && scShowConnectForm) {
+                <!-- Connect Form -->
+                <section class="settings-section">
+                  <h3 class="section-title" style="margin-bottom: 4px">Connect Repository</h3>
+                  <p class="sc-description">Your token is encrypted and only accessible to you.</p>
+
+                  <div class="form-group">
+                    <label class="form-label">Repository URL</label>
+                    <input class="form-input" type="text" [(ngModel)]="scForm.repoUrl" placeholder="https://github.com/org/repo.git">
+                  </div>
+
+                  <div style="display:flex; gap:12px">
+                    <div class="form-group" style="flex:1">
+                      <label class="form-label">Branch</label>
+                      <input class="form-input" type="text" [(ngModel)]="scForm.branch" placeholder="main">
+                    </div>
+                    <div class="form-group" style="flex:1">
+                      <label class="form-label">Provider</label>
+                      <select class="form-input" [(ngModel)]="scForm.provider">
+                        <option value="github">GitHub</option>
+                        <option value="gitlab">GitLab</option>
+                        <option value="bitbucket">Bitbucket</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Personal Access Token</label>
+                    <input class="form-input" type="password" [(ngModel)]="scForm.token" placeholder="ghp_...">
+                    <small class="form-hint">Only you can use this token. Other project members cannot see it.</small>
+                  </div>
+
+                  @if (scError) {
+                    <div class="save-error">{{ scError }}</div>
+                  }
+
+                  <div style="display:flex; gap:8px">
+                    <button class="btn-save" (click)="saveSourceControl()" [disabled]="scSaving || !scForm.repoUrl">
+                      {{ scSaving ? 'Connecting...' : 'Connect' }}
+                    </button>
+                    <button class="sc-btn-secondary" (click)="scShowConnectForm = false; scError = ''">Cancel</button>
+                  </div>
+                </section>
+              } @else {
+                <!-- Connected Status -->
+                <section class="settings-section">
+                  <div class="sc-status-card">
+                    <div class="sc-status-header">
+                      <div class="sc-status-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
+                        </svg>
+                      </div>
+                      <div class="sc-status-info">
+                        <span class="sc-status-label">{{ scData?.provider | uppercase }}</span>
+                        <span class="sc-repo-url">{{ scData?.repoUrl }}</span>
+                        <span class="sc-branch-tag">{{ scData?.branch || 'main' }}</span>
+                      </div>
+                    </div>
+
+                    @if (scData?.lastSyncAt) {
+                      <div class="sc-last-sync">
+                        Last synced: {{ scData.lastSyncAt | date:'medium' }}
+                        @if (scData.lastSyncStatus) {
+                          <span class="sc-sync-badge" [class.sc-sync-success]="scData.lastSyncStatus === 'SUCCESS'" [class.sc-sync-failed]="scData.lastSyncStatus !== 'SUCCESS'">
+                            {{ scData.lastSyncStatus }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </section>
+
+                <!-- Actions -->
+                <section class="settings-section">
+                  <div class="sc-actions">
+                    <button class="btn-save" (click)="syncSourceControl()" [disabled]="scSyncing">
+                      @if (scSyncing) {
+                        <span class="sc-spinner"></span> Pulling...
+                      } @else {
+                        Pull Latest
+                      }
+                    </button>
+                    <button class="sc-btn-secondary" (click)="scShowPushForm = !scShowPushForm">
+                      {{ scShowPushForm ? 'Cancel Push' : 'Push Changes' }}
+                    </button>
+                    <button class="sc-btn-disconnect" (click)="disconnectSourceControl()">Disconnect</button>
+                  </div>
+
+                  @if (scShowPushForm) {
+                    <div class="sc-push-form">
+                      <div class="form-group">
+                        <label class="form-label">Commit Message</label>
+                        <input class="form-input" type="text" [(ngModel)]="scPushForm.commitMessage" placeholder="Update project (auto-generated if empty)">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Target Branch</label>
+                        <input class="form-input" type="text" [(ngModel)]="scPushForm.targetBranch" [placeholder]="scData?.branch || 'main'">
+                        <small class="form-hint">Creates a new branch from this base. Leave empty to use the linked branch.</small>
+                      </div>
+                      <button class="btn-save" (click)="pushSourceControl()" [disabled]="scPushing">
+                        {{ scPushing ? 'Pushing...' : 'Push' }}
+                      </button>
+                    </div>
+                  }
+
+                  @if (scSyncResult) {
+                    <div class="sc-result" [class.sc-result-error]="scSyncIsError">
+                      {{ scSyncResult }}
+                    </div>
+                  }
+                </section>
+
+                <!-- Edit Connection -->
+                <section class="settings-section" style="border-bottom: none">
+                  <button class="sc-btn-edit" (click)="scShowConnectForm = true; scConnected = false">Edit connection settings</button>
+                </section>
+              }
             }
           }
         </div>

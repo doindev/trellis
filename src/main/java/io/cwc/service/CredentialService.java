@@ -1,6 +1,9 @@
 package io.cwc.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,9 @@ public class CredentialService {
     private final CredentialRepository credentialRepository;
     private final CredentialShareRepository credentialShareRepository;
     private final CredentialEncryptionService encryptionService;
+
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private ConfigWritebackService configWritebackService;
 
     public List<CredentialResponse> listCredentials() {
         return credentialRepository.findAll().stream()
@@ -96,7 +102,11 @@ public class CredentialService {
                 .projectId(request.getProjectId())
                 .data(encryptionService.encrypt(request.getData()))
                 .build();
-        return toResponse(credentialRepository.save(entity));
+        CredentialResponse response = toResponse(credentialRepository.save(entity));
+        if (configWritebackService != null && request.getProjectId() != null) {
+            configWritebackService.writeProjectSettings(request.getProjectId());
+        }
+        return response;
     }
 
     @Transactional
@@ -104,12 +114,17 @@ public class CredentialService {
         CredentialEntity entity = findById(id);
         if (request.getName() != null) entity.setName(request.getName());
         if (request.getData() != null) entity.setData(encryptionService.encrypt(request.getData()));
-        return toResponse(credentialRepository.save(entity));
+        CredentialResponse response = toResponse(credentialRepository.save(entity));
+        if (configWritebackService != null && entity.getProjectId() != null) {
+            configWritebackService.writeProjectSettings(entity.getProjectId());
+        }
+        return response;
     }
 
     @Transactional
     public void deleteCredential(String id) {
         CredentialEntity entity = findById(id);
+        String projectId = entity.getProjectId();
         List<String> shares = getShareTargetIds(id);
         if (!shares.isEmpty()) {
             throw new BadRequestException(
@@ -117,6 +132,9 @@ public class CredentialService {
                 + "' because it is shared with other projects. Revoke all shares first.");
         }
         credentialRepository.delete(entity);
+        if (configWritebackService != null && projectId != null) {
+            configWritebackService.writeProjectSettings(projectId);
+        }
     }
 
     // --- Sharing ---

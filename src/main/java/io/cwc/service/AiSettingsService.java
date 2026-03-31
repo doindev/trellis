@@ -1,7 +1,10 @@
 package io.cwc.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +19,9 @@ public class AiSettingsService {
 
     private final AiSettingsRepository repository;
     private final CredentialEncryptionService encryptionService;
+
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private SettingsWritebackService settingsWritebackService;
 
     public AiSettingsDto getSettings() {
         return repository.findFirstByOrderByCreatedAtAsc()
@@ -69,7 +75,9 @@ public class AiSettingsService {
             entity.setApiKey(encryptionService.encryptString(dto.getApiKey()));
         }
 
-        return toDto(repository.save(entity));
+        AiSettingsDto result = toDto(repository.save(entity));
+        if (settingsWritebackService != null) settingsWritebackService.writeSettings();
+        return result;
     }
 
     private AiSettingsDto toDto(AiSettingsEntity entity) {

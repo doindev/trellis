@@ -300,15 +300,99 @@
     @if (activeSection === 'environments') {
       <div class="section-page">
         <h1 class="section-title">Environments</h1>
-        <p class="section-subtitle">Connect your CWC instance to a git repository for version control</p>
-        <div class="placeholder-card">
-          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
-          </svg>
-          <h3>Source control not connected</h3>
-          <p>Push and pull workflow changes to a git repository. Track changes across development, staging, and production environments.</p>
-          <button class="btn-primary" disabled>Connect repository</button>
-        </div>
+        <p class="section-subtitle">Instance-level source control for bootstrapping projects and workflows from Git</p>
+
+        @if (!envConnected && !envShowForm) {
+          <div class="placeholder-card">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <h3>Source control not connected</h3>
+            <p>Connect a Git repository to automatically load projects and workflows at startup. Individual users can also link their own repositories per-project.</p>
+            <button class="btn-primary" (click)="envShowForm = true">Connect repository</button>
+          </div>
+        }
+
+        @if (envShowForm && !envConnected) {
+          <div class="settings-card">
+            <h3 class="card-title">Connect Repository</h3>
+            <div class="form-row">
+              <label class="form-label">Repository URL</label>
+              <input class="form-input" type="text" [(ngModel)]="envForm.repoUrl" placeholder="https://github.com/org/config-repo.git">
+            </div>
+            <div style="display:flex; gap:12px; margin-bottom:16px">
+              <div style="flex:1">
+                <label class="form-label">Branch</label>
+                <input class="form-input" type="text" [(ngModel)]="envForm.branch" placeholder="main">
+              </div>
+              <div style="flex:1">
+                <label class="form-label">Provider</label>
+                <select class="form-input" [(ngModel)]="envForm.provider">
+                  <option value="github">GitHub</option>
+                  <option value="gitlab">GitLab</option>
+                  <option value="bitbucket">Bitbucket</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Access Token</label>
+              <input class="form-input" type="password" [(ngModel)]="envForm.token" placeholder="ghp_...">
+            </div>
+            @if (envError) {
+              <div style="padding:8px 12px; margin-bottom:12px; background:hsla(355,83%,52%,0.1); border:1px solid var(--cwc-error-color); border-radius:6px; color:var(--cwc-error-color); font-size:0.8125rem">{{ envError }}</div>
+            }
+            <div class="form-actions">
+              <button class="btn-primary" (click)="saveEnvironmentSettings()" [disabled]="envSaving || !envForm.repoUrl">
+                {{ envSaving ? 'Connecting...' : 'Connect' }}
+              </button>
+              <button class="btn-secondary" (click)="envShowForm = false; envError = ''">Cancel</button>
+            </div>
+          </div>
+        }
+
+        @if (envConnected) {
+          <div class="settings-card">
+            <h3 class="card-title">Connected Repository</h3>
+            <div class="form-row" style="margin-bottom:8px">
+              <label class="form-label">Provider</label>
+              <span style="font-size:0.8125rem; color:var(--cwc-text-primary)">{{ envData?.provider | uppercase }}</span>
+            </div>
+            <div class="form-row" style="margin-bottom:8px">
+              <label class="form-label">Repository</label>
+              <span style="font-size:0.8125rem; color:var(--cwc-text-primary); word-break:break-all">{{ envData?.repoUrl }}</span>
+            </div>
+            <div class="form-row" style="margin-bottom:8px">
+              <label class="form-label">Branch</label>
+              <span style="font-size:0.8125rem; color:var(--cwc-text-primary)">{{ envData?.branch }}</span>
+            </div>
+            @if (envData?.lastSyncAt) {
+              <div class="form-row" style="margin-bottom:8px">
+                <label class="form-label">Last Sync</label>
+                <span style="font-size:0.8125rem; color:var(--cwc-text-primary)">{{ envData.lastSyncAt | date:'medium' }} — {{ envData.lastSyncStatus }}</span>
+              </div>
+            }
+            @if (envData?.lastSyncError) {
+              <div style="padding:8px 12px; margin-bottom:12px; background:hsla(355,50%,40%,0.1); border:1px solid hsl(355,50%,30%); border-radius:6px; color:hsl(355,50%,70%); font-size:0.8125rem">{{ envData.lastSyncError }}</div>
+            }
+
+            <div class="form-actions">
+              <button class="btn-primary" (click)="syncEnvironment()" [disabled]="envSyncing">
+                {{ envSyncing ? 'Syncing...' : 'Sync Now' }}
+              </button>
+              <button class="btn-secondary" (click)="envShowForm = true; envConnected = false">Edit</button>
+              <button class="btn-danger-outline" (click)="disconnectEnvironment()">Disconnect</button>
+            </div>
+
+            @if (envSyncResult) {
+              <div style="margin-top:12px; padding:8px 12px; border-radius:6px; font-size:0.8125rem"
+                   [style.background]="envSyncIsError ? 'hsla(355,50%,40%,0.1)' : 'hsla(145,50%,40%,0.1)'"
+                   [style.border]="envSyncIsError ? '1px solid hsl(355,50%,30%)' : '1px solid hsl(145,50%,30%)'"
+                   [style.color]="envSyncIsError ? 'hsl(355,50%,70%)' : 'hsl(145,50%,70%)'">
+                {{ envSyncResult }}
+              </div>
+            }
+          </div>
+        }
       </div>
     }
 

@@ -83,6 +83,33 @@ export class ProjectService {
     formData.append('mode', mode);
     return this.api.postFormData<any>(`${this.basePath}/import`, formData);
   }
+
+  /** Import projects/workflows from a git repository URL. */
+  importFromGit(data: { repoUrl: string; branch: string; token: string; provider: string; subPath?: string; mode?: string }): Observable<any> {
+    return this.api.post<any>(`${this.basePath}/import-git`, data);
+  }
+
+  // --- Source Control (per-project, per-user) ---
+
+  getSourceControl(projectId: string): Observable<any> {
+    return this.api.get<any>(`${this.basePath}/${projectId}/source-control`);
+  }
+
+  updateSourceControl(projectId: string, data: { repoUrl: string; branch: string; token: string; provider: string }): Observable<any> {
+    return this.api.put<any>(`${this.basePath}/${projectId}/source-control`, data);
+  }
+
+  deleteSourceControl(projectId: string): Observable<void> {
+    return this.api.delete<void>(`${this.basePath}/${projectId}/source-control`);
+  }
+
+  syncSourceControl(projectId: string): Observable<any> {
+    return this.api.post<any>(`${this.basePath}/${projectId}/source-control/sync`, {});
+  }
+
+  pushSourceControl(projectId: string, data?: { commitMessage?: string; targetBranch?: string }): Observable<any> {
+    return this.api.post<any>(`${this.basePath}/${projectId}/source-control/push`, data || {});
+  }
 }
 
 export interface ProjectMcpEndpoint {

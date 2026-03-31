@@ -36,7 +36,7 @@ export class ProjectSettingsComponent {
   projects = signal<Project[]>([]);
   transferProjectId = '';
 
-  activeTab: 'general' | 'execution' | 'mcp' = 'general';
+  activeTab: 'general' | 'execution' | 'mcp' | 'sourcecontrol' = 'general';
   saving = false;
   saveError = '';
 
@@ -299,6 +299,118 @@ export class ProjectSettingsComponent {
       case 'PROJECT_VIEWER': return 'Viewer';
       default: return role;
     }
+  }
+
+  // ---- Source Control ----
+
+  scLoading = false;
+  scConnected = false;
+  scData: any = null;
+  scForm = { repoUrl: '', branch: 'main', token: '', provider: 'github' };
+  scSaving = false;
+  scError = '';
+  scShowConnectForm = false;
+  scSyncing = false;
+  scSyncResult = '';
+  scSyncIsError = false;
+  scPushing = false;
+  scShowPushForm = false;
+  scPushForm = { commitMessage: '', targetBranch: '' };
+
+  loadSourceControl(): void {
+    this.scLoading = true;
+    this.scError = '';
+    this.projectService.getSourceControl(this.projectId).subscribe({
+      next: (data) => {
+        this.scData = data;
+        this.scConnected = data.connected === true;
+        if (this.scConnected) {
+          this.scForm.repoUrl = data.repoUrl || '';
+          this.scForm.branch = data.branch || 'main';
+          this.scForm.provider = data.provider || 'github';
+          this.scForm.token = '';
+        }
+        this.scLoading = false;
+      },
+      error: () => {
+        this.scConnected = false;
+        this.scLoading = false;
+      }
+    });
+  }
+
+  saveSourceControl(): void {
+    if (!this.scForm.repoUrl) return;
+    this.scSaving = true;
+    this.scError = '';
+    this.projectService.updateSourceControl(this.projectId, this.scForm).subscribe({
+      next: (data) => {
+        this.scData = data;
+        this.scConnected = data.connected === true;
+        this.scSaving = false;
+        this.scShowConnectForm = false;
+        this.scForm.token = '';
+      },
+      error: (err) => {
+        this.scSaving = false;
+        this.scError = err.message || 'Failed to save source control settings';
+      }
+    });
+  }
+
+  disconnectSourceControl(): void {
+    this.projectService.deleteSourceControl(this.projectId).subscribe({
+      next: () => {
+        this.scConnected = false;
+        this.scData = null;
+        this.scForm = { repoUrl: '', branch: 'main', token: '', provider: 'github' };
+        this.scShowConnectForm = false;
+        this.scShowPushForm = false;
+        this.scSyncResult = '';
+      }
+    });
+  }
+
+  syncSourceControl(): void {
+    this.scSyncing = true;
+    this.scSyncResult = '';
+    this.projectService.syncSourceControl(this.projectId).subscribe({
+      next: (result: any) => {
+        this.scSyncing = false;
+        const created = (result.projectsCreated || 0) + (result.workflowsCreated || 0);
+        const updated = (result.projectsUpdated || 0) + (result.workflowsUpdated || 0);
+        this.scSyncResult = `Sync complete. ${created} created, ${updated} updated.`;
+        this.scSyncIsError = false;
+        this.loadSourceControl();
+      },
+      error: (err: any) => {
+        this.scSyncing = false;
+        this.scSyncResult = err.message || 'Sync failed';
+        this.scSyncIsError = true;
+      }
+    });
+  }
+
+  pushSourceControl(): void {
+    this.scPushing = true;
+    this.scSyncResult = '';
+    this.projectService.pushSourceControl(this.projectId, {
+      commitMessage: this.scPushForm.commitMessage || undefined,
+      targetBranch: this.scPushForm.targetBranch || undefined
+    }).subscribe({
+      next: (result: any) => {
+        this.scPushing = false;
+        this.scSyncResult = `Pushed to branch: ${result.branch}`;
+        this.scSyncIsError = false;
+        this.scShowPushForm = false;
+        this.scPushForm = { commitMessage: '', targetBranch: '' };
+      },
+      error: (err: any) => {
+        this.scPushing = false;
+        this.scSyncResult = err.message || 'Push failed';
+        this.scSyncIsError = true;
+      }
+    });
   }
 
 }

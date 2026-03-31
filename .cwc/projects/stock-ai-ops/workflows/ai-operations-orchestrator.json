@@ -1,455 +1,356 @@
 {
-  "configId": "ai-operations-orchestrator",
-  "name": "AI Operations Orchestrator",
-  "description": "Master AI agent overseeing the entire platform. Monitors workflow health, evaluates strategy performance, discovers optimizations, researches/implements new strategies. 4 sub-agents: Health Monitor, Performance Evaluator, Strategy Researcher, Workflow Implementer (with CWC Platform Tool).",
-  "type": "AGENT",
-  "nodes": [
-    {
-      "id": "agent1",
-      "name": "AI Operations Orchestrator",
-      "type": "aiAgent",
-      "typeVersion": 1,
-      "position": [
-        784,
-        304
-      ],
-      "parameters": {
-        "systemMessage": "You are the AI Operations Orchestrator for a stock research automation platform.\n\nSub-agents:\n1. **health_monitor** - Checks workflow execution logs for failures, timeouts, degradation\n2. **performance_evaluator** - Analyzes strategy metrics, score distributions, watchlist quality\n3. **strategy_researcher** - Researches new strategies and data sources via web search\n4. **workflow_implementer** - CWC Platform Tool access to create/update workflows\n\nDaily routine:\n1. health_monitor: 24h execution check\n2. performance_evaluator: strategy assessment\n3. strategy_researcher: if opportunities exist\n4. workflow_implementer: if improvements needed\n5. Compile operations report\n\nOutput: health_status (green/yellow/red), failed_workflows, strategy_performance, optimization_opportunities, actions_taken, recommendations.",
-        "prompt": "{{$json.context}}",
-        "maxIterations": 25
-      }
-    },
-    {
-      "id": "model1",
-      "name": "Orchestrator Model",
-      "type": "anthropicChatModel",
-      "typeVersion": 1,
-      "position": [
-        208,
-        480
-      ],
-      "parameters": {
-        "model": "claude-sonnet-4-20250514",
-        "temperature": 0.4,
-        "maxTokens": 8192
-      }
-    },
-    {
-      "id": "memory1",
-      "name": "Memory",
-      "type": "memoryPostgresChat",
-      "typeVersion": 1,
-      "position": [
-        320,
-        480
-      ],
-      "parameters": {
-        "sessionId": "ai_ops_orchestrator"
-      }
-    },
-    {
-      "id": "think1",
-      "name": "Think",
-      "type": "toolThink",
-      "typeVersion": 1,
-      "position": [
-        640,
-        480
-      ],
-      "parameters": {}
-    },
-    {
-      "id": "httpTool1",
-      "name": "External API",
-      "type": "httpRequestTool",
-      "typeVersion": 1,
-      "position": [
-        1024,
-        480
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "https://api.example.com/{endpoint}",
-        "description": "HTTP requests for research."
-      }
-    },
-    {
-      "id": "sub1",
-      "name": "Health Monitor",
-      "type": "aiSubAgent",
-      "typeVersion": 1,
-      "position": [
-        432,
-        480
-      ],
-      "parameters": {
-        "agentName": "health_monitor",
-        "agentDescription": "Monitors workflow execution health: failures, timeouts, missing executions, performance degradation.",
-        "systemMessage": "Analyze workflow_execution_log: 1) Failed executions (24h), 2) Missing executions, 3) Performance degradation, 4) Error patterns. Classify: CRITICAL/WARNING/INFO. Return: overall_status (green/yellow/red), issues list.",
-        "maxIterations": 10
-      }
-    },
-    {
-      "id": "model2",
-      "name": "Health Model",
-      "type": "anthropicChatModel",
-      "typeVersion": 1,
-      "position": [
-        368,
-        848
-      ],
-      "parameters": {
-        "model": "claude-sonnet-4-20250514",
-        "temperature": 0.2,
-        "maxTokens": 4096
-      }
-    },
-    {
-      "id": "codeTool1",
-      "name": "Log Analyzer",
-      "type": "codeTool",
-      "typeVersion": 1,
-      "position": [
-        496,
-        848
-      ],
-      "parameters": {
-        "language": "js",
-        "code": "try{const d=JSON.parse(input);const l=d.logs||[];return JSON.stringify({total:l.length,success:l.filter(x=>x.status==='success').length,failed:l.filter(x=>x.status!=='success').length,failure_rate:l.length?(l.filter(x=>x.status!=='success').length/l.length*100).toFixed(1)+'%':'0%',errors:l.filter(x=>x.error_message).map(x=>({workflow:x.workflow_name,error:x.error_message}))});}catch(e){return'Error: '+e.message;}"
-      }
-    },
-    {
-      "id": "sub2",
-      "name": "Performance Evaluator",
-      "type": "aiSubAgent",
-      "typeVersion": 1,
-      "position": [
-        768,
-        480
-      ],
-      "parameters": {
-        "agentName": "performance_evaluator",
-        "agentDescription": "Evaluates strategy performance: score distributions, recommendation accuracy, watchlist quality, data gaps.",
-        "systemMessage": "Evaluate: 1) Score distributions per strategy, 2) Recommendation quality, 3) Watchlist freshness, 4) Coverage gaps, 5) Data quality. Return: per_strategy_assessment, improvements.",
-        "maxIterations": 10
-      }
-    },
-    {
-      "id": "model3",
-      "name": "Eval Model",
-      "type": "anthropicChatModel",
-      "typeVersion": 1,
-      "position": [
-        720,
-        848
-      ],
-      "parameters": {
-        "model": "claude-sonnet-4-20250514",
-        "temperature": 0.3,
-        "maxTokens": 4096
-      }
-    },
-    {
-      "id": "sub3",
-      "name": "Strategy Researcher",
-      "type": "aiSubAgent",
-      "typeVersion": 1,
-      "position": [
-        1136,
-        480
-      ],
-      "parameters": {
-        "agentName": "strategy_researcher",
-        "agentDescription": "Researches new investment strategies, data sources, and approaches via web search.",
-        "systemMessage": "Research: 1) Emerging strategies (momentum, ESG, insider buying, options), 2) New free APIs, 3) Feasibility assessment, 4) Workflow design proposals. Prioritize: automatable, free data, complements existing. Return: strategy_ideas, data_sources, proposals.",
-        "maxIterations": 10
-      }
-    },
-    {
-      "id": "model4",
-      "name": "Research Model",
-      "type": "anthropicChatModel",
-      "typeVersion": 1,
-      "position": [
-        1072,
-        848
-      ],
-      "parameters": {
-        "model": "claude-sonnet-4-20250514",
-        "temperature": 0.5,
-        "maxTokens": 4096
-      }
-    },
-    {
-      "id": "tavily1",
-      "name": "Web Search",
-      "type": "tavilySearchTool",
-      "typeVersion": 1,
-      "position": [
-        1216,
-        848
-      ],
-      "parameters": {}
-    },
-    {
-      "id": "sub4",
-      "name": "Workflow Implementer",
-      "type": "aiSubAgent",
-      "typeVersion": 1,
-      "position": [
-        1392,
-        480
-      ],
-      "parameters": {
-        "agentName": "workflow_implementer",
-        "agentDescription": "Direct CWC platform access to create/update workflows, inspect nodes, manage infrastructure.",
-        "systemMessage": "Implement changes on CWC: 1) Create new workflows, 2) Update configs/queries/schedules, 3) Inspect platform, 4) Turn proposals into working workflows. Follow existing patterns. Return: actions_taken, verification_status.",
-        "maxIterations": 12
-      }
-    },
-    {
-      "id": "model5",
-      "name": "Impl Model",
-      "type": "anthropicChatModel",
-      "typeVersion": 1,
-      "position": [
-        1344,
-        848
-      ],
-      "parameters": {
-        "model": "claude-sonnet-4-20250514",
-        "temperature": 0.2,
-        "maxTokens": 4096
-      }
-    },
-    {
-      "id": "platform1",
-      "name": "CWC Platform",
-      "type": "cwcPlatformTool",
-      "typeVersion": 1,
-      "position": [
-        1440,
-        848
-      ],
-      "parameters": {}
+  "configId" : "ai-operations-orchestrator",
+  "name" : "AI Operations Orchestrator",
+  "description" : "Master AI agent overseeing the entire platform. Monitors workflow health, evaluates strategy performance, discovers optimizations, researches/implements new strategies. 4 sub-agents: Health Monitor, Performance Evaluator, Strategy Researcher, Workflow Implementer (with CWC Platform Tool).",
+  "type" : "AGENT",
+  "published" : true,
+  "icon" : "\uD83E\uDDE0",
+  "nodes" : [ {
+    "id" : "agent1",
+    "name" : "AI Operations Orchestrator",
+    "type" : "aiAgent",
+    "typeVersion" : 1,
+    "position" : [ 784, 240 ],
+    "parameters" : {
+      "systemMessage" : "You are the AI Operations Orchestrator for a stock research automation platform.\n\nSub-agents:\n1. **health_monitor** - Checks workflow execution logs for failures, timeouts, degradation\n2. **performance_evaluator** - Analyzes strategy metrics, score distributions, watchlist quality\n3. **strategy_researcher** - Researches new strategies and data sources via web search\n4. **workflow_implementer** - CWC Platform Tool access to create/update workflows\n\nDaily routine:\n1. health_monitor: 24h execution check\n2. performance_evaluator: strategy assessment\n3. strategy_researcher: if opportunities exist\n4. workflow_implementer: if improvements needed\n5. Compile operations report\n\nOutput: health_status (green/yellow/red), failed_workflows, strategy_performance, optimization_opportunities, actions_taken, recommendations.",
+      "prompt" : "{{$json.context}}",
+      "maxIterations" : 25
     }
-  ],
-  "connections": {
-    "model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "agent1",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
+  }, {
+    "id" : "model1",
+    "name" : "Orchestrator Model",
+    "type" : "anthropicChatModel",
+    "typeVersion" : 1,
+    "position" : [ 208, 416 ],
+    "parameters" : {
+      "model" : "claude-sonnet-4-20250514",
+      "temperature" : 0.4,
+      "maxTokens" : 8192
     },
-    "memory1": {
-      "ai_memory": [
-        [
-          {
-            "node": "agent1",
-            "type": "ai_memory",
-            "index": 0
-          },
-          {
-            "node": "agent1",
-            "type": "ai_memory",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "think1": {
-      "ai_tool": [
-        [
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "httpTool1": {
-      "ai_tool": [
-        [
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "sub1": {
-      "ai_tool": [
-        [
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "sub2": {
-      "ai_tool": [
-        [
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "sub3": {
-      "ai_tool": [
-        [
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "sub4": {
-      "ai_tool": [
-        [
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "agent1",
-            "type": "ai_tool",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "model2": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "sub1",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "codeTool1": {
-      "ai_tool": [
-        [
-          {
-            "node": "sub1",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "sub1",
-            "type": "ai_tool",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "model3": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "sub2",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "model4": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "sub3",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "tavily1": {
-      "ai_tool": [
-        [
-          {
-            "node": "sub3",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "sub3",
-            "type": "ai_tool",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "model5": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "sub4",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "platform1": {
-      "ai_tool": [
-        [
-          {
-            "node": "sub4",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "sub4",
-            "type": "ai_tool",
-            "index": 2
-          }
-        ]
-      ]
+    "credentials" : {
+      "anthropicApi" : {
+        "ref" : "anthropic-api-account"
+      }
     }
-  },
-  "icon": "🧠"
+  }, {
+    "id" : "memory1",
+    "name" : "Memory",
+    "type" : "memoryPostgresChat",
+    "typeVersion" : 1,
+    "position" : [ 320, 416 ],
+    "parameters" : {
+      "sessionId" : "ai_ops_orchestrator"
+    },
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  }, {
+    "id" : "think1",
+    "name" : "Think",
+    "type" : "toolThink",
+    "typeVersion" : 1,
+    "position" : [ 656, 416 ],
+    "parameters" : { }
+  }, {
+    "id" : "httpTool1",
+    "name" : "External API",
+    "type" : "httpRequestTool",
+    "typeVersion" : 1,
+    "position" : [ 1040, 416 ],
+    "parameters" : {
+      "method" : "GET",
+      "url" : "https://api.example.com/{endpoint}",
+      "description" : "HTTP requests for research."
+    }
+  }, {
+    "id" : "sub1",
+    "name" : "Health Monitor",
+    "type" : "aiSubAgent",
+    "typeVersion" : 1,
+    "position" : [ 448, 416 ],
+    "parameters" : {
+      "agentName" : "health_monitor",
+      "agentDescription" : "Monitors workflow execution health: failures, timeouts, missing executions, performance degradation.",
+      "systemMessage" : "Analyze workflow_execution_log: 1) Failed executions (24h), 2) Missing executions, 3) Performance degradation, 4) Error patterns. Classify: CRITICAL/WARNING/INFO. Return: overall_status (green/yellow/red), issues list.",
+      "maxIterations" : 10
+    }
+  }, {
+    "id" : "model2",
+    "name" : "Health Model",
+    "type" : "anthropicChatModel",
+    "typeVersion" : 1,
+    "position" : [ 416, 720 ],
+    "parameters" : {
+      "model" : "claude-sonnet-4-20250514",
+      "temperature" : 0.2,
+      "maxTokens" : 4096
+    },
+    "credentials" : {
+      "anthropicApi" : {
+        "ref" : "anthropic-api-account"
+      }
+    }
+  }, {
+    "id" : "codeTool1",
+    "name" : "Log Analyzer",
+    "type" : "codeTool",
+    "typeVersion" : 1,
+    "position" : [ 560, 704 ],
+    "parameters" : {
+      "language" : "js",
+      "code" : "try{const d=JSON.parse(input);const l=d.logs||[];return JSON.stringify({total:l.length,success:l.filter(x=>x.status==='success').length,failed:l.filter(x=>x.status!=='success').length,failure_rate:l.length?(l.filter(x=>x.status!=='success').length/l.length*100).toFixed(1)+'%':'0%',errors:l.filter(x=>x.error_message).map(x=>({workflow:x.workflow_name,error:x.error_message}))});}catch(e){return'Error: '+e.message;}"
+    }
+  }, {
+    "id" : "sub2",
+    "name" : "Performance Evaluator",
+    "type" : "aiSubAgent",
+    "typeVersion" : 1,
+    "position" : [ 768, 416 ],
+    "parameters" : {
+      "agentName" : "performance_evaluator",
+      "agentDescription" : "Evaluates strategy performance: score distributions, recommendation accuracy, watchlist quality, data gaps.",
+      "systemMessage" : "Evaluate: 1) Score distributions per strategy, 2) Recommendation quality, 3) Watchlist freshness, 4) Coverage gaps, 5) Data quality. Return: per_strategy_assessment, improvements.",
+      "maxIterations" : 10
+    }
+  }, {
+    "id" : "model3",
+    "name" : "Eval Model",
+    "type" : "anthropicChatModel",
+    "typeVersion" : 1,
+    "position" : [ 768, 688 ],
+    "parameters" : {
+      "model" : "claude-sonnet-4-20250514",
+      "temperature" : 0.3,
+      "maxTokens" : 4096
+    },
+    "credentials" : {
+      "anthropicApi" : {
+        "ref" : "anthropic-api-account"
+      }
+    }
+  }, {
+    "id" : "sub3",
+    "name" : "Strategy Researcher",
+    "type" : "aiSubAgent",
+    "typeVersion" : 1,
+    "position" : [ 1152, 416 ],
+    "parameters" : {
+      "agentName" : "strategy_researcher",
+      "agentDescription" : "Researches new investment strategies, data sources, and approaches via web search.",
+      "systemMessage" : "Research: 1) Emerging strategies (momentum, ESG, insider buying, options), 2) New free APIs, 3) Feasibility assessment, 4) Workflow design proposals. Prioritize: automatable, free data, complements existing. Return: strategy_ideas, data_sources, proposals.",
+      "maxIterations" : 10
+    }
+  }, {
+    "id" : "model4",
+    "name" : "Research Model",
+    "type" : "anthropicChatModel",
+    "typeVersion" : 1,
+    "position" : [ 1088, 704 ],
+    "parameters" : {
+      "model" : "claude-sonnet-4-20250514",
+      "temperature" : 0.5,
+      "maxTokens" : 4096
+    },
+    "credentials" : {
+      "anthropicApi" : {
+        "ref" : "anthropic-api-account"
+      }
+    }
+  }, {
+    "id" : "tavily1",
+    "name" : "Web Search",
+    "type" : "tavilySearchTool",
+    "typeVersion" : 1,
+    "position" : [ 1248, 688 ],
+    "parameters" : { },
+    "credentials" : {
+      "tavilyApi" : {
+        "ref" : "tavily-api-account"
+      }
+    }
+  }, {
+    "id" : "sub4",
+    "name" : "Workflow Implementer",
+    "type" : "aiSubAgent",
+    "typeVersion" : 1,
+    "position" : [ 1392, 416 ],
+    "parameters" : {
+      "agentName" : "workflow_implementer",
+      "agentDescription" : "Direct CWC platform access to create/update workflows, inspect nodes, manage infrastructure.",
+      "systemMessage" : "Implement changes on CWC: 1) Create new workflows, 2) Update configs/queries/schedules, 3) Inspect platform, 4) Turn proposals into working workflows. Follow existing patterns. Return: actions_taken, verification_status.",
+      "maxIterations" : 12
+    }
+  }, {
+    "id" : "model5",
+    "name" : "Impl Model",
+    "type" : "anthropicChatModel",
+    "typeVersion" : 1,
+    "position" : [ 1392, 672 ],
+    "parameters" : {
+      "model" : "claude-sonnet-4-20250514",
+      "temperature" : 0.2,
+      "maxTokens" : 4096
+    },
+    "credentials" : {
+      "anthropicApi" : {
+        "ref" : "anthropic-api-account"
+      }
+    }
+  }, {
+    "id" : "platform1",
+    "name" : "CWC Platform",
+    "type" : "cwcPlatformTool",
+    "typeVersion" : 1,
+    "position" : [ 1472, 720 ],
+    "parameters" : { }
+  } ],
+  "connections" : {
+    "model1" : {
+      "ai_languageModel" : [ [ {
+        "node" : "agent1",
+        "type" : "ai_languageModel",
+        "index" : 0
+      } ] ]
+    },
+    "memory1" : {
+      "ai_memory" : [ [ {
+        "node" : "agent1",
+        "type" : "ai_memory",
+        "index" : 0
+      }, {
+        "node" : "agent1",
+        "type" : "ai_memory",
+        "index" : 1
+      } ] ]
+    },
+    "think1" : {
+      "ai_tool" : [ [ {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 0
+      }, {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 2
+      } ] ]
+    },
+    "httpTool1" : {
+      "ai_tool" : [ [ {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 0
+      }, {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 2
+      } ] ]
+    },
+    "sub1" : {
+      "ai_tool" : [ [ {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 0
+      }, {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 2
+      } ] ]
+    },
+    "sub2" : {
+      "ai_tool" : [ [ {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 0
+      }, {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 2
+      } ] ]
+    },
+    "sub3" : {
+      "ai_tool" : [ [ {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 0
+      }, {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 2
+      } ] ]
+    },
+    "sub4" : {
+      "ai_tool" : [ [ {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 0
+      }, {
+        "node" : "agent1",
+        "type" : "ai_tool",
+        "index" : 2
+      } ] ]
+    },
+    "model2" : {
+      "ai_languageModel" : [ [ {
+        "node" : "sub1",
+        "type" : "ai_languageModel",
+        "index" : 0
+      } ] ]
+    },
+    "codeTool1" : {
+      "ai_tool" : [ [ {
+        "node" : "sub1",
+        "type" : "ai_tool",
+        "index" : 0
+      }, {
+        "node" : "sub1",
+        "type" : "ai_tool",
+        "index" : 2
+      } ] ]
+    },
+    "model3" : {
+      "ai_languageModel" : [ [ {
+        "node" : "sub2",
+        "type" : "ai_languageModel",
+        "index" : 0
+      } ] ]
+    },
+    "model4" : {
+      "ai_languageModel" : [ [ {
+        "node" : "sub3",
+        "type" : "ai_languageModel",
+        "index" : 0
+      } ] ]
+    },
+    "tavily1" : {
+      "ai_tool" : [ [ {
+        "node" : "sub3",
+        "type" : "ai_tool",
+        "index" : 0
+      }, {
+        "node" : "sub3",
+        "type" : "ai_tool",
+        "index" : 2
+      } ] ]
+    },
+    "model5" : {
+      "ai_languageModel" : [ [ {
+        "node" : "sub4",
+        "type" : "ai_languageModel",
+        "index" : 0
+      } ] ]
+    },
+    "platform1" : {
+      "ai_tool" : [ [ {
+        "node" : "sub4",
+        "type" : "ai_tool",
+        "index" : 0
+      }, {
+        "node" : "sub4",
+        "type" : "ai_tool",
+        "index" : 2
+      } ] ]
+    }
+  }
 }

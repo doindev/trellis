@@ -329,4 +329,18 @@ export class SettingsService {
       workflowSettings
     });
   }
+
+  // --- Environments / Source Control (instance-level) ---
+
+  getSourceControlSettings(): Observable<any> {
+    return this.api.get<any>('/settings/environments/source-control');
+  }
+
+  updateSourceControlSettings(data: { provider: string; repoUrl: string; branch: string; token: string; enabled: boolean }): Observable<any> {
+    return this.api.put<any>('/settings/environments/source-control', data);
+  }
+
+  syncSourceControl(): Observable<any> {
+    return this.api.post<any>('/settings/environments/sync', {});
+  }
 }

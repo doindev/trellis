@@ -269,11 +269,20 @@ public class ConfigBootstrapService {
         // Apply AI settings
         if (settings.getAi() != null) {
             var ai = settings.getAi();
+            // Decrypt enc: prefixed API key
+            String apiKey = ai.getApiKey();
+            if (apiKey != null && apiKey.startsWith("enc:")) {
+                try {
+                    apiKey = encryptionService.decryptString(apiKey.substring(4));
+                } catch (Exception e) {
+                    result.addWarning("Failed to decrypt AI API key: " + e.getMessage());
+                }
+            }
             io.cwc.dto.AiSettingsDto dto = io.cwc.dto.AiSettingsDto.builder()
                     .provider(ai.getProvider())
                     .model(ai.getModel())
                     .baseUrl(ai.getBaseUrl())
-                    .apiKey(ai.getApiKey())
+                    .apiKey(apiKey)
                     .enabled(ai.getEnabled() != null && ai.getEnabled())
                     .build();
             aiSettingsService.saveSettings(dto);
@@ -379,6 +388,19 @@ public class ConfigBootstrapService {
                                ConfigReloadResult result) {
         ProjectConfigFile config = mp.config;
 
+        // Capture original credential data templates BEFORE placeholder resolution
+        // so we can store them as sourcePlaceholder for round-trip export
+        Map<String, Map<String, Object>> originalCredentialData = new LinkedHashMap<>();
+        if (config.getCredentials() != null) {
+            for (ProjectConfigFile.CredentialConfig cc : config.getCredentials()) {
+                if (cc.getRef() != null && cc.getData() != null) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> data = (Map<String, Object>) cc.getData();
+                    originalCredentialData.put(cc.getRef(), new LinkedHashMap<>(data));
+                }
+            }
+        }
+
         // Resolve placeholders on the project config
         try {
             String origConfigId = config.getConfigId();
@@ -445,7 +467,7 @@ public class ConfigBootstrapService {
 
             // Apply children
             String projectId = existing.getId();
-            Map<String, String> credRefToDbId = applyCredentials(config.getCredentials(), projectId, configId, mode, result);
+            Map<String, String> credRefToDbId = applyCredentials(config.getCredentials(), projectId, configId, mode, result, originalCredentialData);
             applyVariables(config.getVariables(), projectId, mode, result);
             applyCaches(config.getCaches(), projectId, mode, result);
             applyTags(config.getTags(), result);
@@ -504,9 +526,11 @@ public class ConfigBootstrapService {
 
     // ---- Apply Phase: Credentials ----
 
+    @SuppressWarnings("unchecked")
     private Map<String, String> applyCredentials(List<ProjectConfigFile.CredentialConfig> credentials,
                                                   String projectId, String projectConfigId,
-                                                  ConfigMode mode, ConfigReloadResult result) {
+                                                  ConfigMode mode, ConfigReloadResult result,
+                                                  Map<String, Map<String, Object>> originalCredentialData) {
         Map<String, String> refToDbId = new LinkedHashMap<>();
         if (credentials == null) return refToDbId;
 
@@ -521,8 +545,8 @@ public class ConfigBootstrapService {
                 CredentialEntity existing = credentialRepository.findByProjectIdAndConfigId(projectId, ref)
                         .orElse(null);
 
-                // Build the source placeholder map for round-trip export
-                String sourcePlaceholders = buildSourcePlaceholders(cc.getData());
+                // Build the source placeholder map from the ORIGINAL (pre-resolution) templates
+                String sourcePlaceholders = buildSourcePlaceholders(originalCredentialData.get(ref));
 
                 if (existing != null && mode == ConfigMode.SEED) {
                     refToDbId.put(ref, existing.getId());
@@ -530,7 +554,7 @@ public class ConfigBootstrapService {
                     // Update
                     if (cc.getName() != null) existing.setName(cc.getName());
                     if (cc.getData() != null) {
-                        Map<String, Object> data = (Map<String, Object>) cc.getData();
+                        Map<String, Object> data = decryptEncPrefixedValues((Map<String, Object>) cc.getData());
                         existing.setData(encryptionService.encrypt(data));
                     }
                     existing.setSourcePlaceholder(sourcePlaceholders);
@@ -538,7 +562,9 @@ public class ConfigBootstrapService {
                     refToDbId.put(ref, existing.getId());
                     result.setCredentialsApplied(result.getCredentialsApplied() + 1);
                 } else {
-                    Map<String, Object> data = cc.getData() != null ? (Map<String, Object>) cc.getData() : Map.of();
+                    Map<String, Object> data = cc.getData() != null
+                            ? decryptEncPrefixedValues((Map<String, Object>) cc.getData())
+                            : Map.of();
                     CredentialEntity entity = CredentialEntity.builder()
                             .projectId(projectId)
                             .configId(ref)
@@ -559,14 +585,48 @@ public class ConfigBootstrapService {
         return refToDbId;
     }
 
-    private String buildSourcePlaceholders(Map<String, Object> data) {
-        if (data == null) return null;
-        // Scan original data values for {{env:...}} patterns before resolution
-        // This is called BEFORE placeholder resolution, so we capture originals
-        // However, by the time we get here, placeholders are already resolved.
-        // We need to store the template separately during the merge phase.
-        // For now, return null — this will be enhanced when export is implemented.
-        return null;
+    /**
+     * Walks a credential data map and decrypts any values prefixed with "enc:".
+     * The enc: prefix signals the value is an encrypted blob that needs decryption
+     * before being re-encrypted as a full credential blob for DB storage.
+     */
+    private Map<String, Object> decryptEncPrefixedValues(Map<String, Object> data) {
+        if (data == null) return Map.of();
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof String str && str.startsWith("enc:")) {
+                try {
+                    String encrypted = str.substring(4);
+                    result.put(entry.getKey(), encryptionService.decryptString(encrypted));
+                } catch (Exception e) {
+                    log.warn("Failed to decrypt enc: value for field '{}': {}", entry.getKey(), e.getMessage());
+                    result.put(entry.getKey(), value);
+                }
+            } else {
+                result.put(entry.getKey(), value);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Builds the source placeholder JSON from original (pre-resolution) credential data.
+     * Stores templates like enc:{{env:KEY}} so round-trip export preserves them.
+     */
+    private String buildSourcePlaceholders(Map<String, Object> originalData) {
+        if (originalData == null || originalData.isEmpty()) return null;
+        // Only store if the data contains placeholder patterns
+        boolean hasPlaceholders = originalData.values().stream()
+                .anyMatch(v -> v instanceof String s &&
+                        (s.contains("{{env:") || s.startsWith("enc:")));
+        if (!hasPlaceholders) return null;
+        try {
+            return objectMapper.writeValueAsString(originalData);
+        } catch (Exception e) {
+            log.debug("Failed to serialize source placeholders: {}", e.getMessage());
+            return null;
+        }
     }
 
     // ---- Apply Phase: Variables ----

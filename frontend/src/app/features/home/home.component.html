@@ -31,7 +31,11 @@
               </button>
               <button class="project-action-item" (click)="importProject(); showProjectActionsMenu = false">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                Import project
+                Import from file
+              </button>
+              <button class="project-action-item" (click)="showGitImportModal = true; showProjectActionsMenu = false">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                Import from GitHub
               </button>
             </div>
           }
@@ -705,6 +709,74 @@
               <span>project.json with credentials, variables, and caches — no workflows. Best for replicating project configuration to another environment.</span>
             </div>
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Git Import Modal -->
+@if (showGitImportModal) {
+  <div class="modal-backdrop" (click)="showGitImportModal = false">
+    <div class="export-modal" (click)="$event.stopPropagation()" style="width: 480px">
+      <div class="export-modal-header">
+        <h3>Import from GitHub</h3>
+        <button class="modal-close-btn" (click)="showGitImportModal = false">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="export-modal-body">
+        <p class="export-description">Clone a Git repository and import all projects and workflows found in it. A single repository can contain multiple projects under a <code style="font-size:0.75rem; background:hsl(0,0%,18%); padding:1px 4px; border-radius:3px">projects/</code> directory.</p>
+
+        <div class="git-import-form">
+          <div class="git-form-group">
+            <label class="git-form-label">Repository URL</label>
+            <input class="git-form-input" type="text" [(ngModel)]="gitImportForm.repoUrl" placeholder="https://github.com/org/repo.git">
+          </div>
+
+          <div class="git-form-row">
+            <div class="git-form-group" style="flex:1">
+              <label class="git-form-label">Branch</label>
+              <input class="git-form-input" type="text" [(ngModel)]="gitImportForm.branch" placeholder="main">
+            </div>
+            <div class="git-form-group" style="flex:1">
+              <label class="git-form-label">Provider</label>
+              <select class="git-form-input" [(ngModel)]="gitImportForm.provider">
+                <option value="github">GitHub</option>
+                <option value="gitlab">GitLab</option>
+                <option value="bitbucket">Bitbucket</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="git-form-group">
+            <label class="git-form-label">Sub-path <span style="font-weight:400; color:hsl(0,0%,40%)">(optional)</span></label>
+            <input class="git-form-input" type="text" [(ngModel)]="gitImportForm.subPath" placeholder="e.g. config or leave empty for repo root">
+            <small class="git-form-hint">Import from a subdirectory within the repository. Leave empty to scan the entire repo.</small>
+          </div>
+
+          <div class="git-form-group">
+            <label class="git-form-label">Personal Access Token</label>
+            <input class="git-form-input" type="password" [(ngModel)]="gitImportForm.token" placeholder="ghp_...">
+            <small class="git-form-hint">Required for private repositories. Token is not stored.</small>
+          </div>
+
+          @if (gitImportError) {
+            <div class="git-form-error">{{ gitImportError }}</div>
+          }
+
+          <div class="git-form-actions">
+            <button class="git-btn-cancel" (click)="showGitImportModal = false">Cancel</button>
+            <button class="git-btn-import" (click)="importFromGit()" [disabled]="gitImporting || !gitImportForm.repoUrl">
+              @if (gitImporting) {
+                <span class="git-spinner"></span> Importing...
+              } @else {
+                Import
+              }
+            </button>
+          </div>
         </div>
       </div>
     </div>

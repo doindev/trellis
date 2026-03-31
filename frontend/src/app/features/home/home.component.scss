@@ -267,6 +267,116 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+// Git Import Form
+.git-import-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.git-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.git-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.git-form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cwc-text-secondary);
+}
+
+.git-form-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: hsl(0, 0%, 9%);
+  border: 1px solid var(--cwc-border);
+  border-radius: 6px;
+  color: hsl(0, 0%, 96%);
+  font-size: 0.8125rem;
+  outline: none;
+  color-scheme: dark;
+
+  &::placeholder { color: hsl(0, 0%, 40%); }
+  &:focus { border-color: var(--bs-primary); }
+}
+
+select.git-form-input {
+  cursor: pointer;
+  appearance: auto;
+}
+
+.git-form-hint {
+  font-size: 0.6875rem;
+  color: hsl(0, 0%, 44%);
+  line-height: 1.3;
+}
+
+.git-form-error {
+  padding: 8px 12px;
+  background: hsla(355, 83%, 52%, 0.1);
+  border: 1px solid var(--cwc-error-color);
+  border-radius: 6px;
+  color: var(--cwc-error-color);
+  font-size: 0.8125rem;
+}
+
+.git-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.git-btn-cancel {
+  padding: 8px 18px;
+  background: none;
+  border: 1px solid var(--cwc-border);
+  border-radius: 6px;
+  color: var(--cwc-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover { color: var(--cwc-text-primary); border-color: hsl(0, 0%, 40%); }
+}
+
+.git-btn-import {
+  padding: 8px 24px;
+  background: var(--bs-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover:not(:disabled) { filter: brightness(0.9); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.git-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .header-actions {
   flex-shrink: 0;
 }

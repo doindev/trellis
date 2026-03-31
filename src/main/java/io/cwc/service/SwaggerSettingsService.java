@@ -1,6 +1,9 @@
 package io.cwc.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,9 @@ public class SwaggerSettingsService {
     private final ProjectRepository projectRepository;
     private final TagRepository tagRepository;
 
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private SettingsWritebackService settingsWritebackService;
+
     public SwaggerSettingsDto getSettings() {
         return repository.findFirstByOrderByCreatedAtAsc()
                 .map(e -> SwaggerSettingsDto.builder()
@@ -48,6 +54,7 @@ public class SwaggerSettingsService {
         if (dto.getApiDescription() != null) entity.setApiDescription(dto.getApiDescription());
         if (dto.getApiVersion() != null) entity.setApiVersion(dto.getApiVersion());
         repository.save(entity);
+        if (settingsWritebackService != null) settingsWritebackService.writeSettings();
         return getSettings();
     }
 

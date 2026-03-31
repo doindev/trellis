@@ -1,0 +1,17 @@
+{
+  "execution" : {
+    "saveExecutionProgress" : "yes",
+    "saveManualExecutions" : "yes",
+    "executionTimeout" : -1
+  },
+  "mcp" : {
+    "enabled" : false,
+    "agentToolsEnabled" : true,
+    "agentToolsDedicated" : true,
+    "agentToolsPath" : "agent",
+    "agentToolsTransport" : "STREAMABLE_HTTP"
+  },
+  "swagger" : {
+    "enabled" : false
+  }
+}

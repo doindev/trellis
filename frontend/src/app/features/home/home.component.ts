@@ -976,6 +976,12 @@ export class HomeComponent implements OnInit {
   importResultIsError = false;
   private importToastTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // Git Import
+  showGitImportModal = false;
+  gitImportForm = { repoUrl: '', branch: 'main', token: '', provider: 'github', subPath: '' };
+  gitImporting = false;
+  gitImportError = '';
+
   exportAsZip(): void {
     const projectId = this.selectedProjectId();
     if (!projectId) return;
@@ -1063,6 +1069,32 @@ export class HomeComponent implements OnInit {
       });
     };
     input.click();
+  }
+
+  importFromGit(): void {
+    if (!this.gitImportForm.repoUrl) return;
+    this.gitImporting = true;
+    this.gitImportError = '';
+    this.projectService.importFromGit(this.gitImportForm).subscribe({
+      next: (result: any) => {
+        this.gitImporting = false;
+        this.showGitImportModal = false;
+        const created = (result.projectsCreated || 0) + (result.workflowsCreated || 0);
+        const updated = (result.projectsUpdated || 0) + (result.workflowsUpdated || 0);
+        const errors = result.errors?.length || 0;
+        if (errors > 0) {
+          this.showImportToast(`Git import completed with ${errors} error(s). ${created} created, ${updated} updated.`, true);
+        } else {
+          this.showImportToast(`Git import successful. ${created} created, ${updated} updated.`, false);
+        }
+        this.gitImportForm = { repoUrl: '', branch: 'main', token: '', provider: 'github', subPath: '' };
+        this.loadProjects();
+      },
+      error: (err: any) => {
+        this.gitImporting = false;
+        this.gitImportError = err.message || 'Import failed';
+      }
+    });
   }
 
   private showImportToast(message: string, isError: boolean): void {

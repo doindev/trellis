@@ -2,7 +2,10 @@ package io.cwc.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -42,6 +45,9 @@ public class McpSettingsService {
     private final TagRepository tagRepository;
     private final CwcMcpServerManager mcpServerManager;
 
+    @Setter(onMethod_ = {@Autowired, @Lazy})
+    private SettingsWritebackService settingsWritebackService;
+
     @Value("${server.port:5678}")
     private int serverPort;
 
@@ -79,6 +85,7 @@ public class McpSettingsService {
             mcpServerManager.stopAll();
         }
 
+        if (settingsWritebackService != null) settingsWritebackService.writeSettings();
         return getSettings();
     }
 
@@ -99,6 +106,7 @@ public class McpSettingsService {
             entity.setAgentToolsTransport(transport);
         }
         repository.save(entity);
+        if (settingsWritebackService != null) settingsWritebackService.writeSettings();
         return getSettings();
     }
 
@@ -124,6 +132,7 @@ public class McpSettingsService {
                 .enabled(true)
                 .build();
         entity = endpointRepository.save(entity);
+        if (settingsWritebackService != null) settingsWritebackService.writeSettings();
         return toEndpointDto(entity);
     }
 
@@ -146,12 +155,14 @@ public class McpSettingsService {
         if (dto.getPath() != null) entity.setPath(dto.getPath());
         entity.setEnabled(dto.isEnabled());
         entity = endpointRepository.save(entity);
+        if (settingsWritebackService != null) settingsWritebackService.writeSettings();
         return toEndpointDto(entity);
     }
 
     @Transactional
     public void deleteEndpoint(String id) {
         endpointRepository.deleteById(id);
+        if (settingsWritebackService != null) settingsWritebackService.writeSettings();
     }
 
     // --- Workflows ---
