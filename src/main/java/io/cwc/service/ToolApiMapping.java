@@ -29,7 +29,6 @@ public class ToolApiMapping {
      * Resolves a tool name + arguments to the REST API call spec the browser should execute.
      * Returns null for bypass tools and browser-local tools.
      */
-    @SuppressWarnings("unchecked")
     public static ApiCallSpec resolve(String toolName, Map<String, Object> args) {
         if (BYPASS_CONSENT_TOOLS.contains(toolName) || BROWSER_LOCAL_TOOLS.contains(toolName)) {
             return null;

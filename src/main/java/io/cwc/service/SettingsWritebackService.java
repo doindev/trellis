@@ -1,21 +1,20 @@
 package io.cwc.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import io.cwc.config.CwcConfigProperties;
-import io.cwc.dto.SettingsConfigFile;
-import io.cwc.entity.AiSettingsEntity;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.cwc.config.CwcConfigProperties;
+import io.cwc.dto.SettingsConfigFile;
+import io.cwc.entity.AiSettingsEntity;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Writes all application settings to {cwc.config.paths[0]}/settings.json on any change.

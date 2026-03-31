@@ -1,24 +1,5 @@
 package io.cwc.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import io.cwc.config.CwcConfigProperties;
-import io.cwc.config.CwcConfigProperties.ConfigMode;
-import io.cwc.dto.ConfigReloadResult;
-import io.cwc.entity.ProjectEntity;
-import io.cwc.entity.ProjectSourceControlEntity;
-import io.cwc.exception.BadRequestException;
-import io.cwc.exception.ForbiddenException;
-import io.cwc.exception.NotFoundException;
-import io.cwc.repository.ProjectRepository;
-import io.cwc.repository.ProjectSourceControlRepository;
-import io.cwc.util.SecurityContextHelper;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -32,6 +13,24 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.cwc.config.CwcConfigProperties.ConfigMode;
+import io.cwc.dto.ConfigReloadResult;
+import io.cwc.entity.ProjectEntity;
+import io.cwc.entity.ProjectSourceControlEntity;
+import io.cwc.exception.BadRequestException;
+import io.cwc.exception.NotFoundException;
+import io.cwc.repository.ProjectRepository;
+import io.cwc.repository.ProjectSourceControlRepository;
+import io.cwc.util.SecurityContextHelper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Orchestrates per-project git operations: import from repo, sync, push changes.

@@ -97,7 +97,6 @@ public class NodeExecutionContext {
 	 * Recursively collects all string values from the credentials map (which may contain
 	 * nested maps like {name: "apikey", value: "the-secret"}).
 	 */
-	@SuppressWarnings("unchecked")
 	public String redactSecrets(String message) {
 		if (message == null || credentials == null || credentials.isEmpty()) return message;
 		java.util.Set<String> secrets = new java.util.LinkedHashSet<>();
@@ -113,7 +112,6 @@ public class NodeExecutionContext {
 		return result;
 	}
 
-	@SuppressWarnings("unchecked")
 	private void collectSecretStrings(Object obj, java.util.Set<String> secrets) {
 		if (obj instanceof java.util.Map) {
 			for (Object val : ((java.util.Map<?, ?>) obj).values()) {
