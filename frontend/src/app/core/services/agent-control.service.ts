@@ -78,11 +78,13 @@ export class AgentControlService implements OnDestroy {
 
     // Check auto-approval rules
     if (this.autoApproval.shouldAutoApprove(data.toolName, category)) {
+      console.log('[AgentControl] Auto-approving:', data.toolName);
       this.approveRequest(request);
       return;
     }
 
     // Show consent modal
+    console.log('[AgentControl] Showing consent modal for:', data.toolName);
     this.controlRequests$.next(request);
   }
 
@@ -99,12 +101,15 @@ export class AgentControlService implements OnDestroy {
 
     if (request.apiSpec && !AgentControlService.BROWSER_LOCAL_TOOLS.has(request.toolName)) {
       // Execute the API call through the user's browser session
+      console.log('[AgentControl] Executing API call:', request.apiSpec.method, request.apiSpec.path);
       this.toolExecutor.execute(request.apiSpec).subscribe({
         next: (result) => {
+          console.log('[AgentControl] API call succeeded:', request.toolName);
           this.respondWithResult(request.requestId, true, result, null);
           this.requestCompleted$.next();
         },
         error: (err) => {
+          console.error('[AgentControl] API call failed:', request.toolName, err);
           this.respondWithResult(request.requestId, true, null, err.message || err.error?.message || 'Request failed');
           this.requestCompleted$.next();
         }

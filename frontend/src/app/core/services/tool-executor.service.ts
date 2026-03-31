@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, throwError, timer } from 'rxjs';
-import { catchError, map, switchMap, takeWhile } from 'rxjs/operators';
+import { Observable, of, throwError, timer, TimeoutError } from 'rxjs';
+import { catchError, map, switchMap, takeWhile, timeout } from 'rxjs/operators';
 
 export interface ApiCallSpec {
   method: string;
@@ -23,10 +23,20 @@ export class ToolExecutorService {
   constructor(private http: HttpClient) {}
 
   execute(apiSpec: ApiCallSpec): Observable<any> {
-    if (apiSpec.requiresPolling) {
-      return this.executeWithPolling(apiSpec);
-    }
-    return this.executeRequest(apiSpec);
+    const request$ = apiSpec.requiresPolling
+      ? this.executeWithPolling(apiSpec)
+      : this.executeRequest(apiSpec);
+
+    return request$.pipe(
+      timeout(55000), // 55s timeout (backend consent times out at 60s)
+      catchError(err => {
+        if (err instanceof TimeoutError) {
+          return throwError(() => new Error('Browser API call timed out'));
+        }
+        const msg = err?.error?.message || err?.message || 'Request failed';
+        return throwError(() => new Error(msg));
+      })
+    );
   }
 
   private executeRequest(apiSpec: ApiCallSpec): Observable<any> {

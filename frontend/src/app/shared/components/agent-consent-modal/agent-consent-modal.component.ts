@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnDestroy, OnChanges, SimpleChanges, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgentControlRequest } from '../../../core/services/agent-control.service';
 import { ApprovalScope } from '../../../core/services/auto-approval.service';
@@ -254,7 +254,7 @@ import { ApprovalScope } from '../../../core/services/auto-approval.service';
     @keyframes acm-spin { to { transform: rotate(360deg); } }
   `]
 })
-export class AgentConsentModalComponent implements OnInit, OnDestroy, AfterViewInit {
+export class AgentConsentModalComponent implements OnInit, OnDestroy, OnChanges, AfterViewInit {
   @Input() request: AgentControlRequest | null = null;
   @Output() approve = new EventEmitter<ApprovalScope | null>();
   @Output() deny = new EventEmitter<void>();
@@ -291,6 +291,13 @@ export class AgentConsentModalComponent implements OnInit, OnDestroy, AfterViewI
     cwc_browser_control: 'Browser Control',
     cwc_push_to_canvas: 'Push to Canvas'
   };
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['request'] && changes['request'].currentValue) {
+      this.stopTimer();
+      this.startTimer();
+    }
+  }
 
   ngOnInit(): void {
     this.startTimer();
