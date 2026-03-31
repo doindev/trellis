@@ -32,7 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 	category = "Core Triggers",
 	icon = "webhook",
 	trigger = true,
-	triggerFavorite = true
+	triggerFavorite = true,
+	implementationNotes = "When expecting query parameters or a request body, always place a Schema Validator node " +
+		"immediately after this webhook node to validate the incoming data shape. The webhook outputs " +
+		"$json.body, $json.queryParams, $json.pathParams, and $json.headers — the validation schema " +
+		"should check against these keys. Additionally, define mcpInputSchema and mcpOutputSchema on the " +
+		"workflow itself to describe the external API contract. This enables the workflow to be easily " +
+		"exposed as an MCP tool or documented via Swagger/OpenAPI at a later date without rework."
 )
 public class WebhookNode extends AbstractTriggerNode {
 
