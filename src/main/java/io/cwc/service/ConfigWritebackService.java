@@ -12,7 +12,6 @@ import io.cwc.entity.CredentialEntity;
 import io.cwc.entity.ProjectEntity;
 import io.cwc.repository.CredentialRepository;
 import io.cwc.repository.ProjectRepository;
-import io.cwc.repository.WorkflowRepository;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,7 +36,6 @@ public class ConfigWritebackService {
     private final CredentialRepository credentialRepository;
     private final PropertiesFileService propertiesFileService;
     private final ProjectRepository projectRepository;
-    private final WorkflowRepository workflowRepository;
     private final ObjectMapper objectMapper;
 
     private final ReentrantLock writeLock = new ReentrantLock();

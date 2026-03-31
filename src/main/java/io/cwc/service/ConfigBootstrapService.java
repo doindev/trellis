@@ -394,7 +394,6 @@ public class ConfigBootstrapService {
         if (config.getCredentials() != null) {
             for (ProjectConfigFile.CredentialConfig cc : config.getCredentials()) {
                 if (cc.getRef() != null && cc.getData() != null) {
-                    @SuppressWarnings("unchecked")
                     Map<String, Object> data = (Map<String, Object>) cc.getData();
                     originalCredentialData.put(cc.getRef(), new LinkedHashMap<>(data));
                 }
@@ -526,7 +525,6 @@ public class ConfigBootstrapService {
 
     // ---- Apply Phase: Credentials ----
 
-    @SuppressWarnings("unchecked")
     private Map<String, String> applyCredentials(List<ProjectConfigFile.CredentialConfig> credentials,
                                                   String projectId, String projectConfigId,
                                                   ConfigMode mode, ConfigReloadResult result,
