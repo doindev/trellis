@@ -27,7 +27,10 @@ import lombok.extern.slf4j.Slf4j;
 	displayName = "Try / Catch",
 	description = "Route items based on errors. Clean items go to 'success', items with errors go to 'error' output.",
 	category = "Flow",
-	icon = "umbrella"
+	icon = "umbrella",
+	implementationNotes = "Output index 0 is 'success' (clean items), output index 1 is 'error' (items with errors). " +
+		"Connect the nodes you want to protect AFTER the success output. The error output receives items that " +
+		"threw exceptions, with error details attached. Useful for wrapping HTTP calls or database operations."
 )
 public class TryCatchNode extends AbstractNode {
 

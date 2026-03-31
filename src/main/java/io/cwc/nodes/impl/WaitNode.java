@@ -31,7 +31,11 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
     displayName = "Wait",
     description = "Pauses the workflow execution for a specified time or until resumed by a webhook call.",
     category = "Human in the Loop",
-    icon = "timer"
+    icon = "timer",
+    implementationNotes = "Three resume modes: 'timeInterval' (wait N seconds/minutes/hours/days), 'specificTime' " +
+        "(resume at ISO 8601 datetime), or 'webhook' (pause until an HTTP call to /api/forms/webhook/{executionId}/{nodeId}). " +
+        "In webhook mode, use 'limitWaitTime' to auto-resume after a timeout. The webhook resume URL is generated " +
+        "at runtime and available in the execution data."
 )
 public class WaitNode extends AbstractNode {
 

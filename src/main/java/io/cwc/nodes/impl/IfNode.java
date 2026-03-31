@@ -27,7 +27,10 @@ import lombok.extern.slf4j.Slf4j;
 	displayName = "If",
 	description = "Route items to different outputs based on conditions. Items matching the conditions go to the 'true' output, others go to 'false'.",
 	category = "Flow",
-	icon = "split"
+	icon = "split",
+	implementationNotes = "Output index 0 is the 'true' path, output index 1 is the 'false' path. " +
+		"In connections, the 'main' array has two sub-arrays: [[true targets], [false targets]]. " +
+		"Leave an empty array [] for an unused branch. Supports boolean, string, and number conditions."
 )
 public class IfNode extends AbstractNode {
 

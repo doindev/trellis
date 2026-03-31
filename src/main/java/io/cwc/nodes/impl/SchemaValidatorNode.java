@@ -30,7 +30,11 @@ import lombok.extern.slf4j.Slf4j;
 	displayName = "Schema Validator",
 	description = "Validate items against a schema or field checks. Valid items output on 'valid', invalid on 'invalid'.",
 	category = "Flow",
-	icon = "shield-check"
+	icon = "shield-check",
+	implementationNotes = "Output index 0 is 'valid', output index 1 is 'invalid'. Three modes: 'fieldChecks' for " +
+		"simple per-field rules, 'jsonSchema' for full JSON Schema validation, or 'both'. After a Webhook node, " +
+		"validate against $json.body, $json.queryParams, $json.pathParams. Use 'includeErrors' parameter (default true) " +
+		"to attach _validationErrors to invalid items. Use type arrays like [\"string\",\"number\"] for path params."
 )
 public class SchemaValidatorNode extends AbstractNode {
 

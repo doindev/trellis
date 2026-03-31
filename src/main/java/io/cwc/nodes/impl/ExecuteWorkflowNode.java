@@ -32,7 +32,10 @@ import lombok.extern.slf4j.Slf4j;
 	displayName = "Execute Sub-Workflow",
 	description = "Execute another workflow and use its output data. The target workflow should use an Execute Workflow Trigger as its starting node.",
 	category = "Flow",
-	icon = "route"
+	icon = "route",
+	implementationNotes = "The target sub-workflow must start with an 'Execute Workflow Trigger' (executeWorkflowTrigger) " +
+		"node. Data passed to this node becomes the input of the sub-workflow. The sub-workflow's output is returned " +
+		"as this node's output. Use the 'workflowId' parameter to specify which workflow to call."
 )
 public class ExecuteWorkflowNode extends AbstractNode {
 

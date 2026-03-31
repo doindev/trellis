@@ -31,7 +31,19 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 		displayName = "AI Agent",
 		description = "Autonomous AI agent that can use tools, memory, and a language model to process requests",
 		category = "AI",
-		icon = "bot"
+		icon = "bot",
+		implementationNotes = "Sub-nodes (chat model, memory, tools) connect TO this agent using special AI connection " +
+			"types, not 'main'. The source is always the sub-node, the target is this agent. " +
+			"CRITICAL DUAL-INDEX RULE: Each AI connection needs two entries in the inner array. " +
+			"ai_languageModel (handle position 0): single entry {index: 0}. " +
+			"ai_memory (handle position 1): two entries {index: 0} AND {index: 1}. " +
+			"ai_tool (handle position 2): two entries {index: 0} AND {index: 2}. " +
+			"The ai_tool index is ALWAYS 2 even with multiple tools — do NOT increment to 3, 4, 5. " +
+			"Every tool connection uses index 0 and index 2 identically. " +
+			"Example connections: " +
+			"model1: {ai_languageModel: [[{node: 'agent1', type: 'ai_languageModel', index: 0}]]}, " +
+			"memory1: {ai_memory: [[{node: 'agent1', type: 'ai_memory', index: 0}, {node: 'agent1', type: 'ai_memory', index: 1}]]}, " +
+			"tool1: {ai_tool: [[{node: 'agent1', type: 'ai_tool', index: 0}, {node: 'agent1', type: 'ai_tool', index: 2}]]}"
 )
 public class AiAgentNode extends AbstractNode {
 

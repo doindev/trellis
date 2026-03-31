@@ -32,7 +32,11 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
     displayName = "Form",
     description = "Shows a form to collect human input mid-workflow. Execution pauses until the form is submitted.",
     category = "Human in the Loop",
-    icon = "file-input"
+    icon = "file-input",
+    implementationNotes = "Execution pauses at this node and generates a form URL at /api/forms/wait/{executionId}/{nodeId}. " +
+        "The workflow resumes when the form is submitted. Use 'limitWaitTime' to auto-resume after a timeout. " +
+        "Form field values are available in the output as $json['Field Label']. Use 'completion' operation " +
+        "as the last node in a multi-page form flow to show a thank-you message or redirect."
 )
 public class FormNode extends AbstractNode {
 

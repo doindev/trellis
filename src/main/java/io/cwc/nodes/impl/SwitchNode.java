@@ -29,7 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 	displayName = "Switch",
 	description = "Route items to different outputs based on rules or expressions. Add routing rules to create output branches.",
 	category = "Flow",
-	icon = "signpost"
+	icon = "signpost",
+	implementationNotes = "Each rule maps to an output index (0, 1, 2, ...). Items not matching any rule go to the " +
+		"fallback output (last index). In connections, the 'main' array has one sub-array per output branch. " +
+		"Rules are evaluated in order; the first matching rule determines the output."
 )
 public class SwitchNode extends AbstractNode {
 

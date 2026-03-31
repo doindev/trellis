@@ -36,7 +36,10 @@ import lombok.extern.slf4j.Slf4j;
 	displayName = "Loop Over Items",
 	description = "Process items in batches. Connect the 'Loop' output through processing nodes back to this node's input to iterate.",
 	category = "Flow",
-	icon = "repeat"
+	icon = "repeat",
+	implementationNotes = "Output index 0 ('Done') fires AFTER all items are processed with collected results. " +
+		"Output index 1 ('Loop') fires for each batch and should connect through processing nodes back to " +
+		"this node's input to form the loop. In connections: main[0] = done path, main[1] = loop body."
 )
 public class LoopOverItemsNode extends AbstractNode {
 

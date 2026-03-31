@@ -40,7 +40,11 @@ import lombok.extern.slf4j.Slf4j;
 	category = "Core",
 	icon = "globe",
 	credentials = {"httpBasicAuth", "httpBearerAuth", "httpCustomAuth", "httpDigestAuth",
-				"httpHeaderAuth", "httpQueryAuth", "oAuth1Api", "oAuth2Api"}
+				"httpHeaderAuth", "httpQueryAuth", "oAuth1Api", "oAuth2Api"},
+	implementationNotes = "Set 'authentication' parameter to use credentials: 'httpBasicAuth', 'httpBearerAuth', " +
+		"'httpHeaderAuth', etc. For JSON POST/PUT, set body as a JSON string or expression. " +
+		"Response data is in $json. Use 'timeout' parameter (milliseconds) to prevent hanging on slow endpoints. " +
+		"For pagination, use the built-in 'pagination' parameter options rather than manual looping."
 )
 public class HttpRequestNode extends AbstractApiNode implements CacheableNode {
 

@@ -32,7 +32,16 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 		displayName = "AI Sub Agent",
 		description = "Sub-agent that connects to an AI Agent or another Sub Agent via the Tool handle. Has its own tools, memory, and optionally its own model.",
 		category = "AI",
-		icon = "bot-message-square"
+		icon = "bot-message-square",
+		implementationNotes = "Connects to a parent AI Agent or another Sub Agent via the ai_tool handle. " +
+			"This node can have its own chat model, memory, and tools wired the same way as aiAgent. " +
+			"CRITICAL DUAL-INDEX RULE for wiring sub-nodes to this sub-agent: " +
+			"ai_languageModel (handle position 0): single entry {index: 0}. " +
+			"ai_memory (handle position 1): two entries {index: 0} AND {index: 1}. " +
+			"ai_tool (handle position 2): two entries {index: 0} AND {index: 2}. " +
+			"The ai_tool index is ALWAYS 2 even with multiple tools — do NOT increment to 3, 4, 5. " +
+			"To connect this sub-agent as a tool on a parent agent, use: " +
+			"subAgent1: {ai_tool: [[{node: 'parentAgent', type: 'ai_tool', index: 0}, {node: 'parentAgent', type: 'ai_tool', index: 2}]]}"
 )
 public class AiSubAgentNode extends AbstractAiSubNode {
 
