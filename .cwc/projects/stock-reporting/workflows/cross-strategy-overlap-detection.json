@@ -1,149 +1,125 @@
 {
-  "configId": "cross-strategy-overlap-detection",
-  "name": "Cross-Strategy Overlap Detection",
-  "description": "Daily (11:30 AM ET, Mon-Fri): Queries Neo4j to find tickers appearing on multiple strategy watchlists. Stocks on 2+ watchlists are high-conviction picks. Creates alerts and stores overlap data for the scorecard generator.",
-  "type": "WORKFLOW",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Weekday 11:30AM",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        200,
-        300
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "30 11 * * 1-5",
-        "timezone": "America/New_York"
-      }
+  "configId" : "cross-strategy-overlap-detection",
+  "name" : "Cross-Strategy Overlap Detection",
+  "description" : "Daily (11:30 AM ET, Mon-Fri): Queries Neo4j to find tickers appearing on multiple strategy watchlists. Stocks on 2+ watchlists are high-conviction picks. Creates alerts and stores overlap data for the scorecard generator.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Weekday 11:30AM",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 512, 160 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "30 11 * * 1-5",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 176, 128 ],
+    "parameters" : {
+      "content" : "## Cross-Strategy Overlap Detection\n\nRequired: neo4j, postgresApi\nFinds tickers on 2+ watchlists = high conviction\nReads FROM Neo4j graph relationships"
+    }
+  }, {
+    "id" : "n4_overlap",
+    "name" : "Neo4j: Find Overlaps",
+    "type" : "neo4j",
+    "typeVersion" : 1,
+    "position" : [ 704, 160 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "MATCH (c:Company)-[r:IN_WATCHLIST]->(w:Watchlist) WITH c.ticker AS ticker, c.name AS company_name, collect(w.name) AS strategies, collect(r.score) AS scores, count(w) AS watchlist_count WHERE watchlist_count >= 2 RETURN ticker, company_name, strategies, scores, watchlist_count ORDER BY watchlist_count DESC, ticker",
+      "parameters" : "{}"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        180,
-        80
-      ],
-      "parameters": {
-        "content": "## Cross-Strategy Overlap Detection\n\nRequired: neo4j, postgresApi\nFinds tickers on 2+ watchlists = high conviction\nReads FROM Neo4j graph relationships"
-      }
-    },
-    {
-      "id": "n4_overlap",
-      "name": "Neo4j: Find Overlaps",
-      "type": "neo4j",
-      "typeVersion": 1,
-      "position": [
-        500,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "MATCH (c:Company)-[r:IN_WATCHLIST]->(w:Watchlist) WITH c.ticker AS ticker, c.name AS company_name, collect(w.name) AS strategies, collect(r.score) AS scores, count(w) AS watchlist_count WHERE watchlist_count >= 2 RETURN ticker, company_name, strategies, scores, watchlist_count ORDER BY watchlist_count DESC, ticker",
-        "parameters": "{}"
-      }
-    },
-    {
-      "id": "has_results",
-      "name": "Any Overlaps?",
-      "type": "if",
-      "typeVersion": 1,
-      "position": [
-        800,
-        300
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "combinator": "and",
-          "conditions": [
-            {
-              "id": "1",
-              "operator": {
-                "type": "string",
-                "operation": "isNotEmpty"
-              },
-              "leftValue": "={{$json.ticker}}"
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "alert1",
-      "name": "Create High-Conviction Alert",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1100,
-        200
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) SELECT '{{$json.ticker}}', 'cross_strategy_overlap', 'multi', '{{$json.company_name}} ({{$json.ticker}}) appears on {{$json.watchlist_count}} watchlists: {{$json.strategies}}. High-conviction pick.', 'warning', '{\"strategies\": {{JSON.stringify($json.strategies)}}, \"count\": {{$json.watchlist_count}}}' WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE ticker='{{$json.ticker}}' AND alert_type='cross_strategy_overlap' AND triggered_at::date=CURRENT_DATE);"
-      }
-    },
-    {
-      "id": "log1",
-      "name": "Log Overlaps",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1100,
-        450
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO ai_agent_reports (agent_name, report_date, report_type, summary, findings, created_at) VALUES ('overlap_detector', CURRENT_DATE, 'cross_strategy_overlap', 'Found {{$json.ticker}} on {{$json.watchlist_count}} watchlists: {{$json.strategies}}', '{\"ticker\": \"{{$json.ticker}}\", \"strategies\": {{JSON.stringify($json.strategies)}}, \"count\": {{$json.watchlist_count}}}', NOW());"
+    "credentials" : {
+      "neo4j" : {
+        "ref" : "neo4j-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "n4_overlap",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "n4_overlap": {
-      "main": [
-        [
-          {
-            "node": "has_results",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "has_results": {
-      "main": [
-        [
-          {
-            "node": "alert1",
-            "type": "main",
-            "index": 0
+  }, {
+    "id" : "has_results",
+    "name" : "Any Overlaps?",
+    "type" : "if",
+    "typeVersion" : 1,
+    "position" : [ 896, 160 ],
+    "parameters" : {
+      "conditions" : {
+        "options" : {
+          "caseSensitive" : true,
+          "leftValue" : "",
+          "typeValidation" : "strict"
+        },
+        "combinator" : "and",
+        "conditions" : [ {
+          "id" : "1",
+          "operator" : {
+            "type" : "string",
+            "operation" : "isNotEmpty"
           },
-          {
-            "node": "log1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+          "leftValue" : "={{$json.ticker}}"
+        } ]
+      }
+    }
+  }, {
+    "id" : "alert1",
+    "name" : "Create High-Conviction Alert",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1104, 80 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) SELECT '{{$json.ticker}}', 'cross_strategy_overlap', 'multi', '{{$json.company_name}} ({{$json.ticker}}) appears on {{$json.watchlist_count}} watchlists: {{$json.strategies}}. High-conviction pick.', 'warning', '{\"strategies\": {{JSON.stringify($json.strategies)}}, \"count\": {{$json.watchlist_count}}}' WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE ticker='{{$json.ticker}}' AND alert_type='cross_strategy_overlap' AND triggered_at::date=CURRENT_DATE);"
+    },
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  }, {
+    "id" : "log1",
+    "name" : "Log Overlaps",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1104, 240 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO ai_agent_reports (agent_name, report_date, report_type, summary, findings, created_at) VALUES ('overlap_detector', CURRENT_DATE, 'cross_strategy_overlap', 'Found {{$json.ticker}} on {{$json.watchlist_count}} watchlists: {{$json.strategies}}', '{\"ticker\": \"{{$json.ticker}}\", \"strategies\": {{JSON.stringify($json.strategies)}}, \"count\": {{$json.watchlist_count}}}', NOW());"
+    },
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "n4_overlap",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "n4_overlap" : {
+      "main" : [ [ {
+        "node" : "has_results",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "has_results" : {
+      "main" : [ [ {
+        "node" : "alert1",
+        "type" : "main",
+        "index" : 0
+      }, {
+        "node" : "log1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

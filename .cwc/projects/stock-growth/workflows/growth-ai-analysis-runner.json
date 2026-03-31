@@ -1,190 +1,150 @@
 {
-  "configId": "growth-ai-analysis-runner",
-  "name": "Growth AI Analysis Runner",
-  "description": "Daily (9 AM ET, Mon-Fri): Feeds top 10 growth candidates to the Growth Strategy Analyst agent for deep analysis. Stores AI scores and recommendations.",
-  "type": "WORKFLOW",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Weekday 9AM",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        200,
-        300
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "0 9 * * 1-5",
-        "timezone": "America/New_York"
-      }
+  "configId" : "growth-ai-analysis-runner",
+  "name" : "Growth AI Analysis Runner",
+  "description" : "Daily (9 AM ET, Mon-Fri): Feeds top 10 growth candidates to the Growth Strategy Analyst agent for deep analysis. Stores AI scores and recommendations.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Weekday 9AM",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 200, 300 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "0 9 * * 1-5",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 180, 80 ],
+    "parameters" : {
+      "content" : "## Growth AI Runner\n\nRequired: postgresApi, anthropicApi, neo4j\nUses: Growth Strategy Analyst agent\nIncludes Neo4j peer comparison data"
+    }
+  }, {
+    "id" : "gc",
+    "name" : "Top Candidates",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 450, 300 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "SELECT w.ticker,t.company_name,t.sector,t.industry,t.market_cap,f.revenue_growth,f.earnings_growth,f.pe_ratio,f.gross_margin,f.operating_margin,f.roe,f.free_cash_flow,f.revenue,f.debt_to_equity FROM watchlists w JOIN tickers t ON w.ticker=t.ticker LEFT JOIN fundamentals f ON t.ticker=f.ticker AND f.period_date=(SELECT MAX(period_date) FROM fundamentals WHERE ticker=t.ticker) WHERE w.strategy='growth' AND w.status='active' ORDER BY w.score DESC LIMIT 10"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        180,
-        80
-      ],
-      "parameters": {
-        "content": "## Growth AI Runner\n\nRequired: postgresApi, anthropicApi, neo4j\nUses: Growth Strategy Analyst agent\nIncludes Neo4j peer comparison data"
-      }
-    },
-    {
-      "id": "gc",
-      "name": "Top Candidates",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        450,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT w.ticker,t.company_name,t.sector,t.industry,t.market_cap,f.revenue_growth,f.earnings_growth,f.pe_ratio,f.gross_margin,f.operating_margin,f.roe,f.free_cash_flow,f.revenue,f.debt_to_equity FROM watchlists w JOIN tickers t ON w.ticker=t.ticker LEFT JOIN fundamentals f ON t.ticker=f.ticker AND f.period_date=(SELECT MAX(period_date) FROM fundamentals WHERE ticker=t.ticker) WHERE w.strategy='growth' AND w.status='active' ORDER BY w.score DESC LIMIT 10"
-      }
-    },
-    {
-      "id": "peers",
-      "name": "Neo4j Peer Lookup",
-      "type": "neo4j",
-      "typeVersion": 1,
-      "position": [
-        700,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "MATCH (c:Company {ticker:$ticker})-[:BELONGS_TO_INDUSTRY]->(i:Industry)<-[:BELONGS_TO_INDUSTRY]-(peer:Company) WHERE peer.ticker <> $ticker WITH peer.ticker AS peer_ticker, peer.name AS peer_name, i.name AS industry OPTIONAL MATCH (peer)-[w:IN_WATCHLIST]->(wl:Watchlist) RETURN peer_ticker, peer_name, industry, collect(DISTINCT wl.name) AS on_watchlists ORDER BY peer_name LIMIT 5",
-        "parameters": "={\"ticker\":\"{{$json.ticker}}\"}"
-      }
-    },
-    {
-      "id": "ctx",
-      "name": "Build Context",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        950,
-        300
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst candidate = items[0]?.json || {};\nconst peers = items.slice(1).map(i => i.json).filter(p => p.peer_ticker);\n\nlet peerInfo = '';\nif (peers.length > 0) {\n  peerInfo = '\\n\\nIndustry Peers (from Neo4j graph):';\n  for (const p of peers) {\n    peerInfo += `\\n- ${p.peer_name} (${p.peer_ticker})${p.on_watchlists?.length ? ' [on: ' + p.on_watchlists.join(', ') + ']' : ''}`;\n  }\n}\n\nconst d = candidate;\nreturn [{json:{ticker:d.ticker,context:`Analyze growth stock:\\nTicker: ${d.ticker} (${d.company_name})\\nSector: ${d.sector} | Industry: ${d.industry} | Cap: $${(d.market_cap/1e9).toFixed(1)}B\\nRevenue: $${(d.revenue/1e9).toFixed(2)}B | Growth: ${(d.revenue_growth*100).toFixed(1)}%\\nEarnings Growth: ${(d.earnings_growth*100).toFixed(1)}% | P/E: ${d.pe_ratio}\\nGross: ${(d.gross_margin*100).toFixed(1)}% | Op: ${(d.operating_margin*100).toFixed(1)}%\\nROE: ${(d.roe*100).toFixed(1)}% | FCF: $${(d.free_cash_flow/1e9).toFixed(2)}B | D/E: ${d.debt_to_equity}${peerInfo}\\nDate: ${new Date().toISOString().split('T')[0]}\\n\\nCompare against industry peers. Full growth analysis with score and recommendation.`}}];"
-      }
-    },
-    {
-      "id": "lp",
-      "name": "Each",
-      "type": "loopOverItems",
-      "typeVersion": 1,
-      "position": [
-        1200,
-        300
-      ],
-      "parameters": {
-        "batchSize": 1
-      }
-    },
-    {
-      "id": "ag",
-      "name": "Growth Analyst",
-      "type": "aiAgent",
-      "typeVersion": 1,
-      "position": [
-        1450,
-        300
-      ],
-      "parameters": {
-        "agentDefinitionId": "UNUeotOovEzLNxiBUlQQa",
-        "prompt": "{{$json.context}}"
-      }
-    },
-    {
-      "id": "st",
-      "name": "Store",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1700,
-        300
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO investment_scores (ticker,strategy,score_date,overall_score,recommendation,thesis,created_at) VALUES ('{{$json.ticker}}','growth',CURRENT_DATE,7.0,'HOLD','{{$json.output}}',NOW()) ON CONFLICT (ticker,strategy,score_date) DO UPDATE SET thesis=EXCLUDED.thesis;"
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "gc",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+  }, {
+    "id" : "peers",
+    "name" : "Neo4j Peer Lookup",
+    "type" : "neo4j",
+    "typeVersion" : 1,
+    "position" : [ 700, 300 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "MATCH (c:Company {ticker:$ticker})-[:BELONGS_TO_INDUSTRY]->(i:Industry)<-[:BELONGS_TO_INDUSTRY]-(peer:Company) WHERE peer.ticker <> $ticker WITH peer.ticker AS peer_ticker, peer.name AS peer_name, i.name AS industry OPTIONAL MATCH (peer)-[w:IN_WATCHLIST]->(wl:Watchlist) RETURN peer_ticker, peer_name, industry, collect(DISTINCT wl.name) AS on_watchlists ORDER BY peer_name LIMIT 5",
+      "parameters" : "={\"ticker\":\"{{$json.ticker}}\"}"
     },
-    "gc": {
-      "main": [
-        [
-          {
-            "node": "peers",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "neo4j" : {
+        "ref" : "neo4j-account"
+      }
+    }
+  }, {
+    "id" : "ctx",
+    "name" : "Build Context",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 950, 300 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "const items = $input.all();\nconst candidate = items[0]?.json || {};\nconst peers = items.slice(1).map(i => i.json).filter(p => p.peer_ticker);\n\nlet peerInfo = '';\nif (peers.length > 0) {\n  peerInfo = '\\n\\nIndustry Peers (from Neo4j graph):';\n  for (const p of peers) {\n    peerInfo += `\\n- ${p.peer_name} (${p.peer_ticker})${p.on_watchlists?.length ? ' [on: ' + p.on_watchlists.join(', ') + ']' : ''}`;\n  }\n}\n\nconst d = candidate;\nreturn [{json:{ticker:d.ticker,context:`Analyze growth stock:\\nTicker: ${d.ticker} (${d.company_name})\\nSector: ${d.sector} | Industry: ${d.industry} | Cap: $${(d.market_cap/1e9).toFixed(1)}B\\nRevenue: $${(d.revenue/1e9).toFixed(2)}B | Growth: ${(d.revenue_growth*100).toFixed(1)}%\\nEarnings Growth: ${(d.earnings_growth*100).toFixed(1)}% | P/E: ${d.pe_ratio}\\nGross: ${(d.gross_margin*100).toFixed(1)}% | Op: ${(d.operating_margin*100).toFixed(1)}%\\nROE: ${(d.roe*100).toFixed(1)}% | FCF: $${(d.free_cash_flow/1e9).toFixed(2)}B | D/E: ${d.debt_to_equity}${peerInfo}\\nDate: ${new Date().toISOString().split('T')[0]}\\n\\nCompare against industry peers. Full growth analysis with score and recommendation.`}}];"
+    }
+  }, {
+    "id" : "lp",
+    "name" : "Each",
+    "type" : "loopOverItems",
+    "typeVersion" : 1,
+    "position" : [ 1200, 300 ],
+    "parameters" : {
+      "batchSize" : 1
+    }
+  }, {
+    "id" : "ag",
+    "name" : "Growth Analyst",
+    "type" : "aiAgent",
+    "typeVersion" : 1,
+    "position" : [ 1450, 300 ],
+    "parameters" : {
+      "agentDefinitionId" : "growth-strategy-analyst",
+      "prompt" : "{{$json.context}}",
+      "systemMessage" : "You are a Growth Strategy Analyst specializing in high-growth companies.\n\nPhilosophy:\n- Revenue growth >15% YoY, expanding margins, strong forward guidance\n- Evaluate TAM, competitive moats, accept higher P/E if justified by trajectory\n- Target: Tech, Biotech, Clean Energy, AI/ML, SaaS\n\nAnalysis steps:\n1. Revenue growth trends (3-5yr CAGR)\n2. Earnings acceleration/deceleration\n3. Management execution vs guidance\n4. Competitive positioning, market share gains\n5. Score 1-10 with justification\n\nOutput JSON: ticker, growth_score, revenue_growth_rate, earnings_trajectory, competitive_moat_rating, risk_factors, recommendation (STRONG_BUY/BUY/HOLD/AVOID), thesis.",
+      "maxIterations" : 15
+    }
+  }, {
+    "id" : "st",
+    "name" : "Store",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1700, 300 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO investment_scores (ticker,strategy,score_date,overall_score,recommendation,thesis,created_at) VALUES ('{{$json.ticker}}','growth',CURRENT_DATE,7.0,'HOLD','{{$json.output}}',NOW()) ON CONFLICT (ticker,strategy,score_date) DO UPDATE SET thesis=EXCLUDED.thesis;"
     },
-    "peers": {
-      "main": [
-        [
-          {
-            "node": "ctx",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "gc",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "ctx": {
-      "main": [
-        [
-          {
-            "node": "lp",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "gc" : {
+      "main" : [ [ {
+        "node" : "peers",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "lp": {
-      "main": [
-        [],
-        [
-          {
-            "node": "ag",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "peers" : {
+      "main" : [ [ {
+        "node" : "ctx",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "ag": {
-      "main": [
-        [
-          {
-            "node": "st",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "ctx" : {
+      "main" : [ [ {
+        "node" : "lp",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "lp" : {
+      "main" : [ [ ], [ {
+        "node" : "ag",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "ag" : {
+      "main" : [ [ {
+        "node" : "st",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

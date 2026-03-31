@@ -1,134 +1,112 @@
 {
-  "configId": "value-stock-screener",
-  "name": "Value Stock Screener",
-  "description": "Daily (7:15 AM ET, Mon-Fri): Screens for undervalued stocks with P/E<15, P/B<1.5, D/E<1.0, positive FCF, current ratio>1.5, cap>$500M.",
-  "type": "WORKFLOW",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Weekday 7:15AM",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        200,
-        300
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "15 7 * * 1-5",
-        "timezone": "America/New_York"
-      }
+  "configId" : "value-stock-screener",
+  "name" : "Value Stock Screener",
+  "description" : "Daily (7:15 AM ET, Mon-Fri): Screens for undervalued stocks with P/E<15, P/B<1.5, D/E<1.0, positive FCF, current ratio>1.5, cap>$500M.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Weekday 7:15AM",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 200, 300 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "15 7 * * 1-5",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 180, 80 ],
+    "parameters" : {
+      "content" : "## Value Screener\n\nRequired: postgresApi, neo4j\nCriteria: P/E<15, P/B<1.5, D/E<1, FCF>0, CR>1.5"
+    }
+  }, {
+    "id" : "sc",
+    "name" : "Screen",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 450, 300 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "SELECT t.ticker,t.company_name,t.sector,t.market_cap,f.pe_ratio,f.pb_ratio,f.debt_to_equity,f.current_ratio,f.roe,f.free_cash_flow,f.dividend_yield,f.net_margin,f.revenue FROM tickers t JOIN fundamentals f ON t.ticker=f.ticker WHERE t.is_active=true AND f.pe_ratio>0 AND f.pe_ratio<15 AND f.pb_ratio>0 AND f.pb_ratio<1.5 AND f.debt_to_equity<1.0 AND f.free_cash_flow>0 AND f.current_ratio>1.5 AND t.market_cap>500000000 AND f.period_date=(SELECT MAX(period_date) FROM fundamentals WHERE ticker=t.ticker) ORDER BY f.pe_ratio ASC LIMIT 50"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        180,
-        80
-      ],
-      "parameters": {
-        "content": "## Value Screener\n\nRequired: postgresApi, neo4j\nCriteria: P/E<15, P/B<1.5, D/E<1, FCF>0, CR>1.5"
-      }
-    },
-    {
-      "id": "sc",
-      "name": "Screen",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        450,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT t.ticker,t.company_name,t.sector,t.market_cap,f.pe_ratio,f.pb_ratio,f.debt_to_equity,f.current_ratio,f.roe,f.free_cash_flow,f.dividend_yield,f.net_margin,f.revenue FROM tickers t JOIN fundamentals f ON t.ticker=f.ticker WHERE t.is_active=true AND f.pe_ratio>0 AND f.pe_ratio<15 AND f.pb_ratio>0 AND f.pb_ratio<1.5 AND f.debt_to_equity<1.0 AND f.free_cash_flow>0 AND f.current_ratio>1.5 AND t.market_cap>500000000 AND f.period_date=(SELECT MAX(period_date) FROM fundamentals WHERE ticker=t.ticker) ORDER BY f.pe_ratio ASC LIMIT 50"
-      }
-    },
-    {
-      "id": "vs",
-      "name": "Score",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        700,
-        300
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForEachItem",
-        "jsCode": "const d=$json;let s=0;s+=d.pe_ratio<10?3:d.pe_ratio<12?2:1;s+=d.pb_ratio<1?3:d.pb_ratio<1.2?2:1;s+=d.debt_to_equity<0.5?2:1;s+=d.current_ratio>2?2:1;s+=d.roe>0.15?2:d.roe>0.1?1:0;return [{json:{...d,value_score:s}}];"
-      }
-    },
-    {
-      "id": "pw",
-      "name": "Watchlist",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        950,
-        200
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO watchlists (strategy,ticker,score,status,metadata) VALUES ('value','{{$json.ticker}}',{{$json.value_score}},'active','{\"pe\":{{$json.pe_ratio}},\"pb\":{{$json.pb_ratio}}}') ON CONFLICT (strategy,ticker) DO UPDATE SET score=EXCLUDED.score,metadata=EXCLUDED.metadata,status='active';"
-      }
-    },
-    {
-      "id": "n4",
-      "name": "Neo4j Watchlist",
-      "type": "neo4j",
-      "typeVersion": 1,
-      "position": [
-        950,
-        450
-      ],
-      "parameters": {
-        "operation": "executeStatement",
-        "query": "MATCH (c:Company {ticker:$ticker}),(w:Watchlist {name:'value'}) MERGE (c)-[r:IN_WATCHLIST]->(w) SET r.score=$score,r.updatedAt=datetime();",
-        "parameters": "{\"ticker\":\"{{$json.ticker}}\",\"score\":{{$json.value_score}}}"
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "sc",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+  }, {
+    "id" : "vs",
+    "name" : "Score",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 700, 300 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForEachItem",
+      "jsCode" : "const d=$json;let s=0;s+=d.pe_ratio<10?3:d.pe_ratio<12?2:1;s+=d.pb_ratio<1?3:d.pb_ratio<1.2?2:1;s+=d.debt_to_equity<0.5?2:1;s+=d.current_ratio>2?2:1;s+=d.roe>0.15?2:d.roe>0.1?1:0;return [{json:{...d,value_score:s}}];"
+    }
+  }, {
+    "id" : "pw",
+    "name" : "Watchlist",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 950, 200 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO watchlists (strategy,ticker,score,status,metadata) VALUES ('value','{{$json.ticker}}',{{$json.value_score}},'active','{\"pe\":{{$json.pe_ratio}},\"pb\":{{$json.pb_ratio}}}') ON CONFLICT (strategy,ticker) DO UPDATE SET score=EXCLUDED.score,metadata=EXCLUDED.metadata,status='active';"
     },
-    "sc": {
-      "main": [
-        [
-          {
-            "node": "vs",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  }, {
+    "id" : "n4",
+    "name" : "Neo4j Watchlist",
+    "type" : "neo4j",
+    "typeVersion" : 1,
+    "position" : [ 950, 450 ],
+    "parameters" : {
+      "operation" : "executeStatement",
+      "query" : "MATCH (c:Company {ticker:$ticker}),(w:Watchlist {name:'value'}) MERGE (c)-[r:IN_WATCHLIST]->(w) SET r.score=$score,r.updatedAt=datetime();",
+      "parameters" : "{\"ticker\":\"{{$json.ticker}}\",\"score\":{{$json.value_score}}}"
     },
-    "vs": {
-      "main": [
-        [
-          {
-            "node": "pw",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "n4",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "neo4j" : {
+        "ref" : "neo4j-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "sc",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "sc" : {
+      "main" : [ [ {
+        "node" : "vs",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "vs" : {
+      "main" : [ [ {
+        "node" : "pw",
+        "type" : "main",
+        "index" : 0
+      }, {
+        "node" : "n4",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

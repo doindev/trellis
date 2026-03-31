@@ -1,105 +1,79 @@
 {
-  "name": "Sector Rotation Tracker",
-  "description": "Weekly (Monday 7 AM ET): Fetches sector ETF performance, stores in sector_performance table for rotation analysis.",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Monday 7AM",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        200,
-        300
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "0 7 * * 1",
-        "timezone": "America/New_York"
-      }
+  "configId" : "sector-rotation-tracker",
+  "name" : "Sector Rotation Tracker",
+  "description" : "Weekly (Monday 7 AM ET): Fetches sector ETF performance, stores in sector_performance table for rotation analysis.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Monday 7AM",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 200, 300 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "0 7 * * 1",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "f1",
+    "name" : "Fetch",
+    "type" : "httpRequest",
+    "typeVersion" : 1,
+    "position" : [ 450, 300 ],
+    "parameters" : {
+      "method" : "GET",
+      "url" : "=https://financialmodelingprep.com/stable/sector-performance-snapshot?date={{$today}}&apikey={{$credentials.fmp_api_key.value}}",
+      "authentication" : "none"
+    }
+  }, {
+    "id" : "tx",
+    "name" : "Transform",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 700, 300 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "const d=$input.first().json;if(!Array.isArray(d))return [{json:{error:'no data'}}];return d.map(s=>({json:{sector:s.sector,perf_date:new Date().toISOString().split('T')[0],daily_return:parseFloat(s.changesPercentage)/100||0}}));"
+    }
+  }, {
+    "id" : "pg",
+    "name" : "Store",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 950, 300 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO sector_performance (sector,perf_date,daily_return) VALUES ('{{$json.sector}}','{{$json.perf_date}}',{{$json.daily_return}}) ON CONFLICT (sector,perf_date) DO UPDATE SET daily_return=EXCLUDED.daily_return;"
     },
-    {
-      "id": "f1",
-      "name": "Fetch",
-      "type": "httpRequest",
-      "typeVersion": 1,
-      "position": [
-        450,
-        300
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "=https://financialmodelingprep.com/stable/sector-performance-snapshot?date={{$today}}&apikey={{$credentials.fmp_api_key.value}}",
-        "authentication": "none"
-      }
-    },
-    {
-      "id": "tx",
-      "name": "Transform",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        700,
-        300
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "const d=$input.first().json;if(!Array.isArray(d))return [{json:{error:'no data'}}];return d.map(s=>({json:{sector:s.sector,perf_date:new Date().toISOString().split('T')[0],daily_return:parseFloat(s.changesPercentage)/100||0}}));"
-      }
-    },
-    {
-      "id": "pg",
-      "name": "Store",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        950,
-        300
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO sector_performance (sector,perf_date,daily_return) VALUES ('{{$json.sector}}','{{$json.perf_date}}',{{$json.daily_return}}) ON CONFLICT (sector,perf_date) DO UPDATE SET daily_return=EXCLUDED.daily_return;"
-      },
-      "credentials": {
-        "postgresApi": {
-          "ref": "postgresql-account"
-        }
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "f1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "f1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "f1": {
-      "main": [
-        [
-          {
-            "node": "tx",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "f1" : {
+      "main" : [ [ {
+        "node" : "tx",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "tx": {
-      "main": [
-        [
-          {
-            "node": "pg",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "tx" : {
+      "main" : [ [ {
+        "node" : "pg",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

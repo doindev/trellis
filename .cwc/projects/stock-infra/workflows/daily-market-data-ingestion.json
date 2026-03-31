@@ -1,179 +1,132 @@
 {
-  "name": "Daily Market Data Ingestion",
-  "description": "Daily (6 PM ET, Mon-Fri): Fetches end-of-day OHLCV from Massive (formerly Polygon.io) grouped daily endpoint for all active tickers. Stores in daily_prices table.",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Weekday 6PM ET",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        512,
-        160
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "0 18 * * 1-5",
-        "timezone": "America/New_York"
-      }
+  "configId" : "daily-market-data-ingestion",
+  "name" : "Daily Market Data Ingestion",
+  "description" : "Daily (6 PM ET, Mon-Fri): Fetches end-of-day OHLCV from Massive (formerly Polygon.io) grouped daily endpoint for all active tickers. Stores in daily_prices table.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Weekday 6PM ET",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 512, 160 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "0 18 * * 1-5",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 176, 128 ],
+    "parameters" : {
+      "content" : "## Daily Market Data\n\nRequired: httpQueryAuth (Massive API Key), postgresApi\nAPI: Massive (formerly Polygon.io) grouped daily\nDocs: massive.com/docs/rest/stocks/aggregates/daily-market-summary"
+    }
+  }, {
+    "id" : "dt",
+    "name" : "Trade Date",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 704, 160 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "const d=new Date(); return [{json:{trade_date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}}];"
+    }
+  }, {
+    "id" : "fetch1",
+    "name" : "Fetch Prices",
+    "type" : "httpRequest",
+    "typeVersion" : 1,
+    "position" : [ 896, 80 ],
+    "parameters" : {
+      "method" : "GET",
+      "url" : "=https://api.massive.com/v2/aggs/grouped/locale/us/market/stocks/{{$json.trade_date}}?adjusted=true&apiKey={{$credentials.massive_api_key.value}}",
+      "authentication" : "none"
+    }
+  }, {
+    "id" : "tickers",
+    "name" : "Active Tickers",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 896, 240 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "SELECT ticker FROM tickers WHERE is_active=true"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        176,
-        128
-      ],
-      "parameters": {
-        "content": "## Daily Market Data\n\nRequired: httpQueryAuth (Massive API Key), postgresApi\nAPI: Massive (formerly Polygon.io) grouped daily\nDocs: massive.com/docs/rest/stocks/aggregates/daily-market-summary"
-      }
-    },
-    {
-      "id": "dt",
-      "name": "Trade Date",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        704,
-        160
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "const d=new Date(); return [{json:{trade_date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}}];"
-      }
-    },
-    {
-      "id": "fetch1",
-      "name": "Fetch Prices",
-      "type": "httpRequest",
-      "typeVersion": 1,
-      "position": [
-        896,
-        80
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "=https://api.massive.com/v2/aggs/grouped/locale/us/market/stocks/{{$json.trade_date}}?adjusted=true&apiKey={{$credentials.massive_api_key.value}}",
-        "authentication": "none"
-      }
-    },
-    {
-      "id": "tickers",
-      "name": "Active Tickers",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        896,
-        240
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT ticker FROM tickers WHERE is_active=true"
-      },
-      "credentials": {
-        "postgresApi": {
-          "ref": "postgresql-account"
-        }
-      }
-    },
-    {
-      "id": "transform1",
-      "name": "Filter & Transform",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        1104,
-        160
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "const items=$input.all(); const pd=items[0]?.json; const results=pd?.results||[]; const tks=new Set(items.slice(1).map(i=>i.json.ticker));\nreturn results.filter(r=>tks.has(r.T)).map(r=>({json:{ticker:r.T,price_date:new Date(r.t).toISOString().split('T')[0],open_price:r.o,high_price:r.h,low_price:r.l,close_price:r.c,adj_close:r.c,volume:r.v}}));"
-      }
-    },
-    {
-      "id": "pg1",
-      "name": "Store",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1296,
-        160
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO daily_prices (ticker,price_date,open_price,high_price,low_price,close_price,adj_close,volume) VALUES ('{{$json.ticker}}','{{$json.price_date}}',{{$json.open_price}},{{$json.high_price}},{{$json.low_price}},{{$json.close_price}},{{$json.adj_close}},{{$json.volume}}) ON CONFLICT (ticker,price_date) DO UPDATE SET open_price=EXCLUDED.open_price,high_price=EXCLUDED.high_price,low_price=EXCLUDED.low_price,close_price=EXCLUDED.close_price,volume=EXCLUDED.volume;"
-      },
-      "credentials": {
-        "postgresApi": {
-          "ref": "postgresql-account"
-        }
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "dt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+  }, {
+    "id" : "transform1",
+    "name" : "Filter & Transform",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 1104, 160 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "const items=$input.all(); const pd=items[0]?.json; const results=pd?.results||[]; const tks=new Set(items.slice(1).map(i=>i.json.ticker));\nreturn results.filter(r=>tks.has(r.T)).map(r=>({json:{ticker:r.T,price_date:new Date(r.t).toISOString().split('T')[0],open_price:r.o,high_price:r.h,low_price:r.l,close_price:r.c,adj_close:r.c,volume:r.v}}));"
+    }
+  }, {
+    "id" : "pg1",
+    "name" : "Store",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1296, 160 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO daily_prices (ticker,price_date,open_price,high_price,low_price,close_price,adj_close,volume) VALUES ('{{$json.ticker}}','{{$json.price_date}}',{{$json.open_price}},{{$json.high_price}},{{$json.low_price}},{{$json.close_price}},{{$json.adj_close}},{{$json.volume}}) ON CONFLICT (ticker,price_date) DO UPDATE SET open_price=EXCLUDED.open_price,high_price=EXCLUDED.high_price,low_price=EXCLUDED.low_price,close_price=EXCLUDED.close_price,volume=EXCLUDED.volume;"
     },
-    "dt": {
-      "main": [
-        [
-          {
-            "node": "fetch1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "tickers",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "dt",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "fetch1": {
-      "main": [
-        [
-          {
-            "node": "transform1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "dt" : {
+      "main" : [ [ {
+        "node" : "fetch1",
+        "type" : "main",
+        "index" : 0
+      }, {
+        "node" : "tickers",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "tickers": {
-      "main": [
-        [
-          {
-            "node": "transform1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "fetch1" : {
+      "main" : [ [ {
+        "node" : "transform1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "transform1": {
-      "main": [
-        [
-          {
-            "node": "pg1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "tickers" : {
+      "main" : [ [ {
+        "node" : "transform1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "transform1" : {
+      "main" : [ [ {
+        "node" : "pg1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

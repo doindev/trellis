@@ -1,22 +1,30 @@
 {
-  "configId": "stock-growth",
-  "name": "Stock Research - Growth Investing",
-  "type": "TEAM",
-  "contextPath": "stock-growth",
-  "description": "Growth investing strategy: identifies companies with above-average earnings growth, expanding margins, and strong forward guidance. Targets tech, biotech, and disruptive innovators.",
-  "credentials": [
-    {
-      "ref": "postgresql-account",
-      "name": "PostgreSQL account",
-      "type": "postgresApi",
-      "data": {
-        "host": "{{env:postgresql.host}}",
-        "port": "{{env:postgresql.port}}",
-        "ssl": "{{env:postgresql.ssl}}",
-        "database": "{{env:postgresql.database}}",
-        "username": "{{env:postgresql.username}}",
-        "password": "{{env:postgresql.password}}"
-      }
+  "configId" : "stock-growth",
+  "name" : "Stock Research - Growth Investing",
+  "type" : "TEAM",
+  "contextPath" : "stock-growth",
+  "description" : "Growth investing strategy: identifies companies with above-average earnings growth, expanding margins, and strong forward guidance. Targets tech, biotech, and disruptive innovators.",
+  "credentials" : [ {
+    "ref" : "neo4j-account",
+    "name" : "Neo4j account",
+    "type" : "neo4j",
+    "data" : {
+      "uri" : "{{env:STOCK_GROWTH_NEO4J_ACCOUNT_URI}}",
+      "username" : "{{env:STOCK_GROWTH_NEO4J_ACCOUNT_USERNAME}}",
+      "database" : "{{env:STOCK_GROWTH_NEO4J_ACCOUNT_DATABASE}}",
+      "password" : "{{env:STOCK_GROWTH_NEO4J_ACCOUNT_PASSWORD}}"
     }
-  ]
+  }, {
+    "ref" : "postgresql-account",
+    "name" : "PostgreSQL account",
+    "type" : "postgresApi",
+    "data" : {
+      "host" : "{{env:postgresql.host}}",
+      "port" : "{{env:postgresql.port}}",
+      "ssl" : "{{env:postgresql.ssl}}",
+      "database" : "{{env:postgresql.database}}",
+      "username" : "{{env:postgresql.username}}",
+      "password" : "{{env:postgresql.password}}"
+    }
+  } ]
 }

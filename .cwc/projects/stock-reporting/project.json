@@ -1,22 +1,30 @@
 {
-  "configId": "stock-reporting",
-  "name": "Stock Research - Valuation & Reporting",
-  "type": "TEAM",
-  "contextPath": "stock-reporting",
-  "description": "Consolidation layer: generates investment scorecards (1-10), compiles HTML investment reports, calculates intrinsic values, sends alert notifications via email when trigger conditions are met.",
-  "credentials": [
-    {
-      "ref": "postgresql-account",
-      "name": "PostgreSQL account",
-      "type": "postgresApi",
-      "data": {
-        "host": "{{env:postgresql.host}}",
-        "port": "{{env:postgresql.port}}",
-        "ssl": "{{env:postgresql.ssl}}",
-        "database": "{{env:postgresql.database}}",
-        "username": "{{env:postgresql.username}}",
-        "password": "{{env:postgresql.password}}"
-      }
+  "configId" : "stock-reporting",
+  "name" : "Stock Research - Valuation & Reporting",
+  "type" : "TEAM",
+  "contextPath" : "stock-reporting",
+  "description" : "Consolidation layer: generates investment scorecards (1-10), compiles HTML investment reports, calculates intrinsic values, sends alert notifications via email when trigger conditions are met.",
+  "credentials" : [ {
+    "ref" : "neo4j-account",
+    "name" : "Neo4j account",
+    "type" : "neo4j",
+    "data" : {
+      "uri" : "{{env:STOCK_REPORTING_NEO4J_ACCOUNT_URI}}",
+      "username" : "{{env:STOCK_REPORTING_NEO4J_ACCOUNT_USERNAME}}",
+      "database" : "{{env:STOCK_REPORTING_NEO4J_ACCOUNT_DATABASE}}",
+      "password" : "{{env:STOCK_REPORTING_NEO4J_ACCOUNT_PASSWORD}}"
     }
-  ]
+  }, {
+    "ref" : "postgresql-account",
+    "name" : "PostgreSQL account",
+    "type" : "postgresApi",
+    "data" : {
+      "host" : "{{env:postgresql.host}}",
+      "port" : "{{env:postgresql.port}}",
+      "ssl" : "{{env:postgresql.ssl}}",
+      "database" : "{{env:postgresql.database}}",
+      "username" : "{{env:postgresql.username}}",
+      "password" : "{{env:postgresql.password}}"
+    }
+  } ]
 }

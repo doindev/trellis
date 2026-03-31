@@ -1,134 +1,112 @@
 {
-  "configId": "growth-stock-screener",
-  "name": "Growth Stock Screener",
-  "description": "Daily (7 AM ET, Mon-Fri): Screens for growth candidates with revenue growth >15%, earnings growth >0, gross margin >40%, market cap >$1B. Stores in watchlist and Neo4j.",
-  "type": "WORKFLOW",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Weekday 7AM",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        200,
-        300
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "0 7 * * 1-5",
-        "timezone": "America/New_York"
-      }
+  "configId" : "growth-stock-screener",
+  "name" : "Growth Stock Screener",
+  "description" : "Daily (7 AM ET, Mon-Fri): Screens for growth candidates with revenue growth >15%, earnings growth >0, gross margin >40%, market cap >$1B. Stores in watchlist and Neo4j.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Weekday 7AM",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 512, 160 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "0 7 * * 1-5",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 176, 128 ],
+    "parameters" : {
+      "content" : "## Growth Screener\n\nRequired: postgresApi, neo4j\nCriteria: rev growth >15%, earnings >0, margin >40%, cap >$1B"
+    }
+  }, {
+    "id" : "sc",
+    "name" : "Screen",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 704, 160 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "SELECT t.ticker,t.company_name,t.sector,t.industry,t.market_cap,f.revenue_growth,f.earnings_growth,f.gross_margin,f.operating_margin,f.pe_ratio,f.roe,f.free_cash_flow,f.revenue FROM tickers t JOIN fundamentals f ON t.ticker=f.ticker WHERE t.is_active=true AND f.revenue_growth>0.15 AND f.earnings_growth>0 AND f.gross_margin>0.40 AND t.market_cap>1000000000 AND f.period_date=(SELECT MAX(period_date) FROM fundamentals WHERE ticker=t.ticker AND period_type='annual') ORDER BY f.revenue_growth DESC LIMIT 50"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        180,
-        80
-      ],
-      "parameters": {
-        "content": "## Growth Screener\n\nRequired: postgresApi, neo4j\nCriteria: rev growth >15%, earnings >0, margin >40%, cap >$1B"
-      }
-    },
-    {
-      "id": "sc",
-      "name": "Screen",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        450,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT t.ticker,t.company_name,t.sector,t.industry,t.market_cap,f.revenue_growth,f.earnings_growth,f.gross_margin,f.operating_margin,f.pe_ratio,f.roe,f.free_cash_flow,f.revenue FROM tickers t JOIN fundamentals f ON t.ticker=f.ticker WHERE t.is_active=true AND f.revenue_growth>0.15 AND f.earnings_growth>0 AND f.gross_margin>0.40 AND t.market_cap>1000000000 AND f.period_date=(SELECT MAX(period_date) FROM fundamentals WHERE ticker=t.ticker AND period_type='annual') ORDER BY f.revenue_growth DESC LIMIT 50"
-      }
-    },
-    {
-      "id": "en",
-      "name": "Enrich",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        700,
-        300
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForEachItem",
-        "jsCode": "return [{json:{...$json,strategy:'growth'}}];"
-      }
-    },
-    {
-      "id": "pw",
-      "name": "Watchlist",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        950,
-        200
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO watchlists (strategy,ticker,score,status,metadata) VALUES ('growth','{{$json.ticker}}',{{$json.revenue_growth}}*10,'active','{\"rev_growth\":{{$json.revenue_growth}},\"sector\":\"{{$json.sector}}\"}') ON CONFLICT (strategy,ticker) DO UPDATE SET score=EXCLUDED.score,metadata=EXCLUDED.metadata,status='active';"
-      }
-    },
-    {
-      "id": "n4",
-      "name": "Neo4j",
-      "type": "neo4j",
-      "typeVersion": 1,
-      "position": [
-        950,
-        450
-      ],
-      "parameters": {
-        "operation": "executeStatement",
-        "query": "MATCH (c:Company {ticker:$ticker}),(w:Watchlist {name:'growth'}) MERGE (c)-[r:IN_WATCHLIST]->(w) SET r.score=$score,r.updatedAt=datetime();",
-        "parameters": "{\"ticker\":\"{{$json.ticker}}\",\"score\":{{$json.revenue_growth}}}"
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "sc",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+  }, {
+    "id" : "en",
+    "name" : "Enrich",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 896, 160 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForEachItem",
+      "jsCode" : "return [{json:{...$json,strategy:'growth'}}];"
+    }
+  }, {
+    "id" : "pw",
+    "name" : "Watchlist",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1104, 80 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO watchlists (strategy,ticker,score,status,metadata) VALUES ('growth','{{$json.ticker}}',{{$json.revenue_growth}}*10,'active','{\"rev_growth\":{{$json.revenue_growth}},\"sector\":\"{{$json.sector}}\"}') ON CONFLICT (strategy,ticker) DO UPDATE SET score=EXCLUDED.score,metadata=EXCLUDED.metadata,status='active';"
     },
-    "sc": {
-      "main": [
-        [
-          {
-            "node": "en",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  }, {
+    "id" : "n4",
+    "name" : "Neo4j",
+    "type" : "neo4j",
+    "typeVersion" : 1,
+    "position" : [ 1104, 240 ],
+    "parameters" : {
+      "operation" : "executeStatement",
+      "query" : "MATCH (c:Company {ticker:$ticker}),(w:Watchlist {name:'growth'}) MERGE (c)-[r:IN_WATCHLIST]->(w) SET r.score=$score,r.updatedAt=datetime();",
+      "parameters" : "{\"ticker\":\"{{$json.ticker}}\",\"score\":{{$json.revenue_growth}}}"
     },
-    "en": {
-      "main": [
-        [
-          {
-            "node": "pw",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "n4",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "neo4j" : {
+        "ref" : "neo4j-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "sc",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "sc" : {
+      "main" : [ [ {
+        "node" : "en",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "en" : {
+      "main" : [ [ {
+        "node" : "pw",
+        "type" : "main",
+        "index" : 0
+      }, {
+        "node" : "n4",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

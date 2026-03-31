@@ -1,207 +1,166 @@
 {
-  "configId": "short-term-momentum-scanner",
-  "name": "Short-Term Momentum Scanner",
-  "description": "Runs 3x daily (8AM, 12PM, 4PM ET, Mon-Fri): Scans for stocks with strong short-term momentum \u2014 price above 20-day MA, RSI between 50-70 (not overbought), volume >1.5x average, and positive 5-day price change. Stores candidates in watchlist for pattern detection.",
-  "type": "WORKFLOW",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "3x Daily Mon-Fri",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        200,
-        300
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "0 8,12,16 * * 1-5",
-        "timezone": "America/New_York"
-      }
+  "configId" : "short-term-momentum-scanner",
+  "name" : "Short-Term Momentum Scanner",
+  "description" : "Runs 3x daily (8AM, 12PM, 4PM ET, Mon-Fri): Scans for stocks with strong short-term momentum — price above 20-day MA, RSI between 50-70 (not overbought), volume >1.5x average, and positive 5-day price change. Stores candidates in watchlist for pattern detection.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "3x Daily Mon-Fri",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 200, 300 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "0 8,12,16 * * 1-5",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 180, 80 ],
+    "parameters" : {
+      "content" : "## Short-Term Momentum Scanner\n\nRequired: postgresApi, httpHeaderAuth (FMP)\nScans 3x daily for momentum setups\nFilters: vol >1M, price >$5, RSI 50-70, above 20MA"
+    }
+  }, {
+    "id" : "fetch_screen",
+    "name" : "FMP Stock Screener",
+    "type" : "httpRequest",
+    "typeVersion" : 1,
+    "position" : [ 450, 300 ],
+    "parameters" : {
+      "method" : "GET",
+      "url" : "=https://financialmodelingprep.com/api/v3/stock-screener?volumeMoreThan=1000000&priceMoreThan=5&marketCapMoreThan=500000000&exchange=NYSE,NASDAQ&limit=100&apikey={{$credentials.httpHeaderAuth.value}}",
+      "authentication" : "none"
+    }
+  }, {
+    "id" : "get_technicals",
+    "name" : "Get Recent Technicals",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 450, 500 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "SELECT DISTINCT ticker, value as rsi_value, signal as rsi_signal FROM technical_indicators WHERE indicator_name = 'RSI_14' AND indicator_date >= CURRENT_DATE - INTERVAL '2 days' AND value BETWEEN 30 AND 70"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        180,
-        80
-      ],
-      "parameters": {
-        "content": "## Short-Term Momentum Scanner\n\nRequired: postgresApi, httpHeaderAuth (FMP)\nScans 3x daily for momentum setups\nFilters: vol >1M, price >$5, RSI 50-70, above 20MA"
-      }
-    },
-    {
-      "id": "fetch_screen",
-      "name": "FMP Stock Screener",
-      "type": "httpRequest",
-      "typeVersion": 1,
-      "position": [
-        450,
-        300
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "=https://financialmodelingprep.com/api/v3/stock-screener?volumeMoreThan=1000000&priceMoreThan=5&marketCapMoreThan=500000000&exchange=NYSE,NASDAQ&limit=100&apikey={{$credentials.httpHeaderAuth.value}}",
-        "authentication": "none"
-      }
-    },
-    {
-      "id": "get_technicals",
-      "name": "Get Recent Technicals",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        450,
-        500
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT DISTINCT ticker, value as rsi_value, signal as rsi_signal FROM technical_indicators WHERE indicator_name = 'RSI_14' AND indicator_date >= CURRENT_DATE - INTERVAL '2 days' AND value BETWEEN 30 AND 70"
-      }
-    },
-    {
-      "id": "filter_momentum",
-      "name": "Filter Momentum",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        750,
-        300
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst screenerResults = items[0]?.json || [];\nconst technicals = items.slice(1).map(i => i.json);\nconst rsiMap = new Map(technicals.map(t => [t.ticker, t]));\n\nconst candidates = (Array.isArray(screenerResults) ? screenerResults : [])\n  .filter(s => {\n    const rsi = rsiMap.get(s.symbol);\n    return rsi && parseFloat(rsi.rsi_value) >= 40 && parseFloat(rsi.rsi_value) <= 75;\n  })\n  .map(s => ({\n    json: {\n      ticker: s.symbol,\n      company_name: s.companyName,\n      sector: s.sector,\n      market_cap: s.marketCap,\n      price: s.price,\n      volume: s.volume,\n      beta: s.beta,\n      rsi: rsiMap.get(s.symbol)?.rsi_value,\n      strategy: 'short_term'\n    }\n  }))\n  .slice(0, 30);\n\nreturn candidates.length > 0 ? candidates : [{json: {skip: true}}];"
-      }
-    },
-    {
-      "id": "filter_skip",
-      "name": "Has Candidates?",
-      "type": "filter",
-      "typeVersion": 1,
-      "position": [
-        1000,
-        300
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "combinator": "and",
-          "conditions": [
-            {
-              "id": "1",
-              "operator": {
-                "type": "boolean",
-                "operation": "notEquals"
-              },
-              "leftValue": "={{$json.skip}}",
-              "rightValue": true
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "pg_wl",
-      "name": "Update Watchlist",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1250,
-        200
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO watchlists (strategy, ticker, score, status, metadata) VALUES ('short_term', '{{$json.ticker}}', {{$json.rsi}}, 'active', '{\"price\": {{$json.price}}, \"volume\": {{$json.volume}}, \"beta\": {{$json.beta}}, \"rsi\": {{$json.rsi}}, \"scan_time\": \"{{$now.format(\"yyyy-MM-dd HH:mm\")}}\" }') ON CONFLICT (strategy, ticker) DO UPDATE SET score = EXCLUDED.score, metadata = EXCLUDED.metadata, status = 'active';"
-      }
-    },
-    {
-      "id": "neo_wl",
-      "name": "Neo4j Watchlist",
-      "type": "neo4j",
-      "typeVersion": 1,
-      "position": [
-        1250,
-        450
-      ],
-      "parameters": {
-        "operation": "executeStatement",
-        "query": "MERGE (w:Watchlist {name: 'short_term', strategy: 'Short-Term Trading'}) WITH w MATCH (c:Company {ticker: $ticker}) MERGE (c)-[r:IN_WATCHLIST]->(w) SET r.score = $score, r.updatedAt = datetime();",
-        "parameters": "{\"ticker\": \"{{$json.ticker}}\", \"score\": {{$json.rsi}}}"
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "fetch_screen",
-            "type": "main",
-            "index": 0
+  }, {
+    "id" : "filter_momentum",
+    "name" : "Filter Momentum",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 750, 300 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "const items = $input.all();\nconst screenerResults = items[0]?.json || [];\nconst technicals = items.slice(1).map(i => i.json);\nconst rsiMap = new Map(technicals.map(t => [t.ticker, t]));\n\nconst candidates = (Array.isArray(screenerResults) ? screenerResults : [])\n  .filter(s => {\n    const rsi = rsiMap.get(s.symbol);\n    return rsi && parseFloat(rsi.rsi_value) >= 40 && parseFloat(rsi.rsi_value) <= 75;\n  })\n  .map(s => ({\n    json: {\n      ticker: s.symbol,\n      company_name: s.companyName,\n      sector: s.sector,\n      market_cap: s.marketCap,\n      price: s.price,\n      volume: s.volume,\n      beta: s.beta,\n      rsi: rsiMap.get(s.symbol)?.rsi_value,\n      strategy: 'short_term'\n    }\n  }))\n  .slice(0, 30);\n\nreturn candidates.length > 0 ? candidates : [{json: {skip: true}}];"
+    }
+  }, {
+    "id" : "filter_skip",
+    "name" : "Has Candidates?",
+    "type" : "filter",
+    "typeVersion" : 1,
+    "position" : [ 1000, 300 ],
+    "parameters" : {
+      "conditions" : {
+        "options" : {
+          "caseSensitive" : true,
+          "leftValue" : "",
+          "typeValidation" : "strict"
+        },
+        "combinator" : "and",
+        "conditions" : [ {
+          "id" : "1",
+          "operator" : {
+            "type" : "boolean",
+            "operation" : "notEquals"
           },
-          {
-            "node": "get_technicals",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+          "leftValue" : "={{$json.skip}}",
+          "rightValue" : true
+        } ]
+      }
+    }
+  }, {
+    "id" : "pg_wl",
+    "name" : "Update Watchlist",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1250, 200 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO watchlists (strategy, ticker, score, status, metadata) VALUES ('short_term', '{{$json.ticker}}', {{$json.rsi}}, 'active', '{\"price\": {{$json.price}}, \"volume\": {{$json.volume}}, \"beta\": {{$json.beta}}, \"rsi\": {{$json.rsi}}, \"scan_time\": \"{{$now.format(\"yyyy-MM-dd HH:mm\")}}\" }') ON CONFLICT (strategy, ticker) DO UPDATE SET score = EXCLUDED.score, metadata = EXCLUDED.metadata, status = 'active';"
     },
-    "fetch_screen": {
-      "main": [
-        [
-          {
-            "node": "filter_momentum",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  }, {
+    "id" : "neo_wl",
+    "name" : "Neo4j Watchlist",
+    "type" : "neo4j",
+    "typeVersion" : 1,
+    "position" : [ 1250, 450 ],
+    "parameters" : {
+      "operation" : "executeStatement",
+      "query" : "MERGE (w:Watchlist {name: 'short_term', strategy: 'Short-Term Trading'}) WITH w MATCH (c:Company {ticker: $ticker}) MERGE (c)-[r:IN_WATCHLIST]->(w) SET r.score = $score, r.updatedAt = datetime();",
+      "parameters" : "{\"ticker\": \"{{$json.ticker}}\", \"score\": {{$json.rsi}}}"
     },
-    "get_technicals": {
-      "main": [
-        [
-          {
-            "node": "filter_momentum",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "neo4j" : {
+        "ref" : "neo4j-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "fetch_screen",
+        "type" : "main",
+        "index" : 0
+      }, {
+        "node" : "get_technicals",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "filter_momentum": {
-      "main": [
-        [
-          {
-            "node": "filter_skip",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "fetch_screen" : {
+      "main" : [ [ {
+        "node" : "filter_momentum",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "filter_skip": {
-      "main": [
-        [
-          {
-            "node": "pg_wl",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "neo_wl",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "get_technicals" : {
+      "main" : [ [ {
+        "node" : "filter_momentum",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "filter_momentum" : {
+      "main" : [ [ {
+        "node" : "filter_skip",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "filter_skip" : {
+      "main" : [ [ {
+        "node" : "pg_wl",
+        "type" : "main",
+        "index" : 0
+      }, {
+        "node" : "neo_wl",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

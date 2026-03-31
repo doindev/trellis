@@ -1,136 +1,106 @@
 {
-  "configId": "sentiment-scoring-engine",
-  "name": "Sentiment Scoring Engine",
-  "description": "Daily (11 AM ET, Mon-Fri): Scores unscored news articles via built-in sentiment analyzer. Labels bullish/bearish/neutral.",
-  "type": "WORKFLOW",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Weekday 11AM",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        200,
-        300
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "0 11 * * 1-5",
-        "timezone": "America/New_York"
-      }
+  "configId" : "sentiment-scoring-engine",
+  "name" : "Sentiment Scoring Engine",
+  "description" : "Daily (11 AM ET, Mon-Fri): Scores unscored news articles via built-in sentiment analyzer. Labels bullish/bearish/neutral.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Weekday 11AM",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 200, 300 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "0 11 * * 1-5",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 180, 80 ],
+    "parameters" : {
+      "content" : "## Sentiment Scoring\n\nRequired: postgresApi\nUses built-in Sentiment Analyzer\nScores: -1 (bearish) to +1 (bullish)"
+    }
+  }, {
+    "id" : "g1",
+    "name" : "Unscored",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 450, 300 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "SELECT id,ticker,headline,summary FROM news_articles WHERE sentiment_score IS NULL AND published_at>NOW()-INTERVAL '3 days' ORDER BY published_at DESC LIMIT 100"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        180,
-        80
-      ],
-      "parameters": {
-        "content": "## Sentiment Scoring\n\nRequired: postgresApi\nUses built-in Sentiment Analyzer\nScores: -1 (bearish) to +1 (bullish)"
-      }
-    },
-    {
-      "id": "g1",
-      "name": "Unscored",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        450,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT id,ticker,headline,summary FROM news_articles WHERE sentiment_score IS NULL AND published_at>NOW()-INTERVAL '3 days' ORDER BY published_at DESC LIMIT 100"
-      }
-    },
-    {
-      "id": "s1",
-      "name": "Analyze",
-      "type": "sentiment",
-      "typeVersion": 1,
-      "position": [
-        700,
-        300
-      ],
-      "parameters": {}
-    },
-    {
-      "id": "c1",
-      "name": "Classify",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        950,
-        300
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForEachItem",
-        "jsCode": "const s=$json.sentimentScore||0;let l='neutral';if(s>0.2)l='bullish';else if(s<-0.2)l='bearish';return [{json:{id:$json.id,sentiment_score:s,sentiment_label:l}}];"
-      }
-    },
-    {
-      "id": "pg",
-      "name": "Update",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1200,
-        300
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "UPDATE news_articles SET sentiment_score={{$json.sentiment_score}},sentiment_label='{{$json.sentiment_label}}' WHERE id={{$json.id}};"
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "g1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+  }, {
+    "id" : "s1",
+    "name" : "Analyze",
+    "type" : "sentiment",
+    "typeVersion" : 1,
+    "position" : [ 700, 300 ],
+    "parameters" : { }
+  }, {
+    "id" : "c1",
+    "name" : "Classify",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 950, 300 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForEachItem",
+      "jsCode" : "const s=$json.sentimentScore||0;let l='neutral';if(s>0.2)l='bullish';else if(s<-0.2)l='bearish';return [{json:{id:$json.id,sentiment_score:s,sentiment_label:l}}];"
+    }
+  }, {
+    "id" : "pg",
+    "name" : "Update",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1200, 300 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "UPDATE news_articles SET sentiment_score={{$json.sentiment_score}},sentiment_label='{{$json.sentiment_label}}' WHERE id={{$json.id}};"
     },
-    "g1": {
-      "main": [
-        [
-          {
-            "node": "s1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "g1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "s1": {
-      "main": [
-        [
-          {
-            "node": "c1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "g1" : {
+      "main" : [ [ {
+        "node" : "s1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "c1": {
-      "main": [
-        [
-          {
-            "node": "pg",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "s1" : {
+      "main" : [ [ {
+        "node" : "c1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "c1" : {
+      "main" : [ [ {
+        "node" : "pg",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

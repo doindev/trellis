@@ -1,206 +1,162 @@
 {
-  "configId": "pattern-detection-engine",
-  "name": "Pattern Detection Engine",
-  "description": "Daily (4:30 PM ET, Mon-Fri): Analyzes price history for short-term watchlist stocks to detect bull flags, ascending triangles, breakouts, and mean reversion setups. Calculates measured move targets and creates trade setup alerts.",
-  "type": "WORKFLOW",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Weekday 4:30PM",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        200,
-        300
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "30 16 * * 1-5",
-        "timezone": "America/New_York"
-      }
+  "configId" : "pattern-detection-engine",
+  "name" : "Pattern Detection Engine",
+  "description" : "Daily (4:30 PM ET, Mon-Fri): Analyzes price history for short-term watchlist stocks to detect bull flags, ascending triangles, breakouts, and mean reversion setups. Calculates measured move targets and creates trade setup alerts.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Weekday 4:30PM",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 200, 300 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "30 16 * * 1-5",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 180, 80 ],
+    "parameters" : {
+      "content" : "## Pattern Detection Engine\n\nRequired: postgresApi\nDetects: bull flags, breakouts, mean reversion\nUses 60-day price history from daily_prices"
+    }
+  }, {
+    "id" : "get_candidates",
+    "name" : "Short-Term Watchlist",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 450, 300 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "SELECT w.ticker, t.company_name FROM watchlists w JOIN tickers t ON w.ticker = t.ticker WHERE w.strategy = 'short_term' AND w.status = 'active' ORDER BY w.score DESC LIMIT 20"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        180,
-        80
-      ],
-      "parameters": {
-        "content": "## Pattern Detection Engine\n\nRequired: postgresApi\nDetects: bull flags, breakouts, mean reversion\nUses 60-day price history from daily_prices"
-      }
-    },
-    {
-      "id": "get_candidates",
-      "name": "Short-Term Watchlist",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        450,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT w.ticker, t.company_name FROM watchlists w JOIN tickers t ON w.ticker = t.ticker WHERE w.strategy = 'short_term' AND w.status = 'active' ORDER BY w.score DESC LIMIT 20"
-      }
-    },
-    {
-      "id": "loop1",
-      "name": "Each Ticker",
-      "type": "loopOverItems",
-      "typeVersion": 1,
-      "position": [
-        700,
-        300
-      ],
-      "parameters": {
-        "batchSize": 1
-      }
-    },
-    {
-      "id": "get_prices",
-      "name": "60-Day Prices",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        950,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT price_date, open_price, high_price, low_price, close_price, volume FROM daily_prices WHERE ticker = '{{$json.ticker}}' ORDER BY price_date DESC LIMIT 60"
-      }
-    },
-    {
-      "id": "detect_patterns",
-      "name": "Detect Patterns",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        1200,
-        300
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "const prices = $input.all().map(i => i.json).filter(p => p.close_price);\nif (prices.length < 20) return [{json: {skip: true}}];\n\nconst closes = prices.map(p => p.close_price).reverse();\nconst highs = prices.map(p => p.high_price).reverse();\nconst lows = prices.map(p => p.low_price).reverse();\nconst volumes = prices.map(p => p.volume).reverse();\nconst n = closes.length;\nconst current = closes[n-1];\nconst ticker = prices[0].ticker || '';\n\n// 20-day SMA and std dev\nconst sma20 = closes.slice(n-20).reduce((a,b)=>a+b,0)/20;\nconst std20 = Math.sqrt(closes.slice(n-20).map(c=>(c-sma20)**2).reduce((a,b)=>a+b,0)/20);\n\n// Average volume\nconst avgVol = volumes.slice(n-20).reduce((a,b)=>a+b,0)/20;\nconst lastVol = volumes[n-1];\nconst volRatio = (lastVol / avgVol).toFixed(2);\n\n// 5-day high and low\nconst high5 = Math.max(...highs.slice(n-5));\nconst low5 = Math.min(...lows.slice(n-5));\n\n// 20-day high\nconst high20 = Math.max(...highs.slice(n-20));\n\nconst patterns = [];\n\n// Bull flag: sharp rise in days 10-5 ago, tight consolidation last 5 days\nconst rise = closes[n-6] / closes[n-15];\nconst flagRange = (high5 - low5) / low5;\nif (rise > 1.08 && flagRange < 0.04) {\n  patterns.push({type: 'bull_flag', target: current + (closes[n-6] - closes[n-15]), confidence: 7});\n}\n\n// Breakout: price at 20-day high with volume surge\nif (current >= high20 * 0.99 && lastVol > avgVol * 1.5) {\n  patterns.push({type: 'breakout', target: current * 1.05, confidence: 6});\n}\n\n// Mean reversion: >2 std dev below 20-day SMA\nif (current < sma20 - 2 * std20) {\n  patterns.push({type: 'mean_reversion', target: sma20, confidence: 5});\n}\n\n// Oversold bounce setup\nconst rsi_approx = 100 - 100/(1 + closes.slice(n-14).filter((c,i,a) => i>0 && c>a[i-1]).length / (closes.slice(n-14).filter((c,i,a) => i>0 && c<a[i-1]).length || 1));\nif (rsi_approx < 35 && current > lows.slice(n-3).reduce((a,b)=>Math.min(a,b), Infinity)) {\n  patterns.push({type: 'oversold_bounce', target: sma20, confidence: 5});\n}\n\nif (patterns.length === 0) return [{json: {skip: true}}];\n\nreturn patterns.map(p => ({json: {\n  ticker, company_name: prices[0].company_name || ticker,\n  pattern: p.type, target_price: p.target?.toFixed(2),\n  current_price: current.toFixed(2), stop_loss: (current * 0.94).toFixed(2),\n  volume_ratio: volRatio, confidence: p.confidence,\n  detected_at: new Date().toISOString()\n}}));"
-      }
-    },
-    {
-      "id": "filter1",
-      "name": "Has Pattern?",
-      "type": "filter",
-      "typeVersion": 1,
-      "position": [
-        1450,
-        300
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "combinator": "and",
-          "conditions": [
-            {
-              "id": "1",
-              "operator": {
-                "type": "boolean",
-                "operation": "notEquals"
-              },
-              "leftValue": "={{$json.skip}}",
-              "rightValue": true
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "alert1",
-      "name": "Create Setup Alert",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1700,
-        300
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) VALUES ('{{$json.ticker}}', 'trade_setup_{{$json.pattern}}', 'short_term', '{{$json.ticker}}: {{$json.pattern}} detected. Entry ~${{$json.current_price}}, Target ${{$json.target_price}}, Stop ${{$json.stop_loss}}. Vol ratio: {{$json.volume_ratio}}x', 'warning', '{\"pattern\": \"{{$json.pattern}}\", \"entry\": {{$json.current_price}}, \"target\": {{$json.target_price}}, \"stop\": {{$json.stop_loss}}, \"confidence\": {{$json.confidence}}}');"
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "get_candidates",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+  }, {
+    "id" : "loop1",
+    "name" : "Each Ticker",
+    "type" : "loopOverItems",
+    "typeVersion" : 1,
+    "position" : [ 700, 300 ],
+    "parameters" : {
+      "batchSize" : 1
+    }
+  }, {
+    "id" : "get_prices",
+    "name" : "60-Day Prices",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 950, 300 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "SELECT price_date, open_price, high_price, low_price, close_price, volume FROM daily_prices WHERE ticker = '{{$json.ticker}}' ORDER BY price_date DESC LIMIT 60"
     },
-    "get_candidates": {
-      "main": [
-        [
-          {
-            "node": "loop1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  }, {
+    "id" : "detect_patterns",
+    "name" : "Detect Patterns",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 1200, 300 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "const prices = $input.all().map(i => i.json).filter(p => p.close_price);\nif (prices.length < 20) return [{json: {skip: true}}];\n\nconst closes = prices.map(p => p.close_price).reverse();\nconst highs = prices.map(p => p.high_price).reverse();\nconst lows = prices.map(p => p.low_price).reverse();\nconst volumes = prices.map(p => p.volume).reverse();\nconst n = closes.length;\nconst current = closes[n-1];\nconst ticker = prices[0].ticker || '';\n\n// 20-day SMA and std dev\nconst sma20 = closes.slice(n-20).reduce((a,b)=>a+b,0)/20;\nconst std20 = Math.sqrt(closes.slice(n-20).map(c=>(c-sma20)**2).reduce((a,b)=>a+b,0)/20);\n\n// Average volume\nconst avgVol = volumes.slice(n-20).reduce((a,b)=>a+b,0)/20;\nconst lastVol = volumes[n-1];\nconst volRatio = (lastVol / avgVol).toFixed(2);\n\n// 5-day high and low\nconst high5 = Math.max(...highs.slice(n-5));\nconst low5 = Math.min(...lows.slice(n-5));\n\n// 20-day high\nconst high20 = Math.max(...highs.slice(n-20));\n\nconst patterns = [];\n\n// Bull flag: sharp rise in days 10-5 ago, tight consolidation last 5 days\nconst rise = closes[n-6] / closes[n-15];\nconst flagRange = (high5 - low5) / low5;\nif (rise > 1.08 && flagRange < 0.04) {\n  patterns.push({type: 'bull_flag', target: current + (closes[n-6] - closes[n-15]), confidence: 7});\n}\n\n// Breakout: price at 20-day high with volume surge\nif (current >= high20 * 0.99 && lastVol > avgVol * 1.5) {\n  patterns.push({type: 'breakout', target: current * 1.05, confidence: 6});\n}\n\n// Mean reversion: >2 std dev below 20-day SMA\nif (current < sma20 - 2 * std20) {\n  patterns.push({type: 'mean_reversion', target: sma20, confidence: 5});\n}\n\n// Oversold bounce setup\nconst rsi_approx = 100 - 100/(1 + closes.slice(n-14).filter((c,i,a) => i>0 && c>a[i-1]).length / (closes.slice(n-14).filter((c,i,a) => i>0 && c<a[i-1]).length || 1));\nif (rsi_approx < 35 && current > lows.slice(n-3).reduce((a,b)=>Math.min(a,b), Infinity)) {\n  patterns.push({type: 'oversold_bounce', target: sma20, confidence: 5});\n}\n\nif (patterns.length === 0) return [{json: {skip: true}}];\n\nreturn patterns.map(p => ({json: {\n  ticker, company_name: prices[0].company_name || ticker,\n  pattern: p.type, target_price: p.target?.toFixed(2),\n  current_price: current.toFixed(2), stop_loss: (current * 0.94).toFixed(2),\n  volume_ratio: volRatio, confidence: p.confidence,\n  detected_at: new Date().toISOString()\n}}));"
+    }
+  }, {
+    "id" : "filter1",
+    "name" : "Has Pattern?",
+    "type" : "filter",
+    "typeVersion" : 1,
+    "position" : [ 1450, 300 ],
+    "parameters" : {
+      "conditions" : {
+        "options" : {
+          "caseSensitive" : true,
+          "leftValue" : "",
+          "typeValidation" : "strict"
+        },
+        "combinator" : "and",
+        "conditions" : [ {
+          "id" : "1",
+          "operator" : {
+            "type" : "boolean",
+            "operation" : "notEquals"
+          },
+          "leftValue" : "={{$json.skip}}",
+          "rightValue" : true
+        } ]
+      }
+    }
+  }, {
+    "id" : "alert1",
+    "name" : "Create Setup Alert",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1696, 304 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) VALUES ('{{$json.ticker}}', 'trade_setup_{{$json.pattern}}', 'short_term', '{{$json.ticker}}: {{$json.pattern}} detected. Entry ~${{$json.current_price}}, Target ${{$json.target_price}}, Stop ${{$json.stop_loss}}. Vol ratio: {{$json.volume_ratio}}x', 'warning', '{\"pattern\": \"{{$json.pattern}}\", \"entry\": {{$json.current_price}}, \"target\": {{$json.target_price}}, \"stop\": {{$json.stop_loss}}, \"confidence\": {{$json.confidence}}}');"
     },
-    "loop1": {
-      "main": [
-        [],
-        [
-          {
-            "node": "get_prices",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "get_candidates",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "get_prices": {
-      "main": [
-        [
-          {
-            "node": "detect_patterns",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "get_candidates" : {
+      "main" : [ [ {
+        "node" : "loop1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "detect_patterns": {
-      "main": [
-        [
-          {
-            "node": "filter1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "loop1" : {
+      "main" : [ [ ], [ {
+        "node" : "get_prices",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "filter1": {
-      "main": [
-        [
-          {
-            "node": "alert1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "get_prices" : {
+      "main" : [ [ {
+        "node" : "detect_patterns",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "detect_patterns" : {
+      "main" : [ [ {
+        "node" : "filter1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "filter1" : {
+      "main" : [ [ {
+        "node" : "alert1",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

@@ -1,22 +1,30 @@
 {
-  "configId": "stock-short-term",
-  "name": "Stock Research - Short-Term Trading",
-  "type": "TEAM",
-  "contextPath": "stock-short-term",
-  "description": "Short-term trading strategies: swing trading (days-weeks), momentum trading, technical breakout patterns (bull flags, MACD crossovers), and event-driven plays. Active management with strict risk controls (stop-loss, take-profit), position sizing, and real-time volatility monitoring. Targets 1-30 day holding periods.",
-  "credentials": [
-    {
-      "ref": "postgresql-account",
-      "name": "PostgreSQL account",
-      "type": "postgresApi",
-      "data": {
-        "host": "{{env:postgresql.host}}",
-        "port": "{{env:postgresql.port}}",
-        "ssl": "{{env:postgresql.ssl}}",
-        "database": "{{env:postgresql.database}}",
-        "username": "{{env:postgresql.username}}",
-        "password": "{{env:postgresql.password}}"
-      }
+  "configId" : "stock-short-term",
+  "name" : "Stock Research - Short-Term Trading",
+  "type" : "TEAM",
+  "contextPath" : "stock-short-term",
+  "description" : "Short-term trading strategies: swing trading (days-weeks), momentum trading, technical breakout patterns (bull flags, MACD crossovers), and event-driven plays. Active management with strict risk controls (stop-loss, take-profit), position sizing, and real-time volatility monitoring. Targets 1-30 day holding periods.",
+  "credentials" : [ {
+    "ref" : "neo4j-account",
+    "name" : "Neo4j account",
+    "type" : "neo4j",
+    "data" : {
+      "uri" : "{{env:STOCK_SHORT_TERM_NEO4J_ACCOUNT_URI}}",
+      "username" : "{{env:STOCK_SHORT_TERM_NEO4J_ACCOUNT_USERNAME}}",
+      "database" : "{{env:STOCK_SHORT_TERM_NEO4J_ACCOUNT_DATABASE}}",
+      "password" : "{{env:STOCK_SHORT_TERM_NEO4J_ACCOUNT_PASSWORD}}"
     }
-  ]
+  }, {
+    "ref" : "postgresql-account",
+    "name" : "PostgreSQL account",
+    "type" : "postgresApi",
+    "data" : {
+      "host" : "{{env:postgresql.host}}",
+      "port" : "{{env:postgresql.port}}",
+      "ssl" : "{{env:postgresql.ssl}}",
+      "database" : "{{env:postgresql.database}}",
+      "username" : "{{env:postgresql.username}}",
+      "password" : "{{env:postgresql.password}}"
+    }
+  } ]
 }

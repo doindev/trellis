@@ -1,190 +1,150 @@
 {
-  "configId": "dividend-ai-analysis-runner",
-  "name": "Dividend AI Analysis Runner",
-  "description": "Daily (10 AM ET, Mon-Fri): Feeds top 10 dividend candidates to Dividend Strategy Analyst for safety, sustainability, and income analysis.",
-  "type": "WORKFLOW",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Weekday 10AM",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        200,
-        300
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "0 10 * * 1-5",
-        "timezone": "America/New_York"
-      }
+  "configId" : "dividend-ai-analysis-runner",
+  "name" : "Dividend AI Analysis Runner",
+  "description" : "Daily (10 AM ET, Mon-Fri): Feeds top 10 dividend candidates to Dividend Strategy Analyst for safety, sustainability, and income analysis.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Weekday 10AM",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 200, 300 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "0 10 * * 1-5",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 180, 80 ],
+    "parameters" : {
+      "content" : "## Dividend AI Runner\n\nRequired: postgresApi, anthropicApi, neo4j\nUses: Dividend Strategy Analyst\nIncludes Neo4j peer comparison data"
+    }
+  }, {
+    "id" : "gc",
+    "name" : "Candidates",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 450, 300 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "SELECT w.ticker,t.company_name,t.sector,t.industry,t.market_cap,f.dividend_yield,f.payout_ratio,f.free_cash_flow,f.debt_to_equity,f.current_ratio,f.roe,f.pe_ratio,f.net_margin FROM watchlists w JOIN tickers t ON w.ticker=t.ticker LEFT JOIN fundamentals f ON t.ticker=f.ticker AND f.period_date=(SELECT MAX(period_date) FROM fundamentals WHERE ticker=t.ticker) WHERE w.strategy='dividend' AND w.status='active' ORDER BY w.score DESC LIMIT 10"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        180,
-        80
-      ],
-      "parameters": {
-        "content": "## Dividend AI Runner\n\nRequired: postgresApi, anthropicApi, neo4j\nUses: Dividend Strategy Analyst\nIncludes Neo4j peer comparison data"
-      }
-    },
-    {
-      "id": "gc",
-      "name": "Candidates",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        450,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT w.ticker,t.company_name,t.sector,t.industry,t.market_cap,f.dividend_yield,f.payout_ratio,f.free_cash_flow,f.debt_to_equity,f.current_ratio,f.roe,f.pe_ratio,f.net_margin FROM watchlists w JOIN tickers t ON w.ticker=t.ticker LEFT JOIN fundamentals f ON t.ticker=f.ticker AND f.period_date=(SELECT MAX(period_date) FROM fundamentals WHERE ticker=t.ticker) WHERE w.strategy='dividend' AND w.status='active' ORDER BY w.score DESC LIMIT 10"
-      }
-    },
-    {
-      "id": "peers",
-      "name": "Neo4j Peer Lookup",
-      "type": "neo4j",
-      "typeVersion": 1,
-      "position": [
-        700,
-        300
-      ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "MATCH (c:Company {ticker:$ticker})-[:BELONGS_TO_INDUSTRY]->(i:Industry)<-[:BELONGS_TO_INDUSTRY]-(peer:Company) WHERE peer.ticker <> $ticker WITH peer.ticker AS peer_ticker, peer.name AS peer_name, i.name AS industry OPTIONAL MATCH (peer)-[w:IN_WATCHLIST]->(wl:Watchlist) RETURN peer_ticker, peer_name, industry, collect(DISTINCT wl.name) AS on_watchlists ORDER BY peer_name LIMIT 5",
-        "parameters": "={\"ticker\":\"{{$json.ticker}}\"}"
-      }
-    },
-    {
-      "id": "ctx",
-      "name": "Context",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        950,
-        300
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst d = items[0]?.json || {};\nconst peers = items.slice(1).map(i => i.json).filter(p => p.peer_ticker);\n\nlet peerInfo = '';\nif (peers.length > 0) {\n  peerInfo = '\\n\\nIndustry Peers (from Neo4j graph):';\n  for (const p of peers) {\n    peerInfo += `\\n- ${p.peer_name} (${p.peer_ticker})${p.on_watchlists?.length ? ' [on: ' + p.on_watchlists.join(', ') + ']' : ''}`;\n  }\n}\n\nreturn [{json:{ticker:d.ticker,context:`Dividend analysis:\\nTicker: ${d.ticker} (${d.company_name})\\nSector: ${d.sector} | Industry: ${d.industry} | Cap: $${(d.market_cap/1e9).toFixed(1)}B\\nYield: ${(d.dividend_yield*100).toFixed(2)}% | Payout: ${(d.payout_ratio*100).toFixed(1)}%\\nFCF: $${(d.free_cash_flow/1e6).toFixed(0)}M | D/E: ${d.debt_to_equity}\\nROE: ${(d.roe*100).toFixed(1)}% | Margin: ${(d.net_margin*100).toFixed(1)}%${peerInfo}\\nDate: ${new Date().toISOString().split('T')[0]}\\n\\nCompare yield and safety vs industry peers. Evaluate safety, growth, income recommendation.`}}];"
-      }
-    },
-    {
-      "id": "lp",
-      "name": "Each",
-      "type": "loopOverItems",
-      "typeVersion": 1,
-      "position": [
-        1200,
-        300
-      ],
-      "parameters": {
-        "batchSize": 1
-      }
-    },
-    {
-      "id": "ag",
-      "name": "Dividend Analyst",
-      "type": "aiAgent",
-      "typeVersion": 1,
-      "position": [
-        1450,
-        300
-      ],
-      "parameters": {
-        "agentDefinitionId": "NikZVvMUE9Ez3ml2wYw-8",
-        "prompt": "{{$json.context}}"
-      }
-    },
-    {
-      "id": "st",
-      "name": "Store",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1700,
-        300
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO investment_scores (ticker,strategy,score_date,overall_score,recommendation,thesis,created_at) VALUES ('{{$json.ticker}}','dividend',CURRENT_DATE,7.0,'HOLD','{{$json.output}}',NOW()) ON CONFLICT (ticker,strategy,score_date) DO UPDATE SET thesis=EXCLUDED.thesis;"
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "gc",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+  }, {
+    "id" : "peers",
+    "name" : "Neo4j Peer Lookup",
+    "type" : "neo4j",
+    "typeVersion" : 1,
+    "position" : [ 700, 300 ],
+    "parameters" : {
+      "operation" : "executeQuery",
+      "query" : "MATCH (c:Company {ticker:$ticker})-[:BELONGS_TO_INDUSTRY]->(i:Industry)<-[:BELONGS_TO_INDUSTRY]-(peer:Company) WHERE peer.ticker <> $ticker WITH peer.ticker AS peer_ticker, peer.name AS peer_name, i.name AS industry OPTIONAL MATCH (peer)-[w:IN_WATCHLIST]->(wl:Watchlist) RETURN peer_ticker, peer_name, industry, collect(DISTINCT wl.name) AS on_watchlists ORDER BY peer_name LIMIT 5",
+      "parameters" : "={\"ticker\":\"{{$json.ticker}}\"}"
     },
-    "gc": {
-      "main": [
-        [
-          {
-            "node": "peers",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "neo4j" : {
+        "ref" : "neo4j-account"
+      }
+    }
+  }, {
+    "id" : "ctx",
+    "name" : "Context",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 950, 300 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "const items = $input.all();\nconst d = items[0]?.json || {};\nconst peers = items.slice(1).map(i => i.json).filter(p => p.peer_ticker);\n\nlet peerInfo = '';\nif (peers.length > 0) {\n  peerInfo = '\\n\\nIndustry Peers (from Neo4j graph):';\n  for (const p of peers) {\n    peerInfo += `\\n- ${p.peer_name} (${p.peer_ticker})${p.on_watchlists?.length ? ' [on: ' + p.on_watchlists.join(', ') + ']' : ''}`;\n  }\n}\n\nreturn [{json:{ticker:d.ticker,context:`Dividend analysis:\\nTicker: ${d.ticker} (${d.company_name})\\nSector: ${d.sector} | Industry: ${d.industry} | Cap: $${(d.market_cap/1e9).toFixed(1)}B\\nYield: ${(d.dividend_yield*100).toFixed(2)}% | Payout: ${(d.payout_ratio*100).toFixed(1)}%\\nFCF: $${(d.free_cash_flow/1e6).toFixed(0)}M | D/E: ${d.debt_to_equity}\\nROE: ${(d.roe*100).toFixed(1)}% | Margin: ${(d.net_margin*100).toFixed(1)}%${peerInfo}\\nDate: ${new Date().toISOString().split('T')[0]}\\n\\nCompare yield and safety vs industry peers. Evaluate safety, growth, income recommendation.`}}];"
+    }
+  }, {
+    "id" : "lp",
+    "name" : "Each",
+    "type" : "loopOverItems",
+    "typeVersion" : 1,
+    "position" : [ 1200, 300 ],
+    "parameters" : {
+      "batchSize" : 1
+    }
+  }, {
+    "id" : "ag",
+    "name" : "Dividend Analyst",
+    "type" : "aiAgent",
+    "typeVersion" : 1,
+    "position" : [ 1450, 300 ],
+    "parameters" : {
+      "agentDefinitionId" : "dividend-strategy-analyst",
+      "prompt" : "{{$json.context}}",
+      "systemMessage" : "You are a Dividend Strategy Analyst for income investments.\n\nPhilosophy:\n- Safety/sustainability over raw yield\n- Favor Dividend Aristocrats (25+ years increases)\n- Payout <75% (most sectors), <90% (REITs/utilities)\n- Dividend growth must outpace inflation, FCF must cover dividends\n\nAnalysis:\n1. Dividend safety score (FCF coverage, payout, debt)\n2. Growth history (5/10yr CAGR)\n3. Yield vs peers and 10Y Treasury\n4. Business model durability\n5. Red flags: special dividends masking cuts, rising payout\n\nOutput JSON: ticker, dividend_score, current_yield, dividend_growth_5yr, payout_ratio, fcf_coverage, aristocrat_status, safety_rating (safe/watch/danger), recommendation, thesis.",
+      "maxIterations" : 12
+    }
+  }, {
+    "id" : "st",
+    "name" : "Store",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1700, 300 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO investment_scores (ticker,strategy,score_date,overall_score,recommendation,thesis,created_at) VALUES ('{{$json.ticker}}','dividend',CURRENT_DATE,7.0,'HOLD','{{$json.output}}',NOW()) ON CONFLICT (ticker,strategy,score_date) DO UPDATE SET thesis=EXCLUDED.thesis;"
     },
-    "peers": {
-      "main": [
-        [
-          {
-            "node": "ctx",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "gc",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "ctx": {
-      "main": [
-        [
-          {
-            "node": "lp",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "gc" : {
+      "main" : [ [ {
+        "node" : "peers",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "lp": {
-      "main": [
-        [],
-        [
-          {
-            "node": "ag",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "peers" : {
+      "main" : [ [ {
+        "node" : "ctx",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "ag": {
-      "main": [
-        [
-          {
-            "node": "st",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "ctx" : {
+      "main" : [ [ {
+        "node" : "lp",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "lp" : {
+      "main" : [ [ ], [ {
+        "node" : "ag",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "ag" : {
+      "main" : [ [ {
+        "node" : "st",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   }
 }

@@ -1,227 +1,168 @@
 {
-  "name": "Dividend & Earnings Calendar Sync",
-  "description": "Weekly (Sunday 9 AM ET): Fetches upcoming dividend ex-dates from FMP and earnings dates from Finnhub. Populates dividend_history and earnings_calendar tables.",
-  "nodes": [
-    {
-      "id": "trigger1",
-      "name": "Sunday 9AM ET",
-      "type": "scheduleTrigger",
-      "typeVersion": 1,
-      "position": [
-        512,
-        160
-      ],
-      "parameters": {
-        "rule": "cronExpression",
-        "cronExpression": "0 9 * * 0",
-        "timezone": "America/New_York"
-      }
+  "configId" : "dividend-earnings-calendar-sync",
+  "name" : "Dividend & Earnings Calendar Sync",
+  "description" : "Weekly (Sunday 9 AM ET): Fetches upcoming dividend ex-dates from FMP and earnings dates from Finnhub. Populates dividend_history and earnings_calendar tables.",
+  "type" : "WORKFLOW",
+  "published" : true,
+  "nodes" : [ {
+    "id" : "trigger1",
+    "name" : "Sunday 9AM ET",
+    "type" : "scheduleTrigger",
+    "typeVersion" : 1,
+    "position" : [ 512, 160 ],
+    "parameters" : {
+      "rule" : "cronExpression",
+      "cronExpression" : "0 9 * * 0",
+      "timezone" : "America/New_York"
+    }
+  }, {
+    "id" : "note1",
+    "name" : "Setup",
+    "type" : "stickyNote",
+    "typeVersion" : 1,
+    "position" : [ 176, 128 ],
+    "parameters" : {
+      "content" : "## Dividend & Earnings Calendar\n\nRequired: httpHeaderAuth (Finnhub/FMP), postgresApi"
+    }
+  }, {
+    "id" : "dr",
+    "name" : "Date Range",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 704, 160 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "const t=new Date(); return [{json:{from_date:t.toISOString().split('T')[0],to_date:new Date(t.getTime()+30*86400000).toISOString().split('T')[0]}}];"
+    }
+  }, {
+    "id" : "fe",
+    "name" : "Earnings",
+    "type" : "httpRequest",
+    "typeVersion" : 1,
+    "position" : [ 896, 80 ],
+    "parameters" : {
+      "method" : "GET",
+      "url" : "=https://finnhub.io/api/v1/calendar/earnings?from={{$json.from_date}}&to={{$json.to_date}}&token={{$credentials.finnhub_api_key.value}}",
+      "authentication" : "none"
+    }
+  }, {
+    "id" : "fd",
+    "name" : "Dividends",
+    "type" : "httpRequest",
+    "typeVersion" : 1,
+    "position" : [ 896, 240 ],
+    "parameters" : {
+      "method" : "GET",
+      "url" : "=https://financialmodelingprep.com/stable/dividends-calendar?from={{$json.from_date}}&to={{$json.to_date}}&apikey={{$credentials.fmp_api_key.value}}",
+      "authentication" : "none"
+    }
+  }, {
+    "id" : "pe",
+    "name" : "Process Earnings",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 1104, 80 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "const d = $input.first().json;\nreturn (d.earningsCalendar || []).map(e => ({\n  json: {\n    ticker: e.symbol,\n    report_date: e.date,\n    fiscal_quarter: 'Q' + (e.quarter || ''),\n    eps_estimate: e.epsEstimate != null ? e.epsEstimate : null,\n    eps_actual: e.epsActual != null ? e.epsActual : null,\n    revenue_estimate: e.revenueEstimate != null ? e.revenueEstimate : null,\n    revenue_actual: e.revenueActual != null ? e.revenueActual : null,\n    surprise_percent: e.surprisePercent != null ? e.surprisePercent : null\n  }\n}));"
+    }
+  }, {
+    "id" : "pd",
+    "name" : "Process Dividends",
+    "type" : "code",
+    "typeVersion" : 1,
+    "position" : [ 1104, 240 ],
+    "parameters" : {
+      "language" : "javaScript",
+      "mode" : "runOnceForAllItems",
+      "jsCode" : "// FMP returns an array â€” each item arrives as a separate input item\nconst items = $input.all();\nreturn items.map(item => {\n  const x = item.json;\n  return {\n    json: {\n      ticker: x.symbol,\n      ex_date: x.date,\n      payment_date: x.paymentDate || null,\n      record_date: x.recordDate || null,\n      declaration_date: x.declarationDate || null,\n      amount: x.dividend != null ? x.dividend : (x.adjDividend != null ? x.adjDividend : null),\n      frequency: x.frequency || null\n    }\n  };\n});"
+    }
+  }, {
+    "id" : "se",
+    "name" : "Store Earnings",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1296, 80 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO earnings_calendar (ticker, report_date, fiscal_quarter, eps_estimate, eps_actual, revenue_estimate, revenue_actual, surprise_percent) VALUES ('{{$json.ticker}}', '{{$json.report_date}}', '{{$json.fiscal_quarter}}', NULLIF(NULLIF('{{$json.eps_estimate}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.eps_actual}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.revenue_estimate}}', 'null'), '')::bigint, NULLIF(NULLIF('{{$json.revenue_actual}}', 'null'), '')::bigint, NULLIF(NULLIF('{{$json.surprise_percent}}', 'null'), '')::numeric) ON CONFLICT (ticker, report_date) DO UPDATE SET eps_estimate = EXCLUDED.eps_estimate, eps_actual = EXCLUDED.eps_actual, revenue_estimate = EXCLUDED.revenue_estimate, revenue_actual = EXCLUDED.revenue_actual, surprise_percent = EXCLUDED.surprise_percent;"
     },
-    {
-      "id": "note1",
-      "name": "Setup",
-      "type": "stickyNote",
-      "typeVersion": 1,
-      "position": [
-        176,
-        128
-      ],
-      "parameters": {
-        "content": "## Dividend & Earnings Calendar\n\nRequired: httpHeaderAuth (Finnhub/FMP), postgresApi"
-      }
-    },
-    {
-      "id": "dr",
-      "name": "Date Range",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        704,
-        160
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "const t=new Date(); return [{json:{from_date:t.toISOString().split('T')[0],to_date:new Date(t.getTime()+30*86400000).toISOString().split('T')[0]}}];"
-      }
-    },
-    {
-      "id": "fe",
-      "name": "Earnings",
-      "type": "httpRequest",
-      "typeVersion": 1,
-      "position": [
-        896,
-        80
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "=https://finnhub.io/api/v1/calendar/earnings?from={{$json.from_date}}&to={{$json.to_date}}&token={{$credentials.finnhub_api_key.value}}",
-        "authentication": "none"
-      }
-    },
-    {
-      "id": "fd",
-      "name": "Dividends",
-      "type": "httpRequest",
-      "typeVersion": 1,
-      "position": [
-        896,
-        240
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "=https://financialmodelingprep.com/stable/dividends-calendar?from={{$json.from_date}}&to={{$json.to_date}}&apikey={{$credentials.fmp_api_key.value}}",
-        "authentication": "none"
-      }
-    },
-    {
-      "id": "pe",
-      "name": "Process Earnings",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        1104,
-        80
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "const d = $input.first().json;\nreturn (d.earningsCalendar || []).map(e => ({\n  json: {\n    ticker: e.symbol,\n    report_date: e.date,\n    fiscal_quarter: 'Q' + (e.quarter || ''),\n    eps_estimate: e.epsEstimate != null ? e.epsEstimate : null,\n    eps_actual: e.epsActual != null ? e.epsActual : null,\n    revenue_estimate: e.revenueEstimate != null ? e.revenueEstimate : null,\n    revenue_actual: e.revenueActual != null ? e.revenueActual : null,\n    surprise_percent: e.surprisePercent != null ? e.surprisePercent : null\n  }\n}));"
-      }
-    },
-    {
-      "id": "pd",
-      "name": "Process Dividends",
-      "type": "code",
-      "typeVersion": 1,
-      "position": [
-        1104,
-        240
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "mode": "runOnceForAllItems",
-        "jsCode": "// FMP returns an array \u00e2\u20ac\u201d each item arrives as a separate input item\nconst items = $input.all();\nreturn items.map(item => {\n  const x = item.json;\n  return {\n    json: {\n      ticker: x.symbol,\n      ex_date: x.date,\n      payment_date: x.paymentDate || null,\n      record_date: x.recordDate || null,\n      declaration_date: x.declarationDate || null,\n      amount: x.dividend != null ? x.dividend : (x.adjDividend != null ? x.adjDividend : null),\n      frequency: x.frequency || null\n    }\n  };\n});"
-      }
-    },
-    {
-      "id": "se",
-      "name": "Store Earnings",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1296,
-        80
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO earnings_calendar (ticker, report_date, fiscal_quarter, eps_estimate, eps_actual, revenue_estimate, revenue_actual, surprise_percent) VALUES ('{{$json.ticker}}', '{{$json.report_date}}', '{{$json.fiscal_quarter}}', NULLIF(NULLIF('{{$json.eps_estimate}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.eps_actual}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.revenue_estimate}}', 'null'), '')::bigint, NULLIF(NULLIF('{{$json.revenue_actual}}', 'null'), '')::bigint, NULLIF(NULLIF('{{$json.surprise_percent}}', 'null'), '')::numeric) ON CONFLICT (ticker, report_date) DO UPDATE SET eps_estimate = EXCLUDED.eps_estimate, eps_actual = EXCLUDED.eps_actual, revenue_estimate = EXCLUDED.revenue_estimate, revenue_actual = EXCLUDED.revenue_actual, surprise_percent = EXCLUDED.surprise_percent;"
-      },
-      "credentials": {
-        "postgresApi": {
-          "ref": "postgresql-account"
-        }
-      }
-    },
-    {
-      "id": "sd",
-      "name": "Store Dividends",
-      "type": "postgres",
-      "typeVersion": 1,
-      "position": [
-        1296,
-        240
-      ],
-      "parameters": {
-        "operation": "executeSql",
-        "query": "INSERT INTO dividend_history (ticker, ex_date, payment_date, record_date, declaration_date, amount, frequency) VALUES ('{{$json.ticker}}', '{{$json.ex_date}}', NULLIF(NULLIF('{{$json.payment_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.record_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.declaration_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.amount}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.frequency}}', 'null'), '')) ON CONFLICT (ticker, ex_date) DO UPDATE SET payment_date = EXCLUDED.payment_date, amount = EXCLUDED.amount, frequency = EXCLUDED.frequency;"
-      },
-      "credentials": {
-        "postgresApi": {
-          "ref": "postgresql-account"
-        }
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
       }
     }
-  ],
-  "connections": {
-    "trigger1": {
-      "main": [
-        [
-          {
-            "node": "dr",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+  }, {
+    "id" : "sd",
+    "name" : "Store Dividends",
+    "type" : "postgres",
+    "typeVersion" : 1,
+    "position" : [ 1296, 240 ],
+    "parameters" : {
+      "operation" : "executeSql",
+      "query" : "INSERT INTO dividend_history (ticker, ex_date, payment_date, record_date, declaration_date, amount, frequency) VALUES ('{{$json.ticker}}', '{{$json.ex_date}}', NULLIF(NULLIF('{{$json.payment_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.record_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.declaration_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.amount}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.frequency}}', 'null'), '')) ON CONFLICT (ticker, ex_date) DO UPDATE SET payment_date = EXCLUDED.payment_date, amount = EXCLUDED.amount, frequency = EXCLUDED.frequency;"
     },
-    "dr": {
-      "main": [
-        [
-          {
-            "node": "fe",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "fd",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "credentials" : {
+      "postgresApi" : {
+        "ref" : "postgresql-account"
+      }
+    }
+  } ],
+  "connections" : {
+    "trigger1" : {
+      "main" : [ [ {
+        "node" : "dr",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "fe": {
-      "main": [
-        [
-          {
-            "node": "pe",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "dr" : {
+      "main" : [ [ {
+        "node" : "fe",
+        "type" : "main",
+        "index" : 0
+      }, {
+        "node" : "fd",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "fd": {
-      "main": [
-        [
-          {
-            "node": "pd",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "fe" : {
+      "main" : [ [ {
+        "node" : "pe",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "pe": {
-      "main": [
-        [
-          {
-            "node": "se",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "fd" : {
+      "main" : [ [ {
+        "node" : "pd",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     },
-    "pd": {
-      "main": [
-        [
-          {
-            "node": "sd",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "pe" : {
+      "main" : [ [ {
+        "node" : "se",
+        "type" : "main",
+        "index" : 0
+      } ] ]
+    },
+    "pd" : {
+      "main" : [ [ {
+        "node" : "sd",
+        "type" : "main",
+        "index" : 0
+      } ] ]
     }
   },
-  "settings": {
-    "errorWorkflow": "",
-    "saveExecutionProgress": "default",
-    "saveManualExecutions": "default",
-    "executionTimeout": -1,
-    "parallelExecution": true
+  "settings" : {
+    "errorWorkflow" : "",
+    "saveExecutionProgress" : "default",
+    "saveManualExecutions" : "default",
+    "executionTimeout" : -1,
+    "parallelExecution" : true
   }
 }

@@ -1,22 +1,30 @@
 {
-  "configId": "stock-value",
-  "name": "Stock Research - Value Investing",
-  "type": "TEAM",
-  "contextPath": "stock-value",
-  "description": "Value investing strategy: finds undervalued stocks via DCF analysis, P/E and P/B comparisons, and margin-of-safety calculations. Targets established companies temporarily punished by the market.",
-  "credentials": [
-    {
-      "ref": "postgresql-account",
-      "name": "PostgreSQL account",
-      "type": "postgresApi",
-      "data": {
-        "host": "{{env:postgresql.host}}",
-        "port": "{{env:postgresql.port}}",
-        "ssl": "{{env:postgresql.ssl}}",
-        "database": "{{env:postgresql.database}}",
-        "username": "{{env:postgresql.username}}",
-        "password": "{{env:postgresql.password}}"
-      }
+  "configId" : "stock-value",
+  "name" : "Stock Research - Value Investing",
+  "type" : "TEAM",
+  "contextPath" : "stock-value",
+  "description" : "Value investing strategy: finds undervalued stocks via DCF analysis, P/E and P/B comparisons, and margin-of-safety calculations. Targets established companies temporarily punished by the market.",
+  "credentials" : [ {
+    "ref" : "neo4j-account",
+    "name" : "Neo4j account",
+    "type" : "neo4j",
+    "data" : {
+      "uri" : "{{env:STOCK_VALUE_NEO4J_ACCOUNT_URI}}",
+      "username" : "{{env:STOCK_VALUE_NEO4J_ACCOUNT_USERNAME}}",
+      "database" : "{{env:STOCK_VALUE_NEO4J_ACCOUNT_DATABASE}}",
+      "password" : "{{env:STOCK_VALUE_NEO4J_ACCOUNT_PASSWORD}}"
     }
-  ]
+  }, {
+    "ref" : "postgresql-account",
+    "name" : "PostgreSQL account",
+    "type" : "postgresApi",
+    "data" : {
+      "host" : "{{env:postgresql.host}}",
+      "port" : "{{env:postgresql.port}}",
+      "ssl" : "{{env:postgresql.ssl}}",
+      "database" : "{{env:postgresql.database}}",
+      "username" : "{{env:postgresql.username}}",
+      "password" : "{{env:postgresql.password}}"
+    }
+  } ]
 }
