@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgentControlRequest } from '../../../core/services/agent-control.service';
 import { ApprovalScope } from '../../../core/services/auto-approval.service';
@@ -18,6 +18,11 @@ import { ApprovalScope } from '../../../core/services/auto-approval.service';
               </svg>
             </div>
             <h3 class="acm-title">AI Agent Request</h3>
+            <button class="acm-close-btn" (click)="onDeny()" [disabled]="executing" title="Deny">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
           </div>
           <div class="acm-body">
             <div class="acm-tool-badge">{{ getToolDisplayName(request.toolName) }}</div>
@@ -104,6 +109,19 @@ import { ApprovalScope } from '../../../core/services/auto-approval.service';
       padding: 20px 24px 12px;
     }
     .acm-icon { color: #f59e0b; flex-shrink: 0; }
+    .acm-close-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--color-fg-muted, #8b8ba0);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+    }
+    .acm-close-btn:hover:not(:disabled) { color: var(--color-fg-default, #1a1a2e); background: var(--color-canvas-subtle, #f0f0f5); }
+    .acm-close-btn:disabled { opacity: 0.3; cursor: not-allowed; }
     .acm-title {
       margin: 0;
       font-size: 16px;
@@ -273,13 +291,6 @@ export class AgentConsentModalComponent implements OnInit, OnDestroy, AfterViewI
     cwc_browser_control: 'Browser Control',
     cwc_push_to_canvas: 'Push to Canvas'
   };
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (this.showDropdown) {
-      this.showDropdown = false;
-    }
-  }
 
   ngOnInit(): void {
     this.startTimer();

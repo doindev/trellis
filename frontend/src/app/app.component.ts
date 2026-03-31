@@ -76,6 +76,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.agentSub = this.agentControlService.controlRequest$.subscribe(req => {
       this.agentRequest = req;
     });
+    this.agentControlService.requestComplete$.subscribe(() => {
+      this.agentRequest = null;
+    });
     this.agentSessionSub = this.agentControlService.isSessionActive$.subscribe(active => {
       this.agentSessionActive = active;
     });
@@ -99,14 +102,14 @@ export class AppComponent implements OnInit, OnDestroy {
   onAgentApprove(scope: any): void {
     if (this.agentRequest) {
       this.agentControlService.approveRequest(this.agentRequest, scope || undefined);
-      this.agentRequest = null;
+      // Modal stays visible showing "Running..." until requestComplete$ fires
     }
   }
 
   onAgentDeny(): void {
     if (this.agentRequest) {
       this.agentControlService.denyRequest(this.agentRequest);
-      this.agentRequest = null;
+      // requestComplete$ fires immediately from denyRequest, clearing the modal
     }
   }
 

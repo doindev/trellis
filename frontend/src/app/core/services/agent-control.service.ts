@@ -17,6 +17,7 @@ export interface AgentControlRequest {
 @Injectable({ providedIn: 'root' })
 export class AgentControlService implements OnDestroy {
   private controlRequests$ = new Subject<AgentControlRequest>();
+  private requestCompleted$ = new Subject<void>();
   private activeSession$ = new BehaviorSubject<boolean>(false);
   private canvasPush$ = new Subject<any>();
   private pendingWorkflowData: any = null;
@@ -24,6 +25,8 @@ export class AgentControlService implements OnDestroy {
   private readonly apiBase = (window as any).__CWC_BASE_PATH__ || '';
 
   controlRequest$ = this.controlRequests$.asObservable();
+  /** Emits when a consent request finishes (API call completed or denied). */
+  requestComplete$ = this.requestCompleted$.asObservable();
   isSessionActive$ = this.activeSession$.asObservable();
   canvasPushReceived$ = this.canvasPush$.asObservable();
 
@@ -97,17 +100,25 @@ export class AgentControlService implements OnDestroy {
     if (request.apiSpec && !AgentControlService.BROWSER_LOCAL_TOOLS.has(request.toolName)) {
       // Execute the API call through the user's browser session
       this.toolExecutor.execute(request.apiSpec).subscribe({
-        next: (result) => this.respondWithResult(request.requestId, true, result, null),
-        error: (err) => this.respondWithResult(request.requestId, true, null, err.message || err.error?.message || 'Request failed')
+        next: (result) => {
+          this.respondWithResult(request.requestId, true, result, null);
+          this.requestCompleted$.next();
+        },
+        error: (err) => {
+          this.respondWithResult(request.requestId, true, null, err.message || err.error?.message || 'Request failed');
+          this.requestCompleted$.next();
+        }
       });
     } else {
       // Browser-local tools (push_to_canvas, browser_control) — approve and let backend handle
       this.respondWithResult(request.requestId, true, { success: true }, null);
+      this.requestCompleted$.next();
     }
   }
 
   denyRequest(request: AgentControlRequest): void {
     this.respondWithResult(request.requestId, false, null, 'User denied the request to execute ' + request.toolName + '.');
+    this.requestCompleted$.next();
   }
 
   revokeControl(): void {
