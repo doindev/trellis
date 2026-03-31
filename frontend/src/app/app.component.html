@@ -415,7 +415,7 @@
 <!-- Agent Control -->
 <app-agent-consent-modal
   [request]="agentRequest"
-  (allow)="onAgentAllow()"
+  (approve)="onAgentApprove($event)"
   (deny)="onAgentDeny()">
 </app-agent-consent-modal>
 <app-agent-control-overlay

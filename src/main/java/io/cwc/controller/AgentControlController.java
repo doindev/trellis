@@ -3,6 +3,7 @@ package io.cwc.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import io.cwc.dto.ToolConsentResult;
 import io.cwc.service.RemoteControlService;
 
 import java.util.Map;
@@ -19,7 +20,14 @@ public class AgentControlController {
             @PathVariable String requestId,
             @RequestBody Map<String, Object> body) {
         boolean approved = Boolean.TRUE.equals(body.get("approved"));
-        remoteControlService.resolveRequest(requestId, approved);
+
+        ToolConsentResult result = ToolConsentResult.builder()
+                .approved(approved)
+                .result(body.get("result"))
+                .error((String) body.get("error"))
+                .build();
+
+        remoteControlService.resolveRequest(requestId, result);
         return Map.of("status", "ok");
     }
 

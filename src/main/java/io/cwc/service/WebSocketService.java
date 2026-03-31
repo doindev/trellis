@@ -78,7 +78,9 @@ public class WebSocketService {
     }
 
     public void sendToolConsentRequest(String browserSessionId, String requestId,
-                                        String toolName, String description, Map<String, Object> arguments) {
+                                        String toolName, String description,
+                                        Map<String, Object> arguments,
+                                        ToolApiMapping.ApiCallSpec apiSpec) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("event", "toolConsentRequest");
         payload.put("requestId", requestId);
@@ -86,6 +88,17 @@ public class WebSocketService {
         payload.put("description", description);
         if (arguments != null && !arguments.isEmpty()) {
             payload.put("arguments", arguments);
+        }
+        if (apiSpec != null) {
+            Map<String, Object> spec = new LinkedHashMap<>();
+            spec.put("method", apiSpec.method());
+            spec.put("path", apiSpec.path());
+            if (apiSpec.body() != null) spec.put("body", apiSpec.body());
+            if (apiSpec.queryParams() != null) spec.put("queryParams", apiSpec.queryParams());
+            spec.put("category", apiSpec.category());
+            spec.put("requiresPolling", apiSpec.requiresPolling());
+            if (apiSpec.pollingPath() != null) spec.put("pollingPath", apiSpec.pollingPath());
+            payload.put("apiSpec", spec);
         }
         send("/topic/agent-control/" + browserSessionId, payload);
     }

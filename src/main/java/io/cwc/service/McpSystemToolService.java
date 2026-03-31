@@ -313,32 +313,18 @@ public class McpSystemToolService {
 
     // --- Tool Dispatch ---
 
-    private static final Set<String> CONSENT_REQUIRED_TOOLS = Set.of(
-            "cwc_browser_control",
-            "cwc_push_to_canvas",
-            "cwc_create_workflow",
-            "cwc_update_workflow",
-            "cwc_publish_workflow",
-            "cwc_create_agent",
-            "cwc_update_agent",
-            "cwc_execute_workflow",
-            "cwc_create_project",
-            "cwc_update_project"
-    );
-
-    private static final Set<String> BROWSER_SESSION_TOOLS = Set.of(
-            "cwc_browser_control",
-            "cwc_push_to_canvas"
-    );
-
     private boolean requiresConsent(String toolName) {
-        return CONSENT_REQUIRED_TOOLS.contains(toolName);
+        return !ToolApiMapping.BYPASS_CONSENT_TOOLS.contains(toolName);
     }
 
-    private boolean needsBrowserSession(String toolName) {
-        return BROWSER_SESSION_TOOLS.contains(toolName);
+    private boolean isBrowserLocalTool(String toolName) {
+        return ToolApiMapping.BROWSER_LOCAL_TOOLS.contains(toolName);
     }
 
+    /**
+     * Execute a tool directly without consent checks.
+     * Used by the chat agent where the user's message IS the consent.
+     */
     /**
      * Execute a tool directly without consent checks.
      * Used by the chat agent where the user's message IS the consent.
@@ -347,7 +333,7 @@ public class McpSystemToolService {
         if (arguments == null) arguments = Map.of();
         try {
             String targetSession = null;
-            if (needsBrowserSession(name)) {
+            if (isBrowserLocalTool(name)) {
                 targetSession = resolveTargetSession((String) arguments.get("browserSessionId"));
             }
             Object result = dispatchTool(name, arguments, targetSession);
@@ -359,33 +345,60 @@ public class McpSystemToolService {
         }
     }
 
+    /**
+     * Handle a tool call from an MCP client. Non-documentation tools are routed through
+     * the user's browser for consent and execution, ensuring user-scoped access control.
+     */
     public Map<String, Object> handleToolCall(String name, Map<String, Object> arguments) {
         if (arguments == null) arguments = Map.of();
 
         try {
-            String targetSession = null;
-
-            if (requiresConsent(name)) {
-                // Resolve browser session, generate description, request consent
-                targetSession = resolveTargetSession((String) arguments.get("browserSessionId"));
-                String description = generateToolDescription(name, arguments);
-
-                Map<String, Object> visibleArgs = new LinkedHashMap<>(arguments);
-                visibleArgs.remove("browserSessionId");
-
-                boolean approved = remoteControlService.requestToolConsent(targetSession, name, description, visibleArgs);
-                if (!approved) {
-                    return Map.of("content", List.of(Map.of("type", "text", "text",
-                            "User denied the request to execute " + name + ".")));
-                }
-            } else if (needsBrowserSession(name)) {
-                targetSession = resolveTargetSession((String) arguments.get("browserSessionId"));
+            // Documentation tools bypass consent and execute locally
+            if (!requiresConsent(name)) {
+                Object result = dispatchTool(name, arguments, null);
+                String text = objectMapper.writeValueAsString(result);
+                return Map.of("content", List.of(Map.of("type", "text", "text", text)));
             }
 
-            Object result = dispatchTool(name, arguments, targetSession);
+            // All other tools: route through the user's browser
+            String targetSession = resolveTargetSession((String) arguments.get("browserSessionId"));
+            String description = generateToolDescription(name, arguments);
 
-            String text = objectMapper.writeValueAsString(result);
-            return Map.of("content", List.of(Map.of("type", "text", "text", text)));
+            Map<String, Object> visibleArgs = new LinkedHashMap<>(arguments);
+            visibleArgs.remove("browserSessionId");
+
+            // Resolve the REST API mapping (null for browser-local tools like push_to_canvas)
+            ToolApiMapping.ApiCallSpec apiSpec = null;
+            if (!isBrowserLocalTool(name)) {
+                apiSpec = ToolApiMapping.resolve(name, arguments);
+            }
+
+            ToolConsentResult consentResult = remoteControlService.requestToolConsent(
+                    targetSession, name, description, visibleArgs, apiSpec);
+
+            if (consentResult.isTimedOut()) {
+                return Map.of("content", List.of(Map.of("type", "text", "text",
+                        "Request timed out waiting for user approval.")));
+            }
+            if (!consentResult.isApproved()) {
+                String reason = consentResult.getError() != null
+                        ? consentResult.getError()
+                        : "User denied the request to execute " + name + ".";
+                return Map.of("content", List.of(Map.of("type", "text", "text", reason)));
+            }
+            if (consentResult.getError() != null) {
+                return Map.of(
+                        "content", List.of(Map.of("type", "text", "text", "Error: " + consentResult.getError())),
+                        "isError", true);
+            }
+
+            // Return the browser's result directly to the MCP client
+            if (consentResult.getResult() != null) {
+                String text = objectMapper.writeValueAsString(consentResult.getResult());
+                return Map.of("content", List.of(Map.of("type", "text", "text", text)));
+            }
+
+            return Map.of("content", List.of(Map.of("type", "text", "text", "{\"success\": true}")));
         } catch (Exception e) {
             log.error("Error handling system tool call: {}", name, e);
             return Map.of(

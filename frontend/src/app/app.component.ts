@@ -96,9 +96,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.agentSessionSub?.unsubscribe();
   }
 
-  onAgentAllow(): void {
+  onAgentApprove(scope: any): void {
     if (this.agentRequest) {
-      this.agentControlService.approveRequest(this.agentRequest);
+      this.agentControlService.approveRequest(this.agentRequest, scope || undefined);
       this.agentRequest = null;
     }
   }

@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import io.cwc.dto.ToolConsentResult;
+import io.cwc.service.ToolApiMapping.ApiCallSpec;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -17,39 +20,41 @@ public class RemoteControlService {
 
     private final WebSocketService webSocketService;
 
-    private final ConcurrentHashMap<String, CompletableFuture<Boolean>> pendingRequests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CompletableFuture<ToolConsentResult>> pendingRequests = new ConcurrentHashMap<>();
 
     /**
-     * Request user consent for a tool call. Sends a WebSocket message
-     * and blocks until the user responds or the timeout expires.
-     *
-     * @return true if user approved, false if denied or timed out
+     * Request user consent for a tool call. Sends a WebSocket message with the API spec
+     * and blocks until the browser responds with the result or the timeout expires.
      */
-    public boolean requestToolConsent(String browserSessionId, String toolName, String description, Map<String, Object> arguments) {
+    public ToolConsentResult requestToolConsent(String browserSessionId, String toolName,
+                                                 String description, Map<String, Object> arguments,
+                                                 ApiCallSpec apiSpec) {
         String requestId = UUID.randomUUID().toString();
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        CompletableFuture<ToolConsentResult> future = new CompletableFuture<>();
         pendingRequests.put(requestId, future);
 
         try {
-            webSocketService.sendToolConsentRequest(browserSessionId, requestId, toolName, description, arguments);
+            webSocketService.sendToolConsentRequest(browserSessionId, requestId, toolName,
+                    description, arguments, apiSpec);
 
             return future.get(60, TimeUnit.SECONDS);
         } catch (Exception e) {
-            log.warn("Tool consent request timed out or failed: {} (tool: {})", requestId, toolName, e);
-            return false;
+            log.warn("Tool consent request timed out or failed: {} (tool: {})", requestId, toolName);
+            return ToolConsentResult.timeout();
         } finally {
             pendingRequests.remove(requestId);
         }
     }
 
     /**
-     * Resolve a pending request (called when user clicks Allow or Deny).
+     * Resolve a pending request with the browser's result.
      */
-    public void resolveRequest(String requestId, boolean approved) {
-        CompletableFuture<Boolean> future = pendingRequests.get(requestId);
+    public void resolveRequest(String requestId, ToolConsentResult result) {
+        CompletableFuture<ToolConsentResult> future = pendingRequests.get(requestId);
         if (future != null) {
-            future.complete(approved);
-            log.info("Tool consent request {} {}", requestId, approved ? "approved" : "denied");
+            future.complete(result);
+            log.info("Tool consent request {} {}", requestId,
+                    result.isApproved() ? "approved" : "denied");
         }
     }
 
@@ -57,7 +62,7 @@ public class RemoteControlService {
      * Deny all pending requests (e.g. when user revokes control).
      */
     public void revokeAll() {
-        pendingRequests.values().forEach(f -> f.complete(false));
+        pendingRequests.values().forEach(f -> f.complete(ToolConsentResult.revoked()));
         pendingRequests.clear();
         log.info("All pending tool consent requests revoked");
     }
