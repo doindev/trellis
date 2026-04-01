@@ -84,7 +84,26 @@
     "position" : [ 1104, 160 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO alerts (ticker, alert_type, strategy, message, severity) SELECT '{{$json.ticker}}', '{{$json.alert_type}}', 'short_term', '{{$json.message}}', '{{$json.severity}}' WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE ticker='{{$json.ticker}}' AND alert_type='{{$json.alert_type}}' AND triggered_at::date=CURRENT_DATE);"
+      "query" : "INSERT INTO alerts (ticker, alert_type, strategy, message, severity) SELECT ?, ?, 'short_term', ?, ? WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE ticker=? AND alert_type=? AND triggered_at::date=CURRENT_DATE);",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.alert_type}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.message}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.severity}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.alert_type}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

@@ -23,7 +23,12 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 		icon = "timescaledb",
 		credentials = {"timescaleDbApi"},
 		implementationNotes = "Use '?' placeholders in SQL and supply values via queryParameters to prevent SQL injection. " +
-			"Example: query=\"SELECT * FROM metrics WHERE device_id = ?\" with queryParameters values=[\"{{$json.deviceId}}\"]. " +
+			"queryParameters is a JSON array of objects, each with 'value' and 'type' fields. " +
+			"Values MUST use the '=' expression prefix for dynamic expressions. Type is 'string', 'number', or 'boolean'. " +
+			"Example: query=\"SELECT * FROM metrics WHERE device_id = ? AND status = ?\" with " +
+			"queryParameters=[{\"value\": \"={{$json.deviceId}}\", \"type\": \"number\"}, {\"value\": \"={{$json.status}}\", \"type\": \"string\"}]. " +
+			"IMPORTANT: Do NOT use {{$json.field}} without the '=' prefix — the correct format is ={{$json.field}}. " +
+			"Do NOT wrap the array in {\"values\": [...]} — it must be a flat JSON array. " +
 			"executeQuery returns rows; executeSql is for INSERT/UPDATE/DELETE."
 )
 public class TimescaleDbNode extends AbstractDatabaseNode {
