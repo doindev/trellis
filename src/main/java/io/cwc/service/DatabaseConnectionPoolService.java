@@ -10,6 +10,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
 
+import org.apache.tomcat.jdbc.pool.PoolProperties;
+
+import io.cwc.credentials.ConnectionPoolParameters;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
@@ -21,8 +24,6 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -38,25 +39,25 @@ public class DatabaseConnectionPoolService {
 
     private record PoolEntry<T>(T pool, long lastUsed) {}
 
-    private final ConcurrentHashMap<String, PoolEntry<HikariDataSource>> jdbcPools = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, PoolEntry<org.apache.tomcat.jdbc.pool.DataSource>> jdbcPools = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, PoolEntry<MongoClient>> mongoPools = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, PoolEntry<JedisPool>> redisPools = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, PoolEntry<Driver>> neo4jPools = new ConcurrentHashMap<>();
 
     public DataSource getJdbcPool(Map<String, Object> credentials, String dbType) {
         String key = poolKey(dbType, credentials);
-        PoolEntry<HikariDataSource> entry = jdbcPools.get(key);
-        if (entry != null && !entry.pool().isClosed()) {
+        PoolEntry<org.apache.tomcat.jdbc.pool.DataSource> entry = jdbcPools.get(key);
+        if (entry != null && entry.pool().getPool() != null) {
             jdbcPools.put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
             return entry.pool();
         }
         synchronized (this) {
             entry = jdbcPools.get(key);
-            if (entry != null && !entry.pool().isClosed()) {
+            if (entry != null && entry.pool().getPool() != null) {
                 jdbcPools.put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
                 return entry.pool();
             }
-            HikariDataSource ds = createHikariPool(credentials, dbType);
+            org.apache.tomcat.jdbc.pool.DataSource ds = createJdbcPool(credentials, dbType);
             jdbcPools.put(key, new PoolEntry<>(ds, System.currentTimeMillis()));
             log.info("Created JDBC connection pool for {} (key={})", dbType, key.substring(0, 8));
             return ds;
@@ -125,7 +126,7 @@ public class DatabaseConnectionPoolService {
 
     // --- Pool creation ---
 
-    private HikariDataSource createHikariPool(Map<String, Object> credentials, String dbType) {
+    private org.apache.tomcat.jdbc.pool.DataSource createJdbcPool(Map<String, Object> credentials, String dbType) {
         String host = stringVal(credentials, "host", "localhost");
         int port = intVal(credentials, "port", defaultPort(dbType));
         String database = stringVal(credentials, "database", "");
@@ -155,31 +156,42 @@ public class DatabaseConnectionPoolService {
             default -> throw new IllegalArgumentException("Unsupported DB type: " + dbType);
         };
 
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(jdbcUrl);
-        config.setUsername(username);
-        config.setPassword(password);
-        config.setMaximumPoolSize(10);
-        config.setMinimumIdle(1);
-        config.setIdleTimeout(10 * 60 * 1000L); // 10 minutes
-        config.setMaxLifetime(30 * 60 * 1000L); // 30 minutes
-        config.setConnectionTimeout(30_000L);
-        config.setKeepaliveTime(60_000L); // send validation query every 60s on idle connections
-        config.setPoolName("cwc-" + dbType + "-" + poolKey(dbType, credentials).substring(0, 8));
+        // Read user-configured pool settings (falls back to defaults if not set)
+        Map<String, Object> poolCfg = ConnectionPoolParameters.getPoolConfig(credentials);
 
-        // Validate connections before use — Oracle doesn't support isValid() on all drivers
-        if ("oracle".equals(dbType)) {
-            config.setConnectionTestQuery("SELECT 1 FROM DUAL");
-        }
+        PoolProperties props = new PoolProperties();
+        props.setUrl(jdbcUrl);
+        props.setUsername(username);
+        props.setPassword(password);
+        props.setInitialSize(intVal(poolCfg, "initialSize", 0));
+        props.setMaxActive(intVal(poolCfg, "maxActive", 10));
+        props.setMaxIdle(intVal(poolCfg, "maxIdle", 10));
+        props.setMinIdle(intVal(poolCfg, "minIdle", 1));
+        props.setMaxWait(intVal(poolCfg, "maxWaitMillis", 30_000));
+        props.setMinEvictableIdleTimeMillis(10 * 60 * 1000); // 10 minutes
+        props.setMaxAge(30 * 60 * 1000L); // 30 minutes
+        props.setTimeBetweenEvictionRunsMillis(60_000); // check idle connections every 60s
+        props.setName("cwc-" + dbType + "-" + poolKey(dbType, credentials).substring(0, 8));
+
+        // Validation
+        String defaultValidation = "oracle".equals(dbType) ? "SELECT 1 FROM DUAL" : "SELECT 1";
+        props.setValidationQuery(stringVal(poolCfg, "validationQuery", defaultValidation));
+        props.setTestOnBorrow(boolVal(poolCfg, "testOnBorrow", false));
+        props.setTestWhileIdle(boolVal(poolCfg, "testWhileIdle", false));
+        props.setValidationInterval(intVal(poolCfg, "validationInterval", 3000));
+
+        // Leak detection
+        props.setRemoveAbandoned(boolVal(poolCfg, "removeAbandoned", false));
+        props.setRemoveAbandonedTimeout(intVal(poolCfg, "removeAbandonedTimeout", 60));
+        props.setLogAbandoned(boolVal(poolCfg, "logAbandoned", false));
 
         // SSL for postgres-compatible drivers
         if (List.of("postgres", "timescaledb", "questdb", "cratedb").contains(dbType)
                 && Boolean.TRUE.equals(credentials.get("ssl"))) {
-            config.addDataSourceProperty("ssl", "true");
-            config.addDataSourceProperty("sslmode", "require");
+            props.setConnectionProperties("ssl=true;sslmode=require;");
         }
 
-        return new HikariDataSource(config);
+        return new org.apache.tomcat.jdbc.pool.DataSource(props);
     }
 
     private MongoClient createMongoClient(Map<String, Object> credentials) {
@@ -325,6 +337,13 @@ public class DatabaseConnectionPoolService {
         if (val instanceof String) {
             try { return Integer.parseInt((String) val); } catch (NumberFormatException e) { return defaultValue; }
         }
+        return defaultValue;
+    }
+
+    private boolean boolVal(Map<String, Object> map, String key, boolean defaultValue) {
+        Object val = map.get(key);
+        if (val instanceof Boolean) return (Boolean) val;
+        if (val instanceof String) return Boolean.parseBoolean((String) val);
         return defaultValue;
     }
 

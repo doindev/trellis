@@ -1,8 +1,10 @@
 package io.cwc.credentials.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.cwc.credentials.ConnectionPoolParameters;
 import io.cwc.credentials.CredentialProviderInterface;
 import io.cwc.credentials.annotation.CredentialProvider;
 import io.cwc.nodes.core.NodeParameter;
@@ -19,7 +21,7 @@ public class MicrosoftSqlCredentials implements CredentialProviderInterface {
 
     @Override
     public List<NodeParameter> getProperties() {
-        return List.of(
+        var params = new ArrayList<>(List.of(
                 NodeParameter.builder()
                         .name("server").displayName("Server")
                         .type(ParameterType.STRING)
@@ -44,6 +46,8 @@ public class MicrosoftSqlCredentials implements CredentialProviderInterface {
                         .name("tls").displayName("Encrypt")
                         .type(ParameterType.BOOLEAN)
                         .defaultValue(true).build()
-        );
+        ));
+        params.add(ConnectionPoolParameters.connectionPoolParameter());
+        return params;
     }
 }

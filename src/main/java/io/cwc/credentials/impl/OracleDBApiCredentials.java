@@ -1,8 +1,10 @@
 package io.cwc.credentials.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.cwc.credentials.ConnectionPoolParameters;
 import io.cwc.credentials.CredentialProviderInterface;
 import io.cwc.credentials.annotation.CredentialProvider;
 import io.cwc.nodes.core.NodeParameter;
@@ -20,7 +22,7 @@ public class OracleDBApiCredentials implements CredentialProviderInterface {
 
     @Override
     public List<NodeParameter> getProperties() {
-        return List.of(
+        var params = new ArrayList<>(List.of(
                 NodeParameter.builder()
                         .name("host").displayName("Host")
                         .type(ParameterType.STRING).required(true)
@@ -47,6 +49,8 @@ public class OracleDBApiCredentials implements CredentialProviderInterface {
                         .name("password").displayName("Password")
                         .type(ParameterType.STRING).required(true)
                         .typeOptions(Map.of("password", true)).build()
-        );
+        ));
+        params.add(ConnectionPoolParameters.connectionPoolParameter());
+        return params;
     }
 }

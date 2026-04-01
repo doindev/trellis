@@ -36,4 +36,7 @@ export interface CredentialProperty {
   options?: { name: string; value: any }[];
   typeOptions?: Record<string, any>;
   displayOptions?: { show?: Record<string, any[]> };
+  nestedParameters?: CredentialProperty[];
+  minValue?: number;
+  maxValue?: number;
 }

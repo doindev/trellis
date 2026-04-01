@@ -93,7 +93,13 @@ export class CredentialListComponent implements OnInit {
     // Pre-populate all fields that have default values
     const data: Record<string, any> = {};
     for (const prop of type.properties) {
-      if (prop.defaultValue != null) {
+      if (prop.type === 'collection' && prop.nestedParameters) {
+        const nested: Record<string, any> = {};
+        for (const np of prop.nestedParameters) {
+          if (np.defaultValue != null) nested[np.name] = np.defaultValue;
+        }
+        if (Object.keys(nested).length) data[prop.name] = nested;
+      } else if (prop.defaultValue != null) {
         data[prop.name] = prop.defaultValue;
       }
     }
@@ -152,6 +158,31 @@ export class CredentialListComponent implements OnInit {
     const cred = this.editorCredential();
     const data = { ...(cred.data || {}), [fieldName]: value };
     this.editorCredential.set({ ...cred, data });
+  }
+
+  onCollectionFieldChange(collectionName: string, fieldName: string, value: any): void {
+    const cred = this.editorCredential();
+    const data = { ...(cred.data || {}) };
+    const collection = { ...(data[collectionName] || {}) };
+    collection[fieldName] = value;
+    data[collectionName] = collection;
+    this.editorCredential.set({ ...cred, data });
+  }
+
+  getCollectionValue(collectionName: string, fieldName: string, defaultValue: any): any {
+    const val = this.editorCredential().data?.[collectionName]?.[fieldName];
+    return val != null ? val : defaultValue;
+  }
+
+  collectionExpanded = signal<Record<string, boolean>>({});
+
+  toggleCollection(name: string): void {
+    const current = this.collectionExpanded();
+    this.collectionExpanded.set({ ...current, [name]: !current[name] });
+  }
+
+  isCollectionExpanded(name: string): boolean {
+    return this.collectionExpanded()[name] ?? false;
   }
 
   saveCredential(): void {
