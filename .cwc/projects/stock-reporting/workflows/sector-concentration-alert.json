@@ -32,7 +32,7 @@
     "position" : [ 704, 128 ],
     "parameters" : {
       "operation" : "executeQuery",
-      "query" : "MATCH (c:Company)-[:IN_WATCHLIST]->(w:Watchlist) MATCH (c)-[:BELONGS_TO_SECTOR]->(s:Sector) WITH w.name AS strategy, s.name AS sector, count(c) AS sector_count WITH strategy, sector, sector_count, sum(sector_count) OVER (PARTITION BY strategy) AS total_in_strategy WITH strategy, sector, sector_count, total_in_strategy, toFloat(sector_count) / total_in_strategy AS concentration WHERE concentration > 0.4 RETURN strategy, sector, sector_count, total_in_strategy, round(concentration * 100, 1) AS concentration_pct ORDER BY concentration DESC",
+      "query" : "MATCH (c:Company)-[:IN_WATCHLIST]->(w:Watchlist) MATCH (c)-[:BELONGS_TO_SECTOR]->(s:Sector) WITH w.name AS strategy, s.name AS sector, count(c) AS sector_count WITH strategy, collect({sector: sector, count: sector_count}) AS sectors, sum(sector_count) AS total_in_strategy UNWIND sectors AS s WITH strategy, s.sector AS sector, s.count AS sector_count, total_in_strategy, toFloat(s.count) / total_in_strategy AS concentration WHERE concentration > 0.4 RETURN strategy, sector, sector_count, total_in_strategy, round(concentration * 100, 1) AS concentration_pct ORDER BY concentration DESC",
       "parameters" : "{}"
     },
     "credentials" : {
