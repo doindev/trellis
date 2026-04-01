@@ -114,7 +114,71 @@
     "position" : [ 1680, 160 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO fundamentals (ticker,period_date,period_type,revenue,net_income,eps,pe_ratio,pb_ratio,ps_ratio,debt_to_equity,roe,roa,current_ratio,dividend_yield,payout_ratio,revenue_growth,earnings_growth,free_cash_flow,gross_margin,operating_margin,net_margin,last_updated) VALUES ('{{$json.ticker}}','{{$json.period_date}}','annual',{{$json.revenue}},{{$json.net_income}},{{$json.eps}},{{$json.pe_ratio}},{{$json.pb_ratio}},{{$json.ps_ratio}},{{$json.debt_to_equity}},{{$json.roe}},{{$json.roa}},{{$json.current_ratio}},{{$json.dividend_yield}},{{$json.payout_ratio}},{{$json.revenue_growth}},{{$json.earnings_growth}},{{$json.free_cash_flow}},{{$json.gross_margin}},{{$json.operating_margin}},{{$json.net_margin}},NOW()) ON CONFLICT (ticker,period_date,period_type) DO UPDATE SET revenue=EXCLUDED.revenue,pe_ratio=EXCLUDED.pe_ratio,roe=EXCLUDED.roe,dividend_yield=EXCLUDED.dividend_yield,last_updated=NOW();"
+      "query" : "INSERT INTO fundamentals (ticker,period_date,period_type,revenue,net_income,eps,pe_ratio,pb_ratio,ps_ratio,debt_to_equity,roe,roa,current_ratio,dividend_yield,payout_ratio,revenue_growth,earnings_growth,free_cash_flow,gross_margin,operating_margin,net_margin,last_updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW()) ON CONFLICT (ticker,period_date,period_type) DO UPDATE SET revenue=EXCLUDED.revenue,pe_ratio=EXCLUDED.pe_ratio,roe=EXCLUDED.roe,dividend_yield=EXCLUDED.dividend_yield,last_updated=NOW();",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.period_date}}",
+        "type" : "string"
+      }, {
+        "value" : "annual",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.revenue}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.net_income}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.eps}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.pe_ratio}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.pb_ratio}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.ps_ratio}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.debt_to_equity}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.roe}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.roa}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.current_ratio}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.dividend_yield}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.payout_ratio}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.revenue_growth}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.earnings_growth}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.free_cash_flow}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.gross_margin}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.operating_margin}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.net_margin}}",
+        "type" : "number"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

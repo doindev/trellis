@@ -73,7 +73,23 @@
     "position" : [ 992, 304 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO alerts (ticker,alert_type,strategy,message,severity) VALUES ('{{$json.ticker}}','{{$json.signal_type}}','technical','{{$json.message}}','{{$json.severity}}');"
+      "query" : "INSERT INTO alerts (ticker,alert_type,strategy,message,severity) VALUES (?,?,?,?,?);",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.signal_type}}",
+        "type" : "string"
+      }, {
+        "value" : "technical",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.message}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.severity}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

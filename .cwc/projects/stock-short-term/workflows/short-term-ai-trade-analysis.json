@@ -64,7 +64,7 @@
     "parameters" : {
       "language" : "javaScript",
       "mode" : "runOnceForAllItems",
-      "jsCode" : "const items = $input.all();\nconst d = items[0]?.json || {};\nconst peers = items.slice(1).map(i => i.json).filter(p => p.peer_ticker);\nconst meta = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : (d.metadata || {});\nconst wlMeta = typeof d.wl_meta === 'string' ? JSON.parse(d.wl_meta) : (d.wl_meta || {});\n\nlet peerInfo = '';\nif (peers.length > 0) {\n  peerInfo = '\\n\\nIndustry Peers:';\n  for (const p of peers) peerInfo += `\\n- ${p.peer_name} (${p.peer_ticker})${p.on_watchlists?.length ? ' [' + p.on_watchlists.join(', ') + ']' : ''}`;\n}\n\nreturn [{json: {ticker: d.ticker, context: `Analyze short-term trade setup:\\nTicker: ${d.ticker} (${d.company_name})\\nSector: ${d.sector} | Cap: $${((d.market_cap||0)/1e9).toFixed(1)}B\\nSetup: ${d.alert_type?.replace('trade_setup_','')}\\nEntry: $${meta.entry} | Target: $${meta.target} | Stop: $${meta.stop}\\nConfidence: ${meta.confidence}/10\\nRSI: ${wlMeta.rsi} | Beta: ${wlMeta.beta} | Volume: ${wlMeta.volume}${peerInfo}\\nDate: ${new Date().toISOString().split('T')[0]}\\n\\nEvaluate this trade setup. Provide entry, stop-loss, targets, position sizing, holding period, and risk assessment.`}}];"
+      "jsCode" : "const items = $input.all();\nconst d = items[0]?.json || {};\nconst peers = items.slice(1).map(i => i.json).filter(p => p.peer_ticker);\nconst meta = typeof d.metadata === 'string' ? JSON.parse(d.metadata) : (d.metadata || {});\nconst wlMeta = typeof d.wl_meta === 'string' ? JSON.parse(d.wl_meta) : (d.wl_meta || {});\n\nlet peerInfo = '';\nif (peers.length > 0) {\n  peerInfo = '\\n\\nIndustry Peers:';\n  for (const p of peers) peerInfo += `\\n- ${p.peer_name} (${p.peer_ticker})${p.on_watchlists?.length ? ' [' + p.on_watchlists.join(', ') + ']' : ''}`;\n}\n\nreturn [{json: {ticker: d.ticker, context: `Analyze short-term trade setup:\\nTicker: ${d.ticker} (${d.company_name})\\nSector: ${d.sector} | Cap: $${((d.market_cap||0)/1e9).toFixed(1)}B\\nSetup: ${d.alert_type?.replace('trade_setup_','')}\\nEntry: $${meta.entry} | Target: $${meta.target} | Stop: $${meta.stop}\\nConfidence: ${meta.confidence}/10${peerInfo}\\nDate: ${new Date().toISOString().split('T')[0]}\\n\\nEvaluate this trade setup.`}}];"
     }
   }, {
     "id" : "lp",
@@ -84,7 +84,6 @@
     "parameters" : {
       "agentDefinitionId" : "short-term-trading-analyst",
       "prompt" : "{{$json.context}}",
-      "systemMessage" : "You are a Short-Term Trading Analyst specializing in 1-30 day holding periods.\n\nYour trading philosophy:\n- Capital preservation first: never risk more than 2% of portfolio per trade\n- Use strict stop-losses (typically 5-8% below entry) and take-profit targets (2:1 reward-to-risk minimum)\n- Trade WITH the trend, not against it. Confirm signals with volume.\n- Prefer liquid, high-volume stocks (avg volume >1M shares/day)\n- Catalyst-aware: earnings, FDA decisions, sector momentum shifts\n\nWhen analyzing a short-term setup:\n1. Identify the pattern: swing reversal, momentum breakout, bull flag, mean reversion\n2. Confirm with volume (breakout volume should be >1.5x average)\n3. Check RSI for overbought/oversold extremes\n4. Identify precise entry price, stop-loss level, and profit target(s)\n5. Calculate position size based on risk parameters\n6. Assess holding period (1-5 days for momentum, 5-15 days for swing, 15-30 for position)\n7. Check for upcoming catalysts (earnings dates, ex-div dates) that could disrupt the trade\n\nRisk rules:\n- Max loss per trade: 2% of portfolio\n- Max open positions: 5-8 concurrent\n- Close positions before earnings unless explicitly playing the event\n- Use trailing stops once trade is profitable\n- No averaging down on losing positions\n\nOutput structured JSON: ticker, setup_type (swing/momentum/bull_flag/mean_reversion/event_driven), entry_price, stop_loss, target_1, target_2, reward_risk_ratio, position_size_pct, holding_period_days, volume_confirmation, catalyst_check, confidence (1-10), recommendation (ENTER/WATCH/SKIP), rationale.",
       "maxIterations" : 15
     }
   }, {
@@ -95,7 +94,14 @@
     "position" : [ 1700, 300 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO investment_scores (ticker, strategy, score_date, overall_score, recommendation, thesis, created_at) VALUES ('{{$json.ticker}}', 'short_term', CURRENT_DATE, 7.0, 'WATCH', '{{$json.output}}', NOW()) ON CONFLICT (ticker, strategy, score_date) DO UPDATE SET thesis = EXCLUDED.thesis;"
+      "query" : "INSERT INTO investment_scores (ticker, strategy, score_date, overall_score, recommendation, thesis, created_at) VALUES (?, 'short_term', CURRENT_DATE, 7.0, 'WATCH', ?, NOW()) ON CONFLICT (ticker, strategy, score_date) DO UPDATE SET thesis = EXCLUDED.thesis;",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.output}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

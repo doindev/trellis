@@ -185,7 +185,8 @@
       "Bash(unzip -p \"$jar_file\" \"dev/langchain4j/agentic/supervisor/AgentInvocation.java\")",
       "Bash(unzip -p $jar_file dev/langchain4j/agentic/scope/JacksonAgenticScopeJsonCodec.java)",
       "Bash(unzip -p $jar_file dev/langchain4j/agentic/supervisor/SupervisorPlanner.java)",
-      "Bash(unzip -p \"$jar_file\" \"dev/langchain4j/agentic/supervisor/PlannerAgent.java\")"
+      "Bash(unzip -p \"$jar_file\" \"dev/langchain4j/agentic/supervisor/PlannerAgent.java\")",
+      "mcp__cwc-agent__cwc_publish_workflow"
     ]
   }
 }

@@ -56,7 +56,11 @@
     "position" : [ 1104, 128 ],
     "parameters" : {
       "operation" : "executeQuery",
-      "query" : "SELECT price_date,close_price,high_price,low_price,volume FROM daily_prices WHERE ticker='{{$json.ticker}}' ORDER BY price_date DESC LIMIT 250"
+      "query" : "SELECT price_date,close_price,high_price,low_price,volume FROM daily_prices WHERE ticker=? ORDER BY price_date DESC LIMIT 250",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {
@@ -82,7 +86,23 @@
     "position" : [ 1488, 128 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO technical_indicators (ticker,indicator_date,indicator_name,value,signal) VALUES ('{{$json.ticker}}','{{$json.indicator_date}}','{{$json.indicator_name}}',{{$json.value}},'{{$json.signal}}') ON CONFLICT (ticker,indicator_date,indicator_name) DO UPDATE SET value=EXCLUDED.value,signal=EXCLUDED.signal;"
+      "query" : "INSERT INTO technical_indicators (ticker,indicator_date,indicator_name,value,signal) VALUES (?,?,?,?,?) ON CONFLICT (ticker,indicator_date,indicator_name) DO UPDATE SET value=EXCLUDED.value,signal=EXCLUDED.signal;",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.indicator_date}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.indicator_name}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.value}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.signal}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

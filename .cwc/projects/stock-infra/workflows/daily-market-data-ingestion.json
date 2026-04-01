@@ -80,7 +80,32 @@
     "position" : [ 1296, 160 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO daily_prices (ticker,price_date,open_price,high_price,low_price,close_price,adj_close,volume) VALUES ('{{$json.ticker}}','{{$json.price_date}}',{{$json.open_price}},{{$json.high_price}},{{$json.low_price}},{{$json.close_price}},{{$json.adj_close}},{{$json.volume}}) ON CONFLICT (ticker,price_date) DO UPDATE SET open_price=EXCLUDED.open_price,high_price=EXCLUDED.high_price,low_price=EXCLUDED.low_price,close_price=EXCLUDED.close_price,volume=EXCLUDED.volume;"
+      "query" : "INSERT INTO daily_prices (ticker,price_date,open_price,high_price,low_price,close_price,adj_close,volume) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT (ticker,price_date) DO UPDATE SET open_price=EXCLUDED.open_price,high_price=EXCLUDED.high_price,low_price=EXCLUDED.low_price,close_price=EXCLUDED.close_price,volume=EXCLUDED.volume;",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.price_date}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.open_price}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.high_price}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.low_price}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.close_price}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.adj_close}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.volume}}",
+        "type" : "number"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

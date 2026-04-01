@@ -55,7 +55,7 @@
     "parameters" : {
       "language" : "javaScript",
       "mode" : "runOnceForAllItems",
-      "jsCode" : "const sp=$input.first().json; const nq=$input.last().json; const m=new Map();\nif(Array.isArray(sp)){for(const i of sp) m.set(i.symbol,{ticker:i.symbol,company_name:i.name,sector:i.sector||'Unknown',industry:i.subSector||i.sector||'Unknown',exchange:i.exchange||'NYSE',index_membership:['SP500']});}\nif(Array.isArray(nq)){for(const i of nq){if(m.has(i.symbol))m.get(i.symbol).index_membership.push('NASDAQ100'); else m.set(i.symbol,{ticker:i.symbol,company_name:i.name,sector:i.sector||'Unknown',industry:i.subSector||i.sector||'Unknown',exchange:i.exchange||'NASDAQ',index_membership:['NASDAQ100']});}}\nreturn Array.from(m.values()).map(t=>({json:t}));"
+      "jsCode" : "const sp=$input.first().json; const nq=$input.last().json; const m=new Map();\nif(Array.isArray(sp)){for(const i of sp) m.set(i.symbol,{ticker:i.symbol,company_name:i.name,sector:i.sector||'Unknown',industry:i.subSector||i.sector||'Unknown',exchange:i.exchange||'NYSE',index_membership:['SP500']});}\nif(Array.isArray(nq)){for(const i of nq){if(m.has(i.symbol))m.get(i.symbol).index_membership.push('NASDAQ100'); else m.set(i.symbol,{ticker:i.symbol,company_name:i.name,sector:i.sector||'Unknown',industry:i.subSector||i.sector||'Unknown',exchange:i.exchange||'NASDAQ',index_membership:['NASDAQ100']});}}\nreturn Array.from(m.values()).map(t=>({json:{...t, index_array: '{' + t.index_membership.map(x=>'\"'+x+'\"').join(',') + '}'}}));"
     }
   }, {
     "id" : "loop1",
@@ -74,7 +74,26 @@
     "position" : [ 1200, 200 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO tickers (ticker,company_name,sector,industry,exchange,index_membership,is_active,last_updated) VALUES ('{{$json.ticker}}','{{$json.company_name}}','{{$json.sector}}','{{$json.industry}}','{{$json.exchange}}',ARRAY[{{$json.index_membership.map(i=>\"'\"+i+\"'\").join(',')}}],true,NOW()) ON CONFLICT (ticker) DO UPDATE SET company_name=EXCLUDED.company_name,sector=EXCLUDED.sector,industry=EXCLUDED.industry,index_membership=EXCLUDED.index_membership,is_active=true,last_updated=NOW();"
+      "query" : "INSERT INTO tickers (ticker,company_name,sector,industry,exchange,index_membership,is_active,last_updated) VALUES (?,?,?,?,?,?::text[],true,NOW()) ON CONFLICT (ticker) DO UPDATE SET company_name=EXCLUDED.company_name,sector=EXCLUDED.sector,industry=EXCLUDED.industry,index_membership=EXCLUDED.index_membership,is_active=true,last_updated=NOW();",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.company_name}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.sector}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.industry}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.exchange}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.index_array}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

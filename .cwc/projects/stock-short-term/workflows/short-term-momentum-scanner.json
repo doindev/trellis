@@ -94,7 +94,17 @@
     "position" : [ 1250, 200 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO watchlists (strategy, ticker, score, status, metadata) VALUES ('short_term', '{{$json.ticker}}', {{$json.rsi}}, 'active', '{\"price\": {{$json.price}}, \"volume\": {{$json.volume}}, \"beta\": {{$json.beta}}, \"rsi\": {{$json.rsi}}, \"scan_time\": \"{{$now.format(\"yyyy-MM-dd HH:mm\")}}\" }') ON CONFLICT (strategy, ticker) DO UPDATE SET score = EXCLUDED.score, metadata = EXCLUDED.metadata, status = 'active';"
+      "query" : "INSERT INTO watchlists (strategy, ticker, score, status, metadata) VALUES ('short_term', ?, ?, 'active', ?::jsonb) ON CONFLICT (strategy, ticker) DO UPDATE SET score = EXCLUDED.score, metadata = EXCLUDED.metadata, status = 'active';",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.rsi}}",
+        "type" : "number"
+      }, {
+        "value" : "={\"price\": {{$json.price}}, \"volume\": {{$json.volume}}, \"beta\": {{$json.beta}}, \"rsi\": {{$json.rsi}}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {
@@ -110,7 +120,7 @@
     "parameters" : {
       "operation" : "executeStatement",
       "query" : "MERGE (w:Watchlist {name: 'short_term', strategy: 'Short-Term Trading'}) WITH w MATCH (c:Company {ticker: $ticker}) MERGE (c)-[r:IN_WATCHLIST]->(w) SET r.score = $score, r.updatedAt = datetime();",
-      "parameters" : "{\"ticker\": \"{{$json.ticker}}\", \"score\": {{$json.rsi}}}"
+      "parameters" : "={\"ticker\": \"{{$json.ticker}}\", \"score\": {{$json.rsi}}}"
     },
     "credentials" : {
       "neo4j" : {

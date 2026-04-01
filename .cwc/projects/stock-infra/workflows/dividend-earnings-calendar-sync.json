@@ -77,7 +77,7 @@
     "parameters" : {
       "language" : "javaScript",
       "mode" : "runOnceForAllItems",
-      "jsCode" : "// FMP returns an array â€” each item arrives as a separate input item\nconst items = $input.all();\nreturn items.map(item => {\n  const x = item.json;\n  return {\n    json: {\n      ticker: x.symbol,\n      ex_date: x.date,\n      payment_date: x.paymentDate || null,\n      record_date: x.recordDate || null,\n      declaration_date: x.declarationDate || null,\n      amount: x.dividend != null ? x.dividend : (x.adjDividend != null ? x.adjDividend : null),\n      frequency: x.frequency || null\n    }\n  };\n});"
+      "jsCode" : "const items = $input.all();\nreturn items.map(item => {\n  const x = item.json;\n  return {\n    json: {\n      ticker: x.symbol,\n      ex_date: x.date,\n      payment_date: x.paymentDate || null,\n      record_date: x.recordDate || null,\n      declaration_date: x.declarationDate || null,\n      amount: x.dividend != null ? x.dividend : (x.adjDividend != null ? x.adjDividend : null),\n      frequency: x.frequency || null\n    }\n  };\n});"
     }
   }, {
     "id" : "se",
@@ -87,7 +87,32 @@
     "position" : [ 1296, 80 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO earnings_calendar (ticker, report_date, fiscal_quarter, eps_estimate, eps_actual, revenue_estimate, revenue_actual, surprise_percent) VALUES ('{{$json.ticker}}', '{{$json.report_date}}', '{{$json.fiscal_quarter}}', NULLIF(NULLIF('{{$json.eps_estimate}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.eps_actual}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.revenue_estimate}}', 'null'), '')::bigint, NULLIF(NULLIF('{{$json.revenue_actual}}', 'null'), '')::bigint, NULLIF(NULLIF('{{$json.surprise_percent}}', 'null'), '')::numeric) ON CONFLICT (ticker, report_date) DO UPDATE SET eps_estimate = EXCLUDED.eps_estimate, eps_actual = EXCLUDED.eps_actual, revenue_estimate = EXCLUDED.revenue_estimate, revenue_actual = EXCLUDED.revenue_actual, surprise_percent = EXCLUDED.surprise_percent;"
+      "query" : "INSERT INTO earnings_calendar (ticker, report_date, fiscal_quarter, eps_estimate, eps_actual, revenue_estimate, revenue_actual, surprise_percent) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (ticker, report_date) DO UPDATE SET eps_estimate = EXCLUDED.eps_estimate, eps_actual = EXCLUDED.eps_actual, revenue_estimate = EXCLUDED.revenue_estimate, revenue_actual = EXCLUDED.revenue_actual, surprise_percent = EXCLUDED.surprise_percent;",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.report_date}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.fiscal_quarter}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.eps_estimate}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.eps_actual}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.revenue_estimate}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.revenue_actual}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.surprise_percent}}",
+        "type" : "number"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {
@@ -102,7 +127,29 @@
     "position" : [ 1296, 240 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO dividend_history (ticker, ex_date, payment_date, record_date, declaration_date, amount, frequency) VALUES ('{{$json.ticker}}', '{{$json.ex_date}}', NULLIF(NULLIF('{{$json.payment_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.record_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.declaration_date}}', 'null'), '')::date, NULLIF(NULLIF('{{$json.amount}}', 'null'), '')::numeric, NULLIF(NULLIF('{{$json.frequency}}', 'null'), '')) ON CONFLICT (ticker, ex_date) DO UPDATE SET payment_date = EXCLUDED.payment_date, amount = EXCLUDED.amount, frequency = EXCLUDED.frequency;"
+      "query" : "INSERT INTO dividend_history (ticker, ex_date, payment_date, record_date, declaration_date, amount, frequency) VALUES (?, ?, ?::date, ?::date, ?::date, ?, ?) ON CONFLICT (ticker, ex_date) DO UPDATE SET payment_date = EXCLUDED.payment_date, amount = EXCLUDED.amount, frequency = EXCLUDED.frequency;",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.ex_date}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.payment_date}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.record_date}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.declaration_date}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.amount}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.frequency}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {
