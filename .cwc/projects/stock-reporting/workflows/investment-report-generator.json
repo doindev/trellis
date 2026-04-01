@@ -88,7 +88,14 @@
     "position" : [ 1100, 400 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,findings,created_at) VALUES ('report_generator',CURRENT_DATE,'daily_investment_report','{{$json.html_report}}','{\"picks\":{{$json.picks_count}},\"alerts\":{{$json.alerts_count}}}',NOW());"
+      "query" : "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,findings,created_at) VALUES ('report_generator',CURRENT_DATE,'daily_investment_report',?,?,NOW());",
+      "queryParameters" : [ {
+        "value" : "={{$json.html_report}}",
+        "type" : "string"
+      }, {
+        "value" : "={{'{\"picks\":' + $json.picks_count + ',\"alerts\":' + $json.alerts_count + '}'}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

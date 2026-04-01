@@ -58,7 +58,32 @@
     "position" : [ 1104, 128 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO investment_scores (ticker,strategy,score_date,overall_score,fundamental_score,technical_score,sentiment_score,valuation_score,recommendation,created_at) VALUES ('{{$json.ticker}}','{{$json.strategy}}',CURRENT_DATE,{{$json.overall_score}},{{$json.fundamental_score}},{{$json.technical_score}},{{$json.sentiment_score}},{{$json.valuation_score}},'{{$json.recommendation}}',NOW()) ON CONFLICT (ticker,strategy,score_date) DO UPDATE SET overall_score=EXCLUDED.overall_score,fundamental_score=EXCLUDED.fundamental_score,technical_score=EXCLUDED.technical_score,sentiment_score=EXCLUDED.sentiment_score,valuation_score=EXCLUDED.valuation_score,recommendation=EXCLUDED.recommendation;"
+      "query" : "INSERT INTO investment_scores (ticker,strategy,score_date,overall_score,fundamental_score,technical_score,sentiment_score,valuation_score,recommendation,created_at) VALUES (?,?,CURRENT_DATE,?,?,?,?,?,?,NOW()) ON CONFLICT (ticker,strategy,score_date) DO UPDATE SET overall_score=EXCLUDED.overall_score,fundamental_score=EXCLUDED.fundamental_score,technical_score=EXCLUDED.technical_score,sentiment_score=EXCLUDED.sentiment_score,valuation_score=EXCLUDED.valuation_score,recommendation=EXCLUDED.recommendation;",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.strategy}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.overall_score}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.fundamental_score}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.technical_score}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.sentiment_score}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.valuation_score}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.recommendation}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

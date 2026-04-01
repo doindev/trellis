@@ -117,7 +117,11 @@
     "position" : [ 1600, 320 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,created_at) VALUES ('ai_ops_orchestrator',CURRENT_DATE,'daily_operations','{{$json.output}}',NOW());"
+      "query" : "INSERT INTO ai_agent_reports (agent_name,report_date,report_type,summary,created_at) VALUES ('ai_ops_orchestrator',CURRENT_DATE,'daily_operations',?,NOW());",
+      "queryParameters" : [ {
+        "value" : "={{$json.output}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

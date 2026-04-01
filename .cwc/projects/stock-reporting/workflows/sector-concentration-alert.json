@@ -72,7 +72,20 @@
     "position" : [ 1104, 128 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) SELECT '', 'sector_concentration', '{{$json.strategy}}', 'Watchlist {{$json.strategy}} is {{$json.concentration_pct}}% concentrated in {{$json.sector}} ({{$json.sector_count}}/{{$json.total_in_strategy}} stocks). Consider diversification.', 'warning', '{\"sector\": \"{{$json.sector}}\", \"concentration\": {{$json.concentration_pct}}, \"count\": {{$json.sector_count}}, \"total\": {{$json.total_in_strategy}}}' WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE alert_type='sector_concentration' AND strategy='{{$json.strategy}}' AND triggered_at::date=CURRENT_DATE);"
+      "query" : "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) SELECT '', 'sector_concentration', ?, ?, 'warning', ? WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE alert_type='sector_concentration' AND strategy=? AND triggered_at::date=CURRENT_DATE);",
+      "queryParameters" : [ {
+        "value" : "={{$json.strategy}}",
+        "type" : "string"
+      }, {
+        "value" : "={{'Watchlist ' + $json.strategy + ' is ' + $json.concentration_pct + '% concentrated in ' + $json.sector + ' (' + $json.sector_count + '/' + $json.total_in_strategy + ' stocks). Consider diversification.'}}",
+        "type" : "string"
+      }, {
+        "value" : "={{'{\"sector\": \"' + $json.sector + '\", \"concentration\": ' + $json.concentration_pct + ', \"count\": ' + $json.sector_count + ', \"total\": ' + $json.total_in_strategy + '}'}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.strategy}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

@@ -58,7 +58,17 @@
     "position" : [ 1104, 80 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO watchlists (strategy,ticker,score,status,metadata) VALUES ('growth','{{$json.ticker}}',{{$json.revenue_growth}}*10,'active','{\"rev_growth\":{{$json.revenue_growth}},\"sector\":\"{{$json.sector}}\"}') ON CONFLICT (strategy,ticker) DO UPDATE SET score=EXCLUDED.score,metadata=EXCLUDED.metadata,status='active';"
+      "query" : "INSERT INTO watchlists (strategy,ticker,score,status,metadata) VALUES ('growth',?,?*10,'active',?) ON CONFLICT (strategy,ticker) DO UPDATE SET score=EXCLUDED.score,metadata=EXCLUDED.metadata,status='active';",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.revenue_growth}}",
+        "type" : "number"
+      }, {
+        "value" : "={{'{\"rev_growth\":' + $json.revenue_growth + ',\"sector\":\"' + $json.sector + '\"}'}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

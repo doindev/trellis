@@ -72,7 +72,20 @@
     "position" : [ 1104, 80 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) SELECT '{{$json.ticker}}', 'cross_strategy_overlap', 'multi', '{{$json.company_name}} ({{$json.ticker}}) appears on {{$json.watchlist_count}} watchlists: {{$json.strategies}}. High-conviction pick.', 'warning', '{\"strategies\": {{JSON.stringify($json.strategies)}}, \"count\": {{$json.watchlist_count}}}' WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE ticker='{{$json.ticker}}' AND alert_type='cross_strategy_overlap' AND triggered_at::date=CURRENT_DATE);"
+      "query" : "INSERT INTO alerts (ticker, alert_type, strategy, message, severity, metadata) SELECT ?, 'cross_strategy_overlap', 'multi', ?, 'warning', ? WHERE NOT EXISTS (SELECT 1 FROM alerts WHERE ticker=? AND alert_type='cross_strategy_overlap' AND triggered_at::date=CURRENT_DATE);",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.company_name + ' (' + $json.ticker + ') appears on ' + $json.watchlist_count + ' watchlists: ' + $json.strategies + '. High-conviction pick.'}}",
+        "type" : "string"
+      }, {
+        "value" : "={{'{\"strategies\": ' + JSON.stringify($json.strategies) + ', \"count\": ' + $json.watchlist_count + '}'}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {
@@ -87,7 +100,14 @@
     "position" : [ 1104, 240 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO ai_agent_reports (agent_name, report_date, report_type, summary, findings, created_at) VALUES ('overlap_detector', CURRENT_DATE, 'cross_strategy_overlap', 'Found {{$json.ticker}} on {{$json.watchlist_count}} watchlists: {{$json.strategies}}', '{\"ticker\": \"{{$json.ticker}}\", \"strategies\": {{JSON.stringify($json.strategies)}}, \"count\": {{$json.watchlist_count}}}', NOW());"
+      "query" : "INSERT INTO ai_agent_reports (agent_name, report_date, report_type, summary, findings, created_at) VALUES ('overlap_detector', CURRENT_DATE, 'cross_strategy_overlap', ?, ?, NOW());",
+      "queryParameters" : [ {
+        "value" : "={{'Found ' + $json.ticker + ' on ' + $json.watchlist_count + ' watchlists: ' + $json.strategies}}",
+        "type" : "string"
+      }, {
+        "value" : "={{'{\"ticker\": \"' + $json.ticker + '\", \"strategies\": ' + JSON.stringify($json.strategies) + ', \"count\": ' + $json.watchlist_count + '}'}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

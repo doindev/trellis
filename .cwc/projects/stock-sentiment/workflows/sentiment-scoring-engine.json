@@ -65,7 +65,17 @@
     "position" : [ 1200, 300 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "UPDATE news_articles SET sentiment_score={{$json.sentiment_score}},sentiment_label='{{$json.sentiment_label}}' WHERE id={{$json.id}};"
+      "query" : "UPDATE news_articles SET sentiment_score=?,sentiment_label=? WHERE id=?;",
+      "queryParameters" : [ {
+        "value" : "={{$json.sentiment_score}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.sentiment_label}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.id}}",
+        "type" : "number"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

@@ -45,7 +45,17 @@
     "position" : [ 950, 300 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO sector_performance (sector,perf_date,daily_return) VALUES ('{{$json.sector}}','{{$json.perf_date}}',{{$json.daily_return}}) ON CONFLICT (sector,perf_date) DO UPDATE SET daily_return=EXCLUDED.daily_return;"
+      "query" : "INSERT INTO sector_performance (sector,perf_date,daily_return) VALUES (?,?,?) ON CONFLICT (sector,perf_date) DO UPDATE SET daily_return=EXCLUDED.daily_return;",
+      "queryParameters" : [ {
+        "value" : "={{$json.sector}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.perf_date}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.daily_return}}",
+        "type" : "number"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

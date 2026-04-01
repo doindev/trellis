@@ -62,7 +62,17 @@
     "position" : [ 784, 208 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO alerts (ticker,alert_type,strategy,message,severity,metadata) VALUES ('{{$json.ticker}}','ex_dividend_upcoming','dividend','Ex-dividend for {{$json.company_name}} ({{$json.ticker}}) on {{$json.ex_date}}. Amount: ${{$json.amount}}','info','{\"ex_date\":\"{{$json.ex_date}}\",\"amount\":{{$json.amount}}}');"
+      "query" : "INSERT INTO alerts (ticker,alert_type,strategy,message,severity,metadata) VALUES (?,'ex_dividend_upcoming','dividend',?,'info',?);",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{'Ex-dividend for ' + $json.company_name + ' (' + $json.ticker + ') on ' + $json.ex_date + '. Amount: $' + $json.amount}}",
+        "type" : "string"
+      }, {
+        "value" : "={{'{\"ex_date\":\"' + $json.ex_date + '\",\"amount\":' + $json.amount + '}'}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

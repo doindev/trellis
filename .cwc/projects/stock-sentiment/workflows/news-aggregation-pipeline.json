@@ -89,7 +89,32 @@
     "position" : [ 1700, 300 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO news_articles (ticker,headline,source,url,published_at,summary,category) SELECT '{{$json.ticker}}','{{$json.headline}}','{{$json.source}}','{{$json.url}}','{{$json.published_at}}','{{$json.summary}}','{{$json.category}}' WHERE NOT EXISTS (SELECT 1 FROM news_articles WHERE url='{{$json.url}}');"
+      "query" : "INSERT INTO news_articles (ticker,headline,source,url,published_at,summary,category) SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM news_articles WHERE url=?);",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.headline}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.source}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.url}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.published_at}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.summary}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.category}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.url}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

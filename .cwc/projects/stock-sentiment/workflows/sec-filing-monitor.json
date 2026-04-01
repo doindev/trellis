@@ -78,7 +78,32 @@
     "position" : [ 1450, 300 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO sec_filings (ticker,filing_type,filing_date,url,summary) SELECT '{{$json.ticker}}','{{$json.filing_type}}','{{$json.filing_date}}','{{$json.url}}','{{$json.summary}}' WHERE NOT EXISTS (SELECT 1 FROM sec_filings WHERE ticker='{{$json.ticker}}' AND filing_type='{{$json.filing_type}}' AND filing_date='{{$json.filing_date}}');"
+      "query" : "INSERT INTO sec_filings (ticker,filing_type,filing_date,url,summary) SELECT ?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM sec_filings WHERE ticker=? AND filing_type=? AND filing_date=?);",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.filing_type}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.filing_date}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.url}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.summary}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.filing_type}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.filing_date}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

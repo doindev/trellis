@@ -39,7 +39,32 @@
     "position" : [ 750, 300 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO workflow_execution_log (workflow_id,workflow_name,execution_id,status,started_at,completed_at,duration_ms,error_message) VALUES ('{{$json.workflow_id}}','{{$json.workflow_name}}','{{$json.execution_id}}','{{$json.status}}','{{$json.started_at}}','{{$json.completed_at}}',{{$json.duration_ms}},'{{$json.error_message}}');"
+      "query" : "INSERT INTO workflow_execution_log (workflow_id,workflow_name,execution_id,status,started_at,completed_at,duration_ms,error_message) VALUES (?,?,?,?,?,?,?,?);",
+      "queryParameters" : [ {
+        "value" : "={{$json.workflow_id}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.workflow_name}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.execution_id}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.status}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.started_at}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.completed_at}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.duration_ms}}",
+        "type" : "number"
+      }, {
+        "value" : "={{$json.error_message}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {

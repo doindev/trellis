@@ -95,7 +95,14 @@
     "position" : [ 1700, 300 ],
     "parameters" : {
       "operation" : "executeSql",
-      "query" : "INSERT INTO investment_scores (ticker,strategy,score_date,overall_score,recommendation,thesis,created_at) VALUES ('{{$json.ticker}}','dividend',CURRENT_DATE,7.0,'HOLD','{{$json.output}}',NOW()) ON CONFLICT (ticker,strategy,score_date) DO UPDATE SET thesis=EXCLUDED.thesis;"
+      "query" : "INSERT INTO investment_scores (ticker,strategy,score_date,overall_score,recommendation,thesis,created_at) VALUES (?,'dividend',CURRENT_DATE,7.0,'HOLD',?,NOW()) ON CONFLICT (ticker,strategy,score_date) DO UPDATE SET thesis=EXCLUDED.thesis;",
+      "queryParameters" : [ {
+        "value" : "={{$json.ticker}}",
+        "type" : "string"
+      }, {
+        "value" : "={{$json.output}}",
+        "type" : "string"
+      } ]
     },
     "credentials" : {
       "postgresApi" : {
