@@ -1,0 +1,14 @@
+{
+  "configId" : "personal",
+  "name" : "Personal",
+  "type" : "PERSONAL",
+  "contextPath" : "d0h2c8yKX8mHF9W4WxR_b",
+  "credentials" : [ {
+    "ref" : "ollama-account",
+    "name" : "Ollama account",
+    "type" : "ollamaApi",
+    "data" : {
+      "baseUrl" : "{{env:PERSONAL_OLLAMA_ACCOUNT_BASEURL}}"
+    }
+  } ]
+}

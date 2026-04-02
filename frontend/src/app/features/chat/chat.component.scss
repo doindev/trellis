@@ -26,6 +26,31 @@
   font-size: 0.875rem;
 }
 
+.chat-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 24px;
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 0.8rem;
+  color: hsl(0, 0%, 55%);
+  font-style: italic;
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-primary, #ff6d5a);
+    animation: pulse-dot 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 .chat-msg {
   display: flex;
   gap: 12px;

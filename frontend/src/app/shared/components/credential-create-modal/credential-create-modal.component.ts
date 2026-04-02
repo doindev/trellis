@@ -284,7 +284,10 @@ export class CredentialCreateModalComponent implements OnInit {
         this.persistCredential(cred);
       },
       error: (err) => {
-        this.validationError.set('Could not validate credentials. Please try again.');
+        const detail = err?.error?.message || err?.error?.error || err?.message || '';
+        this.validationError.set(detail
+          ? 'Connection failed: ' + detail
+          : 'Could not validate credentials. Check the connection details and try again.');
         this.validating.set(false);
       }
     });

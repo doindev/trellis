@@ -58,11 +58,12 @@ public class AiAgentNode extends AbstractNode {
 			return NodeExecutionResult.error("No language model connected. Connect a Chat Model sub-node.");
 		}
 
-		ChatMemory memory = context.getAiInput("ai_memory", ChatMemory.class);
-
 		String systemMessageText = context.getParameter("systemMessage", "You are a helpful assistant.");
 		String promptTemplate = context.getParameter("prompt", "{{input}}");
 		int maxIterations = toInt(context.getParameters().get("maxIterations"), 10);
+
+		ChatMemory wiredMemory = context.getAiInput("ai_memory", ChatMemory.class);
+		ChatMemory memory = AgentMemoryFactory.resolveMemory(context, wiredMemory, model, maxIterations);
 
 		// Separate tool inputs into real tools and sub-agents
 		List<Object> toolInputs = context.getAiInputs("ai_tool", Object.class);
@@ -252,7 +253,7 @@ public class AiAgentNode extends AbstractNode {
 
 	@Override
 	public List<NodeParameter> getParameters() {
-		return List.of(
+		List<NodeParameter> params = new java.util.ArrayList<>(List.of(
 				NodeParameter.builder()
 						.name("agentDefinitionId").displayName("Predefined Agent")
 						.type(ParameterType.OPTIONS)
@@ -279,6 +280,8 @@ public class AiAgentNode extends AbstractNode {
 						.defaultValue(10)
 						.description("Maximum number of tool-use iterations before stopping")
 						.build()
-		);
+		));
+		params.addAll(AgentMemoryFactory.memoryParameters());
+		return params;
 	}
 }

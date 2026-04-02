@@ -191,10 +191,10 @@
     @if (activeSection === 'chat') {
       <div class="section-page">
         <h1 class="section-title">Chat</h1>
-        <p class="section-subtitle">Configure the AI model provider for the workflow chat assistant</p>
+        <p class="section-subtitle">Configure the AI assistant for workflow chat</p>
 
         <div class="settings-card">
-          <h3 class="card-title">AI Provider</h3>
+          <h3 class="card-title">Chat Assistant</h3>
 
           <div class="form-row toggle-row">
             <label class="form-label">Enable AI chat</label>
@@ -203,6 +203,28 @@
               <span class="toggle-slider"></span>
             </label>
           </div>
+
+          <div class="form-row">
+            <label class="form-label">Default Agent</label>
+            <select class="form-input" [(ngModel)]="aiSettings.defaultAgentId">
+              <option [ngValue]="null">None (use provider settings below)</option>
+              @for (agent of aiAgents; track agent.id) {
+                <option [ngValue]="agent.id">{{ agent.name }}</option>
+              }
+            </select>
+            <span class="form-hint">Select an AI agent to power the chat assistant. <a href="/home/agents">Manage agents</a></span>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Max tool iterations</label>
+            <input class="form-input" type="number" [(ngModel)]="aiSettings.maxToolIterations" min="1" max="100" placeholder="10">
+            <span class="form-hint">Maximum number of tool calls per chat response (default: 10)</span>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3 class="card-title">Fallback Provider</h3>
+          <p class="form-hint" style="margin-bottom: 12px">Used when no agent is selected, or the agent has no chat model configured</p>
 
           <div class="form-row">
             <label class="form-label">Provider</label>
@@ -266,12 +288,12 @@
               }
             </div>
           </div>
+        </div>
 
-          <div class="form-actions">
-            <button class="btn-primary" (click)="saveAiSettings()" [disabled]="aiSettingsSaving">
-              {{ aiSettingsSaving ? 'Saving...' : 'Save changes' }}
-            </button>
-          </div>
+        <div class="form-actions" style="margin-top: 16px">
+          <button class="btn-primary" (click)="saveAiSettings()" [disabled]="aiSettingsSaving">
+            {{ aiSettingsSaving ? 'Saving...' : 'Save changes' }}
+          </button>
         </div>
       </div>
     }

@@ -15,4 +15,6 @@ public class AiSettingsDto {
     private String model;
     private String baseUrl;
     private boolean enabled;
+    private int maxToolIterations;
+    private String defaultAgentId;
 }

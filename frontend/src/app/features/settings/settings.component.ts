@@ -39,7 +39,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   copiedKey = false;
 
   // AI / Chat
-  aiSettings: AiSettings = { provider: 'openai', apiKey: '', model: 'gpt-4o-mini', baseUrl: null, enabled: false };
+  aiSettings: AiSettings = { provider: 'openai', apiKey: '', model: 'gpt-4o-mini', baseUrl: null, enabled: false, maxToolIterations: 10, defaultAgentId: null };
+  aiAgents: { id: string; name: string }[] = [];
   aiSettingsSaving = false;
   aiModels: AiModelInfo[] = [];
   aiModelsLoading = false;
@@ -344,6 +345,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.aiModelsError = null;
       },
       error: () => {}
+    });
+    this.workflowService.list({ type: 'AGENT' }).subscribe({
+      next: agents => this.aiAgents = agents.map(a => ({ id: a.id!, name: a.name })),
+      error: () => this.aiAgents = []
     });
   }
 

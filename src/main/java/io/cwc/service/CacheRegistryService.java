@@ -25,7 +25,8 @@ public class CacheRegistryService {
     private final ObjectMapper objectMapper;
     private final CacheDefinitionRepository cacheDefinitionRepository;
 
-    public Cache<String, String> getOrCreateCache(String name, int maxSize, long ttlSeconds) {
+    @SuppressWarnings("unused")
+	public Cache<String, String> getOrCreateCache(String name, int maxSize, long ttlSeconds) {
         return caches.computeIfAbsent(name, k ->
             Caffeine.newBuilder()
                 .maximumSize(maxSize)

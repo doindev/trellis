@@ -30,11 +30,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Service
@@ -53,6 +57,10 @@ public class ChatService {
     private final ChatToolProvider chatToolProvider;
     private final ObjectMapper objectMapper;
     private final Executor workflowExecutor;
+
+    /** Maximum seconds to wait for a single model.chat() call before timing out. */
+    @Value("${cwc.chat.timeout-seconds:120}")
+    private int chatTimeoutSeconds;
 
     /** Tracks in-flight AI responses so they can be interrupted per session. */
     private final Map<String, CompletableFuture<?>> activeTasks = new ConcurrentHashMap<>();
@@ -223,9 +231,13 @@ public class ChatService {
         // Clear any previous interruption flag for this session
         interruptedSessions.remove(sessionId);
 
+        // Cancel any in-flight task for this session before starting a new one
+        CompletableFuture<?> previous = activeTasks.remove(sessionId);
+        if (previous != null && !previous.isDone()) {
+            previous.cancel(true);
+        }
+
         // Run LLM response asynchronously so the HTTP response returns immediately.
-        // History is already loaded (includes the just-saved user message), so no need
-        // to wait for transaction commit.
         CompletableFuture<?> future = CompletableFuture.runAsync(() -> {
             SecurityContextHolder.setContext(securityContext);
             try {
@@ -243,9 +255,12 @@ public class ChatService {
             } finally {
                 SecurityContextHolder.clearContext();
                 activeTasks.remove(sessionId);
+                interruptedSessions.remove(sessionId);
             }
         }, workflowExecutor).exceptionally(t -> {
-            if (!interruptedSessions.contains(sessionId)) {
+            activeTasks.remove(sessionId);
+            interruptedSessions.remove(sessionId);
+            if (!Thread.currentThread().isInterrupted()) {
                 log.error("Uncaught error in chat async task for session {}: {}", sessionId, t.getMessage(), t);
             }
             return null;
@@ -443,16 +458,19 @@ public class ChatService {
             List<ToolSpecification> toolSpecs = new ArrayList<>(toolMap.keySet());
             List<ChatMessage> currentMessages = new ArrayList<>(buildMessages(systemPrompt, history));
 
-            // Manual tool loop — max 10 iterations
-            for (int i = 0; i < 10; i++) {
+            int maxIterations = resolveMaxToolIterations();
+            for (int i = 0; i < maxIterations; i++) {
                 if (isInterrupted(sessionId)) return;
+
+                // Let the user know we're thinking
+                sendToolStatus(sessionId, i == 0 ? "Thinking..." : "Processing tool results...");
 
                 ChatRequest request = ChatRequest.builder()
                         .messages(currentMessages)
                         .toolSpecifications(toolSpecs)
                         .build();
 
-                ChatResponse response = model.chat(request);
+                ChatResponse response = chatWithTimeout(model, request);
                 if (isInterrupted(sessionId)) return;
 
                 AiMessage aiMessage = response.aiMessage();
@@ -463,8 +481,21 @@ public class ChatService {
                     return;
                 }
 
-                for (var toolRequest : aiMessage.toolExecutionRequests()) {
+                // Send partial text if the model included reasoning alongside tool calls
+                if (aiMessage.text() != null && !aiMessage.text().isBlank()) {
+                    sendToolStatus(sessionId, aiMessage.text());
+                }
+
+                var toolRequests = aiMessage.toolExecutionRequests();
+                for (int t = 0; t < toolRequests.size(); t++) {
+                    var toolRequest = toolRequests.get(t);
                     if (isInterrupted(sessionId)) return;
+
+                    // Show which tool and progress (e.g., "Calling cwc_get_workflow (2/3)")
+                    String progress = toolRequests.size() > 1
+                            ? " (" + (t + 1) + "/" + toolRequests.size() + ")"
+                            : "";
+                    sendToolStatus(sessionId, "Calling " + toolRequest.name() + progress);
 
                     ToolExecutor executor = toolMap.entrySet().stream()
                             .filter(e -> e.getKey().name().equals(toolRequest.name()))
@@ -491,7 +522,8 @@ public class ChatService {
     private void syncResponse(String sessionId, String systemPrompt, List<ChatMessageEntity> history) {
         try {
             var messages = buildMessages(systemPrompt, history);
-            ChatResponse response = chatModel.get().chat(messages);
+            ChatRequest request = ChatRequest.builder().messages(messages).build();
+            ChatResponse response = chatWithTimeout(chatModel.get(), request);
             if (isInterrupted(sessionId)) return;
             String text = response.aiMessage().text();
             saveAndSend(sessionId, text);
@@ -535,7 +567,13 @@ public class ChatService {
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(SystemMessage.from(systemPrompt));
 
-        for (ChatMessageEntity entry : history) {
+        // Apply sliding window — keep only the most recent messages to avoid context overflow
+        int maxMessages = resolveMaxToolIterations() * 2; // 2 messages per iteration (user + assistant)
+        List<ChatMessageEntity> windowedHistory = history.size() > maxMessages
+                ? history.subList(history.size() - maxMessages, history.size())
+                : history;
+
+        for (ChatMessageEntity entry : windowedHistory) {
             if ("user".equals(entry.getRole())) {
                 messages.add(UserMessage.from(entry.getContent()));
             } else if ("assistant".equals(entry.getRole())) {
@@ -566,6 +604,47 @@ public class ChatService {
             ));
         } catch (Exception e) {
             log.warn("Failed to send chat message via WebSocket: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Wraps model.chat() with a timeout to prevent hung connections from blocking threads.
+     */
+    private ChatResponse chatWithTimeout(ChatModel model, ChatRequest request) throws Exception {
+        try {
+            return CompletableFuture.supplyAsync(() -> model.chat(request), workflowExecutor)
+                    .get(chatTimeoutSeconds, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            throw new RuntimeException("LLM request timed out after " + chatTimeoutSeconds + " seconds");
+        } catch (java.util.concurrent.ExecutionException e) {
+            // Unwrap the actual cause
+            Throwable cause = e.getCause();
+            if (cause instanceof Exception ex) throw ex;
+            throw new RuntimeException(cause);
+        }
+    }
+
+    private int resolveMaxToolIterations() {
+        try {
+            var entity = aiSettingsService.getEntity();
+            if (entity != null && entity.getMaxToolIterations() > 0) {
+                return entity.getMaxToolIterations();
+            }
+        } catch (Exception e) {
+            log.debug("Could not read maxToolIterations from settings, using default");
+        }
+        return 10;
+    }
+
+    /** Sends a transient status message so the frontend can show tool-call progress. */
+    private void sendToolStatus(String sessionId, String toolName) {
+        try {
+            messagingTemplate.convertAndSend("/topic/chat/" + sessionId, Map.of(
+                    "type", "status",
+                    "content", "Calling tool: " + toolName
+            ));
+        } catch (Exception e) {
+            log.warn("Failed to send tool status via WebSocket: {}", e.getMessage());
         }
     }
 

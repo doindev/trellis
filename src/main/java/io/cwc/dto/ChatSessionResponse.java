@@ -10,6 +10,7 @@ public class ChatSessionResponse {
     private String id;
     private String title;
     private String agentId;
+    private String workflowId;
     private Instant createdAt;
     private Instant updatedAt;
 }

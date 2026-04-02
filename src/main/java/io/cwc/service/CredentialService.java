@@ -102,6 +102,10 @@ public class CredentialService {
                 .projectId(request.getProjectId())
                 .data(encryptionService.encrypt(request.getData()))
                 .build();
+        // Ensure configId is unique to avoid unique constraint violations on (projectId, configId)
+        if (entity.getConfigId() == null) {
+            entity.setConfigId(java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12));
+        }
         CredentialResponse response = toResponse(credentialRepository.save(entity));
         if (configWritebackService != null && request.getProjectId() != null) {
             configWritebackService.writeProjectSettings(request.getProjectId());

@@ -20,15 +20,17 @@ public class OllamaApiCredentials implements CredentialProviderInterface {
     @Override
     public List<NodeParameter> getProperties() {
         return List.of(
-        		NodeParameter.builder()
-	                .name("apiKey").displayName("API Key")
-	                .type(ParameterType.STRING).required(true)
-	                .typeOptions(Map.of("password", true)).build(),
                 NodeParameter.builder()
                     .name("baseUrl").displayName("Base URL")
                     .type(ParameterType.STRING).required(true)
                     .defaultValue("http://localhost:11434")
                     .description("URL of the Ollama server")
+                    .build(),
+                NodeParameter.builder()
+                    .name("apiKey").displayName("API Key")
+                    .type(ParameterType.STRING).required(false)
+                    .typeOptions(Map.of("password", true))
+                    .description("Optional — only needed if Ollama is configured with authentication")
                     .build()
         );
     }

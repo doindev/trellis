@@ -1,4 +1,10 @@
 {
+  "ai" : {
+    "provider" : "ollama",
+    "model" : "glm-4.7-flash:q4_K_M",
+    "baseUrl" : "http://localhost:11434",
+    "enabled" : true
+  },
   "execution" : {
     "saveExecutionProgress" : "yes",
     "saveManualExecutions" : "yes",

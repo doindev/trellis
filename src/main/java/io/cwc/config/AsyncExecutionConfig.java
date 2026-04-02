@@ -1,15 +1,18 @@
 package io.cwc.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.SimpleAsyncTaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -19,8 +22,14 @@ import java.util.concurrent.TimeUnit;
 @EnableScheduling
 public class AsyncExecutionConfig {
 
+    @Value("${spring.threads.virtual.enabled:false}")
+    private boolean virtualThreadsEnabled;
+
     @Bean(name = "workflowExecutor")
     public Executor workflowExecutor() {
+        if (virtualThreadsEnabled) {
+            return Executors.newVirtualThreadPerTaskExecutor();
+        }
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(5);
         executor.setMaxPoolSize(20);
@@ -34,6 +43,9 @@ public class AsyncExecutionConfig {
 
     @Bean(name = "branchExecutorService")
     public ExecutorService branchExecutorService() {
+        if (virtualThreadsEnabled) {
+            return Executors.newVirtualThreadPerTaskExecutor();
+        }
         ThreadPoolExecutor executor = new ThreadPoolExecutor(
                 4, 16, 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(100));
@@ -48,6 +60,12 @@ public class AsyncExecutionConfig {
 
     @Bean
     public TaskScheduler taskScheduler() {
+        if (virtualThreadsEnabled) {
+            SimpleAsyncTaskScheduler scheduler = new SimpleAsyncTaskScheduler();
+            scheduler.setVirtualThreads(true);
+            scheduler.setThreadNamePrefix("wf-sched-");
+            return scheduler;
+        }
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(5);
         scheduler.setThreadNamePrefix("wf-sched-");

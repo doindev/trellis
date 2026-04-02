@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ChatService } from '../../../../core/services/chat.service';
+import { SettingsService } from '../../../../core/services/settings.service';
 import { ChatMessage } from '../../../../core/models/chat.model';
 import { WorkflowNode } from '../../../../core/models';
 
@@ -121,10 +122,19 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   @Output() clearExecution = new EventEmitter<void>();
   private iconCache = new Map<string, SafeHtml>();
 
+  private defaultAgentId: string | null = null;
+
   constructor(
     private chatService: ChatService,
+    private settingsService: SettingsService,
     private sanitizer: DomSanitizer
-  ) {}
+  ) {
+    // Load the default agent ID from settings
+    this.settingsService.getAiSettings().subscribe({
+      next: settings => this.defaultAgentId = settings.defaultAgentId || null,
+      error: () => {}
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['executionData'] && this._viewingExecution && !this.selectedLogsNodeId) {
@@ -640,15 +650,41 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
   private connectChat(): void {
     if (this.chatSessionId || this.chatConnecting) return;
     this.chatConnecting = true;
-    this.chatService.createSession('Workflow Chat').subscribe({
+    this.chatService.getOrCreateSession(
+      'Workflow Chat',
+      this.defaultAgentId || undefined,
+      this.workflowId || undefined
+    ).subscribe({
       next: (session) => {
         this.chatSessionId = session.id;
         this.chatConnecting = false;
         this.chatService.connect(session.id);
+
+        // Load existing message history for restored sessions
+        this.chatService.getMessages(session.id).subscribe({
+          next: (msgs) => {
+            this.messages = msgs;
+            this.shouldScrollChat = true;
+          },
+          error: () => {}
+        });
+
         this.chatService.messages$.subscribe(msg => {
           if (msg.sessionId === this.chatSessionId) {
-            this.isTyping = false;
-            this.messages.push(msg);
+            if (msg.role === 'status') {
+              const lastIdx = this.messages.length - 1;
+              if (lastIdx >= 0 && this.messages[lastIdx].role === 'status') {
+                this.messages[lastIdx] = msg;
+              } else {
+                this.messages.push(msg);
+              }
+            } else {
+              if (this.messages.length > 0 && this.messages[this.messages.length - 1].role === 'status') {
+                this.messages.pop();
+              }
+              this.isTyping = false;
+              this.messages.push(msg);
+            }
             this.shouldScrollChat = true;
           }
         });
@@ -695,7 +731,30 @@ export class EditorDrawerComponent implements AfterViewChecked, OnChanges {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.sendMessage();
+    } else if (event.key === 'Escape' && this.isTyping) {
+      event.preventDefault();
+      this.interruptChat();
     }
+  }
+
+  interruptChat(): void {
+    if (!this.chatSessionId || !this.isTyping) return;
+
+    this.chatService.interruptChat(this.chatSessionId).subscribe();
+
+    // Remove any trailing status message
+    while (this.messages.length > 0 && this.messages[this.messages.length - 1].role === 'status') {
+      this.messages.pop();
+    }
+
+    // Restore the last user message back to the input and remove it from the list
+    if (this.messages.length > 0 && this.messages[this.messages.length - 1].role === 'user') {
+      const lastUserMsg = this.messages.pop()!;
+      this.chatInput = lastUserMsg.content;
+    }
+
+    this.isTyping = false;
+    this.shouldScrollChat = true;
   }
 
   private buildCanvasState(): any {

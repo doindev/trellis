@@ -68,8 +68,8 @@ public class AiSubAgentNode extends AbstractAiSubNode {
 					"No language model available. Connect a Chat Model sub-node or ensure the parent agent has one.");
 		}
 
-		// 2. Get memory (optional)
-		ChatMemory memory = context.getAiInput("ai_memory", ChatMemory.class);
+		// 2. Get memory (optional) — resolved via memory mode parameters
+		ChatMemory wiredMemory = context.getAiInput("ai_memory", ChatMemory.class);
 
 		// 3. Collect tool inputs — separate real tools from nested sub-agents
 		List<Object> toolInputs = context.getAiInputs("ai_tool", Object.class);
@@ -82,6 +82,7 @@ public class AiSubAgentNode extends AbstractAiSubNode {
 		String agentDescription = context.getParameter("agentDescription", "A helpful sub-agent");
 		String systemMessage = context.getParameter("systemMessage", "You are a helpful assistant.");
 		int maxIterations = toInt(context.getParameters().get("maxIterations"), 10);
+		ChatMemory memory = AgentMemoryFactory.resolveMemory(context, wiredMemory, model, maxIterations);
 
 		if (!nestedSubAgents.isEmpty()) {
 			// --- Supervisor path: this sub-agent has its own sub-agents ---
@@ -192,7 +193,7 @@ public class AiSubAgentNode extends AbstractAiSubNode {
 
 	@Override
 	public List<NodeParameter> getParameters() {
-		return List.of(
+		List<NodeParameter> params = new java.util.ArrayList<>(List.of(
 				NodeParameter.builder()
 						.name("agentName").displayName("Agent Name")
 						.type(ParameterType.STRING)
@@ -219,6 +220,8 @@ public class AiSubAgentNode extends AbstractAiSubNode {
 						.defaultValue(10)
 						.description("Maximum number of tool-use iterations before stopping")
 						.build()
-		);
+		));
+		params.addAll(AgentMemoryFactory.memoryParameters());
+		return params;
 	}
 }

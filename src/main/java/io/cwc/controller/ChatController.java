@@ -29,6 +29,11 @@ public class ChatController {
         return chatSessionService.createSession(request);
     }
 
+    @PostMapping("/sessions/resolve")
+    public ChatSessionResponse getOrCreateSession(@RequestBody ChatSessionRequest request) {
+        return chatSessionService.getOrCreateSession(request);
+    }
+
     @PutMapping("/sessions/{id}")
     public ChatSessionResponse updateSession(@PathVariable String id, @RequestBody ChatSessionRequest request) {
         return chatSessionService.updateSession(id, request);

@@ -1,0 +1,14 @@
+{
+  "configId" : "application-instance",
+  "name" : "Application-Instance",
+  "type" : "TEAM",
+  "description" : "System-level resources: default agents, shared credentials, and platform configuration",
+  "credentials" : [ {
+    "ref" : "ollama-account",
+    "name" : "Ollama account",
+    "type" : "ollamaApi",
+    "data" : {
+      "baseUrl" : "{{env:APPLICATION_INSTANCE_OLLAMA_ACCOUNT_BASEURL}}"
+    }
+  } ]
+}

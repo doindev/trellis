@@ -218,7 +218,8 @@ public class MetricsRollupService {
             long bucketEpoch = (epochMs / bucketMs) * bucketMs;
             Instant bucket = Instant.ofEpochMilli(bucketEpoch);
 
-            int[] vals = result
+            @SuppressWarnings("unused")
+			int[] vals = result
                     .computeIfAbsent(projectId, k -> new LinkedHashMap<>())
                     .computeIfAbsent(bucket, k -> new int[7]);
 

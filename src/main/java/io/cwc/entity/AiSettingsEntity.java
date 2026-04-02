@@ -36,6 +36,13 @@ public class AiSettingsEntity {
     private boolean enabled = false;
 
     @Builder.Default
+    @Column(nullable = false)
+    private int maxToolIterations = 10;
+
+    /** ID of the default AI agent used for chat sessions (null = use provider settings). */
+    private String defaultAgentId;
+
+    @Builder.Default
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 

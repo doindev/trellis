@@ -8,6 +8,7 @@ import io.cwc.nodes.core.NodeExecutionContext;
 import io.cwc.nodes.core.NodeParameter;
 import io.cwc.nodes.core.NodeParameter.ParameterType;
 
+import java.time.Duration;
 import java.util.List;
 
 @Node(
@@ -27,11 +28,13 @@ public class OllamaChatModelNode extends AbstractChatModelNode {
 		String model = context.getParameter("model", "llama3");
 		double temperature = toDouble(context.getParameters().get("temperature"), 0.7);
 		int numPredict = toInt(context.getParameters().get("numPredict"), 0);
+		int timeoutSeconds = toInt(context.getParameters().get("timeout"), 120);
 
 		var builder = OllamaChatModel.builder()
 				.baseUrl(baseUrl)
 				.modelName(model)
-				.temperature(temperature);
+				.temperature(temperature)
+				.timeout(Duration.ofSeconds(timeoutSeconds));
 
 		if (numPredict > 0) {
 			builder.numPredict(numPredict);
@@ -60,6 +63,12 @@ public class OllamaChatModelNode extends AbstractChatModelNode {
 						.type(ParameterType.NUMBER)
 						.defaultValue(0)
 						.description("Maximum number of tokens to generate. 0 for model default.")
+						.build(),
+				NodeParameter.builder()
+						.name("timeout").displayName("Timeout (seconds)")
+						.type(ParameterType.NUMBER)
+						.defaultValue(120)
+						.description("Request timeout in seconds. Prevents hung connections to Ollama.")
 						.build()
 		);
 	}

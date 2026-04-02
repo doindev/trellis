@@ -35,8 +35,21 @@ public class ChatSessionService {
         ChatSessionEntity entity = ChatSessionEntity.builder()
                 .title(request.getTitle() != null ? request.getTitle() : "New Chat")
                 .agentId(request.getAgentId())
+                .workflowId(request.getWorkflowId())
                 .build();
         return toResponse(chatSessionRepository.save(entity));
+    }
+
+    @Transactional
+    public ChatSessionResponse getOrCreateSession(ChatSessionRequest request) {
+        if (request.getWorkflowId() != null && !request.getWorkflowId().isBlank()) {
+            var existing = chatSessionRepository
+                    .findFirstByWorkflowIdOrderByUpdatedAtDesc(request.getWorkflowId());
+            if (existing.isPresent()) {
+                return toResponse(existing.get());
+            }
+        }
+        return createSession(request);
     }
 
     @Transactional
@@ -68,6 +81,7 @@ public class ChatSessionService {
                 .id(entity.getId())
                 .title(entity.getTitle())
                 .agentId(entity.getAgentId())
+                .workflowId(entity.getWorkflowId())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

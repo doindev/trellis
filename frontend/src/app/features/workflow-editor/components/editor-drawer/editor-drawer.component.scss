@@ -1024,6 +1024,29 @@
   }
 }
 
+.drawer-chat-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--color-text-light, #888);
+  font-style: italic;
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-primary, #ff6d5a);
+    animation: pulse-dot 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 .drawer-chat-msg {
   display: flex;
   gap: 8px;
@@ -1125,5 +1148,23 @@
   &:disabled {
     opacity: 0.4;
     cursor: default;
+  }
+}
+
+.drawer-chat-stop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: hsl(0, 60%, 50%);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    background: hsl(0, 60%, 58%);
   }
 }

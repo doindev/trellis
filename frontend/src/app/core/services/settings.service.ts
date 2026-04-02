@@ -38,6 +38,8 @@ export interface AiSettings {
   model: string;
   baseUrl: string | null;
   enabled: boolean;
+  maxToolIterations: number;
+  defaultAgentId: string | null;
 }
 
 export interface AiModelInfo {

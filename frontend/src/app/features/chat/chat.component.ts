@@ -96,11 +96,23 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.chatService.connect(this.sessionId);
     this.wsSub = this.chatService.messages$.subscribe(msg => {
       if (msg.sessionId === this.sessionId) {
-        this.messages.push(msg);
-        this.shouldScrollToBottom = true;
-        if (msg.role === 'assistant') {
-          this.sending = false;
+        if (msg.role === 'status') {
+          const lastIdx = this.messages.length - 1;
+          if (lastIdx >= 0 && this.messages[lastIdx].role === 'status') {
+            this.messages[lastIdx] = msg;
+          } else {
+            this.messages.push(msg);
+          }
+        } else {
+          if (this.messages.length > 0 && this.messages[this.messages.length - 1].role === 'status') {
+            this.messages.pop();
+          }
+          this.messages.push(msg);
+          if (msg.role === 'assistant') {
+            this.sending = false;
+          }
         }
+        this.shouldScrollToBottom = true;
       }
     });
   }
@@ -149,6 +161,18 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   interruptChat(): void {
     this.sending = false;
     this.chatService.interruptChat(this.sessionId).subscribe();
+
+    // Remove any trailing status messages
+    while (this.messages.length > 0 && this.messages[this.messages.length - 1].role === 'status') {
+      this.messages.pop();
+    }
+
+    // Restore the last user message back to the input
+    if (this.messages.length > 0 && this.messages[this.messages.length - 1].role === 'user') {
+      const lastUserMsg = this.messages.pop()!;
+      this.messageInput = lastUserMsg.content;
+    }
+
     // Focus the input so the user can immediately type
     setTimeout(() => this.messageInputEl?.nativeElement?.focus(), 0);
   }

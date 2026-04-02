@@ -25,6 +25,10 @@ export class ChatService implements OnDestroy {
     return this.api.post<ChatSession>('/chat/sessions', { title: title || 'New Chat', agentId });
   }
 
+  getOrCreateSession(title?: string, agentId?: string, workflowId?: string): Observable<ChatSession> {
+    return this.api.post<ChatSession>('/chat/sessions/resolve', { title: title || 'New Chat', agentId, workflowId });
+  }
+
   updateSession(id: string, title: string): Observable<ChatSession> {
     return this.api.put<ChatSession>(`/chat/sessions/${id}`, { title });
   }
@@ -58,13 +62,23 @@ export class ChatService implements OnDestroy {
     this.ws.subscribe(`/topic/chat/${sessionId}`, (message) => {
       try {
         const data = JSON.parse(message.body);
-        this.messagesSubject.next({
-          id: data.id,
-          sessionId,
-          role: data.role || 'assistant',
-          content: data.content,
-          createdAt: data.timestamp || new Date().toISOString()
-        });
+        if (data.type === 'status') {
+          this.messagesSubject.next({
+            id: 'status-' + Date.now(),
+            sessionId,
+            role: 'status',
+            content: data.content,
+            createdAt: new Date().toISOString()
+          });
+        } else {
+          this.messagesSubject.next({
+            id: data.id,
+            sessionId,
+            role: data.role || 'assistant',
+            content: data.content,
+            createdAt: data.timestamp || new Date().toISOString()
+          });
+        }
       } catch (e) {
         console.error('Failed to parse chat message:', e);
       }

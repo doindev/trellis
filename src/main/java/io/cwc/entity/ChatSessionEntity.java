@@ -23,6 +23,9 @@ public class ChatSessionEntity {
 
     private String agentId;
 
+    @Column(name = "workflow_id")
+    private String workflowId;
+
     @Builder.Default
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();

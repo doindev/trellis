@@ -30,6 +30,7 @@ public class AiSettingsService {
                         .provider("openai")
                         .model("gpt-4o-mini")
                         .enabled(false)
+                        .maxToolIterations(10)
                         .build());
     }
 
@@ -69,6 +70,10 @@ public class AiSettingsService {
         }
         entity.setBaseUrl(dto.getBaseUrl());
         entity.setEnabled(dto.isEnabled());
+        if (dto.getMaxToolIterations() > 0) {
+            entity.setMaxToolIterations(dto.getMaxToolIterations());
+        }
+        entity.setDefaultAgentId(dto.getDefaultAgentId());
 
         // Only update API key if provided (non-null, non-blank); encrypt before storing
         if (dto.getApiKey() != null && !dto.getApiKey().isBlank()) {
@@ -97,6 +102,8 @@ public class AiSettingsService {
                 .model(entity.getModel())
                 .baseUrl(entity.getBaseUrl())
                 .enabled(entity.isEnabled())
+                .maxToolIterations(entity.getMaxToolIterations())
+                .defaultAgentId(entity.getDefaultAgentId())
                 .build();
     }
 

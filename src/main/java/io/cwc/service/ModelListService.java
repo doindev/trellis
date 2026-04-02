@@ -177,7 +177,7 @@ public class ModelListService {
     /**
      * Fallback: call the Anthropic /v1/models endpoint directly via HTTP.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "unused" })
     private List<ModelInfo> listAnthropicModelsDirect(Map<String, Object> data, String modelType) {
         String apiKey = getString(data, "apiKey");
         String baseUrl = normalizeAnthropicBaseUrl(getString(data, "baseUrl"));
@@ -253,6 +253,7 @@ public class ModelListService {
 
         var ollamaModels = dev.langchain4j.model.ollama.OllamaModels.builder()
                 .baseUrl(baseUrl)
+                .timeout(java.time.Duration.ofSeconds(10))
                 .build();
 
         return ollamaModels.availableModels().content().stream()

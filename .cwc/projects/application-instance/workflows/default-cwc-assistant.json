@@ -1,0 +1,86 @@
+{
+  "configId" : "default-cwc-assistant",
+  "name" : "Default CWC Assistant",
+  "description" : "AI agent with memory and platform tools. Configure the Chat Model node with your provider credentials.",
+  "type" : "AGENT",
+  "published" : true,
+  "icon" : "\uD83E\uDD16",
+  "nodes" : [ {
+    "name" : "AI Assistant",
+    "typeVersion" : 1,
+    "parameters" : {
+      "prompt" : "={{$json.chatInput}}",
+      "maxIterations" : 20,
+      "systemMessage" : "You are a helpful workflow automation assistant for CWC. You have access to platform tools to discover node types, manage workflows, execute them, and push changes to the user's canvas. Use cwc_workflow_guide before building workflows to understand the correct node wiring format. Be concise and practical."
+    },
+    "position" : [ 256, 128 ],
+    "id" : "agent_main",
+    "type" : "aiAgent"
+  }, {
+    "name" : "Chat Model",
+    "parameters" : {
+      "model" : "mistral:latest",
+      "temperature" : 0.7,
+      "timeout" : 120
+    },
+    "typeVersion" : 1,
+    "position" : [ 208, 304 ],
+    "type" : "ollamaChatModel",
+    "id" : "model_chat",
+    "credentials" : {
+      "ollamaApi" : {
+        "ref" : "ollama-account"
+      }
+    }
+  }, {
+    "name" : "Window Buffer Memory",
+    "typeVersion" : 1,
+    "parameters" : {
+      "contextWindowLength" : 20,
+      "sessionId" : "default"
+    },
+    "position" : [ 320, 304 ],
+    "id" : "memory_buffer",
+    "type" : "windowBufferMemory"
+  }, {
+    "name" : "CWC Platform Tools",
+    "typeVersion" : 1,
+    "parameters" : {
+      "toolSelectionMode" : "all"
+    },
+    "position" : [ 448, 304 ],
+    "id" : "tools_platform",
+    "type" : "cwcPlatformTool"
+  } ],
+  "connections" : {
+    "memory_buffer" : {
+      "ai_memory" : [ [ {
+        "type" : "ai_memory",
+        "index" : 0,
+        "node" : "agent_main"
+      }, {
+        "type" : "ai_memory",
+        "index" : 1,
+        "node" : "agent_main"
+      } ] ]
+    },
+    "model_chat" : {
+      "ai_languageModel" : [ [ {
+        "type" : "ai_languageModel",
+        "index" : 0,
+        "node" : "agent_main"
+      } ] ]
+    },
+    "tools_platform" : {
+      "ai_tool" : [ [ {
+        "type" : "ai_tool",
+        "index" : 0,
+        "node" : "agent_main"
+      }, {
+        "type" : "ai_tool",
+        "index" : 2,
+        "node" : "agent_main"
+      } ] ]
+    }
+  }
+}

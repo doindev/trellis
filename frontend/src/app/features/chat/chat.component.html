@@ -7,6 +7,12 @@
           <div class="chat-loading">Loading messages...</div>
         }
         @for (msg of messages; track msg.id) {
+          @if (msg.role === 'status') {
+            <div class="chat-status">
+              <span class="status-dot"></span>
+              <span class="status-text">{{ msg.content }}</span>
+            </div>
+          } @else {
           <div class="chat-msg" [class.chat-msg-user]="msg.role === 'user'" [class.chat-msg-assistant]="msg.role === 'assistant'">
             <div class="chat-msg-avatar">
               @if (msg.role === 'user') {
@@ -24,6 +30,7 @@
               <div class="chat-msg-content" [innerHTML]="renderMarkdown(msg.content)"></div>
             </div>
           </div>
+          }
         }
         @if (sending) {
           <div class="chat-msg chat-msg-assistant chat-msg-typing">

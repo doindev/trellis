@@ -6,4 +6,5 @@ import lombok.Data;
 public class ChatSessionRequest {
     private String title;
     private String agentId;
+    private String workflowId;
 }
