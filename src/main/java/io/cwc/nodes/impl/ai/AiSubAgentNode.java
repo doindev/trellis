@@ -41,7 +41,13 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 			"ai_tool (handle position 2): two entries {index: 0} AND {index: 2}. " +
 			"The ai_tool index is ALWAYS 2 even with multiple tools — do NOT increment to 3, 4, 5. " +
 			"To connect this sub-agent as a tool on a parent agent, use: " +
-			"subAgent1: {ai_tool: [[{node: 'parentAgent', type: 'ai_tool', index: 0}, {node: 'parentAgent', type: 'ai_tool', index: 2}]]}"
+			"subAgent1: {ai_tool: [[{node: 'parentAgent', type: 'ai_tool', index: 0}, {node: 'parentAgent', type: 'ai_tool', index: 2}]]}. " +
+			"MEMORY MODES: The 'memoryMode' parameter controls context management. " +
+			"'Default' uses a message window capped at maxIterations. " +
+			"'Sliding Window' keeps N recent messages. 'Token Budget' caps by token count. " +
+			"'Summarization' compresses older messages. 'Hybrid' combines window + summarization. " +
+			"Wire a database memory node (Postgres, MySQL, Oracle, Redis, MongoDB, Xata) to persist " +
+			"chat history across restarts. The database node provides storage; the memory mode controls the strategy."
 )
 public class AiSubAgentNode extends AbstractAiSubNode {
 
@@ -69,7 +75,7 @@ public class AiSubAgentNode extends AbstractAiSubNode {
 		}
 
 		// 2. Get memory (optional) — resolved via memory mode parameters
-		ChatMemory wiredMemory = context.getAiInput("ai_memory", ChatMemory.class);
+		Object wiredMemoryInput = context.getAiInput("ai_memory", Object.class);
 
 		// 3. Collect tool inputs — separate real tools from nested sub-agents
 		List<Object> toolInputs = context.getAiInputs("ai_tool", Object.class);
@@ -82,7 +88,7 @@ public class AiSubAgentNode extends AbstractAiSubNode {
 		String agentDescription = context.getParameter("agentDescription", "A helpful sub-agent");
 		String systemMessage = context.getParameter("systemMessage", "You are a helpful assistant.");
 		int maxIterations = toInt(context.getParameters().get("maxIterations"), 10);
-		ChatMemory memory = AgentMemoryFactory.resolveMemory(context, wiredMemory, model, maxIterations);
+		ChatMemory memory = AgentMemoryFactory.resolveMemory(context, wiredMemoryInput, model, maxIterations);
 
 		if (!nestedSubAgents.isEmpty()) {
 			// --- Supervisor path: this sub-agent has its own sub-agents ---

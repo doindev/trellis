@@ -3,13 +3,11 @@ package io.cwc.nodes.impl.ai;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractAiMemoryNode;
 import io.cwc.nodes.core.NodeExecutionContext;
 import io.cwc.nodes.core.NodeParameter;
-import io.cwc.nodes.core.NodeParameter.ParameterType;
 import io.cwc.nodes.impl.ai.memory.ChatMessageSerialization;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,9 +34,6 @@ public class XataChatMemoryNode extends AbstractAiMemoryNode {
 
 	@Override
 	public Object supplyData(NodeExecutionContext context) {
-		int windowSize = toInt(context.getParameters().get("contextWindowLength"), 10);
-		String sessionId = context.getParameter("sessionId", "default");
-
 		String apiKey = context.getCredentialString("apiKey");
 		String databaseEndpoint = context.getCredentialString("databaseEndpoint");
 		String branch = context.getCredentialString("branch", "main");
@@ -50,31 +45,12 @@ public class XataChatMemoryNode extends AbstractAiMemoryNode {
 			throw new IllegalArgumentException("Xata database endpoint is required.");
 		}
 
-		ChatMemoryStore store = new XataChatMemoryStore(apiKey, databaseEndpoint, branch);
-
-		return MessageWindowChatMemory.builder()
-				.id(sessionId)
-				.maxMessages(windowSize)
-				.chatMemoryStore(store)
-				.build();
+		return new XataChatMemoryStore(apiKey, databaseEndpoint, branch);
 	}
 
 	@Override
 	public List<NodeParameter> getParameters() {
-		return List.of(
-				NodeParameter.builder()
-						.name("sessionId").displayName("Session ID")
-						.type(ParameterType.STRING)
-						.defaultValue("default")
-						.description("A unique key to isolate this conversation")
-						.build(),
-				NodeParameter.builder()
-						.name("contextWindowLength").displayName("Context Window Length")
-						.type(ParameterType.NUMBER)
-						.defaultValue(10)
-						.description("Number of recent messages to keep in memory")
-						.build()
-		);
+		return List.of();
 	}
 
 	/**

@@ -32,7 +32,15 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 		displayName = "AI Agent Tool",
 		description = "An AI agent exposed as a tool. Unlike a Sub Agent, it is invoked as a regular tool call by the parent agent rather than being delegated to as a sub-agent.",
 		category = "AI",
-		icon = "brain-cog"
+		icon = "brain-cog",
+		implementationNotes = "Wires to a parent AI Agent via the ai_tool handle, same dual-index rule as aiSubAgent. " +
+			"Can have its own chat model, memory, and tools. Falls back to parent's model if none wired. " +
+			"MEMORY MODES: The 'memoryMode' parameter controls context management. " +
+			"'Default' uses a message window capped at maxIterations. " +
+			"'Sliding Window' keeps N recent messages. 'Token Budget' caps by token count. " +
+			"'Summarization' compresses older messages. 'Hybrid' combines window + summarization. " +
+			"Wire a database memory node (Postgres, MySQL, Oracle, Redis, MongoDB, Xata) to persist " +
+			"chat history across restarts. The database node provides storage; the memory mode controls the strategy."
 )
 public class AiAgentToolNode extends AbstractAiSubNode {
 
@@ -51,7 +59,7 @@ public class AiAgentToolNode extends AbstractAiSubNode {
 		}
 
 		// 2. Get memory (optional)
-		ChatMemory wiredMemory = context.getAiInput("ai_memory", ChatMemory.class);
+		Object wiredMemoryInput = context.getAiInput("ai_memory", Object.class);
 
 		// 3. Collect tool inputs — separate real tools from nested sub-agents
 		List<Object> toolInputs = context.getAiInputs("ai_tool", Object.class);
@@ -64,7 +72,7 @@ public class AiAgentToolNode extends AbstractAiSubNode {
 		String agentDescription = context.getParameter("agentDescription", "A helpful AI agent tool");
 		String systemMessage = context.getParameter("systemMessage", "You are a helpful assistant.");
 		int maxIterations = toInt(context.getParameters().get("maxIterations"), 10);
-		ChatMemory memory = AgentMemoryFactory.resolveMemory(context, wiredMemory, model, maxIterations);
+		ChatMemory memory = AgentMemoryFactory.resolveMemory(context, wiredMemoryInput, model, maxIterations);
 
 		// 5. Build the agent (supervisor or simple, same as AiSubAgentNode)
 		Object agent;

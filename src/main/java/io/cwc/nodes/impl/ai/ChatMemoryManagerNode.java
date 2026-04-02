@@ -5,6 +5,8 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractNode;
 import io.cwc.nodes.core.*;
@@ -32,7 +34,7 @@ public class ChatMemoryManagerNode extends AbstractNode {
 
 	@Override
 	public NodeExecutionResult execute(NodeExecutionContext context) {
-		ChatMemory memory = context.getAiInput("ai_memory", ChatMemory.class);
+		ChatMemory memory = resolveMemory(context);
 		if (memory == null) {
 			return NodeExecutionResult.error("No memory input connected");
 		}
@@ -52,6 +54,26 @@ public class ChatMemoryManagerNode extends AbstractNode {
 			}
 			throw new RuntimeException(e);
 		}
+	}
+
+	private ChatMemory resolveMemory(NodeExecutionContext context) {
+		// Try ChatMemory first (Simple Memory, Motorhead)
+		ChatMemory memory = context.getAiInput("ai_memory", ChatMemory.class);
+		if (memory != null) return memory;
+
+		// Try ChatMemoryStore (database-backed memory nodes)
+		ChatMemoryStore store = context.getAiInput("ai_memory", ChatMemoryStore.class);
+		if (store != null) {
+			String sessionId = context.getParameter("sessionId", "default");
+			String memoryId = context.getWorkflowId() + "__" + sessionId;
+			return MessageWindowChatMemory.builder()
+					.id(memoryId)
+					.maxMessages(100)
+					.chatMemoryStore(store)
+					.build();
+		}
+
+		return null;
 	}
 
 	private NodeExecutionResult handleLoad(NodeExecutionContext context, ChatMemory memory) {
@@ -162,6 +184,12 @@ public class ChatMemoryManagerNode extends AbstractNode {
 	@Override
 	public List<NodeParameter> getParameters() {
 		return List.of(
+				NodeParameter.builder()
+						.name("sessionId").displayName("Session ID")
+						.type(ParameterType.STRING)
+						.defaultValue("default")
+						.description("Session key for database-backed memory nodes")
+						.build(),
 				NodeParameter.builder()
 						.name("mode").displayName("Operation Mode")
 						.type(ParameterType.OPTIONS)

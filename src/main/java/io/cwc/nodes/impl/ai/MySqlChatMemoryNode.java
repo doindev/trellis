@@ -18,31 +18,29 @@ import java.util.List;
 
 @Slf4j
 @Node(
-		type = "memoryPostgresChat",
-		displayName = "Postgres Chat Memory",
-		description = "Stores chat history in a PostgreSQL table",
+		type = "memoryMysqlChat",
+		displayName = "MySQL Chat Memory",
+		description = "Stores chat history in a MySQL table",
 		category = "AI / Memory",
 		icon = "database",
-		credentials = "postgresApi",
+		credentials = "mysqlApi",
 		searchOnly = true
 )
-public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
+public class MySqlChatMemoryNode extends AbstractAiMemoryNode {
 
 	@Override
 	public Object supplyData(NodeExecutionContext context) {
 		String tableName = context.getParameter("tableName", "chat_histories");
 
 		String host = context.getCredentialString("host", "localhost");
-		int port = toInt(context.getCredentials().get("port"), 5432);
+		int port = toInt(context.getCredentials().get("port"), 3306);
 		String database = context.getCredentialString("database");
 		String username = context.getCredentialString("username");
 		String password = context.getCredentialString("password");
-		boolean ssl = Boolean.parseBoolean(context.getCredentialString("ssl", "false"));
 
-		String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s%s",
-				host, port, database, ssl ? "?ssl=true" : "");
+		String jdbcUrl = String.format("jdbc:mysql://%s:%d/%s", host, port, database);
 
-		return new PostgresChatMemoryStore(jdbcUrl, username, password, tableName);
+		return new MySqlChatMemoryStore(jdbcUrl, username, password, tableName);
 	}
 
 	@Override
@@ -52,24 +50,19 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 						.name("tableName").displayName("Table Name")
 						.type(ParameterType.STRING)
 						.defaultValue("chat_histories")
-						.description("PostgreSQL table name (auto-created if missing)")
+						.description("MySQL table name (auto-created if missing)")
 						.build()
 		);
 	}
 
-	/**
-	 * ChatMemoryStore backed by a PostgreSQL table.
-	 * Table schema: (session_id VARCHAR PRIMARY KEY, messages TEXT)
-	 * Auto-creates the table on first access.
-	 */
-	static class PostgresChatMemoryStore implements ChatMemoryStore {
+	static class MySqlChatMemoryStore implements ChatMemoryStore {
 		private final String jdbcUrl;
 		private final String username;
 		private final String password;
 		private final String tableName;
 		private boolean tableCreated = false;
 
-		PostgresChatMemoryStore(String jdbcUrl, String username, String password, String tableName) {
+		MySqlChatMemoryStore(String jdbcUrl, String username, String password, String tableName) {
 			this.jdbcUrl = jdbcUrl;
 			this.username = username;
 			this.password = password;
@@ -85,8 +78,8 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 			try (var stmt = conn.createStatement()) {
 				stmt.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
 						"session_id VARCHAR(255) PRIMARY KEY, " +
-						"messages TEXT, " +
-						"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+						"messages LONGTEXT, " +
+						"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)");
 			}
 			tableCreated = true;
 		}
@@ -105,7 +98,7 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 					}
 				}
 			} catch (Exception e) {
-				throw new RuntimeException("Failed to read messages from PostgreSQL", e);
+				throw new RuntimeException("Failed to read messages from MySQL", e);
 			}
 			return List.of();
 		}
@@ -116,14 +109,14 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 			try (Connection conn = getConnection()) {
 				ensureTable(conn);
 				try (PreparedStatement ps = conn.prepareStatement(
-						"INSERT INTO " + tableName + " (session_id, messages, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) " +
-								"ON CONFLICT (session_id) DO UPDATE SET messages = EXCLUDED.messages, updated_at = CURRENT_TIMESTAMP")) {
+						"INSERT INTO " + tableName + " (session_id, messages) VALUES (?, ?) " +
+								"ON DUPLICATE KEY UPDATE messages = VALUES(messages), updated_at = CURRENT_TIMESTAMP")) {
 					ps.setString(1, memoryId.toString());
 					ps.setString(2, json);
 					ps.executeUpdate();
 				}
 			} catch (Exception e) {
-				throw new RuntimeException("Failed to update messages in PostgreSQL", e);
+				throw new RuntimeException("Failed to update messages in MySQL", e);
 			}
 		}
 
@@ -137,7 +130,7 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 					ps.executeUpdate();
 				}
 			} catch (Exception e) {
-				throw new RuntimeException("Failed to delete messages from PostgreSQL", e);
+				throw new RuntimeException("Failed to delete messages from MySQL", e);
 			}
 		}
 

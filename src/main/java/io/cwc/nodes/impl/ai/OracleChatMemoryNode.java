@@ -18,31 +18,35 @@ import java.util.List;
 
 @Slf4j
 @Node(
-		type = "memoryPostgresChat",
-		displayName = "Postgres Chat Memory",
-		description = "Stores chat history in a PostgreSQL table",
+		type = "memoryOracleChat",
+		displayName = "Oracle Chat Memory",
+		description = "Stores chat history in an Oracle database table",
 		category = "AI / Memory",
 		icon = "database",
-		credentials = "postgresApi",
+		credentials = "oracleDBApi",
 		searchOnly = true
 )
-public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
+public class OracleChatMemoryNode extends AbstractAiMemoryNode {
 
 	@Override
 	public Object supplyData(NodeExecutionContext context) {
 		String tableName = context.getParameter("tableName", "chat_histories");
 
 		String host = context.getCredentialString("host", "localhost");
-		int port = toInt(context.getCredentials().get("port"), 5432);
+		int port = toInt(context.getCredentials().get("port"), 1521);
 		String database = context.getCredentialString("database");
 		String username = context.getCredentialString("username");
 		String password = context.getCredentialString("password");
-		boolean ssl = Boolean.parseBoolean(context.getCredentialString("ssl", "false"));
+		String connectAs = context.getCredentialString("connectAs", "serviceName");
 
-		String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s%s",
-				host, port, database, ssl ? "?ssl=true" : "");
+		String jdbcUrl;
+		if ("sid".equals(connectAs)) {
+			jdbcUrl = String.format("jdbc:oracle:thin:@%s:%d:%s", host, port, database);
+		} else {
+			jdbcUrl = String.format("jdbc:oracle:thin:@//%s:%d/%s", host, port, database);
+		}
 
-		return new PostgresChatMemoryStore(jdbcUrl, username, password, tableName);
+		return new OracleChatMemoryStore(jdbcUrl, username, password, tableName);
 	}
 
 	@Override
@@ -52,24 +56,19 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 						.name("tableName").displayName("Table Name")
 						.type(ParameterType.STRING)
 						.defaultValue("chat_histories")
-						.description("PostgreSQL table name (auto-created if missing)")
+						.description("Oracle table name (auto-created if missing)")
 						.build()
 		);
 	}
 
-	/**
-	 * ChatMemoryStore backed by a PostgreSQL table.
-	 * Table schema: (session_id VARCHAR PRIMARY KEY, messages TEXT)
-	 * Auto-creates the table on first access.
-	 */
-	static class PostgresChatMemoryStore implements ChatMemoryStore {
+	static class OracleChatMemoryStore implements ChatMemoryStore {
 		private final String jdbcUrl;
 		private final String username;
 		private final String password;
 		private final String tableName;
 		private boolean tableCreated = false;
 
-		PostgresChatMemoryStore(String jdbcUrl, String username, String password, String tableName) {
+		OracleChatMemoryStore(String jdbcUrl, String username, String password, String tableName) {
 			this.jdbcUrl = jdbcUrl;
 			this.username = username;
 			this.password = password;
@@ -83,10 +82,16 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 		private void ensureTable(Connection conn) throws Exception {
 			if (tableCreated) return;
 			try (var stmt = conn.createStatement()) {
-				stmt.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
-						"session_id VARCHAR(255) PRIMARY KEY, " +
-						"messages TEXT, " +
-						"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+				try (ResultSet rs = stmt.executeQuery(
+						"SELECT COUNT(*) FROM user_tables WHERE table_name = '" + tableName.toUpperCase() + "'")) {
+					rs.next();
+					if (rs.getInt(1) == 0) {
+						stmt.execute("CREATE TABLE " + tableName + " (" +
+								"session_id VARCHAR2(255) PRIMARY KEY, " +
+								"messages CLOB, " +
+								"updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+					}
+				}
 			}
 			tableCreated = true;
 		}
@@ -105,7 +110,7 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 					}
 				}
 			} catch (Exception e) {
-				throw new RuntimeException("Failed to read messages from PostgreSQL", e);
+				throw new RuntimeException("Failed to read messages from Oracle", e);
 			}
 			return List.of();
 		}
@@ -116,14 +121,17 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 			try (Connection conn = getConnection()) {
 				ensureTable(conn);
 				try (PreparedStatement ps = conn.prepareStatement(
-						"INSERT INTO " + tableName + " (session_id, messages, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) " +
-								"ON CONFLICT (session_id) DO UPDATE SET messages = EXCLUDED.messages, updated_at = CURRENT_TIMESTAMP")) {
+						"MERGE INTO " + tableName + " t " +
+								"USING (SELECT ? AS session_id, ? AS messages FROM dual) s " +
+								"ON (t.session_id = s.session_id) " +
+								"WHEN MATCHED THEN UPDATE SET t.messages = s.messages, t.updated_at = CURRENT_TIMESTAMP " +
+								"WHEN NOT MATCHED THEN INSERT (session_id, messages) VALUES (s.session_id, s.messages)")) {
 					ps.setString(1, memoryId.toString());
 					ps.setString(2, json);
 					ps.executeUpdate();
 				}
 			} catch (Exception e) {
-				throw new RuntimeException("Failed to update messages in PostgreSQL", e);
+				throw new RuntimeException("Failed to update messages in Oracle", e);
 			}
 		}
 
@@ -137,7 +145,7 @@ public class PostgresChatMemoryNode extends AbstractAiMemoryNode {
 					ps.executeUpdate();
 				}
 			} catch (Exception e) {
-				throw new RuntimeException("Failed to delete messages from PostgreSQL", e);
+				throw new RuntimeException("Failed to delete messages from Oracle", e);
 			}
 		}
 

@@ -6,7 +6,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.ReplaceOptions;
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractAiMemoryNode;
@@ -32,8 +31,6 @@ public class MongoDbChatMemoryNode extends AbstractAiMemoryNode {
 
 	@Override
 	public Object supplyData(NodeExecutionContext context) {
-		int windowSize = toInt(context.getParameters().get("contextWindowLength"), 10);
-		String sessionId = context.getParameter("sessionId", "default");
 		String collectionName = context.getParameter("collectionName", "chat_histories");
 		String databaseName = context.getParameter("databaseName", "");
 
@@ -63,24 +60,12 @@ public class MongoDbChatMemoryNode extends AbstractAiMemoryNode {
 		MongoClient client = MongoClients.create(connectionString);
 		MongoCollection<Document> collection = client.getDatabase(dbName).getCollection(collectionName);
 
-		ChatMemoryStore store = new MongoDbChatMemoryStore(collection);
-
-		return MessageWindowChatMemory.builder()
-				.id(sessionId)
-				.maxMessages(windowSize)
-				.chatMemoryStore(store)
-				.build();
+		return new MongoDbChatMemoryStore(collection);
 	}
 
 	@Override
 	public List<NodeParameter> getParameters() {
 		return List.of(
-				NodeParameter.builder()
-						.name("sessionId").displayName("Session ID")
-						.type(ParameterType.STRING)
-						.defaultValue("default")
-						.description("A unique key to isolate this conversation")
-						.build(),
 				NodeParameter.builder()
 						.name("collectionName").displayName("Collection Name")
 						.type(ParameterType.STRING)
@@ -91,12 +76,6 @@ public class MongoDbChatMemoryNode extends AbstractAiMemoryNode {
 						.name("databaseName").displayName("Database Name")
 						.type(ParameterType.STRING)
 						.description("Database name (overrides credential database if set)")
-						.build(),
-				NodeParameter.builder()
-						.name("contextWindowLength").displayName("Context Window Length")
-						.type(ParameterType.NUMBER)
-						.defaultValue(10)
-						.description("Number of recent messages to keep in memory")
 						.build()
 		);
 	}

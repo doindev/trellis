@@ -1,7 +1,6 @@
 package io.cwc.nodes.impl.ai;
 
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import io.cwc.nodes.annotation.Node;
 import io.cwc.nodes.base.AbstractAiMemoryNode;
@@ -30,8 +29,6 @@ public class RedisChatMemoryNode extends AbstractAiMemoryNode {
 
 	@Override
 	public Object supplyData(NodeExecutionContext context) {
-		int windowSize = toInt(context.getParameters().get("contextWindowLength"), 10);
-		String sessionId = context.getParameter("sessionId", "default");
 		int sessionTTL = toInt(context.getParameters().get("sessionTTL"), 0);
 
 		// Build Redis connection from credentials
@@ -49,35 +46,17 @@ public class RedisChatMemoryNode extends AbstractAiMemoryNode {
 			pool = new JedisPool(poolConfig, host, port, 2000, null, database, ssl);
 		}
 
-		ChatMemoryStore store = new RedisChatMemoryStore(pool, sessionTTL);
-
-		return MessageWindowChatMemory.builder()
-				.id(sessionId)
-				.maxMessages(windowSize)
-				.chatMemoryStore(store)
-				.build();
+		return new RedisChatMemoryStore(pool, sessionTTL);
 	}
 
 	@Override
 	public List<NodeParameter> getParameters() {
 		return List.of(
 				NodeParameter.builder()
-						.name("sessionId").displayName("Session ID")
-						.type(ParameterType.STRING)
-						.defaultValue("default")
-						.description("A unique key to isolate this conversation")
-						.build(),
-				NodeParameter.builder()
 						.name("sessionTTL").displayName("Session TTL (seconds)")
 						.type(ParameterType.NUMBER)
 						.defaultValue(0)
 						.description("Time-to-live for the session in seconds. 0 means no expiration.")
-						.build(),
-				NodeParameter.builder()
-						.name("contextWindowLength").displayName("Context Window Length")
-						.type(ParameterType.NUMBER)
-						.defaultValue(10)
-						.description("Number of recent messages to keep in memory")
 						.build()
 		);
 	}

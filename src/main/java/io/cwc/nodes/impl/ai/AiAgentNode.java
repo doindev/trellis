@@ -43,7 +43,17 @@ import io.cwc.nodes.core.NodeParameter.ParameterType;
 			"Example connections: " +
 			"model1: {ai_languageModel: [[{node: 'agent1', type: 'ai_languageModel', index: 0}]]}, " +
 			"memory1: {ai_memory: [[{node: 'agent1', type: 'ai_memory', index: 0}, {node: 'agent1', type: 'ai_memory', index: 1}]]}, " +
-			"tool1: {ai_tool: [[{node: 'agent1', type: 'ai_tool', index: 0}, {node: 'agent1', type: 'ai_tool', index: 2}]]}"
+			"tool1: {ai_tool: [[{node: 'agent1', type: 'ai_tool', index: 0}, {node: 'agent1', type: 'ai_tool', index: 2}]]}. " +
+			"MEMORY MODES: The 'memoryMode' parameter controls how conversation context is managed. " +
+			"'Default' uses a simple message window capped at maxIterations. " +
+			"'Sliding Window' keeps the N most recent messages (configurable via memoryWindowSize). " +
+			"'Token Budget' keeps messages up to a token limit (memoryTokenBudget). " +
+			"'Summarization' compresses older messages into a summary after memorySummaryThreshold messages. " +
+			"'Hybrid' combines sliding window with summarization. " +
+			"PERSISTENCE: To persist chat history across restarts or share across instances, wire a database " +
+			"memory node (Postgres, MySQL, Oracle, Redis, MongoDB, Xata) to the ai_memory input. " +
+			"The database node provides the backing store; the memory mode controls the strategy. " +
+			"Simple Memory and Motorhead nodes supply their own complete memory and are used directly."
 )
 public class AiAgentNode extends AbstractNode {
 
@@ -62,8 +72,8 @@ public class AiAgentNode extends AbstractNode {
 		String promptTemplate = context.getParameter("prompt", "{{input}}");
 		int maxIterations = toInt(context.getParameters().get("maxIterations"), 10);
 
-		ChatMemory wiredMemory = context.getAiInput("ai_memory", ChatMemory.class);
-		ChatMemory memory = AgentMemoryFactory.resolveMemory(context, wiredMemory, model, maxIterations);
+		Object wiredMemoryInput = context.getAiInput("ai_memory", Object.class);
+		ChatMemory memory = AgentMemoryFactory.resolveMemory(context, wiredMemoryInput, model, maxIterations);
 
 		// Separate tool inputs into real tools and sub-agents
 		List<Object> toolInputs = context.getAiInputs("ai_tool", Object.class);

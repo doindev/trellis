@@ -6,6 +6,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import io.cwc.dto.AiSettingsDto;
+import io.cwc.entity.WorkflowEntity;
+import io.cwc.repository.WorkflowRepository;
+import io.cwc.service.AiSettingsService;
 import io.cwc.service.ConfigBootstrapService;
 import io.cwc.service.GitSyncService;
 
@@ -22,6 +26,8 @@ public class ConfigBootstrapRunner implements CommandLineRunner {
     private final ConfigBootstrapService configBootstrapService;
     private final CwcConfigProperties configProperties;
     private final GitSyncService gitSyncService;
+    private final AiSettingsService aiSettingsService;
+    private final WorkflowRepository workflowRepository;
 
     @Override
     public void run(String... args) {
@@ -37,6 +43,25 @@ public class ConfigBootstrapRunner implements CommandLineRunner {
             // Never fail startup — log and continue
             log.error("Config bootstrap failed: {}", e.getMessage(), e);
         }
+
+        // Auto-set default agent if none is configured
+        setDefaultAgentIfNeeded();
+    }
+
+    private void setDefaultAgentIfNeeded() {
+        AiSettingsDto settings = aiSettingsService.getSettings();
+        if (settings.getDefaultAgentId() != null) return;
+
+        workflowRepository.findAll().stream()
+                .filter(w -> "AGENT".equals(w.getType()))
+                .map(WorkflowEntity::getId)
+                .findFirst()
+                .ifPresent(agentId -> {
+                    settings.setDefaultAgentId(agentId);
+                    settings.setEnabled(true);
+                    aiSettingsService.saveSettings(settings);
+                    log.info("Auto-set default AI agent to: {}", agentId);
+                });
     }
 
     private void logStartupType() {
