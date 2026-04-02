@@ -109,11 +109,9 @@ public class DataSeeder implements CommandLineRunner {
 
     private String findOrCreateAppProject(String ownerId) {
         // Look for existing Application-Instance project
-        List<ProjectEntity> teamProjects = projectRepository.findByType(ProjectType.TEAM);
-        for (ProjectEntity proj : teamProjects) {
-            if ("Application-Instance".equals(proj.getName())) {
-                return proj.getId();
-            }
+        var existing = projectRepository.findByNameAndType("Application-Instance", ProjectType.TEAM);
+        if (existing.isPresent()) {
+            return existing.get().getId();
         }
 
         // Create it
