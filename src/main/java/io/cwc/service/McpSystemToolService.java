@@ -60,7 +60,7 @@ public class McpSystemToolService {
                 Map.of(
                         "type", "object",
                         "properties", orderedMap(
-                                "type", prop("string", "The node type identifier (e.g. 'httpRequest', 'code', 'ifNode')")
+                                "type", prop("string", "The node type identifier (e.g. 'httpRequest', 'code', 'if')")
                         ),
                         "required", List.of("type")
                 )));
