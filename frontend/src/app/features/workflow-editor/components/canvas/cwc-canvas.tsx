@@ -794,6 +794,7 @@ function CwcCanvasInner({
           onMoveStart={onMoveStart}
           onMoveEnd={onMoveEnd}
           panOnScroll
+          zoomOnDoubleClick={false}
           deleteKeyCode={null}
           proOptions={proOptions}
           className="cwc-flow"
