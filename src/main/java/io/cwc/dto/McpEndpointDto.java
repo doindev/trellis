@@ -16,4 +16,5 @@ public class McpEndpointDto {
     private String path;
     private String url;
     private boolean enabled;
+    private boolean apiKeyRequired;
 }

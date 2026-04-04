@@ -13,3 +13,4 @@ export * from './tag.service';
 export * from './agent-control.service';
 export * from './cache.service';
 export * from './user.service';
+export * from './feature.service';

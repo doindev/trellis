@@ -36,6 +36,8 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
+@org.springframework.boot.autoconfigure.condition.ConditionalOnClass(name = "org.springframework.ai.mcp.server.autoconfigure.McpServerAutoConfiguration")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "cwc.features.mcp-server.enabled", havingValue = "true", matchIfMissing = true)
 public class McpSettingsService {
 
     private final McpSettingsRepository repository;
@@ -130,6 +132,7 @@ public class McpSettingsService {
                 .transport(dto.getTransport())
                 .path(dto.getPath())
                 .enabled(true)
+                .apiKeyRequired(dto.isApiKeyRequired())
                 .build();
         entity = endpointRepository.save(entity);
         if (settingsWritebackService != null) settingsWritebackService.writeSettings();
@@ -154,6 +157,7 @@ public class McpSettingsService {
         if (dto.getTransport() != null) entity.setTransport(dto.getTransport());
         if (dto.getPath() != null) entity.setPath(dto.getPath());
         entity.setEnabled(dto.isEnabled());
+        entity.setApiKeyRequired(dto.isApiKeyRequired());
         entity = endpointRepository.save(entity);
         if (settingsWritebackService != null) settingsWritebackService.writeSettings();
         return toEndpointDto(entity);
@@ -518,6 +522,7 @@ public class McpSettingsService {
                 .path(entity.getPath())
                 .url(resolveBaseUrl() + "/mcp/" + entity.getPath())
                 .enabled(entity.isEnabled())
+                .apiKeyRequired(entity.isApiKeyRequired())
                 .build();
     }
 }

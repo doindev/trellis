@@ -24,6 +24,8 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@org.springframework.boot.autoconfigure.condition.ConditionalOnClass(name = "org.springdoc.core.configuration.SpringDocConfiguration")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "cwc.features.swagger.enabled", havingValue = "true", matchIfMissing = true)
 public class SwaggerSettingsService {
 
     private final SwaggerSettingsRepository repository;

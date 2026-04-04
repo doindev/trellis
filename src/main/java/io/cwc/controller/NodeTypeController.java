@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.web.bind.annotation.RequestParam;
+import io.cwc.config.FeatureFlags;
 import io.cwc.exception.NotFoundException;
 import io.cwc.nodes.core.NodeRegistry;
 import io.cwc.nodes.core.NodeRegistry.NodeRegistration;
@@ -24,10 +25,12 @@ public class NodeTypeController {
 
     private final NodeRegistry nodeRegistry;
     private final WorkflowService workflowService;
+    private final FeatureFlags featureFlags;
 
     @GetMapping
     public Collection<Map<String, Object>> getAll() {
         return nodeRegistry.getAllNodes().stream()
+                .filter(this::isFeatureEnabled)
                 .map(this::toMap)
                 .toList();
     }
@@ -54,10 +57,24 @@ public class NodeTypeController {
     @GetMapping("/categories")
     public List<String> getCategories() {
         return nodeRegistry.getAllNodes().stream()
+                .filter(this::isFeatureEnabled)
                 .map(NodeRegistration::getCategory)
                 .distinct()
                 .sorted()
                 .toList();
+    }
+
+    /**
+     * Filters out nodes whose required feature dependency is not on the classpath.
+     * AI nodes (category starts with "AI") require LangChain4j.
+     */
+    private boolean isFeatureEnabled(NodeRegistration reg) {
+        String category = reg.getCategory();
+        if (category != null && (category.equals("AI") || category.startsWith("AI /")
+                || category.startsWith("Standalone AI"))) {
+            return featureFlags.isLangchain4jAvailable();
+        }
+        return true;
     }
 
     private Map<String, Object> toMap(NodeRegistration reg) {

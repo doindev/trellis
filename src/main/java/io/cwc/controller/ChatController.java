@@ -1,6 +1,8 @@
 package io.cwc.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +15,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
+@ConditionalOnClass(name = "dev.langchain4j.model.chat.ChatModel")
+@ConditionalOnProperty(name = "cwc.features.langchain4j.enabled", havingValue = "true", matchIfMissing = true)
 public class ChatController {
 
     private final ChatService chatService;

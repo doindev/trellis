@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Workflow } from '../../../core/models';
+import { FeatureService } from '../../../core/services/feature.service';
 
 @Component({
     selector: 'app-workflow-card',
@@ -23,7 +24,7 @@ export class WorkflowCardComponent {
   private actionsCloseTimer: ReturnType<typeof setTimeout> | null = null;
   private scrollListener: (() => void) | null = null;
 
-  constructor(private elRef: ElementRef) {}
+  constructor(private elRef: ElementRef, public featureService: FeatureService) {}
 
   get nodeCount(): number {
     return this.workflow.nodes?.length || 0;

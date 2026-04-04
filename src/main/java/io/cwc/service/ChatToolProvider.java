@@ -9,6 +9,8 @@ import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -16,6 +18,8 @@ import java.util.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnClass(name = "dev.langchain4j.model.chat.ChatModel")
+@ConditionalOnProperty(name = "cwc.features.langchain4j.enabled", havingValue = "true", matchIfMissing = true)
 public class ChatToolProvider {
 
     private final McpSystemToolService mcpToolService;

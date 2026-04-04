@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -51,14 +52,18 @@ public class SpaForwardController {
     }
 
     private String patchHtml(String html) {
-        String contextPath = cwcProperties.getContextPath(); // "" or "/cwc"
-        String baseHref = contextPath + "/";
+        String uiPath = cwcProperties.getUiContextPath();   // "" or "/cwc"
+        String apiPath = cwcProperties.getContextPath();     // "" or "/myapp"
+        String baseHref = uiPath + "/";
 
-        // Replace <base href="/"> with the correct context path
+        // Replace <base href="/"> with the UI context path
         html = html.replace("<base href=\"/\">", "<base href=\"" + baseHref + "\">");
 
-        // Inject the global base path variable before </head>
-        String script = "<script>window.__CWC_BASE_PATH__='" + contextPath + "';</script>";
+        // Inject global path variables before </head>
+        String script = "<script>"
+                + "window.__CWC_BASE_PATH__='" + uiPath + "';"
+                + "window.__CWC_API_PATH__='" + apiPath + "';"
+                + "</script>";
         html = html.replace("</head>", script + "</head>");
 
         return html;
@@ -78,15 +83,16 @@ public class SpaForwardController {
             "/settings",
             "/settings/**"
     }, produces = MediaType.TEXT_HTML_VALUE)
-    public String forward(HttpServletRequest request) {
-        // When context path is non-root, only serve for CWC-matched requests
-        if (!cwcProperties.isRootContext()
+    public ResponseEntity<String> forward(HttpServletRequest request) {
+        // When UI context path is non-root, only serve for CWC-matched requests.
+        // Return 404 so the host app can serve its own resources.
+        if (!cwcProperties.isRootUiContext()
                 && request.getAttribute(CwcContextPathFilter.CWC_REQUEST) == null) {
-            return null; // Let the host app handle it
+            return ResponseEntity.notFound().build();
         }
 
         if (cachedIndexHtml != null) {
-            return cachedIndexHtml;
+            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(cachedIndexHtml);
         }
 
         // Fallback: try to read at runtime (e.g. if built after startup)
@@ -96,12 +102,13 @@ public class SpaForwardController {
                 try (InputStream is = resource.getInputStream()) {
                     String html = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                     cachedIndexHtml = patchHtml(html);
-                    return cachedIndexHtml;
+                    return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(cachedIndexHtml);
                 }
             }
         } catch (IOException e) {
             log.error("Failed to read index.html", e);
         }
-        return "<!DOCTYPE html><html><body>CWC frontend not found.</body></html>";
+        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML)
+                .body("<!DOCTYPE html><html><body>CWC frontend not found.</body></html>");
     }
 }

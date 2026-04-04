@@ -54,6 +54,7 @@ export interface McpEndpoint {
   path: string;
   url: string;
   enabled: boolean;
+  apiKeyRequired: boolean;
 }
 
 export interface McpClient {

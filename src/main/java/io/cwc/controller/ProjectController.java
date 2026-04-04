@@ -16,6 +16,7 @@ import io.cwc.service.CwcMcpServerManager;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -24,8 +25,8 @@ public class ProjectController {
 
     private final ProjectService projectService;
     private final ProjectContextPathFilter contextPathFilter;
-    private final CwcMcpServerManager mcpServerManager;
-    private final McpSettingsService mcpSettingsService;
+    private final Optional<CwcMcpServerManager> mcpServerManager;
+    private final Optional<McpSettingsService> mcpSettingsService;
     private final ClusterSyncService clusterSyncService;
     private final ProjectGitService projectGitService;
 
@@ -54,9 +55,8 @@ public class ProjectController {
         contextPathFilter.refreshCache();
         clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_CONTEXT_PATHS);
         clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_WEBHOOKS);
-        if (mcpServerManager.isRunning()) {
-            mcpServerManager.refreshTools();
-        }
+        mcpServerManager.filter(CwcMcpServerManager::isRunning)
+                .ifPresent(CwcMcpServerManager::refreshTools);
         return response;
     }
 
@@ -93,13 +93,16 @@ public class ProjectController {
 
     @GetMapping("/{id}/mcp")
     public List<McpEndpointDto> getProjectMcp(@PathVariable String id) {
-        return mcpSettingsService.getProjectMcpEndpoints(id);
+        return mcpSettingsService.map(s -> s.getProjectMcpEndpoints(id)).orElse(List.of());
     }
 
     @PutMapping("/{id}/mcp")
     public McpEndpointDto updateProjectMcp(@PathVariable String id, @RequestBody ProjectMcpRequest request) {
+        if (mcpSettingsService.isEmpty()) {
+            return McpEndpointDto.builder().enabled(false).transport(request.getTransport()).build();
+        }
         ProjectResponse project = projectService.getProject(id);
-        McpEndpointDto dto = mcpSettingsService.saveProjectMcpEndpoint(
+        McpEndpointDto dto = mcpSettingsService.get().saveProjectMcpEndpoint(
                 id, project.getName(), request.isEnabled(), request.getPath(), request.getTransport());
         if (dto == null) {
             return McpEndpointDto.builder().enabled(false).transport(request.getTransport()).build();

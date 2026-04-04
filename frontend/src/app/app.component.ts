@@ -9,6 +9,7 @@ import { AgentControlOverlayComponent } from './shared/components/agent-control-
 import { ProjectService } from './core/services/project.service';
 import { ChatService } from './core/services/chat.service';
 import { AgentControlService, AgentControlRequest } from './core/services/agent-control.service';
+import { FeatureService } from './core/services/feature.service';
 import { ChatSession } from './core/models/chat.model';
 
 @Component({
@@ -60,10 +61,12 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router,
     private projectService: ProjectService,
     private chatService: ChatService,
-    private agentControlService: AgentControlService
+    private agentControlService: AgentControlService,
+    public featureService: FeatureService
   ) {}
 
   ngOnInit(): void {
+    this.featureService.load();
     this.updateModes(this.router.url);
     this.routerSub = this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd)
@@ -87,7 +90,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private updateModes(url: string): void {
     this.settingsMode = url.startsWith('/settings');
     const wasChatMode = this.chatMode;
-    this.chatMode = url.startsWith('/home/chat');
+    this.chatMode = url.startsWith('/home/chat') && this.featureService.langchain4j();
     if (this.chatMode && !wasChatMode) {
       this.loadChatSessions();
     }

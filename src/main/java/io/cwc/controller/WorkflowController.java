@@ -12,6 +12,7 @@ import io.cwc.service.WorkflowService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/workflows")
@@ -20,7 +21,7 @@ public class WorkflowController {
 
     private final WorkflowService workflowService;
     private final ClusterSyncService clusterSyncService;
-    private final CwcMcpServerManager mcpServerManager;
+    private final Optional<CwcMcpServerManager> mcpServerManager;
 
     @GetMapping
     public List<WorkflowResponse> list(@RequestParam(required = false) String projectId,
@@ -56,14 +57,14 @@ public class WorkflowController {
     @PutMapping("/{id}")
     public WorkflowResponse update(@PathVariable String id, @RequestBody WorkflowUpdateRequest request) {
         WorkflowResponse response = workflowService.updateWorkflow(id, request);
-        if (mcpServerManager.isRunning() && (request.getMcpEnabled() != null
-                || request.getMcpDescription() != null
-                || request.getMcpInputSchema() != null
-                || request.getMcpOutputSchema() != null
-                || request.getName() != null
-                || request.getDescription() != null)) {
-            mcpServerManager.refreshTools();
-        }
+        mcpServerManager.filter(CwcMcpServerManager::isRunning)
+                .filter(m -> request.getMcpEnabled() != null
+                        || request.getMcpDescription() != null
+                        || request.getMcpInputSchema() != null
+                        || request.getMcpOutputSchema() != null
+                        || request.getName() != null
+                        || request.getDescription() != null)
+                .ifPresent(CwcMcpServerManager::refreshTools);
         return response;
     }
 
@@ -183,8 +184,7 @@ public class WorkflowController {
 
     private void notifyWorkflowChanged() {
         clusterSyncService.notifyChange(ClusterSyncService.DOMAIN_WEBHOOKS);
-        if (mcpServerManager.isRunning()) {
-            mcpServerManager.refreshTools();
-        }
+        mcpServerManager.filter(CwcMcpServerManager::isRunning)
+                .ifPresent(CwcMcpServerManager::refreshTools);
     }
 }

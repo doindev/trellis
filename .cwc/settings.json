@@ -12,7 +12,7 @@
   },
   "mcp" : {
     "enabled" : false,
-    "agentToolsEnabled" : true,
+    "agentToolsEnabled" : false,
     "agentToolsDedicated" : true,
     "agentToolsPath" : "agent",
     "agentToolsTransport" : "STREAMABLE_HTTP"

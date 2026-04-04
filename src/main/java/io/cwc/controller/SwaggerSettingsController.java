@@ -1,6 +1,8 @@
 package io.cwc.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.*;
 
 import io.cwc.dto.SwaggerSettingsDto;
@@ -12,6 +14,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/settings/swagger")
 @RequiredArgsConstructor
+@ConditionalOnClass(name = "org.springdoc.core.configuration.SpringDocConfiguration")
+@ConditionalOnProperty(name = "cwc.features.swagger.enabled", havingValue = "true", matchIfMissing = true)
 public class SwaggerSettingsController {
 
     private final SwaggerSettingsService swaggerSettingsService;

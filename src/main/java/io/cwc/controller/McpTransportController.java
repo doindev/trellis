@@ -2,6 +2,8 @@ package io.cwc.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,6 +20,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/mcp")
 @RequiredArgsConstructor
+@ConditionalOnClass(name = "org.springframework.ai.mcp.server.autoconfigure.McpServerAutoConfiguration")
+@ConditionalOnProperty(name = "cwc.features.mcp-server.enabled", havingValue = "true", matchIfMissing = true)
 public class McpTransportController {
 
     private final CwcMcpServerManager mcpServerManager;
@@ -147,6 +151,20 @@ public class McpTransportController {
      * Extracts the path after /mcp/ from the request URI.
      * For SSE endpoints, strips the trailing /sse suffix to get the endpoint path.
      */
+    /**
+     * Token management page — served as self-contained HTML at {mcp-url}/token-management.
+     * Allows users to create, view, and delete API tokens for this MCP endpoint.
+     */
+    @GetMapping(value = "/{path}/token-management", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> tokenManagement(@PathVariable String path) {
+        return ResponseEntity.ok(io.cwc.util.McpTokenPageGenerator.generate(path));
+    }
+
+    @GetMapping(value = "/{path}/{sub}/token-management", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> tokenManagementNested(@PathVariable String path, @PathVariable String sub) {
+        return ResponseEntity.ok(io.cwc.util.McpTokenPageGenerator.generate(path + "/" + sub));
+    }
+
     private String extractPath(HttpServletRequest request) {
         String uri = request.getRequestURI();
         String path = uri.substring("/mcp/".length());

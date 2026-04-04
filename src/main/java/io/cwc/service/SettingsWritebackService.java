@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Optional;
+
 import io.cwc.config.CwcConfigProperties;
 import io.cwc.dto.SettingsConfigFile;
 import io.cwc.entity.AiSettingsEntity;
@@ -29,8 +31,8 @@ public class SettingsWritebackService {
     private final CwcConfigProperties configProperties;
     private final AiSettingsService aiSettingsService;
     private final ExecutionSettingsService executionSettingsService;
-    private final McpSettingsService mcpSettingsService;
-    private final SwaggerSettingsService swaggerSettingsService;
+    private final Optional<McpSettingsService> mcpSettingsService;
+    private final Optional<SwaggerSettingsService> swaggerSettingsService;
     private final PropertiesFileService propertiesFileService;
     private final ConfigBootstrapService configBootstrapService;
     private final ObjectMapper objectMapper;
@@ -99,7 +101,7 @@ public class SettingsWritebackService {
         }
 
         // MCP settings
-        var mcpDto = mcpSettingsService.getSettings();
+        var mcpDto = mcpSettingsService.map(McpSettingsService::getSettings).orElse(null);
         if (mcpDto != null) {
             SettingsConfigFile.McpConfig mcp = new SettingsConfigFile.McpConfig();
             mcp.setEnabled(mcpDto.isEnabled());
@@ -109,7 +111,7 @@ public class SettingsWritebackService {
             mcp.setAgentToolsTransport(mcpDto.getAgentToolsTransport());
 
             // Endpoints
-            var endpoints = mcpSettingsService.listEndpoints(); // already filtered to instance-level
+            var endpoints = mcpSettingsService.map(McpSettingsService::listEndpoints).orElse(null); // already filtered to instance-level
             if (endpoints != null && !endpoints.isEmpty()) {
                 var epConfigs = new ArrayList<SettingsConfigFile.McpEndpointConfig>();
                 for (var ep : endpoints) {
@@ -126,7 +128,7 @@ public class SettingsWritebackService {
         }
 
         // Swagger settings
-        var swaggerDto = swaggerSettingsService.getSettings();
+        var swaggerDto = swaggerSettingsService.map(SwaggerSettingsService::getSettings).orElse(null);
         if (swaggerDto != null) {
             SettingsConfigFile.SwaggerConfig swagger = new SettingsConfigFile.SwaggerConfig();
             swagger.setEnabled(swaggerDto.isEnabled());

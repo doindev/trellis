@@ -108,11 +108,12 @@
     		<version>0.0.1</version>
 		</dependency>
 
-		<!-- Spring AI MCP Server -->
+		<!-- Spring AI MCP Server (optional — when absent, MCP UI and endpoints are disabled) -->
 		<dependency>
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
 		</dependency>
+
 
 		<!-- Swagger UI (OpenAPI 3.0) -->
 		<dependency>
@@ -192,10 +193,12 @@
 			<artifactId>neo4j-java-driver</artifactId>
 		</dependency>
 		<!-- LangChain4j Core + HTTP Client -->
+		
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j</artifactId>
 		</dependency>
+		
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-http-client</artifactId>

@@ -46,7 +46,7 @@ public class ConfigBootstrapService {
     private final TagRepository tagRepository;
     private final AiSettingsService aiSettingsService;
     private final ExecutionSettingsService executionSettingsService;
-    private final McpSettingsService mcpSettingsService;
+    private final Optional<McpSettingsService> mcpSettingsService;
     private final ProjectRelationRepository projectRelationRepository;
     private final WebhookService webhookService;
     private final ClusterSyncService clusterSyncService;
@@ -301,18 +301,19 @@ public class ConfigBootstrapService {
         }
 
         // Apply MCP settings
-        if (settings.getMcp() != null) {
+        if (settings.getMcp() != null && mcpSettingsService.isPresent()) {
+            var mcpSvc = mcpSettingsService.get();
             var mcp = settings.getMcp();
 
             // Enable/disable MCP
             if (mcp.getEnabled() != null) {
-                mcpSettingsService.setEnabled(mcp.getEnabled());
+                mcpSvc.setEnabled(mcp.getEnabled());
             }
 
             // Agent tools settings
             if (mcp.getAgentToolsEnabled() != null || mcp.getAgentToolsDedicated() != null
                     || mcp.getAgentToolsPath() != null || mcp.getAgentToolsTransport() != null) {
-                mcpSettingsService.updateAgentToolsSettings(
+                mcpSvc.updateAgentToolsSettings(
                         mcp.getAgentToolsEnabled(),
                         mcp.getAgentToolsDedicated(),
                         mcp.getAgentToolsPath(),
@@ -325,7 +326,7 @@ public class ConfigBootstrapService {
                     if (epConfig.getName() == null || epConfig.getTransport() == null) continue;
                     try {
                         // Check if an endpoint with this transport already exists
-                        var existing = mcpSettingsService.listEndpoints().stream()
+                        var existing = mcpSvc.listEndpoints().stream()
                                 .filter(e -> e.getTransport().equals(epConfig.getTransport()))
                                 .findFirst();
                         if (existing.isPresent()) {
@@ -336,7 +337,7 @@ public class ConfigBootstrapService {
                                     .path(epConfig.getPath())
                                     .enabled(epConfig.getEnabled() != null ? epConfig.getEnabled() : true)
                                     .build();
-                            mcpSettingsService.updateEndpoint(existing.get().getId(), updateDto);
+                            mcpSvc.updateEndpoint(existing.get().getId(), updateDto);
                         } else {
                             // Create new endpoint
                             McpEndpointDto createDto = McpEndpointDto.builder()
@@ -345,7 +346,7 @@ public class ConfigBootstrapService {
                                     .path(epConfig.getPath())
                                     .enabled(epConfig.getEnabled() != null ? epConfig.getEnabled() : true)
                                     .build();
-                            mcpSettingsService.createEndpoint(createDto);
+                            mcpSvc.createEndpoint(createDto);
                         }
                     } catch (Exception e) {
                         result.addWarning("Failed to apply MCP endpoint '" + epConfig.getName() + "': " + e.getMessage());

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SettingsService, UsageStats, UserInfo, ApiKeyInfo, AiSettings, AiModelInfo, McpSettings, McpWorkflow, McpEndpoint, McpClient, McpServer, McpParameter, McpOutputSchema, SwaggerSettings, SwaggerWorkflow, ExecutionSettings } from '../../core/services/settings.service';
+import { FeatureService } from '../../core/services/feature.service';
 import { WorkflowService } from '../../core/services/workflow.service';
 import { McpParamEditorModalComponent } from '../../shared/components/mcp-param-editor-modal/mcp-param-editor-modal.component';
 
@@ -176,7 +177,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private settingsService: SettingsService,
-    private workflowService: WorkflowService
+    private workflowService: WorkflowService,
+    public featureService: FeatureService
   ) {}
 
   ngOnInit(): void {
@@ -211,13 +213,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.loadApiKeys();
         break;
       case 'chat':
-        this.loadAiSettings();
+        if (this.featureService.langchain4j()) this.loadAiSettings();
         break;
       case 'mcp':
-        this.loadMcpSettings();
+        if (this.featureService.mcpServer()) this.loadMcpSettings();
         break;
       case 'swagger':
-        this.loadSwaggerSettings();
+        if (this.featureService.swagger()) this.loadSwaggerSettings();
         break;
       case 'execution':
         this.loadExecutionSettings();
@@ -562,6 +564,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   copyEndpointUrl(url: string): void {
     navigator.clipboard.writeText(url);
+  }
+
+  toggleEndpointApiKey(endpoint: any, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.settingsService.updateMcpEndpoint(endpoint.id, { ...endpoint, apiKeyRequired: checked }).subscribe({
+      next: () => this.loadMcpSettings()
+    });
   }
 
   // Client actions

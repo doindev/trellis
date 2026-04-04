@@ -1,5 +1,6 @@
 package io.cwc.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -11,16 +12,19 @@ import java.time.Duration;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @Value("${spring.web.resources.static-locations:classpath:/static/}")
+    private String[] staticLocations;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Hashed assets (JS/CSS chunks) — cache for 1 year
         registry.addResourceHandler("/*.js", "/*.css")
-                .addResourceLocations("classpath:/static/")
+                .addResourceLocations(staticLocations)
                 .setCacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic());
 
-        // index.html and other non-hashed resources — always revalidate
+        // Everything else — always revalidate
         registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/")
+                .addResourceLocations(staticLocations)
                 .setCacheControl(CacheControl.noCache());
     }
 

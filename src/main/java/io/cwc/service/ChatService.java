@@ -24,6 +24,8 @@ import io.cwc.repository.ChatMessageRepository;
 import io.cwc.repository.ChatSessionRepository;
 import io.cwc.repository.WorkflowRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,6 +44,8 @@ import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Service
+@ConditionalOnClass(name = "dev.langchain4j.model.chat.ChatModel")
+@ConditionalOnProperty(name = "cwc.features.langchain4j.enabled", havingValue = "true", matchIfMissing = true)
 public class ChatService {
 
     private final Optional<ChatModel> chatModel;

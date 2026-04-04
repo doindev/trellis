@@ -64,6 +64,7 @@ public class SettingsController {
         settings.put("webhookUrlProduction", baseUrl + ctxPath + webhookBasePath);
         settings.put("webhookUrlTest", baseUrl + ctxPath + webhookTestBasePath);
         settings.put("cwcContextPath", ctxPath);
+        settings.put("cwcUiContextPath", cwcProperties.getUiContextPath());
         settings.put("version", "1.0.0");
         settings.put("platform", "cwc");
         if (supportEmail != null && !supportEmail.isBlank()) {

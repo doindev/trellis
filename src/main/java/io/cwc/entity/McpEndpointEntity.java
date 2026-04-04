@@ -33,6 +33,11 @@ public class McpEndpointEntity {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    /** When true, requests to this endpoint require a valid API token */
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean apiKeyRequired = false;
+
     @Builder.Default
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
