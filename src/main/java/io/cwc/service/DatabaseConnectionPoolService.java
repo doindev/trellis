@@ -13,23 +13,21 @@ import javax.sql.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 import io.cwc.credentials.ConnectionPoolParameters;
-import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.Config;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.mongodb.MongoClientSettings;
-import com.mongodb.ConnectionString;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 
+/**
+ * Manages pooled database connections.
+ *
+ * <p>JDBC pools are built-in (no external driver imports — drivers are resolved at runtime
+ * from whatever modules are on the classpath).
+ *
+ * <p>Non-JDBC stores (MongoDB, Redis, Neo4j) register themselves via {@link #registerProvider}
+ * from their own modules so that cwc-core has <b>zero</b> driver dependencies.
+ */
 @Slf4j
 @Service
 public class DatabaseConnectionPoolService {
@@ -39,10 +37,72 @@ public class DatabaseConnectionPoolService {
 
     private record PoolEntry<T>(T pool, long lastUsed) {}
 
+    // ── Pluggable pool providers (registered by database modules) ──
+
+    @FunctionalInterface
+    public interface PoolFactory<T> {
+        T create(Map<String, Object> credentials);
+    }
+
+    @FunctionalInterface
+    public interface PoolCloser<T> {
+        void close(T pool) throws Exception;
+    }
+
+    private record ProviderEntry<T>(
+        ConcurrentHashMap<String, PoolEntry<T>> pools,
+        PoolFactory<T> factory,
+        PoolCloser<T> closer
+    ) {}
+
+    private final ConcurrentHashMap<String, ProviderEntry<?>> providers = new ConcurrentHashMap<>();
+
+    /**
+     * Database modules call this at startup to register their pool factory.
+     * Example from cwc-neo4j:
+     * <pre>
+     *   poolService.registerProvider("neo4j", creds -&gt; createDriver(creds), Driver::close);
+     * </pre>
+     */
+    public <T> void registerProvider(String type, PoolFactory<T> factory, PoolCloser<T> closer) {
+        providers.put(type, new ProviderEntry<>(new ConcurrentHashMap<>(), factory, closer));
+        log.info("Registered database pool provider: {}", type);
+    }
+
+    /**
+     * Get or create a pooled connection for the given type.
+     * Works for any type registered via {@link #registerProvider}.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getPool(String type, Map<String, Object> credentials) {
+        ProviderEntry<T> provider = (ProviderEntry<T>) providers.get(type);
+        if (provider == null) {
+            throw new IllegalStateException(
+                "No pool provider registered for '" + type + "'. "
+                + "Add the corresponding cwc-" + type + " module to your classpath.");
+        }
+        String key = poolKey(type, credentials);
+        PoolEntry<T> entry = provider.pools().get(key);
+        if (entry != null) {
+            provider.pools().put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
+            return entry.pool();
+        }
+        synchronized (this) {
+            entry = provider.pools().get(key);
+            if (entry != null) {
+                provider.pools().put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
+                return entry.pool();
+            }
+            T pool = provider.factory().create(credentials);
+            provider.pools().put(key, new PoolEntry<>(pool, System.currentTimeMillis()));
+            log.info("Created {} pool (key={})", type, key.substring(0, 8));
+            return pool;
+        }
+    }
+
+    // ── JDBC (built-in — no external driver imports) ──
+
     private final ConcurrentHashMap<String, PoolEntry<org.apache.tomcat.jdbc.pool.DataSource>> jdbcPools = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, PoolEntry<MongoClient>> mongoPools = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, PoolEntry<JedisPool>> redisPools = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, PoolEntry<Driver>> neo4jPools = new ConcurrentHashMap<>();
 
     public DataSource getJdbcPool(Map<String, Object> credentials, String dbType) {
         String key = poolKey(dbType, credentials);
@@ -64,67 +124,18 @@ public class DatabaseConnectionPoolService {
         }
     }
 
-    public MongoClient getMongoClient(Map<String, Object> credentials) {
-        String key = poolKey("mongo", credentials);
-        PoolEntry<MongoClient> entry = mongoPools.get(key);
-        if (entry != null) {
-            mongoPools.put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
-            return entry.pool();
-        }
-        synchronized (this) {
-            entry = mongoPools.get(key);
-            if (entry != null) {
-                mongoPools.put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
-                return entry.pool();
-            }
-            MongoClient client = createMongoClient(credentials);
-            mongoPools.put(key, new PoolEntry<>(client, System.currentTimeMillis()));
-            log.info("Created MongoDB client pool (key={})", key.substring(0, 8));
-            return client;
-        }
-    }
+    // ── Convenience accessors (delegates to pluggable providers) ──
+    // Return types are erased to Object at compile time but callers in their
+    // own modules cast to the concrete driver type they depend on.
 
-    public JedisPool getJedisPool(Map<String, Object> credentials) {
-        String key = poolKey("redis", credentials);
-        PoolEntry<JedisPool> entry = redisPools.get(key);
-        if (entry != null && !entry.pool().isClosed()) {
-            redisPools.put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
-            return entry.pool();
-        }
-        synchronized (this) {
-            entry = redisPools.get(key);
-            if (entry != null && !entry.pool().isClosed()) {
-                redisPools.put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
-                return entry.pool();
-            }
-            JedisPool pool = createJedisPool(credentials);
-            redisPools.put(key, new PoolEntry<>(pool, System.currentTimeMillis()));
-            log.info("Created Redis connection pool (key={})", key.substring(0, 8));
-            return pool;
-        }
-    }
+    @SuppressWarnings("unchecked")
+    public <T> T getMongoClient(Map<String, Object> credentials) { return (T) getPool("mongo", credentials); }
+    @SuppressWarnings("unchecked")
+    public <T> T getJedisPool(Map<String, Object> credentials)   { return (T) getPool("redis", credentials); }
+    @SuppressWarnings("unchecked")
+    public <T> T getNeo4jDriver(Map<String, Object> credentials) { return (T) getPool("neo4j", credentials); }
 
-    public Driver getNeo4jDriver(Map<String, Object> credentials) {
-        String key = poolKey("neo4j", credentials);
-        PoolEntry<Driver> entry = neo4jPools.get(key);
-        if (entry != null) {
-            neo4jPools.put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
-            return entry.pool();
-        }
-        synchronized (this) {
-            entry = neo4jPools.get(key);
-            if (entry != null) {
-                neo4jPools.put(key, new PoolEntry<>(entry.pool(), System.currentTimeMillis()));
-                return entry.pool();
-            }
-            Driver driver = createNeo4jDriver(credentials);
-            neo4jPools.put(key, new PoolEntry<>(driver, System.currentTimeMillis()));
-            log.info("Created Neo4j driver pool (key={})", key.substring(0, 8));
-            return driver;
-        }
-    }
-
-    // --- Pool creation ---
+    // ── Pool creation (JDBC only) ──
 
     private org.apache.tomcat.jdbc.pool.DataSource createJdbcPool(Map<String, Object> credentials, String dbType) {
         String host = stringVal(credentials, "host", "localhost");
@@ -156,7 +167,6 @@ public class DatabaseConnectionPoolService {
             default -> throw new IllegalArgumentException("Unsupported DB type: " + dbType);
         };
 
-        // Read user-configured pool settings (falls back to defaults if not set)
         Map<String, Object> poolCfg = ConnectionPoolParameters.getPoolConfig(credentials);
 
         PoolProperties props = new PoolProperties();
@@ -168,24 +178,21 @@ public class DatabaseConnectionPoolService {
         props.setMaxIdle(intVal(poolCfg, "maxIdle", 10));
         props.setMinIdle(intVal(poolCfg, "minIdle", 1));
         props.setMaxWait(intVal(poolCfg, "maxWaitMillis", 30_000));
-        props.setMinEvictableIdleTimeMillis(10 * 60 * 1000); // 10 minutes
-        props.setMaxAge(30 * 60 * 1000L); // 30 minutes
-        props.setTimeBetweenEvictionRunsMillis(60_000); // check idle connections every 60s
+        props.setMinEvictableIdleTimeMillis(10 * 60 * 1000);
+        props.setMaxAge(30 * 60 * 1000L);
+        props.setTimeBetweenEvictionRunsMillis(60_000);
         props.setName("cwc-" + dbType + "-" + poolKey(dbType, credentials).substring(0, 8));
 
-        // Validation
         String defaultValidation = "oracle".equals(dbType) ? "SELECT 1 FROM DUAL" : "SELECT 1";
         props.setValidationQuery(stringVal(poolCfg, "validationQuery", defaultValidation));
         props.setTestOnBorrow(boolVal(poolCfg, "testOnBorrow", false));
         props.setTestWhileIdle(boolVal(poolCfg, "testWhileIdle", false));
         props.setValidationInterval(intVal(poolCfg, "validationInterval", 3000));
 
-        // Leak detection
         props.setRemoveAbandoned(boolVal(poolCfg, "removeAbandoned", false));
         props.setRemoveAbandonedTimeout(intVal(poolCfg, "removeAbandonedTimeout", 60));
         props.setLogAbandoned(boolVal(poolCfg, "logAbandoned", false));
 
-        // SSL for postgres-compatible drivers
         if (List.of("postgres", "timescaledb", "questdb", "cratedb").contains(dbType)
                 && Boolean.TRUE.equals(credentials.get("ssl"))) {
             props.setConnectionProperties("ssl=true;sslmode=require;");
@@ -194,76 +201,10 @@ public class DatabaseConnectionPoolService {
         return new org.apache.tomcat.jdbc.pool.DataSource(props);
     }
 
-    private MongoClient createMongoClient(Map<String, Object> credentials) {
-        String host = stringVal(credentials, "host", "localhost");
-        int port = intVal(credentials, "port", 27017);
-        String database = stringVal(credentials, "database", "admin");
-        String username = stringVal(credentials, "username", "");
-        String password = stringVal(credentials, "password", "");
-        boolean tls = Boolean.TRUE.equals(credentials.get("tls"));
-
-        StringBuilder connStr = new StringBuilder("mongodb://");
-        if (!username.isEmpty()) {
-            connStr.append(username);
-            if (!password.isEmpty()) {
-                connStr.append(":").append(password);
-            }
-            connStr.append("@");
-        }
-        connStr.append(host).append(":").append(port).append("/").append(database);
-        if (tls) {
-            connStr.append("?tls=true");
-        }
-
-        MongoClientSettings settings = MongoClientSettings.builder()
-            .applyConnectionString(new ConnectionString(connStr.toString()))
-            .applyToConnectionPoolSettings(pool -> pool
-                .maxSize(10)
-                .minSize(1)
-                .maxConnectionIdleTime(10, java.util.concurrent.TimeUnit.MINUTES))
-            .applyToServerSettings(server -> server
-                .heartbeatFrequency(30, java.util.concurrent.TimeUnit.SECONDS))
-            .build();
-        return MongoClients.create(settings);
-    }
-
-    private JedisPool createJedisPool(Map<String, Object> credentials) {
-        String host = stringVal(credentials, "host", "localhost");
-        int port = intVal(credentials, "port", 6379);
-        String password = stringVal(credentials, "password", "");
-        int database = intVal(credentials, "database", 0);
-        boolean ssl = Boolean.TRUE.equals(credentials.get("ssl"));
-
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        poolConfig.setMaxTotal(10);
-        poolConfig.setMaxIdle(5);
-        poolConfig.setMinIdle(1);
-        poolConfig.setTestOnBorrow(true);   // PING before returning connection
-        poolConfig.setTestWhileIdle(true);  // PING idle connections periodically
-
-        if (!password.isEmpty()) {
-            return new JedisPool(poolConfig, host, port, 30_000, password, database, ssl);
-        } else {
-            return new JedisPool(poolConfig, host, port, 30_000, null, database, ssl);
-        }
-    }
-
-    private Driver createNeo4jDriver(Map<String, Object> credentials) {
-        String uri = stringVal(credentials, "uri", "bolt://localhost:7687");
-        String username = stringVal(credentials, "username", "neo4j");
-        String password = stringVal(credentials, "password", "");
-
-        Config config = Config.builder()
-            .withConnectionLivenessCheckTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .withConnectionTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .withMaxConnectionPoolSize(10)
-            .build();
-        return GraphDatabase.driver(uri, AuthTokens.basic(username, password), config);
-    }
-
-    // --- Idle eviction ---
+    // ── Idle eviction ──
 
     @Scheduled(fixedRate = EVICTION_INTERVAL_MS)
+    @SuppressWarnings("unchecked")
     public void evictIdlePools() {
         long now = System.currentTimeMillis();
 
@@ -275,45 +216,35 @@ public class DatabaseConnectionPoolService {
             }
         });
 
-        mongoPools.forEach((key, entry) -> {
-            if (now - entry.lastUsed() > IDLE_TIMEOUT_MS) {
-                mongoPools.remove(key);
-                try { entry.pool().close(); } catch (Exception e) { log.warn("Error closing Mongo client", e); }
-                log.info("Evicted idle MongoDB pool (key={})", key.substring(0, 8));
-            }
-        });
-
-        redisPools.forEach((key, entry) -> {
-            if (now - entry.lastUsed() > IDLE_TIMEOUT_MS) {
-                redisPools.remove(key);
-                try { entry.pool().close(); } catch (Exception e) { log.warn("Error closing Redis pool", e); }
-                log.info("Evicted idle Redis pool (key={})", key.substring(0, 8));
-            }
-        });
-
-        neo4jPools.forEach((key, entry) -> {
-            if (now - entry.lastUsed() > IDLE_TIMEOUT_MS) {
-                neo4jPools.remove(key);
-                try { entry.pool().close(); } catch (Exception e) { log.warn("Error closing Neo4j driver", e); }
-                log.info("Evicted idle Neo4j pool (key={})", key.substring(0, 8));
-            }
+        providers.forEach((type, provider) -> {
+            var typedProvider = (ProviderEntry<Object>) provider;
+            typedProvider.pools().forEach((key, entry) -> {
+                if (now - entry.lastUsed() > IDLE_TIMEOUT_MS) {
+                    typedProvider.pools().remove(key);
+                    try { typedProvider.closer().close(entry.pool()); } catch (Exception e) { log.warn("Error closing {} pool", type, e); }
+                    log.info("Evicted idle {} pool (key={})", type, key.substring(0, 8));
+                }
+            });
         });
     }
 
     @PreDestroy
+    @SuppressWarnings("unchecked")
     public void closeAllPools() {
         log.info("Shutting down all database connection pools...");
         jdbcPools.values().forEach(e -> { try { e.pool().close(); } catch (Exception ex) { /* ignore */ } });
-        mongoPools.values().forEach(e -> { try { e.pool().close(); } catch (Exception ex) { /* ignore */ } });
-        redisPools.values().forEach(e -> { try { e.pool().close(); } catch (Exception ex) { /* ignore */ } });
-        neo4jPools.values().forEach(e -> { try { e.pool().close(); } catch (Exception ex) { /* ignore */ } });
         jdbcPools.clear();
-        mongoPools.clear();
-        redisPools.clear();
-        neo4jPools.clear();
+
+        providers.forEach((type, provider) -> {
+            var typedProvider = (ProviderEntry<Object>) provider;
+            typedProvider.pools().values().forEach(e -> {
+                try { typedProvider.closer().close(e.pool()); } catch (Exception ex) { /* ignore */ }
+            });
+            typedProvider.pools().clear();
+        });
     }
 
-    // --- Helpers ---
+    // ── Helpers ──
 
     private String poolKey(String prefix, Map<String, Object> credentials) {
         TreeMap<String, Object> sorted = new TreeMap<>(credentials);

@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GitPushService {
+public class GitPushService implements GitPushProvider {
 
     private static final long GIT_TIMEOUT_SECONDS = 60;
     private static final DateTimeFormatter BRANCH_TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");

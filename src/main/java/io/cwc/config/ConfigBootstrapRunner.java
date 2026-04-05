@@ -11,7 +11,9 @@ import io.cwc.entity.WorkflowEntity;
 import io.cwc.repository.WorkflowRepository;
 import io.cwc.service.AiSettingsService;
 import io.cwc.service.ConfigBootstrapService;
-import io.cwc.service.GitSyncService;
+import io.cwc.service.GitSyncProvider;
+
+import java.util.Optional;
 
 /**
  * Runs the config bootstrap after DataSeeder (Order 1) and GitSyncRunner (Order 2).
@@ -25,7 +27,7 @@ public class ConfigBootstrapRunner implements CommandLineRunner {
 
     private final ConfigBootstrapService configBootstrapService;
     private final CwcConfigProperties configProperties;
-    private final GitSyncService gitSyncService;
+    private final Optional<GitSyncProvider> gitSyncProvider;
     private final AiSettingsService aiSettingsService;
     private final WorkflowRepository workflowRepository;
 
@@ -65,7 +67,7 @@ public class ConfigBootstrapRunner implements CommandLineRunner {
     }
 
     private void logStartupType() {
-        boolean git = gitSyncService.isEnabled();
+        boolean git = gitSyncProvider.map(GitSyncProvider::isEnabled).orElse(false);
         boolean localPaths = configProperties.isEnabled();
         boolean writeback = configProperties.isWritebackEnabled();
 

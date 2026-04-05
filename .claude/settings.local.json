@@ -214,7 +214,18 @@
       "Bash(cp C:/Users/timhj/eclipse-workspace/Cwc/src/main/java/io/cwc/service/McpApiTokenService.java C:/Users/timhj/eclipse-workspace/cwc-parent/cwc-core/src/main/java/io/cwc/service/)",
       "Bash(cp C:/Users/timhj/eclipse-workspace/Cwc/src/main/java/io/cwc/service/McpAccessLogPartitionService.java C:/Users/timhj/eclipse-workspace/cwc-parent/cwc-core/src/main/java/io/cwc/service/)",
       "Bash(mvn versions:set -DnewVersion=0.0.1 -DgenerateBackupPoms=false -q)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(cp \"C:/Users/timhj/eclipse-workspace/cwc-parent/cwc-frontend/frontend/src/app/core/services/feature.service.ts\" \"C:/Users/timhj/eclipse-workspace/Cwc/frontend/src/app/core/services/\")",
+      "Bash(rm -rf cwc-frontend/src/main/resources/static/*)",
+      "Bash(unzip:*)",
+      "Bash(mvn versions:set -DnewVersion=0.0.1-SNAPSHOT -DgenerateBackupPoms=false -q)",
+      "Bash(cp \"C:/Users/timhj/eclipse-workspace/cwc-parent/cwc-frontend/frontend/src/app/app.config.ts\" \"C:/Users/timhj/eclipse-workspace/Cwc/frontend/src/app/\")",
+      "Bash(rm -rf cwc-frontend/src/main/resources/static/* cwc-frontend/frontend/.angular)",
+      "Bash(cp \"C:/Users/timhj/eclipse-workspace/cwc-parent/cwc-frontend/frontend/src/app/features/home/home.component.ts\" \"C:/Users/timhj/eclipse-workspace/Cwc/frontend/src/app/features/home/\")",
+      "Bash(cp \"C:/Users/timhj/eclipse-workspace/cwc-parent/cwc-frontend/src/main/java/io/cwc/config/SpaForwardController.java\" \"C:/Users/timhj/eclipse-workspace/Cwc/src/main/java/io/cwc/config/\")",
+      "Bash(mvn package:*)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 25648\")",
+      "Bash(cmd.exe:*)"
     ]
   }
 }

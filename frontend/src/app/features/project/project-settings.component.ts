@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ProjectService, WorkflowService } from '../../core/services';
+import { ProjectService, WorkflowService, FeatureService } from '../../core/services';
 import { ProjectMcpEndpoint } from '../../core/services/project.service';
 import { Project, ProjectMember } from '../../core/models';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -61,7 +61,7 @@ export class ProjectSettingsComponent {
   execWorkflows: { id: string; name: string }[] = [];
   execSaving = false;
 
-  constructor(private projectService: ProjectService, private workflowService: WorkflowService) {}
+  constructor(private projectService: ProjectService, private workflowService: WorkflowService, public featureService: FeatureService) {}
 
   open(): void {
     this.visible.set(true);

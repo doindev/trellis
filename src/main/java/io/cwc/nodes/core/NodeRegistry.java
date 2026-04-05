@@ -51,6 +51,7 @@ public class NodeRegistry {
 	}
 	
 	// registers a node in the registry
+	@SuppressWarnings("unused")
 	private void registerNode(NodeInterface node, Node annotation) {
 		String type = annotation.type();
 		int version = annotation.version();

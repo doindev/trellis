@@ -15,8 +15,8 @@ import io.cwc.entity.ProjectRelationEntity;
 import io.cwc.entity.ProjectRelationEntity.ProjectRole;
 import io.cwc.repository.ProjectRelationRepository;
 import io.cwc.service.ConfigBootstrapService;
-import io.cwc.service.GitPushService;
-import io.cwc.service.GitSyncService;
+import io.cwc.service.GitPushProvider;
+import io.cwc.service.GitSyncProvider;
 import io.cwc.util.SecurityContextHelper;
 
 import javax.crypto.Mac;
@@ -24,6 +24,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Administrative endpoints for config management and cluster operations.
@@ -35,8 +36,8 @@ import java.util.Map;
 public class AdminController {
 
     private final ConfigBootstrapService configBootstrapService;
-    private final GitPushService gitPushService;
-    private final GitSyncService gitSyncService;
+    private final Optional<GitPushProvider> gitPushProvider;
+    private final Optional<GitSyncProvider> gitSyncProvider;
     private final CwcProperties cwcProperties;
     private final SecurityContextHelper securityContextHelper;
     private final ProjectRelationRepository projectRelationRepository;
@@ -71,7 +72,7 @@ public class AdminController {
                 throw new ForbiddenException("Promoting projects requires owner/admin role or cwc.allow-non-owner-changes=true");
             }
         }
-        return gitPushService.promote(id, request.getTargetBranch(), request.getCommitMessage());
+        return gitPushProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).promote(id, request.getTargetBranch(), request.getCommitMessage());
     }
 
     /**
@@ -87,13 +88,13 @@ public class AdminController {
             @RequestBody String body,
             HttpServletRequest request) {
 
-        String secret = gitSyncService.getWebhookSecret();
+        String secret = gitSyncProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).getWebhookSecret();
         if (secret == null || secret.isBlank()) {
             log.warn("Git webhook received but cwc.git.webhook-secret is not configured");
             return ResponseEntity.status(403).body(Map.of("error", "Webhook secret not configured"));
         }
 
-        if (!gitSyncService.isEnabled()) {
+        if (!gitSyncProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).isEnabled()) {
             return ResponseEntity.status(503).body(Map.of("error", "Git sync is not enabled"));
         }
 
@@ -138,7 +139,7 @@ public class AdminController {
         }
 
         // --- Branch check ---
-        String targetBranch = gitSyncService.getBranch();
+        String targetBranch = gitSyncProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).getBranch();
         if (!branchMatches(body, targetBranch)) {
             log.debug("Git webhook: push to non-tracked branch, ignoring");
             return ResponseEntity.ok(Map.of("status", "ignored", "reason", "branch mismatch"));
@@ -146,7 +147,7 @@ public class AdminController {
 
         // --- Sync and reload ---
         log.info("Git webhook: valid push to '{}', syncing", targetBranch);
-        boolean synced = gitSyncService.sync();
+        boolean synced = gitSyncProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).sync();
         if (!synced) {
             return ResponseEntity.status(500).body(Map.of("error", "Git sync failed"));
         }

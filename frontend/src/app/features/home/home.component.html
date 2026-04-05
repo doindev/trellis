@@ -71,7 +71,9 @@
   <!-- Tab Navigation -->
   <div class="tab-nav">
     <button class="tab" [class.active]="activeTab() === 'workflows'" (click)="setTab('workflows')">Workflows</button>
+    @if (featureService.langchain4j()) {
     <button class="tab" [class.active]="activeTab() === 'agents'" (click)="setTab('agents')">Agents</button>
+    }
     <button class="tab" [class.active]="activeTab() === 'credentials'" (click)="setTab('credentials')">Credentials</button>
     <button class="tab" [class.active]="activeTab() === 'executions'" (click)="setTab('executions')">Executions</button>
     <button class="tab" [class.active]="activeTab() === 'variables'" (click)="setTab('variables')">Variables</button>
@@ -141,8 +143,9 @@
                     [projectName]="getProjectName(workflow.projectId)"
                     (open)="openWorkflow($event)"
                     (move)="onMoveWorkflow($event)"
-                    (share)="onShareWorkflow($event)"
                     (duplicate)="duplicateWorkflow($event)"
+                    (archive)="archiveWorkflow($event)"
+                    (unpublish)="unpublishWorkflow($event)"
                     (enableMcp)="onEnableMcp($event)"
                     (enableSwagger)="onEnableSwagger($event)" />
                 }
@@ -606,6 +609,15 @@
   [projectId]="selectedProjectId()"
   (saved)="onCredentialSaved()"
   (closed)="null" />
+
+<app-confirm-dialog
+  [isOpen]="showArchiveConfirm()"
+  title="Archive Workflow"
+  [message]="'Are you sure you want to archive \'' + (archiveTarget()?.name || '') + '\'? This will unpublish the workflow and move it to the archive.'"
+  confirmText="Archive"
+  confirmBtnClass="btn-danger"
+  (confirmed)="onArchiveConfirmed()"
+  (cancelled)="showArchiveConfirm.set(false)" />
 
 <app-confirm-dialog
   [isOpen]="showDeleteConfirm()"

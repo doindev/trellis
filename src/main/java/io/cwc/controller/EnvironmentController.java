@@ -12,7 +12,8 @@ import io.cwc.exception.NotFoundException;
 import io.cwc.repository.EnvironmentRepository;
 import io.cwc.repository.SourceControlSettingsRepository;
 import io.cwc.service.CredentialEncryptionService;
-import io.cwc.service.GitSyncService;
+import io.cwc.service.GitSyncProvider;
+import java.util.Optional;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -31,7 +32,7 @@ public class EnvironmentController {
     private final EnvironmentRepository environmentRepository;
     private final SourceControlSettingsRepository sourceControlRepository;
     private final CredentialEncryptionService encryptionService;
-    private final GitSyncService gitSyncService;
+    private final Optional<GitSyncProvider> gitSyncProvider;
 
     // ---- Environment CRUD ----
 
@@ -114,7 +115,7 @@ public class EnvironmentController {
     @PostMapping("/sync")
     public Map<String, Object> triggerSync() {
         var entity = sourceControlRepository.findFirstByOrderByCreatedAtAsc().orElse(null);
-        boolean success = gitSyncService.sync();
+        boolean success = gitSyncProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).sync();
 
         if (entity != null) {
             entity.setLastSyncAt(Instant.now());

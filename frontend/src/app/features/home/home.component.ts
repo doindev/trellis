@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild, signal, computed, HostListener, ElementRe
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { WorkflowService, ExecutionService, CredentialService, ProjectService, SettingsService } from '../../core/services';
+import { WorkflowService, ExecutionService, CredentialService, ProjectService, SettingsService, FeatureService } from '../../core/services';
 import { Workflow, Execution, Credential } from '../../core/models';
 import { WorkflowCardComponent } from '../../shared/components/workflow-card/workflow-card.component';
 import { VariableListComponent } from '../variables/variable-list.component';
@@ -13,6 +13,7 @@ import { CacheListComponent } from '../cache/cache-list.component';
 import { ProjectSettingsComponent } from '../project/project-settings.component';
 import { WorkflowMoveModalComponent } from '../../shared/components/workflow-move-modal/workflow-move-modal.component';
 import { WorkflowShareModalComponent } from '../../shared/components/workflow-share-modal/workflow-share-modal.component';
+
 import {
   ExecutionFilterModalComponent,
   ExecutionFilters,
@@ -164,6 +165,10 @@ export class HomeComponent implements OnInit {
     return agents;
   });
 
+  // Archive
+  archiveTarget = signal<Workflow | null>(null);
+  showArchiveConfirm = signal(false);
+
   // Delete
   deleteTarget = signal<Workflow | null>(null);
   showDeleteConfirm = signal(false);
@@ -177,7 +182,7 @@ export class HomeComponent implements OnInit {
   moveTarget = signal<Workflow | null>(null);
   showMoveModal = signal(false);
 
-  // Share
+  // Share (used by agent sharing)
   shareTarget = signal<Workflow | null>(null);
   showShareModal = signal(false);
 
@@ -249,10 +254,13 @@ export class HomeComponent implements OnInit {
     private credentialService: CredentialService,
     private projectService: ProjectService,
     private settingsService: SettingsService,
+    public featureService: FeatureService,
     private elRef: ElementRef
   ) {}
 
   ngOnInit(): void {
+    console.log('[HomeComponent] ngOnInit — langchain4j=%s, mcpServer=%s, featureLoaded=%s',
+      this.featureService.langchain4j(), this.featureService.mcpServer(), this.featureService.loaded());
     // Set active tab from route param
     const tabFromRoute = this.route.snapshot.paramMap.get('tab');
     if (tabFromRoute && ['workflows', 'credentials', 'executions', 'variables', 'caches', 'agents'].includes(tabFromRoute)) {
@@ -646,12 +654,6 @@ export class HomeComponent implements OnInit {
     this.moveTarget.set(null);
   }
 
-  onShareWorkflow(workflow: Workflow): void {
-    if (workflow.published) return;
-    this.shareTarget.set(workflow);
-    this.showShareModal.set(true);
-  }
-
   onShareClosed(): void {
     this.showShareModal.set(false);
     this.shareTarget.set(null);
@@ -659,16 +661,52 @@ export class HomeComponent implements OnInit {
 
   duplicateWorkflow(workflow: Workflow): void {
     if (!workflow.id) return;
-    const copy: Partial<Workflow> = {
-      name: workflow.name + ' (copy)',
-      published: false,
-      currentVersion: 0,
-      nodes: workflow.nodes,
-      connections: workflow.connections,
-      settings: workflow.settings
-    };
-    this.workflowService.create(copy as Workflow).subscribe({
+    this.workflowService.duplicate(workflow.id).subscribe({
+      next: (created) => {
+        // Rename with an incrementing number based on existing workflows
+        const baseName = workflow.name.replace(/\s*\(\d+\)$/, '');
+        const allNames = this.workflows().map(w => w.name);
+        let num = 1;
+        while (allNames.includes(`${baseName} (${num})`) || created.name === `${baseName} (${num})`) {
+          num++;
+        }
+        const newName = `${baseName} (${num})`;
+        this.workflowService.update(created.id!, { ...created, name: newName, published: false } as Workflow).subscribe({
+          next: () => this.loadWorkflows()
+        });
+      }
+    });
+  }
+
+  archiveWorkflow(workflow: Workflow): void {
+    if (!workflow.id) return;
+    if (workflow.published) {
+      alert('This workflow is currently published. Please unpublish it before archiving.');
+      return;
+    }
+    this.archiveTarget.set(workflow);
+    this.showArchiveConfirm.set(true);
+  }
+
+  onArchiveConfirmed(): void {
+    const target = this.archiveTarget();
+    this.showArchiveConfirm.set(false);
+    this.archiveTarget.set(null);
+    if (!target?.id) return;
+    this.workflowService.archive(target.id).subscribe({
       next: () => this.loadWorkflows()
+    });
+  }
+
+  unpublishWorkflow(workflow: Workflow): void {
+    if (!workflow.id) return;
+    this.workflowService.unpublish(workflow.id).subscribe({
+      next: (updated) => {
+        // Update in-place to avoid re-sort moving the workflow to a different position
+        this.workflows.update(list =>
+          list.map(w => w.id === updated.id ? { ...w, published: false, updatedAt: updated.updatedAt } : w)
+        );
+      }
     });
   }
 

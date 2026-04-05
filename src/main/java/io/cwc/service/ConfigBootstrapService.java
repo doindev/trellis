@@ -52,7 +52,7 @@ public class ConfigBootstrapService {
     private final ClusterSyncService clusterSyncService;
 
     @Setter(onMethod_ = {@Autowired, @Lazy})
-    private ProjectGitService projectGitService;
+    private ProjectGitProvider projectGitService;
 
     private final ReentrantLock reloadLock = new ReentrantLock();
     private final AtomicBoolean bootstrapComplete = new AtomicBoolean(false);

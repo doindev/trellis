@@ -1,22 +1,40 @@
 package io.cwc.controller;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-
-import io.cwc.config.ProjectContextPathFilter;
-import io.cwc.dto.*;
-import io.cwc.entity.ProjectSourceControlEntity;
-import io.cwc.service.ClusterSyncService;
-import io.cwc.service.McpSettingsService;
-import io.cwc.service.ProjectGitService;
-import io.cwc.service.ProjectService;
-import io.cwc.service.CwcMcpServerManager;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.cwc.config.ProjectContextPathFilter;
+import io.cwc.dto.ConfigReloadResult;
+import io.cwc.dto.GitImportRequest;
+import io.cwc.dto.McpEndpointDto;
+import io.cwc.dto.ProjectCreateRequest;
+import io.cwc.dto.ProjectDeleteRequest;
+import io.cwc.dto.ProjectMcpRequest;
+import io.cwc.dto.ProjectMemberRequest;
+import io.cwc.dto.ProjectMemberResponse;
+import io.cwc.dto.ProjectResponse;
+import io.cwc.dto.ProjectUpdateRequest;
+import io.cwc.entity.ProjectSourceControlEntity;
+import io.cwc.service.ClusterSyncService;
+import io.cwc.service.CwcMcpServerManager;
+import io.cwc.service.McpSettingsService;
+import io.cwc.service.ProjectGitProvider;
+import io.cwc.service.ProjectService;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -28,7 +46,7 @@ public class ProjectController {
     private final Optional<CwcMcpServerManager> mcpServerManager;
     private final Optional<McpSettingsService> mcpSettingsService;
     private final ClusterSyncService clusterSyncService;
-    private final ProjectGitService projectGitService;
+    private final Optional<ProjectGitProvider> projectGitProvider;
 
     @GetMapping
     public List<ProjectResponse> list() {
@@ -114,7 +132,7 @@ public class ProjectController {
 
     @GetMapping("/{id}/source-control")
     public Map<String, Object> getSourceControl(@PathVariable String id) {
-        ProjectSourceControlEntity sc = projectGitService.getLink(id);
+        ProjectSourceControlEntity sc = projectGitProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).getLink(id);
         if (sc == null) {
             return Map.of("connected", false);
         }
@@ -132,7 +150,7 @@ public class ProjectController {
     @PutMapping("/{id}/source-control")
     public Map<String, Object> updateSourceControl(@PathVariable String id,
                                                     @RequestBody GitImportRequest request) {
-        projectGitService.linkRepo(id, request.getRepoUrl(), request.getBranch(),
+        projectGitProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).linkRepo(id, request.getRepoUrl(), request.getBranch(),
                 request.getToken(), request.getProvider());
         return getSourceControl(id);
     }
@@ -140,12 +158,12 @@ public class ProjectController {
     @DeleteMapping("/{id}/source-control")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteSourceControl(@PathVariable String id) {
-        projectGitService.unlinkRepo(id);
+        projectGitProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).unlinkRepo(id);
     }
 
     @PostMapping("/{id}/source-control/sync")
     public ConfigReloadResult syncSourceControl(@PathVariable String id) {
-        return projectGitService.syncProject(id);
+        return projectGitProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).syncProject(id);
     }
 
     @PostMapping("/{id}/source-control/push")
@@ -153,6 +171,6 @@ public class ProjectController {
                                                   @RequestBody(required = false) Map<String, String> request) {
         String commitMessage = request != null ? request.get("commitMessage") : null;
         String targetBranch = request != null ? request.get("targetBranch") : null;
-        return projectGitService.pushProject(id, commitMessage, targetBranch);
+        return projectGitProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).pushProject(id, commitMessage, targetBranch);
     }
 }

@@ -271,6 +271,7 @@ public class SummarizeNode extends AbstractNode {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private Map<String, List<Map<String, Object>>> groupItems(List<Map<String, Object>> items,
 			List<String> splitByFields, boolean disableDotNotation) {
 		Map<String, List<Map<String, Object>>> groups = new LinkedHashMap<>();

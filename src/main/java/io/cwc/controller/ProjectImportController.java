@@ -13,7 +13,8 @@ import io.cwc.config.CwcConfigProperties.ConfigMode;
 import io.cwc.dto.*;
 import io.cwc.service.ConfigBootstrapService;
 import io.cwc.service.ConfigExportService;
-import io.cwc.service.ProjectGitService;
+import io.cwc.service.ProjectGitProvider;
+import java.util.Optional;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,7 +30,7 @@ public class ProjectImportController {
 
     private final ConfigBootstrapService configBootstrapService;
     private final ConfigExportService configExportService;
-    private final ProjectGitService projectGitService;
+    private final Optional<ProjectGitProvider> projectGitProvider;
     private final ObjectMapper objectMapper;
 
     /**
@@ -62,7 +63,7 @@ public class ProjectImportController {
      */
     @PostMapping("/api/projects/import-git")
     public ConfigReloadResult importFromGit(@RequestBody GitImportRequest request) {
-        return projectGitService.importFromGitRepo(
+        return projectGitProvider.orElseThrow(() -> new io.cwc.exception.ServiceUnavailableException("Git module not available")).importFromGitRepo(
                 request.getRepoUrl(), request.getBranch(), request.getToken(),
                 request.getProvider(), request.getSubPath(), request.getMode());
     }

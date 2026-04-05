@@ -11,8 +11,12 @@
         <nav class="settings-tabs">
           <button class="settings-tab" [class.active]="activeTab === 'general'" (click)="activeTab = 'general'">General</button>
           <button class="settings-tab" [class.active]="activeTab === 'execution'" (click)="activeTab = 'execution'">Execution</button>
+          @if (featureService.mcpServer()) {
           <button class="settings-tab" [class.active]="activeTab === 'mcp'" (click)="activeTab = 'mcp'" [disabled]="!project()?.contextPath">MCP Instance</button>
+          }
+          @if (featureService.git()) {
           <button class="settings-tab" [class.active]="activeTab === 'sourcecontrol'" (click)="activeTab = 'sourcecontrol'; loadSourceControl()">Source Control</button>
+          }
         </nav>
 
         <div class="modal-body">
@@ -151,7 +155,7 @@
             }
 
             <!-- MCP Instance Tab -->
-            @if (activeTab === 'mcp') {
+            @if (activeTab === 'mcp' && featureService.mcpServer()) {
               <p class="mcp-tab-description">Expose this project's MCP-enabled workflows on dedicated MCP endpoints. You can enable one endpoint per transport type.</p>
 
               @if (mcpError) {
@@ -244,7 +248,7 @@
             }
 
             <!-- Source Control Tab -->
-            @if (activeTab === 'sourcecontrol') {
+            @if (activeTab === 'sourcecontrol' && featureService.git()) {
               @if (scLoading) {
                 <p style="color: var(--cwc-text-secondary); font-size: 0.8125rem">Loading source control settings...</p>
               } @else if (!scConnected && !scShowConnectForm) {

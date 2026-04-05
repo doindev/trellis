@@ -54,7 +54,8 @@ public class WorkflowController {
         return workflowService.createWorkflow(request);
     }
 
-    @PutMapping("/{id}")
+    @SuppressWarnings("unused")
+	@PutMapping("/{id}")
     public WorkflowResponse update(@PathVariable String id, @RequestBody WorkflowUpdateRequest request) {
         WorkflowResponse response = workflowService.updateWorkflow(id, request);
         mcpServerManager.filter(CwcMcpServerManager::isRunning)

@@ -14,10 +14,11 @@ import io.cwc.dto.CredentialUpdateRequest;
 import io.cwc.dto.ModelInfo;
 import io.cwc.exception.NotFoundException;
 import io.cwc.service.CredentialService;
-import io.cwc.service.ModelListService;
+import io.cwc.service.ModelListProvider;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/credentials")
@@ -26,7 +27,7 @@ public class CredentialController {
 
     private final CredentialService credentialService;
     private final CredentialTypeRegistry credentialTypeRegistry;
-    private final ModelListService modelListService;
+    private final Optional<ModelListProvider> modelListProvider;
 
     @GetMapping
     public List<CredentialResponse> list(@RequestParam(required = false) String projectId) {
@@ -84,7 +85,8 @@ public class CredentialController {
 
     @PostMapping("/test")
     public CredentialTestResult testCredentials(@RequestBody CredentialTestRequest request) {
-        return modelListService.testCredentials(request.getType(), request.getData());
+        return modelListProvider.map(p -> p.testCredentials(request.getType(), request.getData()))
+                .orElse(CredentialTestResult.failure("AI module not available"));
     }
 
     @GetMapping("/{id}/models")
@@ -92,7 +94,8 @@ public class CredentialController {
                                       @RequestParam(required = false) String modelType) {
         CredentialResponse cred = credentialService.getCredential(id);
         Map<String, Object> data = credentialService.getDecryptedData(id);
-        return modelListService.listModels(cred.getType(), data, modelType);
+        return modelListProvider.map(p -> p.listModels(cred.getType(), data, modelType))
+                .orElse(List.of());
     }
 
     @GetMapping("/types")

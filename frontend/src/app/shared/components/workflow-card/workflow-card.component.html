@@ -70,14 +70,6 @@
       </svg>
       Open
     </button>
-    <button class="dropdown-item" (click)="onAction('share', $event)">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-      </svg>
-      Share...
-    </button>
     <button class="dropdown-item" (click)="onAction('duplicate', $event)">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
@@ -93,6 +85,14 @@
       </svg>
       Move
     </button>
+    @if (workflow.published) {
+    <button class="dropdown-item" (click)="onAction('unpublish', $event)">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 7l-10 10"/><circle cx="12" cy="12" r="9"/>
+      </svg>
+      Unpublish
+    </button>
+    }
     <button class="dropdown-item" (click)="onAction('archive', $event)">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="21 8 21 21 3 21 3 8"/>

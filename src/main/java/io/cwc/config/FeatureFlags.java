@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
  *   cwc.features.langchain4j.enabled=false   # disable AI / chat
  *   cwc.features.swagger.enabled=false        # disable Swagger UI
  *   cwc.features.mcp-server.enabled=false     # disable MCP server
+ *   cwc.git.enabled=false                     # disable Git sync (also requires cwc-git module)
  * </pre>
  *
  * When this project is split into Maven modules, each module will bring its own
@@ -44,6 +45,9 @@ public class FeatureFlags {
     // ── MCP Server ──
     private boolean mcpServerAvailable;
 
+    // ── Git sync ──
+    private boolean gitAvailable;
+
     // ── CWC Frontend UI (Angular SPA) ──
     private boolean frontendAvailable;
 
@@ -60,10 +64,14 @@ public class FeatureFlags {
                 && (classExists("org.springframework.ai.mcp.server.autoconfigure.McpServerAutoConfiguration")
                     || beanExists("cwcMcpServerManager"));
 
+        // Git: cwc-git module present AND cwc.git.enabled=true
+        gitAvailable = "true".equalsIgnoreCase(environment.getProperty("cwc.git.enabled"))
+                && beanExists("gitSyncService");
+
         frontendAvailable = getClass().getClassLoader().getResource("static/.cwc-ui") != null;
 
-        log.info("Feature detection: langchain4j={}, swagger={}, mcpServer={}, frontend={}",
-                langchain4jAvailable, swaggerAvailable, mcpServerAvailable, frontendAvailable);
+        log.info("Feature detection: langchain4j={}, swagger={}, mcpServer={}, git={}, frontend={}",
+                langchain4jAvailable, swaggerAvailable, mcpServerAvailable, gitAvailable, frontendAvailable);
     }
 
     /** Returns {@code true} unless the property is explicitly {@code "false"}. */

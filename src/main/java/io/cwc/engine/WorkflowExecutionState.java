@@ -128,7 +128,8 @@ public class WorkflowExecutionState {
         return combined;
     }
 
-    public Map<String, Object> getOrCreateNodeContext(String nodeId) {
+    @SuppressWarnings("unused")
+	public Map<String, Object> getOrCreateNodeContext(String nodeId) {
         return nodeContextData.computeIfAbsent(nodeId, k -> new ConcurrentHashMap<>());
     }
 

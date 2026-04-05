@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
-public class GitSyncService {
+public class GitSyncService implements GitSyncProvider {
 
     private static final long GIT_TIMEOUT_SECONDS = 120;
 

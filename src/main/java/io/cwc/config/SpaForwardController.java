@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -84,15 +85,21 @@ public class SpaForwardController {
             "/settings/**"
     }, produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> forward(HttpServletRequest request) {
+        boolean rootUi = cwcProperties.isRootUiContext();
+        Object cwcAttr = request.getAttribute(CwcContextPathFilter.CWC_REQUEST);
+        log.info("SpaForward: uri={}, rootUi={}, cwcAttr={}, cachedHtml={}",
+                request.getRequestURI(), rootUi, cwcAttr, cachedIndexHtml != null);
+
         // When UI context path is non-root, only serve for CWC-matched requests.
         // Return 404 so the host app can serve its own resources.
-        if (!cwcProperties.isRootUiContext()
-                && request.getAttribute(CwcContextPathFilter.CWC_REQUEST) == null) {
+        if (!rootUi && cwcAttr == null) {
+            log.info("SpaForward: returning 404 — not a CWC request");
             return ResponseEntity.notFound().build();
         }
 
         if (cachedIndexHtml != null) {
-            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(cachedIndexHtml);
+            log.info("SpaForward: serving cached index.html ({} chars)", cachedIndexHtml.length());
+            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).cacheControl(CacheControl.noStore()).body(cachedIndexHtml);
         }
 
         // Fallback: try to read at runtime (e.g. if built after startup)
@@ -102,7 +109,7 @@ public class SpaForwardController {
                 try (InputStream is = resource.getInputStream()) {
                     String html = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                     cachedIndexHtml = patchHtml(html);
-                    return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(cachedIndexHtml);
+                    return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).cacheControl(CacheControl.noStore()).body(cachedIndexHtml);
                 }
             }
         } catch (IOException e) {

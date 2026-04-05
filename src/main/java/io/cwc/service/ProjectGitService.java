@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ProjectGitService {
+public class ProjectGitService implements ProjectGitProvider {
 
     private static final long GIT_TIMEOUT_SECONDS = 120;
     private static final DateTimeFormatter BRANCH_TS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");

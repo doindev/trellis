@@ -1347,7 +1347,8 @@ public class WorkflowEngine {
         }
     }
 
-    private Map<String, List<Object>> collectAllAiInputs(String nodeId, WorkflowGraph graph,
+    @SuppressWarnings("unused")
+	private Map<String, List<Object>> collectAllAiInputs(String nodeId, WorkflowGraph graph,
                                                           WorkflowExecutionState state) {
         Map<String, List<Object>> aiInputs = new HashMap<>();
         Set<String> seen = new HashSet<>();
@@ -1402,7 +1403,7 @@ public class WorkflowEngine {
      * @param executionId       for logging
      * @return merged AI inputs map
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "unused" })
     private Map<String, List<Object>> mergeAgentDefinition(
             String agentDefinitionId,
             Map<String, List<Object>> workflowAiInputs,

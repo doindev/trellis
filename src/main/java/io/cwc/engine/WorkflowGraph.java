@@ -41,7 +41,7 @@ public class WorkflowGraph {
         private String type = "main";
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "unused" })
     public static WorkflowGraph parse(Object nodesObj, Object connectionsObj, ObjectMapper objectMapper) {
         WorkflowGraph graph = new WorkflowGraph();
 
