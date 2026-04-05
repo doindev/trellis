@@ -1008,6 +1008,21 @@ export class HomeComponent implements OnInit {
   // ---- Project Export / Import ----
 
   showProjectActionsMenu = false;
+  private projectActionsTimer: ReturnType<typeof setTimeout> | null = null;
+
+  scheduleProjectActionsClose(): void {
+    this.cancelProjectActionsClose();
+    this.projectActionsTimer = setTimeout(() => {
+      this.showProjectActionsMenu = false;
+    }, 400);
+  }
+
+  cancelProjectActionsClose(): void {
+    if (this.projectActionsTimer) {
+      clearTimeout(this.projectActionsTimer);
+      this.projectActionsTimer = null;
+    }
+  }
   showExportModal = false;
   exporting = false;
   importResultMessage = '';
